@@ -159,7 +159,7 @@ class ChatApp:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Jiraiya", page_icon="🐸", layout="wide")
+    st.set_page_config(page_title="DnD Agent", page_icon="🎲", layout="wide")
 
     config_path = Path(__file__).parent / "config.yaml"
     with config_path.open() as fp:
