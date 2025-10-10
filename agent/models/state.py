@@ -1,7 +1,8 @@
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+from agent.models.character import Character
 
 
 class TurnPhase(str, Enum):
@@ -13,6 +14,7 @@ class TurnPhase(str, Enum):
 
 class ActionType(str, Enum):
     ATTACK = "attack"
+    SHOOT = "shoot"
     MOVE = "move"
     CAST_SPELL = "cast_spell"
     ROLEPLAY = "roleplay"
@@ -26,6 +28,7 @@ class Action(BaseModel):
     ability: str | None = None
     attack_method: str | None = None
     description: str = ""
+    dice_expression: str = "1d20"
     meta: dict = {}
 
 
@@ -37,22 +40,14 @@ class VerificationResult(BaseModel):
 
 class CombatResult(BaseModel):
     success: bool
-    events: List[str] = Field(default_factory=list)
-    new_state: Optional[dict] = None
+    events: list[str] = Field(default_factory=list)
+    new_state: dict | None = None
 
 
 class DiceRoll(BaseModel):
     expression: str
     rolls: list[int]
     total: int
-
-
-class Character(BaseModel):
-    id: str
-    name: str
-    hp: int
-    pos: tuple[int, int]
-    is_player: bool = False
 
 
 class State(BaseModel):

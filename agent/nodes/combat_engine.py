@@ -1,6 +1,6 @@
 from langgraph.runtime import Runtime
 
-from agent.models.state import Action, ActionType, CombatResult, Context, State, TurnPhase
+from agent.models.state import ActionType, Context, State, TurnPhase
 
 
 class CombatEngine:

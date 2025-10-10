@@ -1,10 +1,8 @@
-from langgraph.runtime import Runtime
-
-from agent.models.state import Context, State, TurnPhase, VerificationResult
+from agent.models.state import State, TurnPhase, VerificationResult
 
 
 class RulesVerifier:
-    def __call__(self, state: State, runtime: Runtime[Context]) -> State:
+    def __call__(self, state: State) -> State:
         action = state.action
         reasons = []
         valid = True

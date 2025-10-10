@@ -1,4 +1,4 @@
-PACKAGE_NAME=dnd-agent
+PACKAGE_NAME=agent
 UV=uv
 
 VERSION=dev
@@ -22,8 +22,8 @@ test-format:
 	$(UV) run ruff format --check $(PACKAGE_NAME) tests
 
 format:
-	$(UV) run ruff format $(PACKAGE_NAME) tests
-	$(UV) run ruff check --fix $(PACKAGE_NAME) tests
+	$(UV) run ruff format $(PACKAGE_NAME)
+	$(UV) run ruff check --fix $(PACKAGE_NAME)
 
 test-coverage:
 	$(UV) run pytest \
