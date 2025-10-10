@@ -5,7 +5,7 @@ import yaml
 
 from agent.graph import build_graph
 from agent.models.config import Config
-from agent.models.state import Observation, State
+from agent.models.state import Character, State
 
 
 def main():
@@ -14,20 +14,24 @@ def main():
         config = yaml.safe_load(fp)
         config = Config.model_validate(config)
 
+    hero = Character(id="pc_alfred", name="Alfred", hp=20, pos=(3, 2), is_player=True)
+    orc = Character(id="orc_1", name="Orc Grunt", hp=12, pos=(4, 2))
+    state = State(characters={hero.id: hero, orc.id: orc}, actor_id=hero.id)
+
     graph = build_graph(config=config.agent)
+    print("Starting combat...\n")
 
-    # Sample observation
-    obs = Observation(
-        turn=1,
-        visible_entities=[{"id": "orc_1", "hp": 12, "pos": [4, 2]}],
-        last_event=None,
-        pc_state={"id": "pc_alfred", "hp": 18, "pos": [3, 2]},
-    )
-    init_state = State(observation=obs)
+    while not state.done and state.turn < 10:
+        state = State.model_validate(graph.invoke(state))
+        print(f"\n--- Turn {state.turn} ---")
+        for event in state.event_log:
+            print(event)
 
-    final_state = graph.invoke(init_state)
+        state.event_log = []
 
-    pprint(final_state)
+        if state.done:
+            print("Combat ended!")
+            break
 
 
 if __name__ == "__main__":

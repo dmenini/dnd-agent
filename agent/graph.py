@@ -9,6 +9,7 @@ from agent.models.config import AgentConfig, LLMConfig
 from agent.models.state import Context, State
 from agent.nodes.agent import LLMAgent
 from agent.nodes.combat_engine import CombatEngine
+from agent.nodes.dice_roller import DiceRoller
 from agent.nodes.rules_verifier import RulesVerifier
 
 
@@ -27,17 +28,20 @@ def build_graph(config: AgentConfig):
     # Nodes
     agent = LLMAgent(llm=llm, system_prompt=config.prompts.system)
     verifier = RulesVerifier()
+    roller = DiceRoller()
     combat = CombatEngine()
 
     # Register nodes
     graph.add_node("decide", agent)
     graph.add_node("verify", verifier)
+    graph.add_node("roll", roller)
     graph.add_node("execute", combat)
 
     # Define edges
     graph.add_edge(START, "decide")
     graph.add_edge("decide", "verify")
-    graph.add_edge("verify", "execute")
+    graph.add_edge("verify", "roll")
+    graph.add_edge("roll", "execute")
     graph.add_edge("execute", END)
 
     return graph.compile()
