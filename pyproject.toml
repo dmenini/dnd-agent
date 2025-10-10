@@ -13,7 +13,6 @@ dependencies = [
     "boto3==1.38.38",
     "langgraph",
     "pydantic==2.11.7",
-    "pydantic-ai==0.3.1",
     "pydantic-settings==2.9.1",
     "pyyaml==6.0.2",
     "streamlit>=1.46.0",

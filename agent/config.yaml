@@ -1,0 +1,22 @@
+data:
+agent:
+  retries: 3
+  llm:
+    name: CLAUDE_3_7_SONNET
+    temperature: 0.5
+  tools:
+    search:
+      name: code_search
+      description: |-
+        Use this tool to look for code snippets and documentation.
+        The search yields better results if you specify the `repo` argument, based on the repos you have access to.
+      search_strategy: hybrid
+      top_k: 5
+    jira:
+      name: create_jira_ticket
+      description: |-
+        Use this tool to create tickets in Jira. Make sure to ask for user confirmation BEFORE proceeding with the usage.
+      project_key: MYPROJECT
+      agile_object: MYTEAM
+  prompts:
+
