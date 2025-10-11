@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
 from agent.graph import build_graph
@@ -32,8 +32,14 @@ def main() -> None:
         range_weapon=range_,
         spell=spell,
     )
-    orc = Character(id="orc_1", name="Orc Grunt", hp=12, pos=(4, 2), stats=Stats(),
-                    melee_weapon=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type="melee"))
+    orc = Character(
+        id="orc_1",
+        name="Orc Grunt",
+        hp=12,
+        pos=(4, 2),
+        stats=Stats(),
+        melee_weapon=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type="melee"),
+    )
     state = State(characters={hero.id: hero, orc.id: orc})
 
     graph = build_graph(config=config.agent)

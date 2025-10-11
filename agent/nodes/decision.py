@@ -1,17 +1,19 @@
-
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.models.state import Action, State
 
 
-class NpcNode:
+class DecisionNode:
     def __init__(self, llm: BaseChatModel, system_prompt: str) -> None:
         self.llm = llm.with_structured_output(Action)
         self.system_prompt = system_prompt
 
     def __call__(self, state: State) -> State:
         actor = state.current_actor
+
+        if state.turn_index == 0:
+            state.append_log(f"\n--- Turn {state.turn} ---")
 
         visible_enemies = [
             c.model_dump_json(include={"id", "name", "hp", "pos"})
@@ -32,5 +34,5 @@ class NpcNode:
                 HumanMessage(content=user_prompt),
             ]
         )
-        state.action = action
+        state.action = action  # type: ignore[assignment]
         return state

@@ -12,10 +12,14 @@ class CombatEngineNode:
     def __call__(self, state: State) -> State:
         action = state.action
         actor = state.current_actor
-        target = state.characters.get(action.target_id) if action else None
 
         if not action:
-            state.event_log.append(f"No action for {actor.name}")
+            state.append_log(f"No action for {actor.name}")
+            return state  # no action, skip
+
+        target = state.characters.get(action.target_id) if action.target_id else None
+        if not target:
+            state.append_log(f"No target for {action.action_type}")
             return state  # no action, skip
 
         event = self._start_event_description(actor, action)
@@ -29,7 +33,7 @@ class CombatEngineNode:
             event = self._resolve_non_combat_action(action, event)
 
         # Finalize turn
-        state.event_log.append(event)
+        state.append_log(event)
         return state
 
     def _start_event_description(self, actor: Character, action: Action) -> str:
@@ -41,7 +45,7 @@ class CombatEngineNode:
     def _resolve_combat_action(
         self,
         actor: Character,
-        target: Character | None,
+        target: Character,
         action: Action,
         event: str,
     ) -> str:

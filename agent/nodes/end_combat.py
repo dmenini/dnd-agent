@@ -1,4 +1,3 @@
-
 from agent.models.state import State
 
 
@@ -12,13 +11,15 @@ class EndCombatNode:
         if state.turn_index == len(state.turn_order):
             state.turn += 1
             state.turn_index = 0
-            state.event_log.insert(0, f"\n--- Turn {state.turn} ---")
             state.flush_logs()
 
         if not alive_enemies:
             state.done = True
-            state.event_log.insert(0, f"\n--- Turn {state.turn} ---")
-            state.event_log.append("All enemies are defeated! Combat ends.")
+            if current_actor.is_player:
+                msg = "All enemies are defeated! Combat ends."
+            else:
+                msg = "The player has been defeated! Combat ends."
+            state.append_log(msg)
             state.flush_logs()
 
         return state

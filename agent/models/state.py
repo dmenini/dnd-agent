@@ -1,6 +1,4 @@
-from pprint import pprint
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from agent.models.character import Character
 from agent.models.enums import ActionType
@@ -23,17 +21,17 @@ class VerificationResult(BaseModel):
     adjusted_action: Action | None = None
 
 
-class CombatResult(BaseModel):
-    success: bool
-    events: list[str] = Field(default_factory=list)
-    new_state: dict | None = None
-
-
 class DiceRoll(BaseModel):
     expression: str
     rolls: list[int]
     total: int
     raw: int
+
+
+class Event(BaseModel):
+    message: str
+    turn: int
+    hide: bool = False
 
 
 class State(BaseModel):
@@ -44,7 +42,7 @@ class State(BaseModel):
     action: Action | None = None
     verification_result: VerificationResult | None = None
     roll: DiceRoll | None = None
-    event_log: list[str] = []
+    event_log: list[Event] = []
     done: bool = False
 
     @property
@@ -57,8 +55,12 @@ class State(BaseModel):
 
     def flush_logs(self) -> None:
         for event in self.event_log:
-            print(event)
-        self.event_log = []
+            if not event.hide:
+                print(event.message)
+                event.hide = True
+
+    def append_log(self, message: str) -> None:
+        self.event_log.append(Event(message=message, turn=self.turn))
 
 
 class Context(BaseModel):

@@ -4,13 +4,13 @@ from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig
 from agent.models.enums import TurnPhase
 from agent.models.state import Context, State
 from agent.nodes.combat_engine import CombatEngineNode
-from agent.nodes.dice_roller import DiceRoller
+from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
-from agent.nodes.npc import NpcNode
 from agent.nodes.rules_verifier import RulesVerifierNode
 from agent.nodes.start_combat import StartCombatNode
 
@@ -30,11 +30,11 @@ def should_continue(state: State) -> str:
 
 
 def build_graph(config: AgentConfig) -> CompiledStateGraph:
-    graph = StateGraph(state_schema=State, context_schema=Context)
+    graph = StateGraph(state_schema=State)
     llm = create_llm(config.llm)
 
     # Nodes
-    agent = NpcNode(llm=llm, system_prompt=config.prompts.system)
+    agent = DecisionNode(llm=llm, system_prompt=config.prompts.system)
     verifier = RulesVerifierNode()
     start_combat = StartCombatNode(dice=DiceRoller())
     combat = CombatEngineNode(dice=DiceRoller())

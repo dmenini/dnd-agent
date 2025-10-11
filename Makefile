@@ -15,11 +15,11 @@ test:  # ci
 	$(MAKE) --keep-going install test-format test-lint test-coverage
 
 test-lint lint:
-	$(UV) run mypy $(PACKAGE_NAME) tests
-	$(UV) run ruff check $(PACKAGE_NAME) tests
+	$(UV) run mypy $(PACKAGE_NAME)
+	$(UV) run ruff check $(PACKAGE_NAME)
 
 test-format:
-	$(UV) run ruff format --check $(PACKAGE_NAME) tests
+	$(UV) run ruff format --check $(PACKAGE_NAME)
 
 format:
 	$(UV) run ruff format $(PACKAGE_NAME)

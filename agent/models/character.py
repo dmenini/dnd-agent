@@ -65,6 +65,7 @@ class Character(BaseModel):
     hp: int = 10
     ac: int = 5
     max_hp: int = 10
+    crit_multiplier: int = 2
     is_player: bool = False
     stats: Stats
     melee_weapon: MeleeWeapon | None = None
