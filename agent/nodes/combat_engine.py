@@ -1,6 +1,6 @@
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.character import Character, Weapon
-from agent.models.state import Action, ActionType, State, TurnPhase
+from agent.models.state import Action, ActionType, State
 
 ATTACK_ROLL_EXPR = "1d20"
 
@@ -11,10 +11,11 @@ class CombatEngineNode:
 
     def __call__(self, state: State) -> State:
         action = state.action
-        actor = state.characters.get(state.actor_id)
+        actor = state.current_actor
         target = state.characters.get(action.target_id) if action else None
 
-        if not action or not actor:
+        if not action:
+            state.event_log.append(f"No action for {actor.name}")
             return state  # no action, skip
 
         event = self._start_event_description(actor, action)
@@ -28,7 +29,7 @@ class CombatEngineNode:
             event = self._resolve_non_combat_action(action, event)
 
         # Finalize turn
-        self._finalize_turn(state, event)
+        state.event_log.append(event)
         return state
 
     def _start_event_description(self, actor: Character, action: Action) -> str:
@@ -46,6 +47,11 @@ class CombatEngineNode:
     ) -> str:
         """Handles attack/spell actions including criticals and damage."""
         weapon = self._select_weapon(character=actor, action_type=action.action_type)
+
+        if not weapon:
+            event += " but forgot to equip the weapon..."
+            return event
+
         advantage = actor.stats.advantage(weapon.stat)
 
         # Attack roll determines hit/miss and crit
@@ -97,13 +103,3 @@ class CombatEngineNode:
         if action.action_type == ActionType.ROLEPLAY:
             return event + " engages in roleplay."
         return event
-
-    def _finalize_turn(self, state: State, event: str) -> None:
-        """Append event, advance turn, and check victory conditions."""
-        state.event_log.append(event)
-        state.phase = TurnPhase.DECIDE
-        state.turn += 1
-
-        if all(c.hp <= 0 for c in state.characters.values() if not c.is_player):
-            state.done = True
-            state.event_log.append("All enemies are defeated! Combat ends.")

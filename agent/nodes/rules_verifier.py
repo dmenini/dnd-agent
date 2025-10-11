@@ -1,4 +1,5 @@
-from agent.models.state import State, TurnPhase, VerificationResult
+from agent.models.enums import ActionType
+from agent.models.state import State, VerificationResult
 
 
 class RulesVerifierNode:
@@ -12,11 +13,10 @@ class RulesVerifierNode:
             reasons.append("No action provided")
 
         # Mock logic — later integrate SRD checks
-        if action.action_type == "attack" and action.target_id is None:
+        if action and action.action_type == ActionType.ATTACK and action.target_id is None:
             valid = False
             reasons.append("Missing target")
 
         state.verification_result = VerificationResult(valid=valid, reasons=reasons)
-        state.phase = TurnPhase.ROLL if state.verification_result.valid else TurnPhase.DECIDE
 
         return state

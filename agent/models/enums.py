@@ -6,6 +6,8 @@ class TurnPhase(str, Enum):
     VERIFY = "verify"
     ROLL = "roll"
     EXECUTE = "execute"
+    START = "start"
+    END = "end"
 
 
 class ActionType(str, Enum):

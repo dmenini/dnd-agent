@@ -5,11 +5,14 @@ from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from agent.models.config import AgentConfig, LLMConfig
+from agent.models.enums import TurnPhase
 from agent.models.state import Context, State
-from agent.nodes.agent import NpcNode
 from agent.nodes.combat_engine import CombatEngineNode
 from agent.nodes.dice_roller import DiceRoller
+from agent.nodes.end_combat import EndCombatNode
+from agent.nodes.npc import NpcNode
 from agent.nodes.rules_verifier import RulesVerifierNode
+from agent.nodes.start_combat import StartCombatNode
 
 
 def create_llm(config: LLMConfig) -> BaseChatModel:
@@ -20,6 +23,12 @@ def create_llm(config: LLMConfig) -> BaseChatModel:
     )
 
 
+def should_continue(state: State) -> str:
+    if state.done:
+        return END
+    return TurnPhase.DECIDE
+
+
 def build_graph(config: AgentConfig) -> CompiledStateGraph:
     graph = StateGraph(state_schema=State, context_schema=Context)
     llm = create_llm(config.llm)
@@ -27,17 +36,23 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     # Nodes
     agent = NpcNode(llm=llm, system_prompt=config.prompts.system)
     verifier = RulesVerifierNode()
+    start_combat = StartCombatNode(dice=DiceRoller())
     combat = CombatEngineNode(dice=DiceRoller())
+    end_combat = EndCombatNode()
 
     # Register nodes
-    graph.add_node("decide", agent)
-    graph.add_node("verify", verifier)
-    graph.add_node("execute", combat)
+    graph.add_node(TurnPhase.START, start_combat)
+    graph.add_node(TurnPhase.DECIDE, agent)
+    graph.add_node(TurnPhase.VERIFY, verifier)
+    graph.add_node(TurnPhase.EXECUTE, combat)
+    graph.add_node(TurnPhase.END, end_combat)
 
     # Define edges
-    graph.add_edge(START, "decide")
-    graph.add_edge("decide", "verify")
-    graph.add_edge("verify", "execute")
-    graph.add_edge("execute", END)
+    graph.add_edge(START, TurnPhase.START)
+    graph.add_edge(TurnPhase.START, TurnPhase.DECIDE)
+    graph.add_edge(TurnPhase.DECIDE, TurnPhase.VERIFY)
+    graph.add_edge(TurnPhase.VERIFY, TurnPhase.EXECUTE)
+    graph.add_edge(TurnPhase.EXECUTE, TurnPhase.END)
+    graph.add_conditional_edges(TurnPhase.END, should_continue)
 
     return graph.compile()

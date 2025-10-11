@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import yaml
+from langchain_core.runnables import RunnableConfig
 
 from agent.graph import build_graph
 from agent.models.character import MeleeWeapon, RangeWeapon, Spell, Stats
@@ -16,7 +17,7 @@ def main() -> None:
         config = yaml.safe_load(fp)
         config = Config.model_validate(config)
 
-    melee = MeleeWeapon(name="Sword", damage_dice="1d6", damage_type="melee")
+    melee = MeleeWeapon(name="Sword", damage_dice="2d6", damage_type="melee")
     range_ = RangeWeapon(name="Bow", damage_dice="1d6", damage_type="range")
     spell = Spell(name="Fire Ball", damage_dice="1d6", damage_type="magic")
 
@@ -31,23 +32,13 @@ def main() -> None:
         range_weapon=range_,
         spell=spell,
     )
-    orc = Character(id="orc_1", name="Orc Grunt", hp=12, pos=(4, 2), stats=Stats())
-    state = State(characters={hero.id: hero, orc.id: orc}, actor_id=hero.id)
+    orc = Character(id="orc_1", name="Orc Grunt", hp=12, pos=(4, 2), stats=Stats(),
+                    melee_weapon=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type="melee"))
+    state = State(characters={hero.id: hero, orc.id: orc})
 
     graph = build_graph(config=config.agent)
-    print("Starting combat...\n")
 
-    while not state.done and state.turn < MAX_ITER:
-        state = State.model_validate(graph.invoke(state))
-        print(f"\n--- Turn {state.turn} ---")
-        for event in state.event_log:
-            print(event)
-
-        state.event_log = []
-
-        if state.done:
-            print("Combat ended!")
-            break
+    graph.invoke(state, RunnableConfig(recursion_limit=100))
 
 
 if __name__ == "__main__":
