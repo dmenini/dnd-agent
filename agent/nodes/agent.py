@@ -6,8 +6,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from agent.models.state import Action, ActionType, State, TurnPhase
 
 
-class LLMAgent:
-    def __init__(self, llm: BaseChatModel, system_prompt: str):
+class NpcNode:
+    def __init__(self, llm: BaseChatModel, system_prompt: str) -> None:
         self.llm = llm
         self.system_prompt = system_prompt
 
@@ -24,7 +24,7 @@ class LLMAgent:
         try:
             parsed = json.loads(result.content)
             state.action = Action(**parsed)
-        except Exception as e:
+        except ValueError as e:
             print("Parsing failed:", e, result.content)
             state.action = Action(
                 actor_id=state.actor_id, action_type=ActionType.WAIT, description="waits for a moment."

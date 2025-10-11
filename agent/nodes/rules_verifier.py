@@ -1,7 +1,7 @@
 from agent.models.state import State, TurnPhase, VerificationResult
 
 
-class RulesVerifier:
+class RulesVerifierNode:
     def __call__(self, state: State) -> State:
         action = state.action
         reasons = []

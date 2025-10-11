@@ -45,6 +45,7 @@ ignore = [
     "FIX", # Allow FIXME
     "TD", # Allow TODO
     "D", # Ignore docstring checks
+    "T201", # Allow prints
     "ANN401", # Allow dynamically typed expressions (typing.Any)
     "COM812", # Do not require trailing comma (must be disabled to avoid conflicts with formatter)
     "ISC001", # Allows concatenated string literals on one line (must be disabled to avoid conflicts with formatter)

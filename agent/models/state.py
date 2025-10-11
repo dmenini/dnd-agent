@@ -1,24 +1,7 @@
-from enum import Enum
-
 from pydantic import BaseModel, Field
 
 from agent.models.character import Character
-
-
-class TurnPhase(str, Enum):
-    DECIDE = "decide"
-    VERIFY = "verify"
-    ROLL = "roll"
-    EXECUTE = "execute"
-
-
-class ActionType(str, Enum):
-    ATTACK = "attack"
-    SHOOT = "shoot"
-    MOVE = "move"
-    CAST_SPELL = "cast_spell"
-    ROLEPLAY = "roleplay"
-    WAIT = "wait"
+from agent.models.enums import ActionType, TurnPhase
 
 
 class Action(BaseModel):
@@ -48,10 +31,11 @@ class DiceRoll(BaseModel):
     expression: str
     rolls: list[int]
     total: int
+    raw: int
 
 
 class State(BaseModel):
-    turn: int = 1
+    turn: int = 0
     phase: TurnPhase = TurnPhase.DECIDE
     actor_id: str | None = None
     characters: dict[str, Character] = {}
