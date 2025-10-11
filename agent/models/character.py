@@ -1,29 +1,17 @@
 from pydantic import BaseModel
 
-from agent.models.enums import ActionType
+from agent.models.enums import ActionType, PartyType
+from agent.models.weapons import MeleeWeapon, RangeWeapon, Spell
 
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
 DISADVANTAGE_THRESHOLD = 8
 
 
-class Weapon(BaseModel):
+class Party(BaseModel):
+    id: str
     name: str
-    damage_dice: str
-    damage_type: str
-    stat: str
-
-
-class MeleeWeapon(Weapon):
-    stat: str = "strength"
-
-
-class RangeWeapon(Weapon):
-    stat: str = "dexterity"
-
-
-class Spell(Weapon):
-    stat: str = "intelligence"
+    is_player_party: bool = False
 
 
 class Stats(BaseModel):
@@ -66,8 +54,13 @@ class Character(BaseModel):
     ac: int = 5
     max_hp: int = 10
     crit_multiplier: int = 2
+    party: Party
     is_player: bool = False
     stats: Stats
     melee_weapon: MeleeWeapon | None = None
     range_weapon: RangeWeapon | None = None
     spell: Spell | None = None
+
+    @property
+    def is_alive(self) -> bool:
+        return self.hp > 0

@@ -10,15 +10,18 @@ class DecisionNode:
         self.system_prompt = system_prompt
 
     def __call__(self, state: State) -> State:
+        if state.turn_index == 0:
+            state.append_log(f"\n--- Round {state.round} ---")
+
         actor = state.current_actor
 
-        if state.turn_index == 0:
-            state.append_log(f"\n--- Turn {state.turn} ---")
+        if not actor.is_alive:
+            return state
 
         visible_enemies = [
             c.model_dump_json(include={"id", "name", "hp", "pos"})
             for c in state.characters.values()
-            if c.hp > 0 and c.id != actor.id
+            if c.is_alive and c.id != actor.id
         ]
 
         user_prompt = (

@@ -1,6 +1,8 @@
 from agent.mechanics.dice_roller import DiceRoller
-from agent.models.character import Character, Weapon
+from agent.models.character import Character
+from agent.models.enums import COMBAT_ACTIONS
 from agent.models.state import Action, ActionType, State
+from agent.models.weapons import Weapon
 
 ATTACK_ROLL_EXPR = "1d20"
 
@@ -13,24 +15,33 @@ class CombatEngineNode:
         action = state.action
         actor = state.current_actor
 
+        if not actor.is_alive:
+            return state
+
         if not action:
-            state.append_log(f"No action for {actor.name}")
-            return state  # no action, skip
+            msg = f"No action for {actor.name}"
+            raise ValueError(msg)
 
         target = state.characters.get(action.target_id) if action.target_id else None
         if not target:
-            state.append_log(f"No target for {action.action_type}")
-            return state  # no action, skip
+            msg = f"No target for {action.action_type}"
+            raise ValueError(msg)
 
         event = self._start_event_description(actor, action)
 
         # Handle the main combat actions
-        if action.action_type in {ActionType.ATTACK, ActionType.SHOOT, ActionType.CAST_SPELL}:
+        if action.action_type in COMBAT_ACTIONS:
             event = self._resolve_combat_action(actor=actor, target=target, action=action, event=event)
 
         # Handle non-combat actions (move, wait, roleplay)
-        elif action.action_type in {ActionType.MOVE, ActionType.ROLEPLAY, ActionType.WAIT}:
-            event = self._resolve_non_combat_action(action, event)
+        elif action.action_type == ActionType.MOVE:
+            event = event + " and moves strategically."
+
+        elif action.action_type == ActionType.ROLEPLAY:
+            event = event + " engages in roleplay."
+
+        elif action.action_type == ActionType.WAIT:
+            event = event + " and waits patiently."
 
         # Finalize turn
         state.append_log(event)
@@ -98,12 +109,3 @@ class CombatEngineNode:
 
     def _apply_damage(self, target: Character, damage: int) -> None:
         target.hp = max(0, target.hp - damage)
-
-    def _resolve_non_combat_action(self, action: Action, event: str) -> str:
-        if action.action_type == ActionType.WAIT:
-            return event + " and waits patiently."
-        if action.action_type == ActionType.MOVE:
-            return event + " and moves strategically."
-        if action.action_type == ActionType.ROLEPLAY:
-            return event + " engages in roleplay."
-        return event

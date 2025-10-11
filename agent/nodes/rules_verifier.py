@@ -1,4 +1,4 @@
-from agent.models.enums import ActionType
+from agent.models.enums import ActionType, COMBAT_ACTIONS
 from agent.models.state import State, VerificationResult
 
 
@@ -12,8 +12,7 @@ class RulesVerifierNode:
             valid = False
             reasons.append("No action provided")
 
-        # Mock logic — later integrate SRD checks
-        if action and action.action_type == ActionType.ATTACK and action.target_id is None:
+        if action.action_type in COMBAT_ACTIONS and action.target_id is None:
             valid = False
             reasons.append("Missing target")
 

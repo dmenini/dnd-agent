@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from agent.models.character import Character
+from agent.models.character import Character, Party
 from agent.models.enums import ActionType
 
 
@@ -35,10 +35,11 @@ class Event(BaseModel):
 
 
 class State(BaseModel):
-    turn: int = 0
+    round: int = 0
     turn_order: list[str] = []
     turn_index: int = 0
     characters: dict[str, Character] = {}
+    parties: dict[str, Party] = {}
     action: Action | None = None
     verification_result: VerificationResult | None = None
     roll: DiceRoll | None = None
@@ -46,12 +47,19 @@ class State(BaseModel):
     done: bool = False
 
     @property
-    def current_actor(self) -> Character:
-        return self.alive_characters[self.turn_order[self.turn_index]]
+    def alive_characters(self) -> dict[str, Character]:
+        return {cid: c for cid, c in self.characters.items() if c.is_alive}
 
     @property
-    def alive_characters(self) -> dict[str, Character]:
-        return {c.id: c for c in self.characters.values() if c.hp > 0}
+    def current_actor(self) -> Character:
+        return self.characters[self.turn_order[self.turn_index]]
+
+    def get_party_members(self, party_id: str, alive_only: bool = False) -> list[Character]:
+        """Get members of a party."""
+        members = [c for c in self.characters.values() if c.party.id == party_id]
+        if alive_only:
+            members = [m for m in members if m.is_alive]
+        return members
 
     def flush_logs(self) -> None:
         for event in self.event_log:
@@ -60,7 +68,7 @@ class State(BaseModel):
                 event.hide = True
 
     def append_log(self, message: str) -> None:
-        self.event_log.append(Event(message=message, turn=self.turn))
+        self.event_log.append(Event(message=message, turn=self.round))
 
 
 class Context(BaseModel):
