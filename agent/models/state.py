@@ -54,7 +54,7 @@ class State(BaseModel):
     def current_actor(self) -> Character:
         return self.characters[self.turn_order[self.turn_index]]
 
-    def get_party_members(self, party_id: str, alive_only: bool = False) -> list[Character]:
+    def get_party_members(self, party_id: str, *, alive_only: bool = False) -> list[Character]:
         """Get members of a party."""
         members = [c for c in self.characters.values() if c.party.id == party_id]
         if alive_only:

@@ -1,9 +1,14 @@
+from logging import getLogger
+
 from agent.models.state import State
+
+log = getLogger(__name__)
 
 
 class EndCombatNode:
     def __call__(self, state: State) -> State:
         """Advance turn, check victory conditions, and append logs."""
+        log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         # Advance to next character
         state.turn_index += 1
@@ -15,10 +20,7 @@ class EndCombatNode:
             state.flush_logs()
 
         # Check if any party has been wiped out
-        defeated_parties = [
-            p for p in state.parties.values()
-            if not state.get_party_members(p.id, alive_only=True)
-        ]
+        defeated_parties = [p for p in state.parties.values() if not state.get_party_members(p.id, alive_only=True)]
 
         # Remove defeated parties from active play
         for defeated in defeated_parties:
@@ -26,9 +28,9 @@ class EndCombatNode:
 
         # Determine if only one party remains
         alive_parties = [
-            p for p in state.parties.values()
-            if p.id not in [d.id for d in defeated_parties]
-            and state.get_party_members(p.id, alive_only=True)
+            p
+            for p in state.parties.values()
+            if p.id not in [d.id for d in defeated_parties] and state.get_party_members(p.id, alive_only=True)
         ]
 
         # Check victory conditions

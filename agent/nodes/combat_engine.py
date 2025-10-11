@@ -1,10 +1,13 @@
+from logging import getLogger
+
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.character import Character
 from agent.models.enums import COMBAT_ACTIONS
 from agent.models.state import Action, ActionType, State
-from agent.models.weapons import Weapon
 
 ATTACK_ROLL_EXPR = "1d20"
+
+log = getLogger(__name__)
 
 
 class CombatEngineNode:
@@ -12,6 +15,8 @@ class CombatEngineNode:
         self.dice = dice
 
     def __call__(self, state: State) -> State:
+        log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
+
         action = state.action
         actor = state.current_actor
 
@@ -61,7 +66,7 @@ class CombatEngineNode:
         event: str,
     ) -> str:
         """Handles attack/spell actions including criticals and damage."""
-        weapon = self._select_weapon(character=actor, action_type=action.action_type)
+        weapon = actor.select_weapon(action_type=action.action_type)
 
         if not weapon:
             event += " but forgot to equip the weapon..."
@@ -97,15 +102,6 @@ class CombatEngineNode:
             event += f" {target.name} is defeated!"
 
         return event
-
-    def _select_weapon(self, character: Character, action_type: ActionType) -> Weapon | None:
-        if action_type == ActionType.ATTACK:
-            return character.melee_weapon
-        if action_type == ActionType.CAST_SPELL:
-            return character.spell
-        if action_type == ActionType.SHOOT:
-            return character.range_weapon
-        return None
 
     def _apply_damage(self, target: Character, damage: int) -> None:
         target.hp = max(0, target.hp - damage)

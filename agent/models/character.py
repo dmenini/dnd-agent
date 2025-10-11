@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-from agent.models.enums import ActionType, PartyType
-from agent.models.weapons import MeleeWeapon, RangeWeapon, Spell
+from agent.models.enums import ActionType
+from agent.models.weapons import MeleeWeapon, RangeWeapon, Spell, Weapon
 
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
@@ -64,3 +64,12 @@ class Character(BaseModel):
     @property
     def is_alive(self) -> bool:
         return self.hp > 0
+
+    def select_weapon(self, action_type: ActionType) -> Weapon | None:
+        if action_type == ActionType.ATTACK:
+            return self.melee_weapon
+        if action_type == ActionType.CAST_SPELL:
+            return self.spell
+        if action_type == ActionType.SHOOT:
+            return self.range_weapon
+        return None

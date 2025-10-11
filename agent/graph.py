@@ -7,7 +7,7 @@ from langgraph.graph.state import CompiledStateGraph
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig
 from agent.models.enums import TurnPhase
-from agent.models.state import Context, State
+from agent.models.state import State
 from agent.nodes.combat_engine import CombatEngineNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
@@ -27,6 +27,13 @@ def should_continue(state: State) -> str:
     if state.done:
         return END
     return TurnPhase.DECIDE
+
+
+def is_valid_action(state: State) -> str:
+    if state.verification_result and state.verification_result.valid:
+        return TurnPhase.EXECUTE
+
+    return TurnPhase.DECIDE  # re-evaluate action
 
 
 def build_graph(config: AgentConfig) -> CompiledStateGraph:
@@ -51,7 +58,7 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     graph.add_edge(START, TurnPhase.START)
     graph.add_edge(TurnPhase.START, TurnPhase.DECIDE)
     graph.add_edge(TurnPhase.DECIDE, TurnPhase.VERIFY)
-    graph.add_edge(TurnPhase.VERIFY, TurnPhase.EXECUTE)
+    graph.add_conditional_edges(TurnPhase.VERIFY, is_valid_action)
     graph.add_edge(TurnPhase.EXECUTE, TurnPhase.END)
     graph.add_conditional_edges(TurnPhase.END, should_continue)
 

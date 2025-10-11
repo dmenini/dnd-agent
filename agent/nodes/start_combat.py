@@ -1,5 +1,9 @@
+from logging import getLogger
+
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
+
+log = getLogger(__name__)
 
 
 class StartCombatNode:
@@ -7,6 +11,8 @@ class StartCombatNode:
         self.dice = dice
 
     def __call__(self, state: State) -> State:
+        log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
+
         state.append_log("Starting combat!")
 
         rolls = []
