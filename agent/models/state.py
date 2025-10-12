@@ -62,9 +62,10 @@ class State(BaseModel):
         return members
 
     def flush_logs(self) -> None:
+        green = f"\033[32m{{message}}\033[0m"
         for event in self.event_log:
             if not event.hide:
-                print(event.message)
+                print(green.format(message=event.message))
                 event.hide = True
 
     def append_log(self, message: str) -> None:

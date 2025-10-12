@@ -70,6 +70,7 @@ def main() -> None:
     )
 
     graph = build_graph(config=config.agent)
+    print(graph.get_graph().draw_mermaid())
 
     graph.invoke(state, RunnableConfig(recursion_limit=100))
 
