@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableConfig
 from agent.graph import build_graph
 from agent.models.character import MeleeWeapon, Party, RangeWeapon, Spell, Stats
 from agent.models.config import Config
+from agent.models.enums import DamageType
 from agent.models.state import Character, State
 
 MAX_ITER = 100
@@ -27,14 +28,13 @@ def main() -> None:
     party_players = Party(id="p1", name="Heroes", is_player_party=True)
     party_enemies = Party(id="p2", name="Goblins", is_player_party=False)
 
-    melee = MeleeWeapon(name="Sword", damage_dice="2d6", damage_type="melee", range=2)
-    range_ = RangeWeapon(name="Bow", damage_dice="1d6", damage_type="range", range=10)
-    spell = Spell(name="Fire Ball", damage_dice="1d6", damage_type="magic", range=5)
+    melee = MeleeWeapon(name="Sword", damage_dice="2d6", damage_type=DamageType.SLASHING, range=2)
+    range_ = RangeWeapon(name="Bow", damage_dice="1d6", damage_type=DamageType.PIERCING, range=10)
+    spell = Spell(name="Fire Ball", damage_dice="1d6", damage_type=DamageType.MAGIC, range=5)
 
     hero = Character(
         id="pc_alfred",
         name="Alfred",
-        hp=20,
         pos=(2, 2),
         is_player=True,
         party=party_players,
@@ -46,22 +46,20 @@ def main() -> None:
     orc = Character(
         id="orc_1",
         name="Orc Grunt",
-        hp=12,
         pos=(4, 2),
         party=party_enemies,
         stats=Stats(),
-        melee_weapon=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type="melee", range=1),
+        melee_weapon=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type=DamageType.BLUDGEONING, range=1),
         range_weapon=range_,
     )
 
     goblin = Character(
         id="goblin_1",
         name="Goblin Dramer",
-        hp=6,
         pos=(6, 2),
         party=party_enemies,
         stats=Stats(),
-        melee_weapon=MeleeWeapon(name="Dagger", damage_dice="1d5", damage_type="melee", range=1),
+        melee_weapon=MeleeWeapon(name="Dagger", damage_dice="1d5", damage_type=DamageType.SLASHING, range=1),
         spell=spell,
     )
     state = State(

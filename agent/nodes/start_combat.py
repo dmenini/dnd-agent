@@ -17,7 +17,7 @@ class StartCombatNode:
 
         rolls = []
         for cid, char in state.characters.items():
-            expr = f"1d20+{char.stats.modifier('dexterity')}"
+            expr = f"1d20+{char.initiative_modifier}"
             init_roll = self.dice.roll_with_context(dice_expression=expr)
             rolls.append((init_roll.total, cid))
             state.append_log(f"{char.name} rolls initiative: {init_roll.total}")

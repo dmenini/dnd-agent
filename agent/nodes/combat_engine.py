@@ -83,25 +83,22 @@ class CombatEngineNode:
         is_critical = roll.raw == self.dice.sides(ATTACK_ROLL_EXPR)
 
         # 2nd roll determines damage dealt
-        mod = actor.stats.modifier(weapon.stat)
+        mod = actor.attack_modifier(weapon)
         expr = weapon.damage_dice + (f"+{mod}" if mod >= 0 else f"-{mod}")
         roll = self.dice.roll_with_context(dice_expression=expr, advantage=advantage)
         damage = roll.total
 
         if is_critical:
             event += " and rolls a NATURAL 20! Critical hit!"
-            damage *= actor.crit_multiplier
+            damage *= actor.crit_multiplier(weapon)
         else:
             event += f" and rolls {roll.total} to hit."
 
         # Apply damage
-        self._apply_damage(target=target, damage=damage)
-        event += f" Hits {target.name} for {damage} damage (HP now {max(0, target.hp)})."
+        target.apply_damage(damage=damage)
+        event += f" Hits {target.name} for {damage} damage (HP now {target.attributes.current_hp})."
 
-        if target.hp <= 0:
+        if not target.is_alive:
             event += f" {target.name} is defeated!"
 
         return event
-
-    def _apply_damage(self, target: Character, damage: int) -> None:
-        target.hp = max(0, target.hp - damage)
