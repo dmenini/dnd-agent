@@ -1,9 +1,7 @@
-from typing import Self
-
 from pydantic import BaseModel, computed_field
 
-from agent.models.action import Action, ActionCategory, ActionOption
-from agent.models.enums import Condition, StatType, WeaponType
+from agent.models.action import Action, ActionCategory, ActionOption, ResourceCost
+from agent.models.enums import ActionType, Condition, StatType, TargetingType, WeaponType
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangeWeapon, Spell
 
 DEFAULT_STAT = 10
@@ -49,6 +47,7 @@ class Attributes(BaseModel):
 
     # dynamic fields updated during play
     current_hp: int = 8
+    current_movement: float = 6.0
 
     def compute_max_hp(self, level: int, stats: Stats) -> int:
         """HP grows with level and Constitution modifier."""
@@ -110,6 +109,13 @@ class Character(BaseModel):
     def speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats)
 
+    def move(self, destination: tuple[int, int], *, dash: bool = False) -> None:
+        self.pos = destination
+        distance_cost = self.distance(destination)
+        if dash:
+            distance_cost /= 2  # Dash halves cost
+        self.attributes.current_movement = max(self.attributes.current_movement - distance_cost, 0)
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def proficiency_bonus(self) -> int:
@@ -134,8 +140,9 @@ class Character(BaseModel):
             self.conditions.remove(cond)
 
     def attack_modifier(self, action: Action) -> int:
+        weapon_bonus = action.magical_bonus or 0
         prof_bonus = self.proficiency_bonus if action.weapon_type in self.proficiencies else 0
-        return self.stats.modifier(action.stat) + action.magical_bonus + prof_bonus
+        return self.stats.modifier(action.stat) + weapon_bonus + prof_bonus
 
     def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
         return self.attributes.base_crit_multiplier
@@ -164,7 +171,19 @@ class Character(BaseModel):
         for ability in self.special_abilities:
             actions[ability.id] = ability
 
+        actions["dash"] = ActionOption(
+            id="dash",
+            name="Dash",
+            source="Base",
+            action_type=ActionType.DASH,
+            category=ActionCategory.STANDARD,
+            targeting=TargetingType.SELF,
+            resource_cost=ResourceCost(action_points=1),
+            range=self.speed,
+            stat=StatType.DEX,
+        )
+
         return actions
 
-    def distance(self, other: Self) -> float:
-        return abs(self.pos[0] - other.pos[0]) + abs(self.pos[1] - other.pos[1])  # Manhattan distance
+    def distance(self, target: tuple[int, int]) -> float:
+        return abs(self.pos[0] - target[0]) + abs(self.pos[1] - target[1])  # Manhattan distance

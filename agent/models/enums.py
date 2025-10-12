@@ -45,6 +45,7 @@ class TargetingType(str, Enum):
     SINGLE = "single"
     MULTI = "multi"
     AREA = "area"
+    SELF = "self"
 
 
 class ActionCategory(str, Enum):
@@ -61,6 +62,7 @@ class ActionType(str, Enum):
     AOE_SPELL = "aoe_spell"
     UTILITY = "utility"
     SPECIAL = "special"
+    DASH = "dash"
 
 
 class WeaponType(str, Enum):

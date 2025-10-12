@@ -62,7 +62,7 @@ def main() -> None:
     goblin = Character(
         id="goblin_1",
         name="Goblin Dramer",
-        pos=(6, 2),
+        pos=(8, 4),
         party=party_enemies,
         stats=Stats(),
         main_hand=MeleeWeapon(

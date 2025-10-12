@@ -3,6 +3,7 @@
 from logging import getLogger
 
 from agent.models.action import COMBAT_ACTION_TYPES
+from agent.models.enums import ActionType
 from agent.models.state import State, VerificationResult
 
 log = getLogger(__name__)
@@ -28,6 +29,8 @@ class RulesVerifierNode:
             # self.check_spell_slots,
             # self.check_conditions,
         ]
+
+        # TODO: validate multi-target actions match the targeting of the weapon
 
     def __call__(self, state: State) -> State:
         """Runs all validation checks on the current action."""
@@ -117,8 +120,23 @@ class RulesVerifierNode:
 
         for target_id in action.target_ids:
             target = state.characters[target_id]
-            dist = actor.distance(target)
+            dist = actor.distance(target.pos)
             if dist > action.range:
                 return False, f"Target {target.name} is out of range ({dist:.1f} > {action.range})"
+
+        return True, None
+
+    def check_movement(self, state: State) -> tuple[bool, str | None]:
+        action = state.action
+        actor = state.current_actor
+
+        if action.action_type == ActionType.DASH:
+            if not action.target_position:
+                return False, f"No target position specified for action {action.action_type}"
+
+            dist = actor.distance(action.target_position)
+            max_dist = actor.attributes.current_movement * 2
+            if dist > max_dist:
+                return False, f"Position {action.target_position} is out of range ({dist:.1f} > {max_dist})"
 
         return True, None

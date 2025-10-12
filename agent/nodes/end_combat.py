@@ -11,10 +11,14 @@ class EndCombatNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         # Advance to next character
+        actor = state.current_actor
         state.turn_index += 1
 
         # End of round → wrap turn
         if state.turn_index >= len(state.turn_order):
+            # Reset resources
+            actor.attributes.current_movement = actor.speed
+
             state.round += 1
             state.turn_index = 0
             state.flush_logs()

@@ -34,8 +34,9 @@ class DecisionNode:
             "is_player": actor.is_player,
             "level": actor.level,
             "hp": f"{actor.attributes.current_hp}/{actor.max_hp}",
+            "movement": f"{actor.attributes.current_movement}/{actor.speed}",
             "stats": actor.stats.model_dump_json(),
-            "available_actions": {id_: val.model_dump_json() for id_, val in actions.items()},
+            "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
         }
 
         visible_enemies = [
@@ -45,7 +46,7 @@ class DecisionNode:
                 "pos": c.pos,
                 "party": c.party.model_dump_json(),
                 "hp": f"{c.attributes.current_hp}/{c.max_hp}",
-                "distance": actor.distance(c),
+                "distance": actor.distance(c.pos),
             }
             for c in state.characters.values()
             if c.is_alive and c.id != actor.id
@@ -72,6 +73,7 @@ class DecisionNode:
             **chosen_option.model_dump(),
             actor_id=actor.id,
             target_ids=result.target_ids,
+            target_position=result.target_position,
             description=result.description,
         )
 

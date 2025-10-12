@@ -27,19 +27,19 @@ class CombatEngineNode:
             msg = f"No action for {actor.name}"
             raise ValueError(msg)
 
-        if not action.target_ids:
-            msg = f"No target(s) for action {action.id}"
-            raise ValueError(msg)
-
-        targets = [state.characters[tid] for tid in action.target_ids if tid in state.characters]
-        if not targets:
-            msg = f"Targets not found for action {action.id}"
-            raise ValueError(msg)
-
         event = self._start_event_description(actor, action)
 
         # Handle the main combat actions
         if action.action_type in COMBAT_ACTION_TYPES:
+            if not action.target_ids:
+                msg = f"No target(s) for action {action.id}"
+                raise ValueError(msg)
+
+            targets = [state.characters[tid] for tid in action.target_ids if tid in state.characters]
+            if not targets:
+                msg = f"Targets not found for action {action.id}"
+                raise ValueError(msg)
+
             for target in targets:
                 event = self._resolve_combat_action(
                     actor=actor,
@@ -47,6 +47,9 @@ class CombatEngineNode:
                     action=action,
                     event=event,
                 )
+
+        elif action.action_type == ActionType.DASH:
+            event = self._resolve_movement_action(actor=actor, action=action, event=event)
 
         # Handle non-combat actions (move, wait, roleplay)
         elif action.action_type == ActionType.UTILITY:
@@ -102,5 +105,15 @@ class CombatEngineNode:
 
         if not target.is_alive:
             event += f" {target.name} is defeated!"
+
+        return event
+
+    def _resolve_movement_action(self, actor: Character, action: Action, event: str) -> str:
+        if not action.target_position:
+            msg = "Movement requires a destination position"
+            raise ValueError(msg)
+
+        actor.move(action.target_position, dash=action.action_type == ActionType.DASH)
+        event += f" and moves to position {action.target_position}."
 
         return event
