@@ -45,6 +45,7 @@ class DecisionNode:
                 "pos": c.pos,
                 "party": c.party.model_dump_json(),
                 "hp": f"{c.attributes.current_hp}/{c.max_hp}",
+                "distance": actor.distance(c),
             }
             for c in state.characters.values()
             if c.is_alive and c.id != actor.id

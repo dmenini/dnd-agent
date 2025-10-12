@@ -117,12 +117,8 @@ class RulesVerifierNode:
 
         for target_id in action.target_ids:
             target = state.characters[target_id]
-            dist = self._distance(actor.pos, target.pos)
+            dist = actor.distance(target)
             if dist > action.range:
                 return False, f"Target {target.name} is out of range ({dist:.1f} > {action.range})"
 
         return True, None
-
-    @staticmethod
-    def _distance(p1: tuple[int, int], p2: tuple[int, int]) -> float:
-        return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])  # Manhattan distance

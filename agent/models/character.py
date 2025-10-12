@@ -1,3 +1,5 @@
+from typing import Self
+
 from pydantic import BaseModel, computed_field
 
 from agent.models.action import Action, ActionCategory, ActionOption
@@ -163,3 +165,6 @@ class Character(BaseModel):
             actions[ability.id] = ability
 
         return actions
+
+    def distance(self, other: Self) -> float:
+        return abs(self.pos[0] - other.pos[0]) + abs(self.pos[1] - other.pos[1])  # Manhattan distance
