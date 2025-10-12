@@ -27,16 +27,21 @@ class CombatEngineNode:
             msg = f"No action for {actor.name}"
             raise ValueError(msg)
 
-        target = state.characters.get(action.target_id) if action.target_id else None
-        if not target:
-            msg = f"No target for {action.action_type}"
+        if not action.target_ids:
+            msg = f"No target(s) for action {action.action_type}"
+            raise ValueError(msg)
+
+        targets = [state.characters[tid] for tid in action.target_ids if tid in state.characters]
+        if not targets:
+            msg = f"Targets not found for action {action.action_type}"
             raise ValueError(msg)
 
         event = self._start_event_description(actor, action)
 
         # Handle the main combat actions
         if action.action_type in COMBAT_ACTIONS:
-            event = self._resolve_combat_action(actor=actor, target=target, action=action, event=event)
+            for target in targets:
+                event = self._resolve_combat_action(actor=actor, target=target, action=action, event=event)
 
         # Handle non-combat actions (move, wait, roleplay)
         elif action.action_type == ActionType.MOVE:

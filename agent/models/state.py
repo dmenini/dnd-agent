@@ -7,7 +7,7 @@ from agent.models.enums import ActionType
 class Action(BaseModel):
     actor_id: str
     action_type: ActionType
-    target_id: str | None = None
+    target_ids: list[str] = []
     ability: str | None = None
     attack_method: str | None = None
     description: str = ""
@@ -62,7 +62,7 @@ class State(BaseModel):
         return members
 
     def flush_logs(self) -> None:
-        green = f"\033[32m{{message}}\033[0m"
+        green = "\033[32m{message}\033[0m"
         for event in self.event_log:
             if not event.hide:
                 print(green.format(message=event.message))

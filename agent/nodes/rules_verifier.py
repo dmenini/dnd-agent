@@ -17,7 +17,7 @@ class RulesVerifierNode:
             self.check_actor_exists,
             self.check_actor_alive,
             self.check_turn_validity,
-            self.check_target_exists,
+            self.check_targets_exist,
             self.check_target_alive,
             self.check_friendly_fire,
             self.check_weapon_equipped,
@@ -81,30 +81,33 @@ class RulesVerifierNode:
             return False, "It's not this character's turn"
         return True, None
 
-    def check_target_exists(self, state: State) -> tuple[bool, str | None]:
+    def check_targets_exist(self, state: State) -> tuple[bool, str | None]:
         action = state.action
         if action.action_type in COMBAT_ACTIONS:
-            if not action.target_id:
-                return False, "Missing target for combat action"
-            if action.target_id not in state.characters:
-                return False, f"Target {action.target_id} not found"
+            if not action.target_ids:
+                return False, "Missing targets for combat action"
+            for target_id in action.target_ids:
+                if target_id not in state.characters:
+                    return False, f"Target {target_id} not found"
         return True, None
 
     def check_target_alive(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.target_id and action.action_type in COMBAT_ACTIONS:
-            target = state.characters[action.target_id]
-            if not target.is_alive:
-                return False, f"Target {target.name} is already down"
+        if action.action_type in COMBAT_ACTIONS:
+            for target_id in action.target_ids:
+                target = state.characters[target_id]
+                if not target.is_alive:
+                    return False, f"Target {target_id} is already down"
         return True, None
 
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.target_id and action.action_type in COMBAT_ACTIONS:
+        if action.target_ids and action.action_type in COMBAT_ACTIONS:
             actor = state.characters[action.actor_id]
-            target = state.characters[action.target_id]
-            if actor.party.id == target.party.id:
-                return False, f"{actor.name} cannot attack ally {target.name}"
+            for target_id in action.target_ids:
+                target = state.characters[target_id]
+                if actor.party.id == target.party.id:
+                    return False, f"{actor.name} cannot attack ally {target.name}"
         return True, None
 
     def check_weapon_equipped(self, state: State) -> tuple[bool, str | None]:
@@ -123,19 +126,15 @@ class RulesVerifierNode:
 
     def check_range(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.target_id is None:
-            return True, None  # No target — skip range check
-
         actor = state.characters[action.actor_id]
-        target = state.characters[action.target_id]
 
-        weapon = actor.select_weapon(action_type=action.action_type)
-        if not weapon:
-            return True, None  # no range attribute, skip
+        for target_id in action.target_ids:
+            target = state.characters[target_id]
+            weapon = actor.select_weapon(action_type=action.action_type)
+            dist = self._distance(actor.pos, target.pos)
+            if dist > weapon.range:
+                return False, f"Target {target.name} is out of range ({dist:.1f} > {weapon.range})"
 
-        dist = self._distance(actor.pos, target.pos)
-        if dist > weapon.range:
-            return False, f"Target {target.name} is out of range ({dist:.1f} > {weapon.range})"
         return True, None
 
     @staticmethod
