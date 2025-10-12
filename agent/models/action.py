@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from agent.models.enums import ActionCategory, ActionType, DamageType, StatType, TargetingType
+from agent.models.enums import ActionCategory, ActionType, DamageType, StatType, TargetingType, WeaponType
 
 
 class ResourceCost(BaseModel):
@@ -26,6 +26,7 @@ class ActionOption(BaseModel):
     resource_cost: ResourceCost
     damage_dice: str
     damage_type: DamageType
+    weapon_type: WeaponType | None
     magical_bonus: int = 0
     stat: StatType
     range: float

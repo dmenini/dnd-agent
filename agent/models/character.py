@@ -1,8 +1,8 @@
 from pydantic import BaseModel, computed_field
 
 from agent.models.action import Action, ActionCategory, ActionOption
-from agent.models.enums import Condition, StatType
-from agent.models.weapons import MeleeWeapon, RangeWeapon, Spell
+from agent.models.enums import Condition, StatType, WeaponType
+from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangeWeapon, Spell
 
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
@@ -79,9 +79,10 @@ class Character(BaseModel):
     attributes: Attributes = Attributes()
     stats: Stats = Stats()
     conditions: list[Condition] = []
+    proficiencies: list[WeaponType] = []
 
-    main_hand: MeleeWeapon | None = None
-    off_hand: MeleeWeapon | None = None
+    main_hand: MeleeWeapon | FinesseWeapon | None = None
+    off_hand: MeleeWeapon | FinesseWeapon | None = None
     ranged: RangeWeapon | None = None
     spells: list[Spell] = []
     special_abilities: list[Action] = []
@@ -107,6 +108,11 @@ class Character(BaseModel):
     def speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats)
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def proficiency_bonus(self) -> int:
+        return 2 + (self.level - 1) // 4
+
     @property
     def is_alive(self) -> bool:
         return self.attributes.current_hp > 0
@@ -126,7 +132,8 @@ class Character(BaseModel):
             self.conditions.remove(cond)
 
     def attack_modifier(self, action: Action) -> int:
-        return self.stats.modifier(action.stat) + action.magical_bonus
+        prof_bonus = self.proficiency_bonus if action.weapon_type in self.proficiencies else 0
+        return self.stats.modifier(action.stat) + action.magical_bonus + prof_bonus
 
     def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
         return self.attributes.base_crit_multiplier

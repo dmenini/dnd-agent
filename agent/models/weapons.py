@@ -3,7 +3,7 @@ from abc import ABC
 from pydantic import BaseModel
 
 from agent.models.action import ActionCategory, ActionOption, ActionType, ResourceCost
-from agent.models.enums import DamageType, StatType, TargetingType
+from agent.models.enums import DamageType, StatType, TargetingType, WeaponType
 
 
 class Equipment(ABC, BaseModel):
@@ -17,9 +17,9 @@ class Equipment(ABC, BaseModel):
 
 class Weapon(Equipment):
     name: str
+    weapon_type: WeaponType
     weight: float = 0.0
     magical_bonus: int = 0
-    versatile: bool = False
 
     def to_action(self, category: ActionCategory) -> ActionOption:
         return ActionOption(
@@ -27,6 +27,7 @@ class Weapon(Equipment):
             name=f"{'Off Hand' if category == ActionCategory.BONUS else 'Main Hand'} Attack",
             source=self.name,
             action_type=ActionType.MELEE_ATTACK,
+            weapon_type=self.weapon_type,
             category=category,
             targeting=TargetingType.SINGLE,
             resource_cost=ResourceCost(action_points=1),
@@ -34,7 +35,6 @@ class Weapon(Equipment):
             damage_type=self.damage_type,
             stat=self.stat,
             range=self.range,
-            meta={"versatile": self.versatile},
         )
 
 
@@ -59,6 +59,7 @@ class RangeWeapon(Weapon):
             name="Ranged Attack",
             source=self.name,
             action_type=ActionType.RANGED_ATTACK,
+            weapon_type=self.weapon_type,
             category=category,
             targeting=TargetingType.SINGLE,
             resource_cost=ResourceCost(action_points=1, ammo=1),
@@ -83,6 +84,7 @@ class Spell(Equipment):
             name=f"Cast {self.name}",
             source=self.name,
             action_type=ActionType.AOE_SPELL if targeting == TargetingType.AREA else ActionType.SPELL,
+            weapon_type=None,
             category=category,
             targeting=targeting,
             resource_cost=ResourceCost(action_points=1, mana=self.mana_cost, cooldown=self.cooldown),
