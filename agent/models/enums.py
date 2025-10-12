@@ -41,13 +41,23 @@ class TurnPhase(str, Enum):
     END = "end"
 
 
+class TargetingType(str, Enum):
+    SINGLE = "single"
+    MULTI = "multi"
+    AREA = "area"
+
+
+class ActionCategory(str, Enum):
+    STANDARD = "standard"
+    BONUS = "bonus"
+    REACTION = "reaction"
+    MOVEMENT = "movement"
+
+
 class ActionType(str, Enum):
-    ATTACK = "attack"
-    SHOOT = "shoot"
-    MOVE = "move"
-    CAST_SPELL = "cast_spell"
-    ROLEPLAY = "roleplay"
-    WAIT = "wait"
-
-
-COMBAT_ACTIONS = {ActionType.ATTACK, ActionType.SHOOT, ActionType.CAST_SPELL}
+    MELEE_ATTACK = "melee_attack"
+    RANGED_ATTACK = "ranged_attack"
+    SPELL = "spell"
+    AOE_SPELL = "aoe_spell"
+    UTILITY = "utility"
+    SPECIAL = "special"

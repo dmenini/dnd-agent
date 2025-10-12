@@ -1,6 +1,8 @@
+# mypy: disable-error-code="union-attr"
+
 from logging import getLogger
 
-from agent.models.enums import COMBAT_ACTIONS, ActionType
+from agent.models.action import COMBAT_ACTION_TYPES
 from agent.models.state import State, VerificationResult
 
 log = getLogger(__name__)
@@ -20,7 +22,6 @@ class RulesVerifierNode:
             self.check_targets_exist,
             self.check_target_alive,
             self.check_friendly_fire,
-            self.check_weapon_equipped,
             self.check_range,
             # Future checks:
             # self.check_line_of_sight,
@@ -32,7 +33,7 @@ class RulesVerifierNode:
         """Runs all validation checks on the current action."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        reasons = []
+        reasons: list[str] = []
         valid = True
 
         if not state.current_actor.is_alive:
@@ -51,7 +52,7 @@ class RulesVerifierNode:
         state.verification_result = VerificationResult(valid=valid, reasons=reasons)
 
         if not state.verification_result.valid:
-            event = f"❌ Invalid action {state.action.model_dump_json()}\nReasons:\n"
+            event = f"❌ Invalid action {state.action.model_dump_json(exclude={'combat_option'})}\nReasons:\n"
             for reason in state.verification_result.reasons:
                 event += f" - {reason}\n"
             state.append_log(event)
@@ -83,7 +84,7 @@ class RulesVerifierNode:
 
     def check_targets_exist(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.action_type in COMBAT_ACTIONS:
+        if action.action_type in COMBAT_ACTION_TYPES:
             if not action.target_ids:
                 return False, "Missing targets for combat action"
             for target_id in action.target_ids:
@@ -93,7 +94,7 @@ class RulesVerifierNode:
 
     def check_target_alive(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.action_type in COMBAT_ACTIONS:
+        if action.action_type in COMBAT_ACTION_TYPES:
             for target_id in action.target_ids:
                 target = state.characters[target_id]
                 if not target.is_alive:
@@ -102,38 +103,23 @@ class RulesVerifierNode:
 
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.target_ids and action.action_type in COMBAT_ACTIONS:
-            actor = state.characters[action.actor_id]
+        if action.target_ids and action.action_type in COMBAT_ACTION_TYPES:
+            actor = state.current_actor
             for target_id in action.target_ids:
                 target = state.characters[target_id]
                 if actor.party.id == target.party.id:
                     return False, f"{actor.name} cannot attack ally {target.name}"
         return True, None
 
-    def check_weapon_equipped(self, state: State) -> tuple[bool, str | None]:
-        action = state.action
-        if action.action_type not in COMBAT_ACTIONS:
-            return True, None  # Skip for non-combat actions
-
-        actor = state.characters[action.actor_id]
-        if (
-            (action.action_type == ActionType.ATTACK and not actor.melee_weapon)
-            or (action.action_type == ActionType.SHOOT and not actor.range_weapon)
-            or (action.action_type == ActionType.CAST_SPELL and not actor.spell)
-        ):
-            return False, f"{actor.name} has no weapon or spell equipped"
-        return True, None
-
     def check_range(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        actor = state.characters[action.actor_id]
+        actor = state.current_actor
 
         for target_id in action.target_ids:
             target = state.characters[target_id]
-            weapon = actor.select_weapon(action_type=action.action_type)
             dist = self._distance(actor.pos, target.pos)
-            if dist > weapon.range:
-                return False, f"Target {target.name} is out of range ({dist:.1f} > {weapon.range})"
+            if dist > action.range:
+                return False, f"Target {target.name} is out of range ({dist:.1f} > {action.range})"
 
         return True, None
 

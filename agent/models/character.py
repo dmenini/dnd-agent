@@ -1,7 +1,8 @@
 from pydantic import BaseModel, computed_field
 
-from agent.models.enums import ActionType, Condition, StatType
-from agent.models.weapons import MeleeWeapon, RangeWeapon, Spell, Weapon
+from agent.models.action import Action, ActionCategory, ActionOption
+from agent.models.enums import Condition, StatType
+from agent.models.weapons import MeleeWeapon, RangeWeapon, Spell
 
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
@@ -34,17 +35,6 @@ class Stats(BaseModel):
             return False
         return None
 
-    def get_stat_from_action(self, action_type: ActionType) -> int:
-        if action_type == ActionType.ATTACK:
-            return self.strength
-        if action_type == ActionType.SHOOT:
-            return self.dexterity
-        if action_type == ActionType.CAST_SPELL:
-            return self.intelligence
-        if action_type == ActionType.ROLEPLAY:
-            return self.charisma
-        return DEFAULT_STAT
-
 
 class Attributes(BaseModel):
     base_hp: int = 8
@@ -73,13 +63,9 @@ class Attributes(BaseModel):
         """Derived initiative bonus."""
         return stats.modifier(StatType.DEX)
 
-    def compute_speed(self, stats: Stats) -> float:
+    def compute_speed(self, stats: Stats) -> float:  # noqa: ARG002
         """Base speed, possibly affected by conditions later."""
         return self.base_speed
-
-    def compute_crit_multiplier(self, weapon: Weapon | None) -> int:
-        """Base crit multiplier, weapon magic can modify it."""
-        return self.base_crit_multiplier + (weapon.magical_bonus // 2)
 
 
 class Character(BaseModel):
@@ -94,27 +80,29 @@ class Character(BaseModel):
     stats: Stats = Stats()
     conditions: list[Condition] = []
 
-    melee_weapon: MeleeWeapon | None = None
-    range_weapon: RangeWeapon | None = None
-    spell: Spell | None = None
+    main_hand: MeleeWeapon | None = None
+    off_hand: MeleeWeapon | None = None
+    ranged: RangeWeapon | None = None
+    spells: list[Spell] = []
+    special_abilities: list[Action] = []
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def ac(self) -> int:
         """Armor Class is derived from DEX and equipment."""
         return self.attributes.compute_ac(stats=self.stats)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def max_hp(self) -> int:
         return self.attributes.compute_max_hp(stats=self.stats, level=self.level)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def initiative_modifier(self) -> int:
         return self.attributes.compute_initiative(stats=self.stats)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats)
@@ -126,28 +114,45 @@ class Character(BaseModel):
     def apply_damage(self, damage: int) -> None:
         self.attributes.current_hp = max(0, self.attributes.current_hp - damage)
 
-    def heal(self, amount: int):
-        self.attributes.current_hp = min(self.current_hp + amount, self.max_hp)
+    def heal(self, amount: int) -> None:
+        self.attributes.current_hp = min(self.attributes.current_hp + amount, self.max_hp)
 
-    def select_weapon(self, action_type: ActionType) -> Weapon | None:
-        if action_type == ActionType.ATTACK:
-            return self.melee_weapon
-        if action_type == ActionType.CAST_SPELL:
-            return self.spell
-        if action_type == ActionType.SHOOT:
-            return self.range_weapon
-        return None
-
-    def apply_condition(self, cond: Condition):
+    def apply_condition(self, cond: Condition) -> None:
         if cond not in self.conditions:
             self.conditions.append(cond)
 
-    def remove_condition(self, cond: Condition):
+    def remove_condition(self, cond: Condition) -> None:
         if cond in self.conditions:
             self.conditions.remove(cond)
 
-    def attack_modifier(self, weapon: Weapon) -> int:
-        return self.stats.modifier(weapon.stat) + weapon.magical_bonus
+    def attack_modifier(self, action: Action) -> int:
+        return self.stats.modifier(action.stat) + action.magical_bonus
 
-    def crit_multiplier(self, weapon: Weapon) -> int:
-        return self.attributes.compute_crit_multiplier(weapon)
+    def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
+        return self.attributes.base_crit_multiplier
+
+    def available_actions(self) -> dict[str, ActionOption]:
+        actions: dict[str, ActionOption] = {}
+
+        # List all equipment with the category to apply
+        equipment_map = [
+            (self.main_hand, ActionCategory.STANDARD),
+            (self.off_hand, ActionCategory.BONUS),
+            (self.ranged, ActionCategory.STANDARD),
+        ]
+
+        for eq, category in equipment_map:
+            if eq:
+                action = eq.to_action(category)
+                actions[action.id] = action
+
+        # Spells always standard action
+        for spell in self.spells:
+            action = spell.to_action(ActionCategory.STANDARD)
+            actions[action.id] = action
+
+        # Special abilities
+        for ability in self.special_abilities:
+            actions[ability.id] = ability
+
+        return actions

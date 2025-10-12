@@ -1,3 +1,5 @@
+from enum import Enum
+
 from langchain_aws import ChatBedrockConverse
 from langchain_core.language_models import BaseChatModel
 from langgraph.constants import END, START
@@ -6,13 +8,21 @@ from langgraph.graph.state import CompiledStateGraph
 
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig
-from agent.models.enums import TurnPhase
 from agent.models.state import State
 from agent.nodes.combat_engine import CombatEngineNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
 from agent.nodes.rules_verifier import RulesVerifierNode
 from agent.nodes.start_combat import StartCombatNode
+
+
+class TurnPhase(str, Enum):
+    DECIDE = "decide"
+    VERIFY = "verify"
+    ROLL = "roll"
+    EXECUTE = "execute"
+    START = "start"
+    END = "end"
 
 
 def create_llm(config: LLMConfig) -> BaseChatModel:

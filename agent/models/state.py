@@ -1,24 +1,12 @@
 from pydantic import BaseModel
 
+from agent.models.action import Action
 from agent.models.character import Character, Party
-from agent.models.enums import ActionType
-
-
-class Action(BaseModel):
-    actor_id: str
-    action_type: ActionType
-    target_ids: list[str] = []
-    ability: str | None = None
-    attack_method: str | None = None
-    description: str = ""
-    dice_expression: str = "1d20"
-    meta: dict = {}
 
 
 class VerificationResult(BaseModel):
     valid: bool
     reasons: list[str] = []
-    adjusted_action: Action | None = None
 
 
 class DiceRoll(BaseModel):
@@ -42,7 +30,6 @@ class State(BaseModel):
     parties: dict[str, Party] = {}
     action: Action | None = None
     verification_result: VerificationResult | None = None
-    roll: DiceRoll | None = None
     event_log: list[Event] = []
     done: bool = False
 

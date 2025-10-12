@@ -1,9 +1,9 @@
 from logging import getLogger
 
 from agent.mechanics.dice_roller import DiceRoller
+from agent.models.action import COMBAT_ACTION_TYPES, ActionType
 from agent.models.character import Character
-from agent.models.enums import COMBAT_ACTIONS
-from agent.models.state import Action, ActionType, State
+from agent.models.state import Action, State
 
 ATTACK_ROLL_EXPR = "1d20"
 
@@ -28,37 +28,36 @@ class CombatEngineNode:
             raise ValueError(msg)
 
         if not action.target_ids:
-            msg = f"No target(s) for action {action.action_type}"
+            msg = f"No target(s) for action {action.id}"
             raise ValueError(msg)
 
         targets = [state.characters[tid] for tid in action.target_ids if tid in state.characters]
         if not targets:
-            msg = f"Targets not found for action {action.action_type}"
+            msg = f"Targets not found for action {action.id}"
             raise ValueError(msg)
 
         event = self._start_event_description(actor, action)
 
         # Handle the main combat actions
-        if action.action_type in COMBAT_ACTIONS:
+        if action.action_type in COMBAT_ACTION_TYPES:
             for target in targets:
-                event = self._resolve_combat_action(actor=actor, target=target, action=action, event=event)
+                event = self._resolve_combat_action(
+                    actor=actor,
+                    target=target,
+                    action=action,
+                    event=event,
+                )
 
         # Handle non-combat actions (move, wait, roleplay)
-        elif action.action_type == ActionType.MOVE:
-            event = event + " and moves strategically."
-
-        elif action.action_type == ActionType.ROLEPLAY:
-            event = event + " engages in roleplay."
-
-        elif action.action_type == ActionType.WAIT:
-            event = event + " and waits patiently."
+        elif action.action_type == ActionType.UTILITY:
+            event += " performs a utility action."
 
         # Finalize turn
         state.append_log(event)
         return state
 
     def _start_event_description(self, actor: Character, action: Action) -> str:
-        event = f"{actor.name} performs {action.action_type.value}"
+        event = f"{actor.name} performs {action.name}"
         if action.description:
             event += f" ({action.description})"
         return event
@@ -71,13 +70,11 @@ class CombatEngineNode:
         event: str,
     ) -> str:
         """Handles attack/spell actions including criticals and damage."""
-        weapon = actor.select_weapon(action_type=action.action_type)
-
-        if not weapon:
+        if not action:
             event += " but forgot to equip the weapon..."
             return event
 
-        advantage = actor.stats.advantage(weapon.stat)
+        advantage = actor.stats.advantage(action.stat)
 
         # Attack roll determines hit/miss and crit
         roll = self.dice.roll_with_context(dice_expression=ATTACK_ROLL_EXPR, advantage=advantage)
@@ -88,15 +85,15 @@ class CombatEngineNode:
         is_critical = roll.raw == self.dice.sides(ATTACK_ROLL_EXPR)
 
         # 2nd roll determines damage dealt
-        mod = actor.attack_modifier(weapon)
-        expr = weapon.damage_dice + (f"+{mod}" if mod >= 0 else f"-{mod}")
+        mod = actor.attack_modifier(action)
+        expr = action.damage_dice + (f"+{mod}" if mod >= 0 else f"-{mod}")
         roll = self.dice.roll_with_context(dice_expression=expr, advantage=advantage)
-        damage = roll.total
 
         if is_critical:
+            damage = roll.raw * actor.crit_multiplier(action) + mod
             event += " and rolls a NATURAL 20! Critical hit!"
-            damage *= actor.crit_multiplier(weapon)
         else:
+            damage = roll.total
             event += f" and rolls {roll.total} to hit."
 
         # Apply damage

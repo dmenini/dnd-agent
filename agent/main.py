@@ -16,7 +16,7 @@ MAX_ITER = 100
 log = getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-log = getLogger("botocore").setLevel(logging.INFO)
+getLogger("botocore").setLevel(logging.INFO)
 
 
 def main() -> None:
@@ -39,9 +39,9 @@ def main() -> None:
         is_player=True,
         party=party_players,
         stats=Stats(),
-        melee_weapon=melee,
-        range_weapon=range_,
-        spell=spell,
+        main_hand=melee,
+        ranged=range_,
+        spells=[spell],
     )
     orc = Character(
         id="orc_1",
@@ -49,8 +49,8 @@ def main() -> None:
         pos=(4, 2),
         party=party_enemies,
         stats=Stats(),
-        melee_weapon=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type=DamageType.BLUDGEONING, range=1),
-        range_weapon=range_,
+        main_hand=MeleeWeapon(name="Fist", damage_dice="1d3", damage_type=DamageType.BLUDGEONING, range=1),
+        ranged=range_,
     )
 
     goblin = Character(
@@ -59,8 +59,8 @@ def main() -> None:
         pos=(6, 2),
         party=party_enemies,
         stats=Stats(),
-        melee_weapon=MeleeWeapon(name="Dagger", damage_dice="1d5", damage_type=DamageType.SLASHING, range=1),
-        spell=spell,
+        main_hand=MeleeWeapon(name="Dagger", damage_dice="1d5", damage_type=DamageType.SLASHING, range=1),
+        spells=[spell],
     )
     state = State(
         characters={hero.id: hero, orc.id: orc, goblin.id: goblin},
