@@ -2,8 +2,8 @@ from abc import ABC
 
 from pydantic import BaseModel
 
-from agent.models.action import ActionCategory, ActionOption, ActionType, ResourceCost
-from agent.models.enums import DamageType, StatType, TargetingType, WeaponType
+from agent.models.action import ActionCategory, ActionOption, ActionType
+from agent.models.enums import DamageType, SpellLevel, StatType, TargetingType, WeaponType
 
 
 class Equipment(ABC, BaseModel):
@@ -30,7 +30,6 @@ class Weapon(Equipment):
             weapon_type=self.weapon_type,
             category=category,
             targeting=TargetingType.SINGLE,
-            resource_cost=ResourceCost(action_points=1),
             damage_dice=self.damage_dice,
             damage_type=self.damage_type,
             stat=self.stat,
@@ -51,7 +50,6 @@ class FinesseWeapon(Weapon):
 class RangeWeapon(Weapon):
     stat: StatType = StatType.DEX
     damage_type: DamageType = DamageType.PIERCING
-    ammo: int = 20
 
     def to_action(self, category: ActionCategory) -> ActionOption:
         return ActionOption(
@@ -62,7 +60,6 @@ class RangeWeapon(Weapon):
             weapon_type=self.weapon_type,
             category=category,
             targeting=TargetingType.SINGLE,
-            resource_cost=ResourceCost(action_points=1, ammo=1),
             damage_dice=self.damage_dice,
             damage_type=self.damage_type,
             stat=self.stat,
@@ -73,23 +70,26 @@ class RangeWeapon(Weapon):
 class Spell(Equipment):
     stat: StatType = StatType.INT
     damage_type: DamageType = DamageType.MAGIC
-    mana_cost: int = 5
-    cooldown: int = 0
     is_aoe: bool = False
+    level: SpellLevel = SpellLevel.LEVEL_1
+    casting_time: ActionCategory = ActionCategory.STANDARD
 
-    def to_action(self, category: ActionCategory) -> ActionOption:
+    def to_action(self) -> ActionOption:
         targeting = TargetingType.AREA if self.is_aoe else TargetingType.SINGLE
         return ActionOption(
             id=f"cast_{self.name.lower().replace(' ', '_')}",
             name=f"Cast {self.name}",
             source=self.name,
             action_type=ActionType.AOE_SPELL if targeting == TargetingType.AREA else ActionType.SPELL,
-            weapon_type=None,
-            category=category,
+            weapon_type=WeaponType.SPELL,
+            category=self.casting_time,
             targeting=targeting,
-            resource_cost=ResourceCost(action_points=1, mana=self.mana_cost, cooldown=self.cooldown),
             damage_dice=self.damage_dice,
             damage_type=self.damage_type,
             stat=self.stat,
             range=self.range,
         )
+
+
+class Cantrip(Spell):
+    level: SpellLevel = SpellLevel.CANTRIP

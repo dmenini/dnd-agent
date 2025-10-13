@@ -3,13 +3,6 @@ from pydantic import BaseModel, Field
 from agent.models.enums import ActionCategory, ActionType, DamageType, StatType, TargetingType, WeaponType
 
 
-class ResourceCost(BaseModel):
-    action_points: int = 1
-    mana: int = 0
-    ammo: int = 0
-    cooldown: int = 0
-
-
 class DecisionResult(BaseModel):
     action_id: str = Field(description="ID of the action to take")
     target_ids: list[str] = Field(
@@ -33,7 +26,6 @@ class ActionOption(BaseModel):
     action_type: ActionType
     category: ActionCategory
     targeting: TargetingType
-    resource_cost: ResourceCost
     damage_dice: str | None = None
     damage_type: DamageType | None = None
     weapon_type: WeaponType | None = None

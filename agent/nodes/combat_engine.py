@@ -3,6 +3,7 @@ from logging import getLogger
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.action import COMBAT_ACTION_TYPES, ActionType
 from agent.models.character import Character
+from agent.models.enums import WeaponType
 from agent.models.state import Action, State
 
 ATTACK_ROLL_EXPR = "1d20"
@@ -56,6 +57,12 @@ class CombatEngineNode:
             event += " performs a utility action."
 
         # Finalize turn
+        actor.action_economy.consume(action.category)
+
+        if action.weapon_type == WeaponType.SPELL:
+            spell = next(spell for spell in actor.spells if action.source == spell.name)
+            actor.spell_slots.consume(spell.level)
+
         state.append_log(event)
         return state
 

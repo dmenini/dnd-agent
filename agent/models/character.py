@@ -1,7 +1,7 @@
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, Field, computed_field
 
-from agent.models.action import Action, ActionCategory, ActionOption, ResourceCost
-from agent.models.enums import ActionType, Condition, StatType, TargetingType, WeaponType
+from agent.models.action import Action, ActionCategory, ActionOption
+from agent.models.enums import ActionType, Condition, SpellLevel, StatType, TargetingType, WeaponType
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangeWeapon, Spell
 
 DEFAULT_STAT = 10
@@ -34,6 +34,80 @@ class Stats(BaseModel):
         if val and val <= DISADVANTAGE_THRESHOLD:
             return False
         return None
+
+
+class SpellSlots(BaseModel):
+    slots: dict[SpellLevel, int] = Field(
+        default_factory=lambda: {
+            SpellLevel.LEVEL_1: 2,
+            SpellLevel.LEVEL_2: 0,
+            SpellLevel.LEVEL_3: 0,
+        }
+    )  # default low-level caster
+    max_slots: dict[SpellLevel, int] = Field(
+        default_factory=lambda: {
+            SpellLevel.LEVEL_1: 2,
+            SpellLevel.LEVEL_2: 0,
+            SpellLevel.LEVEL_3: 0,
+        }
+    )
+
+    def has_slot(self, level: SpellLevel) -> bool:
+        """Check if there are slots left for the given spell level. Cantrips are always available."""
+        if level == SpellLevel.CANTRIP:
+            return True
+        return self.slots.get(level, 0) > 0
+
+    def consume(self, level: SpellLevel) -> None:
+        if not self.has_slot(level):
+            msg = f"No spell slots remaining for level {level}"
+            raise ValueError(msg)
+
+        if level != SpellLevel.CANTRIP:
+            self.slots[level] -= 1
+
+    def restore_all(self) -> None:
+        """Restore all resources. Must be done after combat ends."""
+        self.slots = self.max_slots.copy()
+
+
+class ActionEconomy(BaseModel):
+    standard_actions: int = 1
+    max_standard_actions: int = 1
+    bonus_actions: int = 1
+    max_bonus_actions: int = 1
+    reaction_available: bool = True
+    movement_available: bool = True
+
+    def has_resources(self) -> bool:
+        # TODO: extend when movement and reactions are implemented
+        return self.standard_actions > 0 or self.bonus_actions > 0
+
+    def consume(self, category: ActionCategory) -> None:
+        """Consume the resources used by the action."""
+        if category == ActionCategory.STANDARD:
+            if self.standard_actions <= 0:
+                raise ValueError("No standard actions left")
+            self.standard_actions -= 1
+        elif category == ActionCategory.BONUS:
+            if self.bonus_actions <= 0:
+                raise ValueError("No bonus actions left")
+            self.bonus_actions -= 1
+        elif category == ActionCategory.REACTION:
+            if not self.reaction_available:
+                raise ValueError("Reaction already used")
+            self.reaction_available = False
+        elif category == ActionCategory.MOVEMENT:
+            if not self.movement_available:
+                raise ValueError("Already moved")
+            self.movement_available = False
+
+    def restore_all(self) -> None:
+        """Restore all resources. Must be done after each round."""
+        self.standard_actions = self.max_standard_actions
+        self.bonus_actions = self.max_bonus_actions
+        self.movement_available = True
+        self.reaction_available = True
 
 
 class Attributes(BaseModel):
@@ -87,6 +161,9 @@ class Character(BaseModel):
     ranged: RangeWeapon | None = None
     spells: list[Spell] = []
     special_abilities: list[Action] = []
+
+    spell_slots: SpellSlots = SpellSlots()
+    action_economy: ActionEconomy = ActionEconomy()
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -150,7 +227,11 @@ class Character(BaseModel):
     def available_actions(self) -> dict[str, ActionOption]:
         actions: dict[str, ActionOption] = {}
 
-        # List all equipment with the category to apply
+        # Standard + Bonus Actions available?
+        std_available = self.action_economy.standard_actions > 0
+        bonus_available = self.action_economy.bonus_actions > 0
+
+        # Equipment-based actions
         equipment_map = [
             (self.main_hand, ActionCategory.STANDARD),
             (self.off_hand, ActionCategory.BONUS),
@@ -158,30 +239,39 @@ class Character(BaseModel):
         ]
 
         for eq, category in equipment_map:
-            if eq:
+            if eq and (
+                (category == ActionCategory.STANDARD and std_available)
+                or (category == ActionCategory.BONUS and bonus_available)
+            ):
                 action = eq.to_action(category)
                 actions[action.id] = action
 
-        # Spells always standard action
-        for spell in self.spells:
-            action = spell.to_action(ActionCategory.STANDARD)
-            actions[action.id] = action
+        # Spells (only if action available and slot available)
+        if std_available:
+            for spell in self.spells:
+                if self.spell_slots.has_slot(spell.level):
+                    action = spell.to_action()
+                    actions[action.id] = action
 
-        # Special abilities
+        # Special abilities (can have their own categories)
         for ability in self.special_abilities:
-            actions[ability.id] = ability
+            if (ability.category == ActionCategory.BONUS and bonus_available) or (
+                ability.category == ActionCategory.STANDARD and not std_available
+            ):
+                actions[ability.id] = ability
 
-        actions["dash"] = ActionOption(
-            id="dash",
-            name="Dash",
-            source="Base",
-            action_type=ActionType.DASH,
-            category=ActionCategory.STANDARD,
-            targeting=TargetingType.SELF,
-            resource_cost=ResourceCost(action_points=1),
-            range=self.speed,
-            stat=StatType.DEX,
-        )
+        # Dash (always if movement + standard action)
+        if std_available and self.action_economy.movement_available:
+            actions["dash"] = ActionOption(
+                id="dash",
+                name="Dash",
+                source="Base",
+                action_type=ActionType.DASH,
+                category=ActionCategory.STANDARD,
+                targeting=TargetingType.SELF,
+                range=self.speed,
+                stat=StatType.DEX,
+            )
 
         return actions
 

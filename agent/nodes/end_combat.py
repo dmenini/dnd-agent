@@ -10,25 +10,28 @@ class EndCombatNode:
         """Advance turn, check victory conditions, and append logs."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        # Advance to next character
         actor = state.current_actor
-        state.turn_index += 1
+
+        # Advance to next character if resources exhausted
+        if not actor.available_actions():
+            state.turn_index += 1
 
         # End of round → wrap turn
         if state.turn_index >= len(state.turn_order):
             # Reset resources
-            actor.attributes.current_movement = actor.speed
+            for cid in state.turn_order:
+                state.characters[cid].attributes.current_movement = actor.speed
+                state.characters[cid].action_economy.restore_all()
 
             state.round += 1
             state.turn_index = 0
-            state.flush_logs()
 
         # Check if any party has been wiped out
         defeated_parties = [p for p in state.parties.values() if not state.get_party_members(p.id, alive_only=True)]
 
         # Remove defeated parties from active play
         for defeated in defeated_parties:
-            state.append_log(f"Party '{defeated.name}' has been defeated!")
+            state.append_system_log(f"Party '{defeated.name}' has been defeated!")
 
         # Determine if only one party remains
         alive_parties = [
@@ -42,15 +45,13 @@ class EndCombatNode:
             state.done = True
 
             if not alive_parties:
-                state.append_log("All parties have fallen. It's a draw.")
+                state.append_system_log("All parties have fallen. It's a draw.")
             else:
                 winner = alive_parties[0]
 
                 if winner.is_player_party:
-                    state.append_log(f"🎉 The players are victorious! Party '{winner.name}' stands triumphant!")
+                    state.append_system_log(f"🎉 The players are victorious! Party '{winner.name}' stands triumphant!")
                 else:
-                    state.append_log(f"💀 The enemies prevail... Party '{winner.name}' wins the battle.")
-
-            state.flush_logs()
+                    state.append_system_log(f"💀 The enemies prevail... Party '{winner.name}' wins the battle.")
 
         return state

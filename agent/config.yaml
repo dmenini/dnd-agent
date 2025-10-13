@@ -12,5 +12,4 @@ agent:
       Reason about the best type of action for the given state, while following these rules:
       - The chosen action should take the position and range into account (we use Manhattan distance)
       - Only choose one action among the options available.
-      - Use the dash action to move on the map.
       - Do not attack members of the same party.

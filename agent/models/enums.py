@@ -110,3 +110,11 @@ class WeaponType(str, Enum):
 
     # Other / Custom
     OTHER = "other"
+    SPELL = "spell"
+
+
+class SpellLevel(Enum):
+    CANTRIP = 0
+    LEVEL_1 = 1
+    LEVEL_2 = 2
+    LEVEL_3 = 3
