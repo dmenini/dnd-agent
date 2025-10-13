@@ -7,7 +7,7 @@ from agent.models.character import Character, Party
 class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
-    correction: str = ""
+    input: Action | None = None
 
 
 class DiceRoll(BaseModel):
@@ -18,6 +18,7 @@ class DiceRoll(BaseModel):
 
 
 class Event(BaseModel):
+    actor_id: str | None = None
     message: str
     turn: int
     hide: bool = False
@@ -57,7 +58,12 @@ class State(BaseModel):
                 event.hide = True
 
     def append_log(self, message: str) -> None:
-        self.event_log.append(Event(message=message, turn=self.round))
+        """Append a log event associated to a certain actor. It will be part of the agent history."""
+        self.event_log.append(Event(message=message, turn=self.round, actor_id=self.current_actor.id))
+
+    def append_system_log(self, message: str) -> None:
+        """Append a system log event. It will be excluded from the agent history"""
+        self.event_log.append(Event(message=message, turn=self.round, actor_id=None))
 
 
 class Context(BaseModel):

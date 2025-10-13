@@ -73,9 +73,8 @@ class CombatEngineNode:
         event: str,
     ) -> str:
         """Handles attack/spell actions including criticals and damage."""
-        if not action:
-            event += " but forgot to equip the weapon..."
-            return event
+        if not action or not action.damage_dice:
+            raise ValueError
 
         advantage = actor.stats.advantage(action.stat)
 

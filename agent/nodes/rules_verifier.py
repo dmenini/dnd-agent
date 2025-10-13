@@ -31,7 +31,6 @@ class RulesVerifierNode:
         """Runs all validation checks on the current action."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        reasons: list[str] = []
         valid = True
 
         if not state.current_actor.is_alive:
@@ -48,12 +47,8 @@ class RulesVerifierNode:
                 if self.fail_fast:
                     break
 
-        state.verification_result = VerificationResult(valid=valid, reason=reasons)
-
-        if not state.verification_result.valid:
-            event = f"❌ Invalid action {state.action.model_dump_json(exclude={'combat_option'})}\nReasons:\n{reasons}"
-            state.append_log(event)
-
+        state.verification_result = VerificationResult(valid=valid, reason=reasons, input=state.action)
+        state.append_system_log(f"Validation error: {state.verification_result.reason}")
         return state
 
     def check_action_exists(self, state: State) -> tuple[bool, str | None]:
