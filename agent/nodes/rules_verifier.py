@@ -131,4 +131,8 @@ class RulesVerifierNode:
             if dist > max_dist:
                 return False, f"Position {decision.target_position} is out of range ({dist:.1f} > {max_dist})"
 
+            for char in state.characters:
+                if char.pos == decision.target_position:
+                    return False, f"Position {decision.target_position} is already taken by character {char.name}"
+
         return True, None
