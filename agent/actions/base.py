@@ -1,6 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from pydantic import BaseModel
 
 from agent.models.enums import ActionCategory, ActionType
+
+if TYPE_CHECKING:
+    from agent.models.character import Character
 
 
 class ActionEconomy(BaseModel):
@@ -49,3 +56,9 @@ class Action(BaseModel):
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.standard_actions > 0
+
+    def execute(self, actor: Character, target: Any) -> str:
+        raise NotImplementedError
+
+    def finalize(self, actor: Character) -> None:
+        actor.action_economy.consume(self.category)

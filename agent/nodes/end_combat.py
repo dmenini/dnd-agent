@@ -13,6 +13,7 @@ class EndCombatNode:
         actor = state.current_actor
 
         # Advance to next character if resources exhausted
+        # TODO: Improve this by avoid looping over dead characters, just remove them from initiative order
         if not actor.is_alive or not actor.has_resources():
             state.turn_index += 1
 

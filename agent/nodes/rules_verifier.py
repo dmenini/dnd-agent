@@ -2,7 +2,7 @@
 
 from logging import getLogger
 
-from agent.actions.attack import COMBAT_ACTION_TYPES
+from agent.actions.attack import AttackAction
 from agent.actions.dash import DashAction
 from agent.models.enums import TargetingType
 from agent.models.state import State, VerificationResult
@@ -64,7 +64,7 @@ class RulesVerifierNode:
     def check_targets_exist(self, state: State) -> tuple[bool, str | None]:
         action = state.action
         decision = state.decision
-        if action.action_type in COMBAT_ACTION_TYPES:
+        if isinstance(action, AttackAction):
             if not decision.target_ids:
                 return False, "Missing targets for combat action"
             for target_id in decision.target_ids:
@@ -75,7 +75,7 @@ class RulesVerifierNode:
     def check_targets_alive(self, state: State) -> tuple[bool, str | None]:
         action = state.action
         decision = state.decision
-        if action.action_type in COMBAT_ACTION_TYPES:
+        if isinstance(action, AttackAction):
             for target_id in decision.target_ids:
                 target = state.characters[target_id]
                 if not target.is_alive:
@@ -86,7 +86,7 @@ class RulesVerifierNode:
         action = state.action
         decision = state.decision
         if (
-            action.action_type in COMBAT_ACTION_TYPES
+            isinstance(action, AttackAction)
             and action.targeting == TargetingType.SINGLE
             and len(decision.target_ids) > 1
         ):
@@ -96,7 +96,7 @@ class RulesVerifierNode:
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
         action = state.action
         decision = state.decision
-        if decision.target_ids and action.action_type in COMBAT_ACTION_TYPES:
+        if decision.target_ids and isinstance(action, AttackAction):
             actor = state.current_actor
             for target_id in decision.target_ids:
                 target = state.characters[target_id]

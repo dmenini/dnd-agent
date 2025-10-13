@@ -195,17 +195,10 @@ class Character(BaseModel):
 
         self.conditions = [c for c in self.conditions if c.duration >= 0]
 
-    def attack_modifier(self, action: Action) -> int:
-        prof_bonus = self.proficiency_bonus if action.weapon_type in self.proficiencies else 0
-        mod = self.stats.modifier(action.stat) if action.stat else 0
-        return mod + prof_bonus
-
-    def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
-        return self.attributes.base_crit_multiplier
-
     def has_resources(self) -> bool:
-        has_bonus = self.off_hand and (self.action_economy.bonus_actions > 0)
-        has_main = (self.main_hand or self.ranged or self.spells) and (self.action_economy.standard_actions > 0)
+        has_bonus = self.off_hand is not None and (self.action_economy.bonus_actions > 0)
+        main_hand = self.main_hand or self.ranged or self.spells
+        has_main = main_hand is not None and (self.action_economy.standard_actions > 0)
         return has_main or has_bonus
 
     def available_actions(self) -> dict[str, Action]:
@@ -223,7 +216,7 @@ class Character(BaseModel):
 
         for eq, action_cls in equipment_map:
             if eq:
-                action = action_cls.from_weapon(weapon=eq)
+                action = action_cls.from_weapon(weapon=eq)  # type: ignore[attr-defined]
                 all_actions.append(action)
 
         # Spells (only if action available and slot available)

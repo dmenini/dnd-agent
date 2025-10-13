@@ -1,12 +1,12 @@
 from logging import getLogger
 
 from agent.actions.attack import (
-    COMBAT_ACTION_TYPES,
+    AttackAction,
 )
+from agent.actions.dash import DashAction
+from agent.actions.dodge import DodgeAction
 from agent.mechanics.dice_roller import DiceRoller
-from agent.models.character import Character
-from agent.models.enums import ActionType, ConditionType
-from agent.models.state import Action, State
+from agent.models.state import State
 
 ATTACK_ROLL_EXPR = "1d20"
 
@@ -34,117 +34,22 @@ class CombatEngineNode:
         event = f"{actor.name} performs {action.name}: {decision.description}"
 
         # Handle the main combat actions
-        if action.action_type in COMBAT_ACTION_TYPES:
+        if isinstance(state.action, AttackAction):
             if not decision.target_ids:
                 msg = f"No target(s) for action {action.id}"
                 raise ValueError(msg)
 
             targets = [state.characters[tid] for tid in decision.target_ids if tid in state.characters]
-            if not targets:
-                msg = f"Targets not found for action {action.id}"
-                raise ValueError(msg)
-
             for target in targets:
-                event = self._resolve_combat_action(
-                    actor=actor,
-                    target=target,
-                    action=action,
-                    event=event,
-                )
+                event += action.execute(actor=actor, target=target)
 
-        elif action.action_type == ActionType.DASH:
-            event = self._resolve_movement_action(
-                actor=actor, action=action, target=decision.target_position, event=event
-            )
+        elif isinstance(state.action, DashAction):
+            event += action.execute(actor=actor, target=decision.target_position)
 
-        elif action.action_type == ActionType.DODGE:
-            event = self._resolve_dodge_action(actor=actor, event=event)
+        elif isinstance(state.action, DodgeAction):
+            event += action.execute(actor=actor, target=None)
 
-        # Finalize turn
-        actor.action_economy.consume(action.category)
-
-        if action.action_type == ActionType.SPELL:
-            spell = next(spell for spell in actor.spells if action.source == spell.name)
-            actor.spell_slots.consume(spell.level)
+        action.finalize(actor)
 
         state.append_log(event)
         return state
-
-    def _resolve_combat_action(
-        self,
-        actor: Character,
-        target: Character,
-        action: Action,
-        event: str,
-    ) -> str:
-        """Handles attack/spell actions including criticals and damage."""
-        if not action or not action.damage_dice:
-            raise ValueError
-
-        # --- 1. Compute attacker advantage ---
-        adv_from_actor = actor.stats.advantage(action.stat) if action.stat else None
-        adv_from_target = None
-
-        # --- 2. Check if target is dodging ---
-        if target.has_effect(ConditionType.DODGING):
-            adv_from_target = False
-            event += f" {target.name} is dodging, attack at disadvantage."
-
-        # --- 3. Resolve advantage/disadvantage interaction ---
-        # True + False → None (they cancel)
-        if adv_from_actor is True and adv_from_target is False:
-            final_advantage = None
-        else:
-            # If either gives advantage/disadvantage, prefer that one
-            final_advantage = adv_from_actor if adv_from_actor is not None else adv_from_target
-
-        # --- 4. Attack roll ---
-        roll = self.dice.roll_with_context(
-            dice_expression=ATTACK_ROLL_EXPR,
-            advantage=final_advantage,
-        )
-
-        if roll.total < target.ac:
-            event += f" {actor.name} misses..."
-            return event
-
-        is_critical = roll.raw == self.dice.sides(ATTACK_ROLL_EXPR)
-
-        # --- 5. Damage roll ---
-        mod = actor.attack_modifier(action)
-        expr = action.damage_dice + (f"+{mod}" if mod >= 0 else f"-{mod}")
-        roll = self.dice.roll_with_context(
-            dice_expression=expr,
-            advantage=final_advantage,
-        )
-
-        if is_critical:
-            damage = roll.raw * actor.crit_multiplier(action) + mod
-            event += f" {actor.name} rolls a NATURAL 20! Critical hit!"
-        else:
-            damage = roll.total
-            event += f" {actor.name} rolls {roll.total} to hit."
-
-        # --- 6. Apply damage ---
-        target.apply_damage(damage=damage)
-        event += f" {actor.name} hits {target.name} for {damage} damage (HP now {target.attributes.current_hp})."
-
-        if not target.is_alive:
-            event += f" {target.name} is defeated!"
-
-        return event
-
-    def _resolve_movement_action(self, actor: Character, action: Action, target: tuple[int, int], event: str) -> str:
-        if not target:
-            msg = "Movement requires a destination position"
-            raise ValueError(msg)
-
-        actor.move(target, dash=action.action_type == ActionType.DASH)
-        event += f" {actor.name} moves to position {target}."
-
-        return event
-
-    def _resolve_dodge_action(self, actor: Character, event: str) -> str:
-        actor.apply_condition(cond=ConditionType.DODGING, duration=1)
-        event += f" {actor.name} prepares to dodge."
-        return event
