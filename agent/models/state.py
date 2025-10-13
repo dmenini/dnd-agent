@@ -5,8 +5,9 @@ from agent.models.character import Character, Party
 
 
 class VerificationResult(BaseModel):
-    valid: bool
-    reasons: list[str] = []
+    valid: bool = True
+    reason: str = ""
+    correction: str = ""
 
 
 class DiceRoll(BaseModel):

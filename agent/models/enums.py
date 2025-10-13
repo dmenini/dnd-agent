@@ -43,7 +43,6 @@ class TurnPhase(str, Enum):
 
 class TargetingType(str, Enum):
     SINGLE = "single"
-    MULTI = "multi"
     AREA = "area"
     SELF = "self"
 
