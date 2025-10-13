@@ -1,13 +1,32 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from enum import Enum
+from typing import Any, TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from agent.models.enums import ActionCategory, ActionType  # noqa: TC001
-
 if TYPE_CHECKING:
     from agent.models.character import Character
+
+
+class ActionCategory(str, Enum):
+    STANDARD = "standard"
+    BONUS = "bonus"
+    REACTION = "reaction"
+    MOVEMENT = "movement"
+
+
+class ActionType(str, Enum):
+    MAIN_HAND_ATTACK = "main_attack"
+    OFF_HAND_ATTACK = "off_attack"
+    RANGED_ATTACK = "ranged_attack"
+    SPELL = "spell"
+    AOE_SPELL = "aoe_spell"
+    UTILITY = "utility"
+    SPECIAL = "special"
+    DASH = "dash"
+    MOVE = "move"
+    DODGE = "DODGE"
 
 
 class ActionEconomy(BaseModel):

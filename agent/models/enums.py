@@ -48,26 +48,6 @@ class TargetingType(str, Enum):
     SELF = "self"
 
 
-class ActionCategory(str, Enum):
-    STANDARD = "standard"
-    BONUS = "bonus"
-    REACTION = "reaction"
-    MOVEMENT = "movement"
-
-
-class ActionType(str, Enum):
-    MAIN_HAND_ATTACK = "main_attack"
-    OFF_HAND_ATTACK = "off_attack"
-    RANGED_ATTACK = "ranged_attack"
-    SPELL = "spell"
-    AOE_SPELL = "aoe_spell"
-    UTILITY = "utility"
-    SPECIAL = "special"
-    DASH = "dash"
-    MOVE = "move"
-    DODGE = "DODGE"
-
-
 class WeaponType(str, Enum):
     # Simple Melee
     CLUB = "club"

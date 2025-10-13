@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent.actions.base import Action, ActionEconomy
-from agent.models.enums import ActionCategory, ActionType, TargetingType
+from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
+from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.models.character import Character

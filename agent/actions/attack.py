@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-from agent.actions.base import Action, ActionEconomy
+from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import (
-    ActionCategory,
-    ActionType,
     ConditionType,
     DamageType,
     SpellLevel,
