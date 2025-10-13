@@ -30,7 +30,7 @@ class ActionOption(BaseModel):
     damage_type: DamageType | None = None
     weapon_type: WeaponType | None = None
     magical_bonus: int | None = None
-    stat: StatType
+    stat: StatType | None = None
     range: float
     meta: dict = {}
 

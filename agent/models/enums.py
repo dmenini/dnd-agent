@@ -24,12 +24,13 @@ class DamageType(str, Enum):
     MAGIC = "magic"
 
 
-class Condition(str, Enum):
+class ConditionType(str, Enum):
     STUNNED = "stunned"
     PARALYZED = "paralyzed"
     POISONED = "poisoned"
     PRONE = "prone"
     UNCONSCIOUS = "unconscious"
+    DODGING = "dodging"
 
 
 class TurnPhase(str, Enum):
@@ -62,6 +63,7 @@ class ActionType(str, Enum):
     UTILITY = "utility"
     SPECIAL = "special"
     DASH = "dash"
+    DODGE = "DODGE"
 
 
 class WeaponType(str, Enum):

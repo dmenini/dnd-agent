@@ -22,6 +22,7 @@ class EndCombatNode:
             for cid in state.turn_order:
                 state.characters[cid].attributes.current_movement = actor.speed
                 state.characters[cid].action_economy.restore_all()
+                state.characters[cid].elapse_conditions()
 
             state.round += 1
             state.turn_index = 0

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, computed_field
 
 from agent.models.action import Action, ActionCategory, ActionOption
-from agent.models.enums import ActionType, Condition, SpellLevel, StatType, TargetingType, WeaponType
+from agent.models.enums import ActionType, ConditionType, SpellLevel, StatType, TargetingType, WeaponType
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangeWeapon, Spell
 
 DEFAULT_STAT = 10
@@ -143,6 +143,11 @@ class Attributes(BaseModel):
         return self.base_speed
 
 
+class StatusEffect(BaseModel):
+    type: ConditionType
+    duration: int
+
+
 class Character(BaseModel):
     id: str
     name: str
@@ -153,7 +158,7 @@ class Character(BaseModel):
     experience: int = 0
     attributes: Attributes = Attributes()
     stats: Stats = Stats()
-    conditions: list[Condition] = []
+    conditions: list[StatusEffect] = []
     proficiencies: list[WeaponType] = []
 
     main_hand: MeleeWeapon | FinesseWeapon | None = None
@@ -208,18 +213,29 @@ class Character(BaseModel):
     def heal(self, amount: int) -> None:
         self.attributes.current_hp = min(self.attributes.current_hp + amount, self.max_hp)
 
-    def apply_condition(self, cond: Condition) -> None:
-        if cond not in self.conditions:
-            self.conditions.append(cond)
+    def has_effect(self, cond: ConditionType) -> bool:
+        existing_conditions = {c.type for c in self.conditions}
+        return cond in existing_conditions
 
-    def remove_condition(self, cond: Condition) -> None:
-        if cond in self.conditions:
-            self.conditions.remove(cond)
+    def apply_condition(self, cond: ConditionType, duration: int) -> None:
+        if not self.has_effect(cond):
+            effect = StatusEffect(type=cond, duration=duration)
+            self.conditions.append(effect)
+        else:
+            existing_effect = next(c for c in self.conditions if c.type == cond)
+            existing_effect.duration = duration
+
+    def elapse_conditions(self) -> None:
+        for effect in self.conditions:
+            effect.duration -= 1
+
+        self.conditions = [c for c in self.conditions if c.duration >= 0]
 
     def attack_modifier(self, action: Action) -> int:
         weapon_bonus = action.magical_bonus or 0
         prof_bonus = self.proficiency_bonus if action.weapon_type in self.proficiencies else 0
-        return self.stats.modifier(action.stat) + weapon_bonus + prof_bonus
+        mod = self.stats.modifier(action.stat) if action.stat else 0
+        return mod + weapon_bonus + prof_bonus
 
     def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
         return self.attributes.base_crit_multiplier
@@ -271,6 +287,18 @@ class Character(BaseModel):
                 targeting=TargetingType.SELF,
                 range=self.speed,
                 stat=StatType.DEX,
+            )
+
+        if std_available:
+            actions["dodge"] = ActionOption(
+                id="dodge",
+                name="Dodge",
+                source="Base",
+                action_type=ActionType.DODGE,
+                category=ActionCategory.STANDARD,
+                targeting=TargetingType.SELF,
+                range=self.speed,
+                stat=None,
             )
 
         return actions
