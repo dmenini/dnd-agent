@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
-from agent.models.action import Action
+from agent.actions.base import Action
+from agent.models.action import DecisionResult
 from agent.models.character import Character, Party
 
 
@@ -8,13 +9,6 @@ class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
     input: Action | None = None
-
-
-class DiceRoll(BaseModel):
-    expression: str
-    rolls: list[int]
-    total: int
-    raw: int
 
 
 class Event(BaseModel):
@@ -30,6 +24,7 @@ class State(BaseModel):
     turn_index: int = 0
     characters: dict[str, Character] = {}
     parties: dict[str, Party] = {}
+    decision: DecisionResult | None = None
     action: Action | None = None
     verification_result: VerificationResult | None = None
     event_log: list[Event] = []

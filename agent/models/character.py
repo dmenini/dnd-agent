@@ -1,8 +1,11 @@
 from pydantic import BaseModel, Field, computed_field
 
-from agent.models.action import Action, ActionCategory, ActionOption
-from agent.models.enums import ActionType, ConditionType, SpellLevel, StatType, TargetingType, WeaponType
-from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangeWeapon, Spell
+from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction, SpellAction
+from agent.actions.base import Action, ActionEconomy
+from agent.actions.dash import DashAction
+from agent.actions.dodge import DodgeAction
+from agent.models.enums import ConditionType, SpellLevel, StatType, WeaponType
+from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon, Spell
 
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
@@ -71,48 +74,9 @@ class SpellSlots(BaseModel):
         self.slots = self.max_slots.copy()
 
 
-class ActionEconomy(BaseModel):
-    standard_actions: int = 1
-    max_standard_actions: int = 1
-    bonus_actions: int = 1
-    max_bonus_actions: int = 1
-    reaction_available: bool = True
-    movement_available: bool = True
-
-    def has_resources(self) -> bool:
-        # TODO: extend when movement and reactions are implemented
-        return self.standard_actions > 0 or self.bonus_actions > 0
-
-    def consume(self, category: ActionCategory) -> None:
-        """Consume the resources used by the action."""
-        if category == ActionCategory.STANDARD:
-            if self.standard_actions <= 0:
-                raise ValueError("No standard actions left")
-            self.standard_actions -= 1
-        elif category == ActionCategory.BONUS:
-            if self.bonus_actions <= 0:
-                raise ValueError("No bonus actions left")
-            self.bonus_actions -= 1
-        elif category == ActionCategory.REACTION:
-            if not self.reaction_available:
-                raise ValueError("Reaction already used")
-            self.reaction_available = False
-        elif category == ActionCategory.MOVEMENT:
-            if not self.movement_available:
-                raise ValueError("Already moved")
-            self.movement_available = False
-
-    def restore_all(self) -> None:
-        """Restore all resources. Must be done after each round."""
-        self.standard_actions = self.max_standard_actions
-        self.bonus_actions = self.max_bonus_actions
-        self.movement_available = True
-        self.reaction_available = True
-
-
 class Attributes(BaseModel):
     base_hp: int = 8
-    base_ac: int = 10
+    base_ac: int = 2
     base_speed: float = 6.0
     vision_range: float = 10.0
     base_crit_multiplier: int = 2
@@ -163,7 +127,7 @@ class Character(BaseModel):
 
     main_hand: MeleeWeapon | FinesseWeapon | None = None
     off_hand: MeleeWeapon | FinesseWeapon | None = None
-    ranged: RangeWeapon | None = None
+    ranged: RangedWeapon | None = None
     spells: list[Spell] = []
     special_abilities: list[Action] = []
 
@@ -232,76 +196,41 @@ class Character(BaseModel):
         self.conditions = [c for c in self.conditions if c.duration >= 0]
 
     def attack_modifier(self, action: Action) -> int:
-        weapon_bonus = action.magical_bonus or 0
         prof_bonus = self.proficiency_bonus if action.weapon_type in self.proficiencies else 0
         mod = self.stats.modifier(action.stat) if action.stat else 0
-        return mod + weapon_bonus + prof_bonus
+        return mod + prof_bonus
 
     def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
         return self.attributes.base_crit_multiplier
 
-    def available_actions(self) -> dict[str, ActionOption]:
-        actions: dict[str, ActionOption] = {}
-
-        # Standard + Bonus Actions available?
-        std_available = self.action_economy.standard_actions > 0
-        bonus_available = self.action_economy.bonus_actions > 0
+    def available_actions(self) -> dict[str, Action]:
+        all_actions: list[Action] = [
+            DashAction(range=self.speed),
+            DodgeAction(),
+        ]
 
         # Equipment-based actions
         equipment_map = [
-            (self.main_hand, ActionCategory.STANDARD),
-            (self.off_hand, ActionCategory.BONUS),
-            (self.ranged, ActionCategory.STANDARD),
+            (self.main_hand, MainHandAttackAction),
+            (self.off_hand, OffHandAttackAction),
+            (self.ranged, RangedAttackAction),
         ]
 
-        for eq, category in equipment_map:
-            if eq and (
-                (category == ActionCategory.STANDARD and std_available)
-                or (category == ActionCategory.BONUS and bonus_available)
-            ):
-                action = eq.to_action(category)
-                actions[action.id] = action
+        for eq, action_cls in equipment_map:
+            if eq:
+                action = action_cls.from_weapon(weapon=eq)
+                all_actions.append(action)
 
         # Spells (only if action available and slot available)
-        if std_available:
-            for spell in self.spells:
-                if self.spell_slots.has_slot(spell.level):
-                    action = spell.to_action()
-                    actions[action.id] = action
+        for spell in self.spells:
+            if self.spell_slots.has_slot(spell.level):
+                action = SpellAction.from_spell(spell)
+                all_actions.append(action)
 
         # Special abilities (can have their own categories)
-        for ability in self.special_abilities:
-            if (ability.category == ActionCategory.BONUS and bonus_available) or (
-                ability.category == ActionCategory.STANDARD and not std_available
-            ):
-                actions[ability.id] = ability
+        all_actions += self.special_abilities
 
-        # Dash (always if movement + standard action)
-        if std_available and self.action_economy.movement_available:
-            actions["dash"] = ActionOption(
-                id="dash",
-                name="Dash",
-                source="Base",
-                action_type=ActionType.DASH,
-                category=ActionCategory.STANDARD,
-                targeting=TargetingType.SELF,
-                range=self.speed,
-                stat=StatType.DEX,
-            )
-
-        if std_available:
-            actions["dodge"] = ActionOption(
-                id="dodge",
-                name="Dodge",
-                source="Base",
-                action_type=ActionType.DODGE,
-                category=ActionCategory.STANDARD,
-                targeting=TargetingType.SELF,
-                range=self.speed,
-                stat=None,
-            )
-
-        return actions
+        return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 
     def distance(self, target: tuple[int, int]) -> float:
         return abs(self.pos[0] - target[0]) + abs(self.pos[1] - target[1])  # Manhattan distance

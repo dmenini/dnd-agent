@@ -3,8 +3,8 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.models.action import ActionOption, DecisionResult
-from agent.models.state import Action, Event, State
+from agent.models.action import DecisionResult
+from agent.models.state import Event, State
 
 log = getLogger(__name__)
 
@@ -77,14 +77,8 @@ class DecisionNode:
             ]
         )
 
-        chosen_option: ActionOption = actions[result.action_id]
-        state.action = Action(
-            **chosen_option.model_dump(),
-            actor_id=actor.id,
-            target_ids=result.target_ids,
-            target_position=result.target_position,
-            description=result.description,
-        )
+        state.action = actions[result.action_id]
+        state.decision = result
 
         # Reset verification
         state.verification_result = None

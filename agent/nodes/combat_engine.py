@@ -1,9 +1,11 @@
 from logging import getLogger
 
+from agent.actions.attack import (
+    COMBAT_ACTION_TYPES,
+)
 from agent.mechanics.dice_roller import DiceRoller
-from agent.models.action import COMBAT_ACTION_TYPES, ActionType
 from agent.models.character import Character
-from agent.models.enums import ConditionType, WeaponType
+from agent.models.enums import ActionType, ConditionType
 from agent.models.state import Action, State
 
 ATTACK_ROLL_EXPR = "1d20"
@@ -18,25 +20,26 @@ class CombatEngineNode:
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
+        decision = state.decision
         action = state.action
         actor = state.current_actor
 
         if not actor.is_alive:
             return state
 
-        if not action:
-            msg = f"No action for {actor.name}"
+        if not action or not decision:
+            msg = "State is missing action and decision"
             raise ValueError(msg)
 
-        event = self._start_event_description(actor, action)
+        event = f"{actor.name} performs {action.name}: {decision.description}"
 
         # Handle the main combat actions
         if action.action_type in COMBAT_ACTION_TYPES:
-            if not action.target_ids:
+            if not decision.target_ids:
                 msg = f"No target(s) for action {action.id}"
                 raise ValueError(msg)
 
-            targets = [state.characters[tid] for tid in action.target_ids if tid in state.characters]
+            targets = [state.characters[tid] for tid in decision.target_ids if tid in state.characters]
             if not targets:
                 msg = f"Targets not found for action {action.id}"
                 raise ValueError(msg)
@@ -50,30 +53,22 @@ class CombatEngineNode:
                 )
 
         elif action.action_type == ActionType.DASH:
-            event = self._resolve_movement_action(actor=actor, action=action, event=event)
+            event = self._resolve_movement_action(
+                actor=actor, action=action, target=decision.target_position, event=event
+            )
 
         elif action.action_type == ActionType.DODGE:
             event = self._resolve_dodge_action(actor=actor, event=event)
 
-        # Handle non-combat actions (move, wait, roleplay)
-        elif action.action_type == ActionType.UTILITY:
-            event += " performs a utility action."
-
         # Finalize turn
         actor.action_economy.consume(action.category)
 
-        if action.weapon_type == WeaponType.SPELL:
+        if action.action_type == ActionType.SPELL:
             spell = next(spell for spell in actor.spells if action.source == spell.name)
             actor.spell_slots.consume(spell.level)
 
         state.append_log(event)
         return state
-
-    def _start_event_description(self, actor: Character, action: Action) -> str:
-        event = f"{actor.name} performs {action.name}"
-        if action.description:
-            event += f" ({action.description})."
-        return event
 
     def _resolve_combat_action(
         self,
@@ -139,13 +134,13 @@ class CombatEngineNode:
 
         return event
 
-    def _resolve_movement_action(self, actor: Character, action: Action, event: str) -> str:
-        if not action.target_position:
+    def _resolve_movement_action(self, actor: Character, action: Action, target: tuple[int, int], event: str) -> str:
+        if not target:
             msg = "Movement requires a destination position"
             raise ValueError(msg)
 
-        actor.move(action.target_position, dash=action.action_type == ActionType.DASH)
-        event += f" {actor.name} moves to position {action.target_position}."
+        actor.move(target, dash=action.action_type == ActionType.DASH)
+        event += f" {actor.name} moves to position {target}."
 
         return event
 

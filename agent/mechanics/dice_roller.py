@@ -1,9 +1,16 @@
 import random
 import re
 
-from agent.models.state import DiceRoll
+from pydantic import BaseModel
 
 dice_pattern = re.compile(r"(\d*)d(\d+)([+-]\d+)?")
+
+
+class DiceRoll(BaseModel):
+    expression: str
+    rolls: list[int]
+    total: int
+    raw: int
 
 
 class DiceRoller:

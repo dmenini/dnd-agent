@@ -2,8 +2,9 @@
 
 from logging import getLogger
 
-from agent.models.action import COMBAT_ACTION_TYPES
-from agent.models.enums import ActionType, TargetingType
+from agent.actions.attack import COMBAT_ACTION_TYPES
+from agent.actions.dash import DashAction
+from agent.models.enums import TargetingType
 from agent.models.state import State, VerificationResult
 
 log = getLogger(__name__)
@@ -16,10 +17,7 @@ class RulesVerifierNode:
         """
         self.fail_fast = fail_fast
         self.checks = [
-            self.check_action_exists,
-            self.check_actor_exists,
             self.check_actor_alive,
-            self.check_turn_validity,
             self.check_targets_exist,
             self.check_targets_alive,
             self.check_targets_valid,
@@ -37,6 +35,10 @@ class RulesVerifierNode:
             state.verification_result = VerificationResult(valid=valid)
             return state
 
+        if not state.action or not state.decision:
+            msg = "State is missing action and decision"
+            raise ValueError(msg)
+
         reasons = []
         for check in self.checks:
             ok, reason = check(state)
@@ -53,43 +55,28 @@ class RulesVerifierNode:
 
         return state
 
-    def check_action_exists(self, state: State) -> tuple[bool, str | None]:
-        if not state.action:
-            return False, "No action provided"
-        return True, None
-
-    def check_actor_exists(self, state: State) -> tuple[bool, str | None]:
-        action = state.action
-        if action.actor_id not in state.characters:
-            return False, f"Actor {action.actor_id} not found"
-        return True, None
-
     def check_actor_alive(self, state: State) -> tuple[bool, str | None]:
-        actor = state.characters.get(state.action.actor_id)
+        actor = state.current_actor
         if actor and not actor.is_alive:
             return False, f"{actor.name} is incapacitated or dead"
         return True, None
 
-    def check_turn_validity(self, state: State) -> tuple[bool, str | None]:
-        actor = state.characters.get(state.action.actor_id)
-        if actor and actor.id != state.current_actor.id:
-            return False, "It's not this character's turn"
-        return True, None
-
     def check_targets_exist(self, state: State) -> tuple[bool, str | None]:
         action = state.action
+        decision = state.decision
         if action.action_type in COMBAT_ACTION_TYPES:
-            if not action.target_ids:
+            if not decision.target_ids:
                 return False, "Missing targets for combat action"
-            for target_id in action.target_ids:
+            for target_id in decision.target_ids:
                 if target_id not in state.characters:
                     return False, f"Target {target_id} not found"
         return True, None
 
     def check_targets_alive(self, state: State) -> tuple[bool, str | None]:
         action = state.action
+        decision = state.decision
         if action.action_type in COMBAT_ACTION_TYPES:
-            for target_id in action.target_ids:
+            for target_id in decision.target_ids:
                 target = state.characters[target_id]
                 if not target.is_alive:
                     return False, f"Target {target_id} is already down"
@@ -97,19 +84,21 @@ class RulesVerifierNode:
 
     def check_targets_valid(self, state: State) -> tuple[bool, str | None]:
         action = state.action
+        decision = state.decision
         if (
             action.action_type in COMBAT_ACTION_TYPES
             and action.targeting == TargetingType.SINGLE
-            and len(action.target_ids) > 1
+            and len(decision.target_ids) > 1
         ):
             return False, "Cannot have multiple targets for a single target action"
         return True, None
 
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
         action = state.action
-        if action.target_ids and action.action_type in COMBAT_ACTION_TYPES:
+        decision = state.decision
+        if decision.target_ids and action.action_type in COMBAT_ACTION_TYPES:
             actor = state.current_actor
-            for target_id in action.target_ids:
+            for target_id in decision.target_ids:
                 target = state.characters[target_id]
                 if actor.party.id == target.party.id:
                     return False, f"{actor.name} cannot attack ally {target.name}"
@@ -118,8 +107,9 @@ class RulesVerifierNode:
     def check_range(self, state: State) -> tuple[bool, str | None]:
         action = state.action
         actor = state.current_actor
+        decision = state.decision
 
-        for target_id in action.target_ids:
+        for target_id in decision.target_ids:
             target = state.characters[target_id]
             dist = actor.distance(target.pos)
             if dist > action.range:
@@ -130,14 +120,15 @@ class RulesVerifierNode:
     def check_movement(self, state: State) -> tuple[bool, str | None]:
         action = state.action
         actor = state.current_actor
+        decision = state.decision
 
-        if action.action_type == ActionType.DASH:
-            if not action.target_position:
+        if isinstance(action, DashAction):
+            if not decision.target_position:
                 return False, f"No target position specified for action {action.action_type}"
 
-            dist = actor.distance(action.target_position)
+            dist = actor.distance(decision.target_position)
             max_dist = actor.attributes.current_movement * 2
             if dist > max_dist:
-                return False, f"Position {action.target_position} is out of range ({dist:.1f} > {max_dist})"
+                return False, f"Position {decision.target_position} is out of range ({dist:.1f} > {max_dist})"
 
         return True, None

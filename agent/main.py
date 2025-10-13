@@ -6,9 +6,9 @@ import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
 from agent.graph import build_graph
-from agent.models.character import MeleeWeapon, Party, RangeWeapon, Spell, Stats
+from agent.models.character import MeleeWeapon, Party, RangedWeapon, Spell, Stats
 from agent.models.config import Config
-from agent.models.enums import DamageType, WeaponType
+from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.state import Character, State
 
 MAX_ITER = 100
@@ -29,12 +29,24 @@ def main() -> None:
     party_enemies = Party(id="p2", name="Goblins", is_player_party=False)
 
     melee = MeleeWeapon(
-        name="Sword", damage_dice="2d6", damage_type=DamageType.SLASHING, weapon_type=WeaponType.LONGSWORD, range=2
+        name="Sword",
+        damage_dice="2d6",
+        damage_type=DamageType.SLASHING,
+        weapon_type=WeaponType.LONGSWORD,
+        range=2,
+        targeting=TargetingType.SINGLE,
     )
-    range_ = RangeWeapon(
-        name="Bow", damage_dice="1d6", damage_type=DamageType.PIERCING, weapon_type=WeaponType.LONGBOW, range=10
+    range_ = RangedWeapon(
+        name="Bow",
+        damage_dice="1d6",
+        damage_type=DamageType.PIERCING,
+        weapon_type=WeaponType.LONGBOW,
+        range=10,
+        targeting=TargetingType.SINGLE,
     )
-    spell = Spell(name="Fire Ball", damage_dice="1d6", damage_type=DamageType.MAGIC, range=5)
+    spell = Spell(
+        name="Fire Ball", damage_dice="1d6", damage_type=DamageType.MAGIC, range=5, targeting=TargetingType.SINGLE
+    )
 
     hero = Character(
         id="pc_alfred",
@@ -54,7 +66,12 @@ def main() -> None:
         party=party_enemies,
         stats=Stats(),
         main_hand=MeleeWeapon(
-            name="Fist", damage_dice="1d3", damage_type=DamageType.BLUDGEONING, weapon_type=WeaponType.OTHER, range=1
+            name="Fist",
+            damage_dice="1d3",
+            damage_type=DamageType.BLUDGEONING,
+            weapon_type=WeaponType.OTHER,
+            range=1,
+            targeting=TargetingType.SINGLE,
         ),
         ranged=range_,
     )
@@ -66,7 +83,12 @@ def main() -> None:
         party=party_enemies,
         stats=Stats(),
         main_hand=MeleeWeapon(
-            name="Dagger", damage_dice="1d5", damage_type=DamageType.SLASHING, weapon_type=WeaponType.DAGGER, range=1
+            name="Dagger",
+            damage_dice="1d5",
+            damage_type=DamageType.SLASHING,
+            weapon_type=WeaponType.DAGGER,
+            range=1,
+            targeting=TargetingType.SINGLE,
         ),
         spells=[spell],
     )
