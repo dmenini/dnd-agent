@@ -4,6 +4,7 @@ from logging import getLogger
 
 from agent.actions.attack import AttackAction
 from agent.actions.dash import DashAction
+from agent.actions.move import MovementAction
 from agent.models.enums import TargetingType
 from agent.models.state import State, VerificationResult
 
@@ -122,17 +123,21 @@ class RulesVerifierNode:
         actor = state.current_actor
         decision = state.decision
 
-        if isinstance(action, DashAction):
-            if not decision.target_position:
-                return False, f"No target position specified for action {action.action_type}"
+        if not isinstance(action, (DashAction, MovementAction)):
+            return True, None
 
-            dist = actor.distance(decision.target_position)
-            max_dist = actor.attributes.current_movement * 2
-            if dist > max_dist:
-                return False, f"Position {decision.target_position} is out of range ({dist:.1f} > {max_dist})"
+        mult = 2 if isinstance(action, DashAction) else 1
 
-            for char in state.characters:
-                if char.pos == decision.target_position:
-                    return False, f"Position {decision.target_position} is already taken by character {char.name}"
+        if not decision.target_position:
+            return False, f"No target position specified for action {action.action_type}"
+
+        dist = actor.distance(decision.target_position)
+        max_dist = actor.attributes.current_movement * mult
+        if dist > max_dist:
+            return False, f"Position {decision.target_position} is out of range ({dist:.1f} > {max_dist})"
+
+        for char in state.characters:
+            if char.pos == decision.target_position:
+                return False, f"Position {decision.target_position} is already taken by character {char.name}"
 
         return True, None

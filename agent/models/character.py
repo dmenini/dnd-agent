@@ -4,6 +4,7 @@ from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, Rang
 from agent.actions.base import Action, ActionEconomy
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
+from agent.actions.move import MovementAction
 from agent.models.enums import ConditionType, SpellLevel, StatType, WeaponType
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon, Spell
 
@@ -199,10 +200,12 @@ class Character(BaseModel):
         has_bonus = self.off_hand is not None and (self.action_economy.bonus_actions > 0)
         main_hand = self.main_hand or self.ranged or self.spells
         has_main = main_hand is not None and (self.action_economy.standard_actions > 0)
-        return has_main or has_bonus
+        has_movement = self.action_economy.movement_available
+        return has_main or has_bonus or has_movement
 
     def available_actions(self) -> dict[str, Action]:
         all_actions: list[Action] = [
+            MovementAction(range=self.speed),
             DashAction(range=self.speed),
             DodgeAction(),
         ]

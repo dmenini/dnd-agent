@@ -64,6 +64,7 @@ class ActionType(str, Enum):
     UTILITY = "utility"
     SPECIAL = "special"
     DASH = "dash"
+    MOVE = "move"
     DODGE = "DODGE"
 
 

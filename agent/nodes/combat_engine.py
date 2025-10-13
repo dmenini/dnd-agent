@@ -5,6 +5,7 @@ from agent.actions.attack import (
 )
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
+from agent.actions.move import MovementAction
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
 
@@ -43,7 +44,7 @@ class CombatEngineNode:
             for target in targets:
                 event += action.execute(actor=actor, target=target)
 
-        elif isinstance(state.action, DashAction):
+        elif isinstance(state.action, (DashAction, MovementAction)):
             event += action.execute(actor=actor, target=decision.target_position)
 
         elif isinstance(state.action, DodgeAction):

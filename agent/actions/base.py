@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -17,25 +17,6 @@ class ActionEconomy(BaseModel):
     max_bonus_actions: int = 1
     reaction_available: bool = True
     movement_available: bool = True
-
-    def consume(self, category: ActionCategory) -> None:
-        """Consume the resources used by the action."""
-        if category == ActionCategory.STANDARD:
-            if self.standard_actions <= 0:
-                raise ValueError("No standard actions left")
-            self.standard_actions -= 1
-        elif category == ActionCategory.BONUS:
-            if self.bonus_actions <= 0:
-                raise ValueError("No bonus actions left")
-            self.bonus_actions -= 1
-        elif category == ActionCategory.REACTION:
-            if not self.reaction_available:
-                raise ValueError("Reaction already used")
-            self.reaction_available = False
-        elif category == ActionCategory.MOVEMENT:
-            if not self.movement_available:
-                raise ValueError("Already moved")
-            self.movement_available = False
 
     def restore_all(self) -> None:
         """Restore all resources. Must be done after each round."""
@@ -61,4 +42,7 @@ class Action(BaseModel):
         raise NotImplementedError
 
     def finalize(self, actor: Character) -> None:
-        actor.action_economy.consume(self.category)
+        """Consume resources (action point by default)."""
+        if actor.action_economy.standard_actions <= 0:
+            raise ValueError("No standard actions left")
+        actor.action_economy.standard_actions -= 1

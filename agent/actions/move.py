@@ -9,29 +9,29 @@ if TYPE_CHECKING:
     from agent.models.character import Character
 
 
-class DashAction(Action):
+class MovementAction(Action):
     """Option shown to the Agent"""
 
-    id: str = "dash"
-    name: str = "Dash"
-    description: str = "Dash on the map to a new position within double the range."
-    action_type: ActionType = ActionType.DASH
-    category: ActionCategory = ActionCategory.STANDARD
+    id: str = "move"
+    name: str = "Move"
+    description: str = "Move on the map to a new position within the range."
+    action_type: ActionType = ActionType.MOVE
+    category: ActionCategory = ActionCategory.MOVEMENT
 
     targeting: TargetingType = TargetingType.SELF
     range: float
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.standard_actions > 0 and action_economy.movement_available
+        return action_economy.movement_available
 
     def execute(self, actor: Character, target: tuple[int, int]) -> str:
-        actor.move(target, dash=True)
+        actor.move(target, dash=False)
         return f" {actor.name} moves to position {target}."
 
     def finalize(self, actor: Character) -> None:
-        """Consume standard action point and movement."""
-        super().finalize(actor)
-
-        if not self.movement_available:
+        """Consume movement."""
+        if not actor.action_economy.movement_available:
             raise ValueError("Already moved")
+        # The AI doesn't work well if we keep the movement as a float,
+        # so after one movement action prevents it from using it again in the same turn
         actor.action_economy.movement_available = False

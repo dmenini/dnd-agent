@@ -133,6 +133,12 @@ class OffHandAttackAction(AttackAction):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.bonus_actions > 0
 
+    def finalize(self, actor: Character) -> None:
+        """Consume bonus point."""
+        if actor.action_economy.bonus_actions <= 0:
+            raise ValueError("No bonus actions left")
+        actor.action_economy.bonus_actions -= 1
+
 
 class RangedAttackAction(AttackAction):
     id: str = "ranged_attack"
@@ -181,5 +187,6 @@ class SpellAction(AttackAction):
         )
 
     def finalize(self, actor: Character) -> None:
+        """Consume action point and spell slot."""
         super().finalize(actor)
         actor.spell_slots.consume(self.level)
