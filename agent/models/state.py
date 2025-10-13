@@ -50,20 +50,21 @@ class State(BaseModel):
             members = [m for m in members if m.is_alive]
         return members
 
-    def flush_logs(self) -> None:
-        green = "\033[32m{message}\033[0m"
-        for event in self.event_log:
-            if not event.hide:
-                print(green.format(message=event.message))
-                event.hide = True
-
     def append_log(self, message: str) -> None:
         """Append a log event associated to a certain actor. It will be part of the agent history."""
-        self.event_log.append(Event(message=message, turn=self.round, actor_id=self.current_actor.id))
+        green = "\033[32m{message}\033[0m"
+        message = f"Turn {self.round}.{self.turn_index} -> {message}"
+        event = Event(message=message, turn=self.round, actor_id=self.current_actor.id)
+        self.event_log.append(event)
+        print(green.format(message=event.message))
 
     def append_system_log(self, message: str) -> None:
         """Append a system log event. It will be excluded from the agent history"""
-        self.event_log.append(Event(message=message, turn=self.round, actor_id=None))
+        yellow = "\033[33m{message}\033[0m"
+        message = f"Turn {self.round}.{self.turn_index} -> {message}"
+        event = Event(message=message, turn=self.round, actor_id=None)
+        self.event_log.append(event)
+        print(yellow.format(message=event.message))
 
 
 class Context(BaseModel):

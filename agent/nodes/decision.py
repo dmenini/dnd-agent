@@ -17,9 +17,6 @@ class DecisionNode:
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        if state.turn_index == 0:
-            state.append_log(f"\n--- Round {state.round} ---")
-
         actor = state.current_actor
 
         if not actor.is_alive:

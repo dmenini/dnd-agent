@@ -37,18 +37,20 @@ class RulesVerifierNode:
             state.verification_result = VerificationResult(valid=valid)
             return state
 
-        reasons = ""
+        reasons = []
         for check in self.checks:
             ok, reason = check(state)
             if not ok:
                 valid = False
                 if reason:
-                    reasons += f" - {reason}\n"
+                    reasons.append(reason)
                 if self.fail_fast:
                     break
 
-        state.verification_result = VerificationResult(valid=valid, reason=reasons, input=state.action)
-        state.append_system_log(f"Validation error: {state.verification_result.reason}")
+        state.verification_result = VerificationResult(valid=valid, reason="; ".join(reasons), input=state.action)
+        if not valid:
+            state.append_system_log(f"Validation error: {state.verification_result.reason}")
+
         return state
 
     def check_action_exists(self, state: State) -> tuple[bool, str | None]:

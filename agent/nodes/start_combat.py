@@ -28,6 +28,4 @@ class StartCombatNode:
             "Initiative order: " + " → ".join(state.characters[cid].name for cid in state.turn_order)
         )
 
-        state.flush_logs()
-
         return state
