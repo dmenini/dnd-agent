@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
-from agent.models.enums import ActionCategory, ActionType
+from agent.models.enums import ActionCategory, ActionType  # noqa: TC001
 
 if TYPE_CHECKING:
     from agent.models.character import Character

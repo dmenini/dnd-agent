@@ -7,6 +7,7 @@ from agent.models.enums import ActionCategory, ActionType, TargetingType
 
 if TYPE_CHECKING:
     from agent.models.character import Character
+    from agent.models.position import Position
 
 
 class DashAction(Action):
@@ -24,7 +25,7 @@ class DashAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.standard_actions > 0 and action_economy.movement_available
 
-    def execute(self, actor: Character, target: tuple[int, int]) -> str:
+    def execute(self, actor: Character, target: Position) -> str:
         actor.move(target, dash=True)
         return f" {actor.name} moves to position {target}."
 
@@ -32,6 +33,6 @@ class DashAction(Action):
         """Consume standard action point and movement."""
         super().finalize(actor)
 
-        if not self.movement_available:
+        if not actor.action_economy.movement_available:
             raise ValueError("Already moved")
         actor.action_economy.movement_available = False

@@ -1,7 +1,15 @@
 from pydantic import BaseModel, Field
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 from agent.actions.base import Action
 from agent.models.character import Character, Party
+from agent.models.position import Position
+
+CELL_WIDTH = 2
+
+console = Console()
 
 
 class VerificationResult(BaseModel):
@@ -19,7 +27,7 @@ class DecisionResult(BaseModel):
             "Multiple targets can be attacked only with area actions."
         ),
     )
-    target_position: tuple[int, int] | None = Field(
+    target_position: Position | None = Field(
         default=None,
         description="Target position in case of movement actions. It must be within range.",
     )
@@ -35,6 +43,8 @@ class Event(BaseModel):
 
 class State(BaseModel):
     round: int = 0
+    map_height: int = 10
+    map_width: int = 10
     turn_order: list[str] = []
     turn_index: int = 0
     characters: dict[str, Character] = {}
@@ -62,19 +72,35 @@ class State(BaseModel):
 
     def append_log(self, message: str) -> None:
         """Append a log event associated to a certain actor. It will be part of the agent history."""
-        green = "\033[32m{message}\033[0m"
-        message = f"Turn {self.round}.{self.turn_index} -> {message}"
-        event = Event(message=message, turn=self.round, actor_id=self.current_actor.id)
+        actor = self.current_actor
+        message = f"Turn {self.round + 1}.{self.turn_index + 1} {actor.icon} -> {message}"
+        event = Event(message=message, turn=self.round, actor_id=actor.id)
         self.event_log.append(event)
-        print(green.format(message=event.message))
+
+        text = Text(event.message, style="bold green")
+        console.print(text)
 
     def append_system_log(self, message: str) -> None:
         """Append a system log event. It will be excluded from the agent history"""
-        yellow = "\033[33m{message}\033[0m"
-        message = f"Turn {self.round}.{self.turn_index} -> {message}"
+        message = f"Turn {self.round + 1}.{self.turn_index + 1} -> {message}"
         event = Event(message=message, turn=self.round, actor_id=None)
         self.event_log.append(event)
-        print(yellow.format(message=event.message))
+
+        text = Text(event.message, style="bold yellow")
+        console.print(text)
+
+    def draw_map(self) -> None:
+        # The chosen char aligns well with emoticons
+        grid = [["· " for _ in range(self.map_width)] for _ in range(self.map_height)]
+
+        for char in self.characters.values():
+            grid[char.pos.y][char.pos.x] = char.icon
+
+        table = Table(box=None, show_header=True, show_footer=True)
+        for row in grid:
+            table.add_row(" ".join(row))
+
+        console.print(table)
 
 
 class Context(BaseModel):

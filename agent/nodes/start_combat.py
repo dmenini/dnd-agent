@@ -14,6 +14,7 @@ class StartCombatNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         state.append_system_log("Starting combat!")
+        state.draw_map()
 
         rolls = []
         for cid, char in state.characters.items():

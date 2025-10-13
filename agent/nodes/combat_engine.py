@@ -33,6 +33,7 @@ class CombatEngineNode:
             raise ValueError(msg)
 
         event = f"{actor.name} performs {action.name}: {decision.description}"
+        event = event if event.endswith(".") else event + "."
 
         # Handle the main combat actions
         if isinstance(state.action, AttackAction):

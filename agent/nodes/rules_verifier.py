@@ -6,6 +6,7 @@ from agent.actions.attack import AttackAction
 from agent.actions.dash import DashAction
 from agent.actions.move import MovementAction
 from agent.models.enums import TargetingType
+from agent.models.position import Position
 from agent.models.state import State, VerificationResult
 
 log = getLogger(__name__)
@@ -24,6 +25,7 @@ class RulesVerifierNode:
             self.check_targets_valid,
             self.check_friendly_fire,
             self.check_range,
+            self.check_movement,
         ]
 
     def __call__(self, state: State) -> State:
@@ -127,17 +129,27 @@ class RulesVerifierNode:
             return True, None
 
         mult = 2 if isinstance(action, DashAction) else 1
+        pos = decision.target_position
 
-        if not decision.target_position:
-            return False, f"No target position specified for action {action.action_type}"
+        if not pos:
+            return False, f"No target position specified for action {action.id}"
 
-        dist = actor.distance(decision.target_position)
+        if not (Position(x=0, y=0) <= pos < Position(x=state.map_width, y=state.map_height)):
+            return (
+                False,
+                (
+                    f"Target position ({pos.x}, {pos.y}) is out of map bounds "
+                    f"(0-{state.map_width - 1}, 0-{state.map_height - 1})"
+                ),
+            )
+
+        dist = actor.distance(pos)
         max_dist = actor.attributes.current_movement * mult
         if dist > max_dist:
-            return False, f"Position {decision.target_position} is out of range ({dist:.1f} > {max_dist})"
+            return False, f"Position {pos} is out of range ({dist:.1f} > {max_dist})"
 
-        for char in state.characters:
-            if char.pos == decision.target_position:
-                return False, f"Position {decision.target_position} is already taken by character {char.name}"
+        for char in state.characters.values():
+            if char.pos == pos:
+                return False, f"Position {pos} is already taken by character {char.name}"
 
         return True, None

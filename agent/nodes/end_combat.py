@@ -28,6 +28,8 @@ class EndCombatNode:
             state.round += 1
             state.turn_index = 0
 
+            state.draw_map()
+
         self._check_victory_conditions(state)
 
         return state

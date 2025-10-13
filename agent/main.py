@@ -9,12 +9,13 @@ from agent.graph import build_graph
 from agent.models.character import MeleeWeapon, Party, RangedWeapon, Spell, Stats
 from agent.models.config import Config
 from agent.models.enums import DamageType, TargetingType, WeaponType
+from agent.models.position import Position
 from agent.models.state import Character, State
 
 MAX_ITER = 100
 
 log = getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 getLogger("botocore").setLevel(logging.INFO)
 
@@ -51,7 +52,8 @@ def main() -> None:
     hero = Character(
         id="pc_alfred",
         name="Alfred",
-        pos=(2, 2),
+        icon="⚔️",
+        pos=Position(x=2, y=2),
         is_player=True,
         party=party_players,
         stats=Stats(),
@@ -62,7 +64,8 @@ def main() -> None:
     orc = Character(
         id="orc_1",
         name="Orc Grunt",
-        pos=(4, 2),
+        icon="👹",
+        pos=Position(x=4, y=2),
         party=party_enemies,
         stats=Stats(),
         main_hand=MeleeWeapon(
@@ -79,7 +82,8 @@ def main() -> None:
     goblin = Character(
         id="goblin_1",
         name="Goblin Dramer",
-        pos=(8, 4),
+        icon="🧌",
+        pos=Position(x=8, y=4),
         party=party_enemies,
         stats=Stats(),
         main_hand=MeleeWeapon(

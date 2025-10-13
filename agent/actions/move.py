@@ -7,13 +7,14 @@ from agent.models.enums import ActionCategory, ActionType, TargetingType
 
 if TYPE_CHECKING:
     from agent.models.character import Character
+    from agent.models.position import Position
 
 
 class MovementAction(Action):
     """Option shown to the Agent"""
 
     id: str = "move"
-    name: str = "Move"
+    name: str = "Movement"
     description: str = "Move on the map to a new position within the range."
     action_type: ActionType = ActionType.MOVE
     category: ActionCategory = ActionCategory.MOVEMENT
@@ -24,7 +25,7 @@ class MovementAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.movement_available
 
-    def execute(self, actor: Character, target: tuple[int, int]) -> str:
+    def execute(self, actor: Character, target: Position) -> str:
         actor.move(target, dash=False)
         return f" {actor.name} moves to position {target}."
 

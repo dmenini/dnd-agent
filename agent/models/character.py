@@ -6,6 +6,7 @@ from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.models.enums import ConditionType, SpellLevel, StatType, WeaponType
+from agent.models.position import Position
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon, Spell
 
 DEFAULT_STAT = 10
@@ -116,7 +117,8 @@ class StatusEffect(BaseModel):
 class Character(BaseModel):
     id: str
     name: str
-    pos: tuple[int, int]
+    icon: str
+    pos: Position
     party: Party
     is_player: bool = False
     level: int = 1
@@ -156,7 +158,7 @@ class Character(BaseModel):
     def speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats)
 
-    def move(self, destination: tuple[int, int], *, dash: bool = False) -> None:
+    def move(self, destination: Position, *, dash: bool = False) -> None:
         self.pos = destination
         distance_cost = self.distance(destination)
         if dash:
@@ -233,5 +235,5 @@ class Character(BaseModel):
 
         return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 
-    def distance(self, target: tuple[int, int]) -> float:
-        return abs(self.pos[0] - target[0]) + abs(self.pos[1] - target[1])  # Manhattan distance
+    def distance(self, target: Position) -> float:
+        return self.pos.manhattan_distance(target)
