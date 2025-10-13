@@ -3,8 +3,7 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.models.action import DecisionResult
-from agent.models.state import Event, State
+from agent.models.state import DecisionResult, Event, State
 
 log = getLogger(__name__)
 

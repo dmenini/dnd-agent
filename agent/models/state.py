@@ -1,7 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
-from agent.models.action import DecisionResult
 from agent.models.character import Character, Party
 
 
@@ -9,6 +8,22 @@ class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
     input: Action | None = None
+
+
+class DecisionResult(BaseModel):
+    action_id: str = Field(description="ID of the action to take")
+    target_ids: list[str] = Field(
+        default=[],
+        description=(
+            "IDs of the targets to attack for attack actions. Targets must be within range. "
+            "Multiple targets can be attacked only with area actions."
+        ),
+    )
+    target_position: tuple[int, int] | None = Field(
+        default=None,
+        description="Target position in case of movement actions. It must be within range.",
+    )
+    description: str = Field(description="Action description for narrative purpose.")
 
 
 class Event(BaseModel):
