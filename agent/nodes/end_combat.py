@@ -13,33 +13,33 @@ class EndCombatNode:
         actor = state.current_actor
 
         # Advance to next character if resources exhausted
-        if not actor.available_actions():
+        if not actor.is_alive or not actor.has_resources():
             state.turn_index += 1
 
         # End of round → wrap turn
-        if state.turn_index >= len(state.turn_order):
+        if state.turn_index >= len(state.characters):
             # Reset resources
-            for cid in state.turn_order:
-                state.characters[cid].attributes.current_movement = actor.speed
-                state.characters[cid].action_economy.restore_all()
-                state.characters[cid].elapse_conditions()
+            for char in state.alive_characters.values():
+                char.attributes.current_movement = actor.speed
+                char.action_economy.restore_all()
+                char.elapse_conditions()
 
             state.round += 1
             state.turn_index = 0
 
+        self._check_victory_conditions(state)
+
+        return state
+
+    def _check_victory_conditions(self, state: State) -> None:
         # Check if any party has been wiped out
         defeated_parties = [p for p in state.parties.values() if not state.get_party_members(p.id, alive_only=True)]
-
-        # Remove defeated parties from active play
+        defeated_parties_ids = [p.id for p in defeated_parties]
         for defeated in defeated_parties:
             state.append_system_log(f"Party '{defeated.name}' has been defeated!")
 
         # Determine if only one party remains
-        alive_parties = [
-            p
-            for p in state.parties.values()
-            if p.id not in [d.id for d in defeated_parties] and state.get_party_members(p.id, alive_only=True)
-        ]
+        alive_parties = [p for p in state.parties.values() if p.id not in defeated_parties_ids]
 
         # Check victory conditions
         if len(alive_parties) <= 1:
@@ -54,5 +54,3 @@ class EndCombatNode:
                     state.append_system_log(f"🎉 The players are victorious! Party '{winner.name}' stands triumphant!")
                 else:
                     state.append_system_log(f"💀 The enemies prevail... Party '{winner.name}' wins the battle.")
-
-        return state

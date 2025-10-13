@@ -11,10 +11,6 @@ class ActionEconomy(BaseModel):
     reaction_available: bool = True
     movement_available: bool = True
 
-    def has_resources(self) -> bool:
-        # TODO: extend when movement and reactions are implemented
-        return self.standard_actions > 0 or self.bonus_actions > 0
-
     def consume(self, category: ActionCategory) -> None:
         """Consume the resources used by the action."""
         if category == ActionCategory.STANDARD:

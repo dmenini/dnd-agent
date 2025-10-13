@@ -203,6 +203,11 @@ class Character(BaseModel):
     def crit_multiplier(self, action: Action) -> int:  # noqa: ARG002
         return self.attributes.base_crit_multiplier
 
+    def has_resources(self) -> bool:
+        has_bonus = self.off_hand and (self.action_economy.bonus_actions > 0)
+        has_main = (self.main_hand or self.ranged or self.spells) and (self.action_economy.standard_actions > 0)
+        return has_main or has_bonus
+
     def available_actions(self) -> dict[str, Action]:
         all_actions: list[Action] = [
             DashAction(range=self.speed),
