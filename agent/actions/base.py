@@ -21,7 +21,6 @@ class ActionType(str, Enum):
     OFF_HAND_ATTACK = "off_attack"
     RANGED_ATTACK = "ranged_attack"
     SPELL = "spell"
-    AOE_SPELL = "aoe_spell"
     UTILITY = "utility"
     SPECIAL = "special"
     DASH = "dash"

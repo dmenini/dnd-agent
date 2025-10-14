@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import random
 from enum import Enum
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+from agent.models.enums import StatType
 
 if TYPE_CHECKING:
     from agent.models.character import Character
@@ -22,6 +25,38 @@ class EffectType(str, Enum):
 class StatusEffect(BaseModel):
     type: EffectType
     duration: int
+    chance: float = 1.0
+    save_stat: StatType = StatType.CON
+    save_dc: int = 12  # Difficulty class
+
+    def try_apply(self, target: Character) -> bool:
+        event = ""
+        # Check immunity
+        if target.is_immune_to(self.type):
+            event += f" {target.name} is immune to {self.type} effect."
+            return False
+
+        # Random chance
+        if self.chance < 1.0 and random.random() > self.chance:  # noqa: S311
+            event += f" The {self.type} effect fails to take hold."
+            return False
+
+        # Saving throw
+        if self.save_dc:
+            roll = target.roll_save(save_stat=self.save_stat)
+            if roll >= self.save_dc:
+                event += (
+                    f" {target.name} resists {self.type} with a "
+                    f"{self.save_stat.value} save ({roll} vs DC {self.save_dc})!"
+                )
+                # Negate effect
+                return False
+
+        # Apply the effect
+        target.apply_status(self)
+
+        # TODO: return event
+        return True
 
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
@@ -37,7 +72,13 @@ class StatusEffect(BaseModel):
         return damage
 
     def on_attack_roll(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
-        """Modify attack toll advantage/disadvantage.
+        """Modify attack roll advantage/disadvantage.
+        Return False to signal disadvantage, True for advantage, or None for neutral.
+        """
+        return None
+
+    def on_save_roll(self) -> bool | None:
+        """Modify save roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
         return None

@@ -5,17 +5,21 @@ from pathlib import Path
 import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
+from agent.effects.hasted import Hasted
+from agent.effects.poisoned import Poisoned
+from agent.effects.stunned import Stunned
 from agent.graph import build_graph
-from agent.models.character import MeleeWeapon, Party, RangedWeapon, Spell, Stats
+from agent.models.character import MeleeWeapon, Party, RangedWeapon, Stats
 from agent.models.config import Config
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position
 from agent.models.state import Character, State
+from agent.models.weapons import AttackSpell, SupportSpell
 
 MAX_ITER = 100
 
 log = getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 getLogger("botocore").setLevel(logging.INFO)
 
@@ -29,15 +33,17 @@ def main() -> None:
     party_players = Party(id="p1", name="Heroes", is_player_party=True)
     party_enemies = Party(id="p2", name="Goblins", is_player_party=False)
 
-    melee = MeleeWeapon(
+    sword = MeleeWeapon(
         name="Sword",
+        description="Heavy sword that may stun the enemy",
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
+        status_effects=[Stunned(duration=1, chance=0.25)],
     )
-    range_ = RangedWeapon(
+    bow = RangedWeapon(
         name="Bow",
         damage_dice="1d6",
         damage_type=DamageType.PIERCING,
@@ -45,8 +51,29 @@ def main() -> None:
         range=10,
         targeting=TargetingType.SINGLE,
     )
-    spell = Spell(
-        name="Fire Ball", damage_dice="1d6", damage_type=DamageType.MAGIC, range=5, targeting=TargetingType.SINGLE
+    dagger = MeleeWeapon(
+        name="Dagger",
+        description="Poisonous dagger",
+        damage_dice="1d5",
+        damage_type=DamageType.SLASHING,
+        weapon_type=WeaponType.DAGGER,
+        range=1,
+        targeting=TargetingType.SINGLE,
+        status_effects=[Poisoned(duration=3, damage=1)],
+    )
+    fire_ball = AttackSpell(
+        name="Fire Ball",
+        damage_dice="1d6",
+        damage_type=DamageType.MAGIC,
+        range=5,
+        targeting=TargetingType.SINGLE,
+    )
+    haste = SupportSpell(
+        name="Haste",
+        description="Gain 1 extra action on the next 2 turns",
+        range=1,
+        targeting=TargetingType.SELF,
+        status_effects=[Hasted(duration=2)],
     )
 
     hero = Character(
@@ -57,9 +84,9 @@ def main() -> None:
         is_player=True,
         party=party_players,
         stats=Stats(),
-        main_hand=melee,
-        ranged=range_,
-        spells=[spell],
+        main_hand=sword,
+        ranged=bow,
+        spells=[fire_ball, haste],
     )
     orc = Character(
         id="orc_1",
@@ -76,7 +103,7 @@ def main() -> None:
             range=1,
             targeting=TargetingType.SINGLE,
         ),
-        ranged=range_,
+        ranged=bow,
     )
 
     goblin = Character(
@@ -86,15 +113,8 @@ def main() -> None:
         pos=Position(x=8, y=4),
         party=party_enemies,
         stats=Stats(),
-        main_hand=MeleeWeapon(
-            name="Dagger",
-            damage_dice="1d5",
-            damage_type=DamageType.SLASHING,
-            weapon_type=WeaponType.DAGGER,
-            range=1,
-            targeting=TargetingType.SINGLE,
-        ),
-        spells=[spell],
+        main_hand=dagger,
+        spells=[fire_ball],
     )
     state = State(
         characters={hero.id: hero, orc.id: orc, goblin.id: goblin},

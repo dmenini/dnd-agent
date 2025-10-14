@@ -3,11 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
-from agent.effects.base import EffectType
+from agent.effects.base import EffectType, StatusEffect
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import (
     DamageType,
-    SpellLevel,
     StatType,
     TargetingType,
     WeaponType,
@@ -15,7 +14,7 @@ from agent.models.enums import (
 
 if TYPE_CHECKING:
     from agent.models.character import Character
-    from agent.models.weapons import RangedWeapon, Spell, Weapon
+    from agent.models.weapons import RangedWeapon, Weapon
 
 ATTACK_ROLL_EXPR = "1d20"
 
@@ -28,6 +27,7 @@ class AttackAction(Action):
     weapon_type: WeaponType
     stat: StatType
     range: float
+    status_effects: list[StatusEffect] = []
 
     def execute(self, actor: Character, target: Character) -> str:
         dice = DiceRoller()
@@ -42,9 +42,10 @@ class AttackAction(Action):
             adv = effect.on_attack_roll(actor, target)
             if adv is True:
                 advantage += 1
+                event += f" {target.name} is {effect.type.value}, attack at advantage."
             elif adv is False:
                 disadvantage += 1
-                event += f" {target.name} is affected by {effect.type}, attack at disadvantage."
+                event += f" {target.name} is {effect.type.value}, attack at disadvantage."
 
         if advantage > disadvantage:
             final_advantage = True
@@ -82,6 +83,12 @@ class AttackAction(Action):
         target.apply_damage(damage=damage)
         event += f" {actor.name} hits {target.name} for {damage} damage (HP now {target.attributes.current_hp})."
 
+        # 9. Apply status effect
+        for effect in self.status_effects:
+            applied = effect.try_apply(target)
+            if applied:
+                event += f" {target.name} is {effect.type.value}."
+
         if not target.is_alive:
             event += f" {target.name} is defeated!"
 
@@ -107,19 +114,21 @@ class MainHandAttackAction(AttackAction):
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
             source=weapon.name,
+            description=f"Base Attack with main hand weapon: {weapon.description}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
+            status_effects=weapon.status_effects,
         )
 
 
 class OffHandAttackAction(AttackAction):
     id: str = "off_hand_attack"
     name: str = "Off Hand Attack"
-    description: str = "Bonus attack with off hand weapon."
+    description: str = ""
     action_type: ActionType = ActionType.OFF_HAND_ATTACK
     category: ActionCategory = ActionCategory.BONUS
 
@@ -127,12 +136,14 @@ class OffHandAttackAction(AttackAction):
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
             source=weapon.name,
+            description=f"Bonus Attack with off hand weapon: {weapon.description}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
+            status_effects=weapon.status_effects,
         )
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
@@ -148,7 +159,7 @@ class OffHandAttackAction(AttackAction):
 class RangedAttackAction(AttackAction):
     id: str = "ranged_attack"
     name: str = "Ranged Attack"
-    description: str = "Base attack with ranged weapon."
+    description: str = ""
     action_type: ActionType = ActionType.RANGED_ATTACK
     category: ActionCategory = ActionCategory.STANDARD
 
@@ -156,42 +167,12 @@ class RangedAttackAction(AttackAction):
     def from_weapon(cls, weapon: RangedWeapon) -> Self:
         return cls(
             source=weapon.name,
+            description=f"Ranged Attack: {weapon.description}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
+            status_effects=weapon.status_effects,
         )
-
-
-class SpellAction(AttackAction):
-    id: str = "cast_spell"
-    name: str = "Cast Spell"
-    description: str = "Cast spell."
-    action_type: ActionType = ActionType.SPELL
-    category: ActionCategory = ActionCategory.STANDARD
-    level: SpellLevel
-
-    @classmethod
-    def from_spell(cls, spell: Spell) -> Self:
-        return cls(
-            id=f"cast_{spell.name.lower().replace(' ', '_')}",
-            name=f"Cast {spell.name}",
-            description=spell.description,
-            source=spell.name,
-            action_type=ActionType.AOE_SPELL if spell.targeting == TargetingType.AREA else ActionType.SPELL,
-            weapon_type=WeaponType.SPELL,
-            category=spell.casting_time,
-            targeting=spell.targeting,
-            damage_dice=spell.damage_dice,
-            damage_type=spell.damage_type,
-            stat=spell.stat,
-            range=spell.range,
-            level=spell.level,
-        )
-
-    def finalize(self, actor: Character) -> None:
-        """Consume action point and spell slot."""
-        super().finalize(actor)
-        actor.spell_slots.consume(self.level)

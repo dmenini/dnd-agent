@@ -2,15 +2,17 @@ from typing import Self
 
 from pydantic import BaseModel, Field, computed_field
 
-from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction, SpellAction
+from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
 from agent.actions.base import Action, ActionEconomy
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
+from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.effects.base import EffectType, StatusEffect
+from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import SpellLevel, StatType, WeaponType
 from agent.models.position import Position
-from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon, Spell
+from agent.models.weapons import AttackSpell, FinesseWeapon, MeleeWeapon, RangedWeapon, Spell, SupportSpell
 
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
@@ -125,6 +127,7 @@ class Character(BaseModel):
     stats: Stats = Stats()
     status_effects: list[StatusEffect] = []
     proficiencies: list[WeaponType] = []
+    proficient_saves: list[StatType] = []
 
     main_hand: MeleeWeapon | FinesseWeapon | None = None
     off_hand: MeleeWeapon | FinesseWeapon | None = None
@@ -187,6 +190,10 @@ class Character(BaseModel):
     def has_effect(self, cond: EffectType) -> bool:
         existing_conditions = {c.type for c in self.status_effects}
         return cond in existing_conditions
+
+    def is_immune_to(self, cond: EffectType) -> bool:  # noqa: ARG002
+        # TODO: Implement this
+        return False
 
     def start_turn(self) -> None:
         self.turn_done = False
@@ -260,7 +267,13 @@ class Character(BaseModel):
         # Spells (only if action available and slot available)
         for spell in self.spells:
             if self.spell_slots.has_slot(spell.level):
-                action = SpellAction.from_spell(spell)
+                if isinstance(spell, AttackSpell):
+                    action = AttackSpellAction.from_spell(spell)
+                elif isinstance(spell, SupportSpell):
+                    action = SupportSpellAction.from_spell(spell)
+                else:
+                    raise NotImplementedError
+
                 all_actions.append(action)
 
         # Special abilities (can have their own categories)
@@ -270,3 +283,28 @@ class Character(BaseModel):
 
     def distance(self, target: Position) -> float:
         return self.pos.manhattan_distance(target)
+
+    def roll_save(self, save_stat: StatType) -> int:
+        """
+        Rolls a saving throw for the given ability type.
+        Accounts for modifiers, proficiency, and active status effects.
+        """
+        dice = DiceRoller()
+
+        # Compute ability modifier
+        ability_mod = self.stats.modifier(save_stat)
+
+        # Add proficiency if applicable
+        prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
+
+        # Determine advantage/disadvantage from active effects
+        advantage = self.stats.advantage(save_stat)
+        for effect in self.status_effects:
+            adv = effect.on_save_roll()
+            if adv is not None:
+                advantage = adv
+
+        # Roll the d20 (with advantage/disadvantage if applicable)
+        roll = dice.roll_with_context(dice_expression="1d20", advantage=advantage)
+
+        return roll.total + ability_mod + prof_bonus

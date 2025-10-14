@@ -47,6 +47,8 @@ ignore = [
     "TD", # Allow TODO
     "D", # Ignore docstring checks
     "T201", # Allow prints
+    "TC001",
+    "RUF012",
     "TRY003",
     "EM101",
     "ANN401", # Allow dynamically typed expressions (typing.Any)
