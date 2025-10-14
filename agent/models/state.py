@@ -93,7 +93,7 @@ class State(BaseModel):
         # The chosen char aligns well with emoticons
         grid = [["· " for _ in range(self.map_width)] for _ in range(self.map_height)]
 
-        for char in self.characters.values():
+        for char in self.alive_characters.values():
             grid[char.pos.y][char.pos.x] = char.icon
 
         table = Table(box=None, show_header=True, show_footer=True)
