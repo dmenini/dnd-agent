@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.effects.dodge import Dodge
-from agent.models.enums import ConditionType, TargetingType
+from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.models.character import Character

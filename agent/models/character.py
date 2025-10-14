@@ -1,14 +1,14 @@
 from typing import Self
 
-from pydantic import BaseModel, computed_field, Field
+from pydantic import BaseModel, Field, computed_field
 
 from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction, SpellAction
 from agent.actions.base import Action, ActionEconomy
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
-from agent.effects.base import StatusEffect
-from agent.models.enums import ConditionType, SpellLevel, StatType, WeaponType
+from agent.effects.base import EffectType, StatusEffect
+from agent.models.enums import SpellLevel, StatType, WeaponType
 from agent.models.position import Position
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon, Spell
 
@@ -184,11 +184,11 @@ class Character(BaseModel):
     def heal(self, amount: int) -> None:
         self.attributes.current_hp = min(self.attributes.current_hp + amount, self.max_hp)
 
-    def has_effect(self, cond: ConditionType) -> bool:
+    def has_effect(self, cond: EffectType) -> bool:
         existing_conditions = {c.type for c in self.status_effects}
         return cond in existing_conditions
 
-    def start_turn(self):
+    def start_turn(self) -> None:
         self.turn_done = False
 
         self.attributes.current_movement = self.speed

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
+from agent.effects.base import EffectType
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import (
-    ConditionType,
     DamageType,
     SpellLevel,
     StatType,
@@ -68,7 +68,7 @@ class AttackAction(Action):
 
         damage = roll.total
         melee = {ActionType.MAIN_HAND_ATTACK, ActionType.OFF_HAND_ATTACK}
-        if is_critical or (target.has_effect(ConditionType.PARALYZED) and self.action_type in melee):
+        if is_critical or (target.has_effect(EffectType.PARALYZED) and self.action_type in melee):
             damage = roll.raw * self._crit_multiplier(actor) + mod
             event += f" {actor.name} rolls a NATURAL 20! Critical hit!"
 

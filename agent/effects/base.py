@@ -1,42 +1,48 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
-
-from agent.models.enums import ConditionType
 
 if TYPE_CHECKING:
     from agent.models.character import Character
 
 
+class EffectType(str, Enum):
+    STUNNED = "stunned"
+    PARALYZED = "paralyzed"
+    POISONED = "poisoned"
+    PRONE = "prone"
+    UNCONSCIOUS = "unconscious"
+    DODGING = "dodging"
+    HASTED = "hasted"
+
+
 class StatusEffect(BaseModel):
-    type: ConditionType
+    type: EffectType
     duration: int
 
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
-        pass
 
     def on_turn_start(self, target: Character) -> None:
         """Call at the start of the target's turn."""
-        pass
 
     def on_turn_end(self, target: Character) -> None:
         """Call at the end of the target's turn."""
-        pass
 
-    def on_receive_damage(self, target: Character, damage: int) -> int:
+    def on_receive_damage(self, target: Character, damage: int) -> int:  # noqa: ARG002
         """Modify damage taken (e.g., resistance, vulnerability)."""
         return damage
 
-    def on_attack_roll(self, actor: Character, target: Character) -> bool | None:
+    def on_attack_roll(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
         """Modify attack toll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
         return None
 
-    def on_attack(self, actor: Character, target: Character, damage: int) -> int:
+    def on_attack(self, actor: Character, target: Character, damage: int) -> int:  # noqa: ARG002
         """Modify outgoing damage (e.g., weaken attacks)."""
         return damage
 

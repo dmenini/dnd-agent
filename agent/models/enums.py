@@ -24,16 +24,6 @@ class DamageType(str, Enum):
     MAGIC = "magic"
 
 
-class ConditionType(str, Enum):
-    STUNNED = "stunned"
-    PARALYZED = "paralyzed"
-    POISONED = "poisoned"
-    PRONE = "prone"
-    UNCONSCIOUS = "unconscious"
-    DODGING = "dodging"
-    HASTED = "hasted"
-
-
 class TurnPhase(str, Enum):
     DECIDE = "decide"
     VERIFY = "verify"

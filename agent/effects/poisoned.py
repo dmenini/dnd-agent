@@ -1,15 +1,15 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
-from agent.effects.base import StatusEffect
-from agent.models.enums import ConditionType
+from agent.effects.base import EffectType, StatusEffect
 
 if TYPE_CHECKING:
     from agent.models.character import Character
 
 
 class Poisoned(StatusEffect):
-    type: ConditionType = ConditionType.POISONED
+    type: EffectType = EffectType.POISONED
     damage: int = 1
 
     def on_turn_end(self, target: Character) -> None:
