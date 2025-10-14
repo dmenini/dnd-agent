@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import Self, TYPE_CHECKING
 
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.mechanics.dice_roller import DiceRoller
@@ -33,26 +33,28 @@ class AttackAction(Action):
         dice = DiceRoller()
         event = ""
 
-        # 1. Compute attacker advantage
-        adv_from_actor = actor.stats.advantage(self.stat)
-        adv_from_target = None
+        # 1. Compute actor advantage
+        advantage = 1 if actor.stats.advantage(self.stat) else 0
+        disadvantage = 0
 
-        # 2. Check if target is dodging
-        if target.has_effect(ConditionType.DODGING):
-            adv_from_target = False
-            event += f" {target.name} is dodging, attack at disadvantage."
+        # 2. Collect modifiers from target status effects
+        for effect in target.status_effects:
+            adv = effect.on_attack_roll(actor, target)
+            if adv is True:
+                advantage += 1
+            elif adv is False:
+                disadvantage += 1
+                event += f" {target.name} is affected by {effect.type}, attack at disadvantage."
 
-        # 3. Resolve advantage/disadvantage interaction
-        # True + False → None (they cancel)
-        if adv_from_actor is True and adv_from_target is False:
-            final_advantage = None
+        if advantage > disadvantage:
+            final_advantage = True
+        elif disadvantage > advantage:
+            final_advantage = False
         else:
-            # If either gives advantage/disadvantage, prefer that one
-            final_advantage = adv_from_actor if adv_from_actor is not None else adv_from_target
+            final_advantage = None  # cancel out
 
         # 4. Attack roll
         roll = dice.roll_with_context(dice_expression=ATTACK_ROLL_EXPR, advantage=final_advantage)
-
         if roll.total < target.ac:
             event += f" {actor.name} misses..."
             return event
@@ -64,14 +66,19 @@ class AttackAction(Action):
         expr = self.damage_dice + (f"+{mod}" if mod >= 0 else f"-{mod}")
         roll = dice.roll_with_context(dice_expression=expr, advantage=final_advantage)
 
-        if is_critical:
+        damage = roll.total
+        melee = {ActionType.MAIN_HAND_ATTACK, ActionType.OFF_HAND_ATTACK}
+        if is_critical or (target.has_effect(ConditionType.PARALYZED) and self.action_type in melee):
             damage = roll.raw * self._crit_multiplier(actor) + mod
             event += f" {actor.name} rolls a NATURAL 20! Critical hit!"
-        else:
-            damage = roll.total
-            event += f" {actor.name} rolls {roll.total} to hit."
 
-        # 6. Apply damage
+        # 6. Let status effects modify outgoing damage
+        damage = actor.modify_outgoing_damage(target, damage)
+
+        # 7. Let target status effects modify incoming damage
+        damage = target.modify_incoming_damage(damage)
+
+        # 8. Apply damage
         target.apply_damage(damage=damage)
         event += f" {actor.name} hits {target.name} for {damage} damage (HP now {target.attributes.current_hp})."
 

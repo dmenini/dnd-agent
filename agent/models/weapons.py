@@ -2,7 +2,8 @@ from abc import ABC
 
 from pydantic import BaseModel
 
-from agent.models.enums import ActionCategory, DamageType, SpellLevel, StatType, TargetingType, WeaponType
+from agent.actions.base import ActionCategory
+from agent.models.enums import DamageType, SpellLevel, StatType, TargetingType, WeaponType
 
 
 class Equipment(ABC, BaseModel):

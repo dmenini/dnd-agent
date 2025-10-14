@@ -31,6 +31,7 @@ class ConditionType(str, Enum):
     PRONE = "prone"
     UNCONSCIOUS = "unconscious"
     DODGING = "dodging"
+    HASTED = "hasted"
 
 
 class TurnPhase(str, Enum):

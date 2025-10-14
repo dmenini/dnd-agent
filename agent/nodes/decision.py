@@ -21,6 +21,12 @@ class DecisionNode:
         if not actor.is_alive:
             return state
 
+        if actor.turn_done:
+            actor.start_turn()
+
+            for effect in actor.status_effects:
+                state.append_log(str(effect).format(actor=actor.name))
+
         actions = actor.available_actions()
         actor_str = {
             "id": actor.id,

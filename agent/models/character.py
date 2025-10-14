@@ -1,10 +1,13 @@
-from pydantic import BaseModel, Field, computed_field
+from typing import Self
+
+from pydantic import BaseModel, computed_field, Field
 
 from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction, SpellAction
 from agent.actions.base import Action, ActionEconomy
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
+from agent.effects.base import StatusEffect
 from agent.models.enums import ConditionType, SpellLevel, StatType, WeaponType
 from agent.models.position import Position
 from agent.models.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon, Spell
@@ -109,11 +112,6 @@ class Attributes(BaseModel):
         return self.base_speed
 
 
-class StatusEffect(BaseModel):
-    type: ConditionType
-    duration: int
-
-
 class Character(BaseModel):
     id: str
     name: str
@@ -125,7 +123,7 @@ class Character(BaseModel):
     experience: int = 0
     attributes: Attributes = Attributes()
     stats: Stats = Stats()
-    conditions: list[StatusEffect] = []
+    status_effects: list[StatusEffect] = []
     proficiencies: list[WeaponType] = []
 
     main_hand: MeleeWeapon | FinesseWeapon | None = None
@@ -136,6 +134,7 @@ class Character(BaseModel):
 
     spell_slots: SpellSlots = SpellSlots()
     action_economy: ActionEconomy = ActionEconomy()
+    turn_done: bool = False
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -174,6 +173,11 @@ class Character(BaseModel):
     def is_alive(self) -> bool:
         return self.attributes.current_hp > 0
 
+    def receive_damage(self, damage: int) -> None:
+        for effect in self.status_effects:
+            damage = effect.on_receive_damage(self, damage)
+        self.apply_damage(damage)
+
     def apply_damage(self, damage: int) -> None:
         self.attributes.current_hp = max(0, self.attributes.current_hp - damage)
 
@@ -181,22 +185,51 @@ class Character(BaseModel):
         self.attributes.current_hp = min(self.attributes.current_hp + amount, self.max_hp)
 
     def has_effect(self, cond: ConditionType) -> bool:
-        existing_conditions = {c.type for c in self.conditions}
+        existing_conditions = {c.type for c in self.status_effects}
         return cond in existing_conditions
 
-    def apply_condition(self, cond: ConditionType, duration: int) -> None:
-        if not self.has_effect(cond):
-            effect = StatusEffect(type=cond, duration=duration)
-            self.conditions.append(effect)
+    def start_turn(self):
+        self.turn_done = False
+
+        self.attributes.current_movement = self.speed
+        self.action_economy.restore_all()
+
+        for effect in self.status_effects:
+            effect.on_turn_start(self)
+
+        # Remove expired effects
+        self.status_effects = [eff for eff in self.status_effects if not eff.is_expired()]
+
+    def end_turn(self) -> None:
+        for effect in self.status_effects:
+            effect.on_turn_end(self)
+
+        # Remove expired effects
+        self.status_effects = [eff for eff in self.status_effects if not eff.is_expired()]
+
+        self.turn_done = True
+
+    def end_round(self) -> None:
+        pass
+
+    def apply_status(self, effect: StatusEffect) -> None:
+        if not self.has_effect(effect.type):
+            self.status_effects.append(effect)
         else:
-            existing_effect = next(c for c in self.conditions if c.type == cond)
-            existing_effect.duration = duration
+            existing_effect = next(eff for eff in self.status_effects if eff.type == effect.type)
+            existing_effect.duration = effect.duration
 
-    def elapse_conditions(self) -> None:
-        for effect in self.conditions:
-            effect.duration -= 1
+        effect.on_apply(self)
 
-        self.conditions = [c for c in self.conditions if c.duration >= 0]
+    def modify_incoming_damage(self, damage: int) -> int:
+        for effect in self.status_effects:
+            damage = effect.on_receive_damage(self, damage)
+        return damage
+
+    def modify_outgoing_damage(self, target: Self, damage: int) -> int:
+        for effect in self.status_effects:
+            damage = effect.on_attack(self, target, damage)
+        return damage
 
     def has_resources(self) -> bool:
         has_bonus = self.off_hand is not None and (self.action_economy.bonus_actions > 0)

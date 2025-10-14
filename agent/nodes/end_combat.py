@@ -15,15 +15,14 @@ class EndCombatNode:
         # Advance to next character if resources exhausted
         # TODO: Improve this by avoid looping over dead characters, just remove them from initiative order
         if not actor.is_alive or not actor.has_resources():
+            actor.end_turn()
             state.turn_index += 1
 
-        # End of round → wrap turn
+        # End of round
         if state.turn_index >= len(state.characters):
             # Reset resources
             for char in state.alive_characters.values():
-                char.attributes.current_movement = actor.speed
-                char.action_economy.restore_all()
-                char.elapse_conditions()
+                char.end_round()
 
             state.round += 1
             state.turn_index = 0
