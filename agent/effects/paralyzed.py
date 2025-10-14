@@ -19,14 +19,12 @@ class Paralyzed(StatusEffect):
         target.action_economy.bonus_actions = -1  # Cannot act
         target.action_economy.movement_available = False  # Cannot move
 
-    def on_attack_roll(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
-        """
-        Attack rolls against the target have advantage.
-        Critical hits on melee attacks within 5ft applied in action itself.
-        """
-        return True
+    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:
+        """Attack rolls against the target have advantage."""
+        return True if is_target else None
 
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
+        """Critical hits on melee attacks within 5ft applied in action itself."""
         return actor.distance(target.pos) <= MIN_AUTOCRIT_DISTANCE
 
     def on_turn_end(self, target: Character) -> None:  # noqa: ARG002

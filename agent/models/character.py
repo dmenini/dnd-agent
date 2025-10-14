@@ -289,7 +289,7 @@ class Character(BaseModel):
 
         # Compute advantage from multiple sources
         sources = [self.stats.advantage(attack_stat)]
-        sources += [effect.on_attack_roll(self, target) for effect in target.status_effects]
+        sources += [effect.on_attack_roll(is_target=True) for effect in target.status_effects]
         advantage = self._resolve_advantage(sources)
 
         return dice.roll_with_context(dice_expression="1d20", advantage=advantage)
@@ -303,7 +303,7 @@ class Character(BaseModel):
 
         # Compute advantage from multiple sources
         sources = [self.stats.advantage(save_stat)]
-        sources += [effect.on_save_roll() for effect in self.status_effects]
+        sources += [effect.on_save_roll(save_stat) for effect in self.status_effects]
         advantage = self._resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)

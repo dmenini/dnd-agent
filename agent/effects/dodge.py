@@ -15,6 +15,6 @@ class Dodge(StatusEffect):
         """Grant an extra action on each of the target's turns."""
         self.duration = 0
 
-    def on_attack_roll(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
-        """When the actor rolls against this target, the attack is at disadvantage."""
-        return False  # Always imposes disadvantage on attackers
+    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:
+        """Attack rolls against the target have disadvantage."""
+        return False if is_target else None

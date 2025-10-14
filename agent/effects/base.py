@@ -20,6 +20,7 @@ class EffectType(str, Enum):
     UNCONSCIOUS = "unconscious"
     DODGING = "dodging"
     HASTED = "hasted"
+    RESTRAINED = "restrained"
 
 
 class StatusEffect(BaseModel):
@@ -71,13 +72,13 @@ class StatusEffect(BaseModel):
         """Modify damage taken (e.g., resistance, vulnerability)."""
         return damage
 
-    def on_attack_roll(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
+    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:  # noqa: ARG002
         """Modify attack roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
         return None
 
-    def on_save_roll(self) -> bool | None:
+    def on_save_roll(self, stat: StatType) -> bool | None:  # noqa: ARG002
         """Modify save roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
