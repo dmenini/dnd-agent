@@ -7,6 +7,8 @@ from agent.effects.base import EffectType, StatusEffect
 if TYPE_CHECKING:
     from agent.models.character import Character
 
+MIN_AUTOCRIT_DISTANCE = 5
+
 
 class Paralyzed(StatusEffect):
     type: EffectType = EffectType.PARALYZED
@@ -23,6 +25,9 @@ class Paralyzed(StatusEffect):
         Critical hits on melee attacks within 5ft applied in action itself.
         """
         return True
+
+    def is_auto_crit(self, actor: Character, target: Character) -> bool:
+        return actor.distance(target.pos) <= MIN_AUTOCRIT_DISTANCE
 
     def on_turn_end(self, target: Character) -> None:  # noqa: ARG002
         """Call at the end of the target's turn."""

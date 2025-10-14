@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from typing import Self
 
 from pydantic import BaseModel, Field, computed_field
@@ -9,7 +10,7 @@ from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.effects.base import EffectType, StatusEffect
-from agent.mechanics.dice_roller import DiceRoller
+from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.enums import SpellLevel, StatType, WeaponType
 from agent.models.position import Position
 from agent.models.weapons import AttackSpell, FinesseWeapon, MeleeWeapon, RangedWeapon, Spell, SupportSpell
@@ -86,7 +87,6 @@ class Attributes(BaseModel):
     base_ac: int = 2
     base_speed: float = 6.0
     vision_range: float = 10.0
-    base_crit_multiplier: int = 2
     mana: int = 0
     max_mana: int = 0
 
@@ -284,27 +284,44 @@ class Character(BaseModel):
     def distance(self, target: Position) -> float:
         return self.pos.manhattan_distance(target)
 
-    def roll_save(self, save_stat: StatType) -> int:
+    def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
+        dice = DiceRoller()
+
+        # Compute advantage from multiple sources
+        sources = [self.stats.advantage(attack_stat)]
+        sources += [effect.on_attack_roll(self, target) for effect in target.status_effects]
+        advantage = self._resolve_advantage(sources)
+
+        return dice.roll_with_context(dice_expression="1d20", advantage=advantage)
+
+    def save_roll(self, save_stat: StatType) -> DiceRoll:
         """
         Rolls a saving throw for the given ability type.
         Accounts for modifiers, proficiency, and active status effects.
         """
         dice = DiceRoller()
 
-        # Compute ability modifier
-        ability_mod = self.stats.modifier(save_stat)
-
-        # Add proficiency if applicable
-        prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
-
-        # Determine advantage/disadvantage from active effects
-        advantage = self.stats.advantage(save_stat)
-        for effect in self.status_effects:
-            adv = effect.on_save_roll()
-            if adv is not None:
-                advantage = adv
+        # Compute advantage from multiple sources
+        sources = [self.stats.advantage(save_stat)]
+        sources += [effect.on_save_roll() for effect in self.status_effects]
+        advantage = self._resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)
-        roll = dice.roll_with_context(dice_expression="1d20", advantage=advantage)
+        ability_mod = self.stats.modifier(save_stat)
+        prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
+        mod = ability_mod + prof_bonus
+        expr = f"1d20+{mod}"
+        return dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
-        return roll.total + ability_mod + prof_bonus
+    def _resolve_advantage(self, sources: Iterable[bool | None]) -> bool | None:
+        """
+        Resolves multiple advantage/disadvantage sources into a final state.
+        Returns True for advantage, False for disadvantage, or None for neutral.
+        """
+        advantages = sum(1 for s in sources if s is True)
+        disadvantages = sum(1 for s in sources if s is False)
+        if advantages > disadvantages:
+            return True
+        if disadvantages > advantages:
+            return False
+        return None

@@ -43,8 +43,8 @@ class StatusEffect(BaseModel):
 
         # Saving throw
         if self.save_dc:
-            roll = target.roll_save(save_stat=self.save_stat)
-            if roll >= self.save_dc:
+            roll = target.save_roll(save_stat=self.save_stat)
+            if roll.total >= self.save_dc:
                 event += (
                     f" {target.name} resists {self.type} with a "
                     f"{self.save_stat.value} save ({roll} vs DC {self.save_dc})!"
@@ -89,6 +89,9 @@ class StatusEffect(BaseModel):
 
     def is_expired(self) -> bool:
         return self.duration <= 0
+
+    def is_auto_crit(self, actor: Character, target: Character) -> bool:  # noqa: ARG002
+        return False
 
     def __str__(self) -> str:
         return f" {{actor}} is {self.type.value} ({self.duration} turns left)."

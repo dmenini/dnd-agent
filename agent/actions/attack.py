@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
-from agent.effects.base import EffectType, StatusEffect
+from agent.effects.base import StatusEffect
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import (
     DamageType,
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from agent.models.character import Character
     from agent.models.weapons import RangedWeapon, Weapon
 
-ATTACK_ROLL_EXPR = "1d20"
+CRIT_ROLL_VAL = 20
 
 
 class AttackAction(Action):
@@ -33,57 +33,41 @@ class AttackAction(Action):
         dice = DiceRoller()
         event = ""
 
-        # 1. Compute actor advantage
-        advantage = 1 if actor.stats.advantage(self.stat) else 0
-        disadvantage = 0
+        # Attack roll
+        roll = actor.attack_roll(attack_stat=self.stat, target=target)
+        is_critical = roll.raw == CRIT_ROLL_VAL
+        is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
 
-        # 2. Collect modifiers from target status effects
-        for effect in target.status_effects:
-            adv = effect.on_attack_roll(actor, target)
-            if adv is True:
-                advantage += 1
-                event += f" {target.name} is {effect.type.value}, attack at advantage."
-            elif adv is False:
-                disadvantage += 1
-                event += f" {target.name} is {effect.type.value}, attack at disadvantage."
-
-        if advantage > disadvantage:
-            final_advantage = True
-        elif disadvantage > advantage:
-            final_advantage = False
-        else:
-            final_advantage = None  # cancel out
-
-        # 4. Attack roll
-        roll = dice.roll_with_context(dice_expression=ATTACK_ROLL_EXPR, advantage=final_advantage)
-        if roll.total < target.ac:
-            event += f" {actor.name} misses..."
-            return event
-
-        is_critical = roll.raw == dice.sides(ATTACK_ROLL_EXPR)
-
-        # 5. Damage roll
         mod = self._attack_modifier(actor)
-        expr = self.damage_dice + (f"+{mod}" if mod >= 0 else f"-{mod}")
-        roll = dice.roll_with_context(dice_expression=expr, advantage=final_advantage)
 
-        damage = roll.total
-        melee = {ActionType.MAIN_HAND_ATTACK, ActionType.OFF_HAND_ATTACK}
-        if is_critical or (target.has_effect(EffectType.PARALYZED) and self.action_type in melee):
-            damage = roll.raw * self._crit_multiplier(actor) + mod
+        if is_critical:
+            # Critical guarantees a hit -> direct damage roll with critical
             event += f" {actor.name} rolls a NATURAL 20! Critical hit!"
+            roll1 = dice.roll_once(self.damage_dice)
+            roll2 = dice.roll_once(self.damage_dice)
+            damage = roll1.raw + roll2.raw + mod
 
-        # 6. Let status effects modify outgoing damage
+        else:
+            # Check attack roll result
+            if roll.total < target.ac:
+                event += f" {actor.name} misses..."
+                return event
+
+            # Damage roll
+            roll = dice.roll_once(self.damage_dice)
+            damage = roll.total + mod
+
+        # Let status effects modify outgoing damage
         damage = actor.modify_outgoing_damage(target, damage)
 
-        # 7. Let target status effects modify incoming damage
+        # Let target status effects modify incoming damage
         damage = target.modify_incoming_damage(damage)
 
-        # 8. Apply damage
+        # Apply damage
         target.apply_damage(damage=damage)
         event += f" {actor.name} hits {target.name} for {damage} damage (HP now {target.attributes.current_hp})."
 
-        # 9. Apply status effect
+        # Try to apply status effects
         for effect in self.status_effects:
             applied = effect.try_apply(target)
             if applied:
@@ -98,9 +82,6 @@ class AttackAction(Action):
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
         mod = actor.stats.modifier(self.stat)
         return mod + prof_bonus
-
-    def _crit_multiplier(self, actor: Character) -> int:
-        return actor.attributes.base_crit_multiplier
 
 
 class MainHandAttackAction(AttackAction):
