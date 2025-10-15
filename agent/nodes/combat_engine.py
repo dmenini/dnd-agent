@@ -6,7 +6,7 @@ from agent.actions.attack import (
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
-from agent.mechanics.dice_roller import DiceRoller
+from agent.actions.spell import SupportSpellAction
 from agent.models.state import State
 
 ATTACK_ROLL_EXPR = "1d20"
@@ -15,11 +15,11 @@ log = getLogger(__name__)
 
 
 class CombatEngineNode:
-    def __init__(self, dice: DiceRoller) -> None:
-        self.dice = dice
-
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
+
+        if not state.action or not state.decision:
+            return state
 
         decision = state.decision
         action = state.action
@@ -28,15 +28,11 @@ class CombatEngineNode:
         if not actor.is_alive:
             return state
 
-        if not action or not decision:
-            msg = "State is missing action and decision"
-            raise ValueError(msg)
-
         event = f"{actor.name} performs {action.name}: {decision.description}"
         event = event if event.endswith(".") else event + "."
 
         # Handle the main combat actions
-        if isinstance(state.action, AttackAction):
+        if isinstance(state.action, (AttackAction, SupportSpellAction)):
             if not decision.target_ids:
                 msg = f"No target(s) for action {action.id}"
                 raise ValueError(msg)

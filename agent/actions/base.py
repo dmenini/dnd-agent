@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
@@ -27,7 +27,8 @@ class ActionType(str, Enum):
     SPECIAL = "special"
     DASH = "dash"
     MOVE = "move"
-    DODGE = "DODGE"
+    DODGE = "dodge"
+    WAIT = "pass"
 
 
 class Action(BaseModel):

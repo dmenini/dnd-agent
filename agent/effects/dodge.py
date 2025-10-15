@@ -10,6 +10,10 @@ if TYPE_CHECKING:
 
 
 class Dodge(StatusEffect):
+    """
+    * Attack rolls against the target have disadvantage.
+    """
+
     type: EffectType = EffectType.DODGING
     _traits: list[Trait] = [AttackerDisadvantageOnAttackRoll()]
 

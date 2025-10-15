@@ -64,6 +64,7 @@ ignore = [
     "ARG", # Unused function args -> Fixtures are functionally relevant
     "FBT", # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
     "SLF001",
+    "PLR2004",
 ]
 
 [tool.mypy]

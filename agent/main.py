@@ -5,12 +5,12 @@ from pathlib import Path
 import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
+from agent.character.character import MeleeWeapon, Party, RangedWeapon
+from agent.character.stats import Attributes, Stats
 from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
 from agent.graph import build_graph
-from agent.character.character import MeleeWeapon, Party, RangedWeapon
-from agent.character.stats import Attributes, Stats
 from agent.models.config import Config
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position
@@ -20,7 +20,7 @@ from agent.models.weapons import AttackSpell, SupportSpell
 MAX_ITER = 100
 
 log = getLogger(__name__)
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 getLogger("botocore").setLevel(logging.INFO)
 
@@ -42,7 +42,7 @@ def main() -> None:
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Stunned(duration=1, chance=1)],
+        status_effects=[Stunned(duration=1)],
     )
     bow = RangedWeapon(
         name="Bow",
@@ -74,14 +74,14 @@ def main() -> None:
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        status_effects=[Hasted(duration=2)],
+        status_effects=[Hasted(duration=2, save_dc=0)],
     )
 
     hero = Character(
         id="pc_alfred",
         name="Alfred",
         icon="⚔️",
-        attributes=Attributes(base_hp=20, current_hp=20),
+        attributes=Attributes(base_hp=20, hp=20),
         pos=Position(x=2, y=2),
         is_player=True,
         party=party_players,

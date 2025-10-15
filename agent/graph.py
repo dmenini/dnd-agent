@@ -54,7 +54,7 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     agent = DecisionNode(llm=llm, system_prompt=config.prompts.system)
     verifier = RulesVerifierNode()
     start_combat = StartCombatNode(dice=DiceRoller())
-    combat = CombatEngineNode(dice=DiceRoller())
+    combat = CombatEngineNode()
     end_combat = EndCombatNode()
 
     # Register nodes

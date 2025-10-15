@@ -17,6 +17,7 @@ class ActionEconomy(BaseModel):
     max_bonus_actions: int = 1
     reaction_available: bool = True
     movement_available: bool = True
+    movement_used: float = 0.0
 
     def restore_all(self) -> None:
         """Restore all resources. Must be done after each round."""
@@ -24,6 +25,7 @@ class ActionEconomy(BaseModel):
         self.bonus_actions = self.max_bonus_actions
         self.movement_available = True
         self.reaction_available = True
+        self.movement_used = 0.0
 
 
 class SpellSlots(BaseModel):

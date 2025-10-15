@@ -39,8 +39,7 @@ class RulesVerifierNode:
             return state
 
         if not state.action or not state.decision:
-            msg = "State is missing action and decision"
-            raise ValueError(msg)
+            return state
 
         reasons = []
         for check in self.checks:
@@ -144,7 +143,7 @@ class RulesVerifierNode:
             )
 
         dist = actor.distance(pos)
-        max_dist = actor.attributes.current_movement * mult
+        max_dist = actor.current_speed * mult
         if dist > max_dist:
             return False, f"Position {pos} is out of range ({dist:.1f} > {max_dist})"
 

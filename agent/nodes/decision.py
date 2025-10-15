@@ -29,6 +29,9 @@ class DecisionNode:
 
         actions = actor.available_actions()
         if not actions:
+            state.action = None
+            state.decision = None
+            state.verification_result = None
             return state
 
         actor_str = {
@@ -38,8 +41,8 @@ class DecisionNode:
             "party": actor.party.model_dump_json(),
             "is_player": actor.is_player,
             "level": actor.level,
-            "hp": f"{actor.attributes.current_hp}/{actor.max_hp}",
-            "movement": f"{actor.attributes.current_movement}/{actor.speed}",
+            "hp": f"{actor.attributes.hp}/{actor.max_hp}",
+            "movement": f"{actor.current_speed}/{actor.speed}",
             "stats": actor.stats.model_dump_json(),
             "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
         }
@@ -50,10 +53,11 @@ class DecisionNode:
                 "name": c.name,
                 "pos": c.pos,
                 "party": c.party.model_dump_json(),
-                "hp": f"{c.attributes.current_hp}/{c.max_hp}",
+                "hp": f"{c.attributes.hp}/{c.max_hp}",
                 "distance": actor.distance(c.pos),
             }
-            for c in state.alive_characters.values() if c.id != actor.id
+            for c in state.alive_characters.values()
+            if c.id != actor.id
         ]
 
         history = self.group_messages(

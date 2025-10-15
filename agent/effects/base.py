@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import random
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, PrivateAttr
 
-from agent.effects.traits import Trait
-from agent.mechanics.advantage import resolve_advantage
 from agent.character.stats import StatType
+from agent.effects.traits import Trait
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -21,50 +19,26 @@ class EffectType(str, Enum):
     DODGING = "dodging"
     HASTED = "hasted"
     RESTRAINED = "restrained"
+    LETHARGIC = "lethargic"
 
 
 class StatusEffect(BaseModel):
     type: EffectType
     duration: int
-    chance: float = 1.0
     save_stat: StatType = StatType.CON
     save_dc: int = 12  # Difficulty class
 
     _traits: list[Trait] = PrivateAttr(default_factory=list)
 
-    def try_apply(self, target: Character) -> bool:
-        event = ""
-        # Check immunity
-        if target.is_immune_to(self.type):
-            event += f" {target.name} is immune to {self.type} effect."
-            return False
-
-        # Random chance
-        if self.chance < 1.0 and random.random() > self.chance:  # noqa: S311
-            event += f" The {self.type} effect fails to take hold."
-            return False
-
-        # Saving throw
-        if self.save_dc:
-            roll = target.save_roll(save_stat=self.save_stat)
-            if roll.total >= self.save_dc:
-                event += (
-                    f" {target.name} resists {self.type} with a "
-                    f"{self.save_stat.value} save ({roll} vs DC {self.save_dc})!"
-                )
-                # Negate effect
-                return False
-
-        # Apply the effect
-        target.apply_status(self)
-
-        # TODO: return event
-        return True
-
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
         for trait in self._traits:
             self._trigger_hook(trait, "on_apply", target)
+
+    def on_expire(self, target: Character) -> None:
+        """Call when the effect is first applied."""
+        for trait in self._traits:
+            self._trigger_hook(trait, "on_expire", target)
 
     def on_turn_start(self, target: Character) -> None:
         """Call at the start of the target's turn."""
@@ -82,25 +56,6 @@ class StatusEffect(BaseModel):
             damage += self._trigger_hook(trait, "on_receive_damage", target, damage) or 0
         return damage
 
-    def on_attack_roll(self, actor: Character | None = None, target: Character | None = None) -> bool | None:
-        """Modify attack roll advantage/disadvantage.
-        Return False to signal disadvantage, True for advantage, or None for neutral.
-        """
-        results = []
-        for trait in self._traits:
-            if target:
-                results.append(self._trigger_hook(trait, "on_attack_roll_as_target"))
-            if actor:
-                results.append(self._trigger_hook(trait, "on_attack_roll_as_actor"))
-        return resolve_advantage(results)
-
-    def on_save_roll(self, stat: StatType) -> bool | None:
-        """Modify save roll advantage/disadvantage.
-        Return False to signal disadvantage, True for advantage, or None for neutral.
-        """
-        results = [self._trigger_hook(trait, "on_save_roll", stat) for trait in self._traits]
-        return resolve_advantage(results)
-
     def on_attack(self, actor: Character, target: Character, damage: int) -> int:
         """Modify outgoing damage (e.g., weaken attacks)."""
         for trait in self._traits:
@@ -110,7 +65,9 @@ class StatusEffect(BaseModel):
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
         """Modify crit chance."""
         for trait in self._traits:
-            return self._trigger_hook(trait, "is_auto_crit", actor, target)
+            res = self._trigger_hook(trait, "is_auto_crit", actor, target)
+            if res is not None:
+                return res
         return False
 
     def is_expired(self) -> bool:
