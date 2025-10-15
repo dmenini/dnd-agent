@@ -10,12 +10,12 @@ from agent.character.stats import Attributes, Stats
 from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
+from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.graph import build_graph
 from agent.models.config import Config
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position
 from agent.models.state import Character, State
-from agent.models.weapons import AttackSpell, SupportSpell
 
 MAX_ITER = 100
 

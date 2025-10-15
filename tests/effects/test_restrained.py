@@ -4,12 +4,12 @@ from agent.character.character import Character, Party
 from agent.character.stats import Attributes
 from agent.effects.base import EffectType
 from agent.effects.restrained import Restrained
+from agent.equipment.weapons import MeleeWeapon
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
-from agent.models.weapons import MeleeWeapon
 from tests.conftest import advance_turn
 
 

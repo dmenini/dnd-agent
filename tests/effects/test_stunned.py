@@ -1,11 +1,11 @@
 from agent.character.character import Character, Party
 from agent.effects.base import EffectType
 from agent.effects.stunned import Stunned
+from agent.equipment.weapons import MeleeWeapon
 from agent.models.config import AgentConfig
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
-from agent.models.weapons import MeleeWeapon
 from tests.conftest import advance_turn
 
 

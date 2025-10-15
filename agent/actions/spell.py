@@ -14,7 +14,7 @@ from agent.models.enums import (
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.models.weapons import AttackSpell, SupportSpell
+    from agent.equipment.spells import AttackSpell, SupportSpell
 
 
 class AttackSpellAction(AttackAction):

@@ -13,7 +13,7 @@ from agent.models.enums import (
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.models.weapons import RangedWeapon, Weapon
+    from agent.equipment.weapons import RangedWeapon, Weapon
 
 CRIT_ROLL_VAL = 20
 

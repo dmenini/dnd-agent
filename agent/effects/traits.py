@@ -22,7 +22,8 @@ class AttackerDisadvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add"))
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add")
+        )
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
@@ -30,7 +31,8 @@ class AttackerAdvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add"))
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add")
+        )
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
@@ -38,7 +40,8 @@ class TargetDisadvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add"))
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add")
+        )
 
 
 class TargetAdvantageOnAttackRoll(Trait):
@@ -46,7 +49,8 @@ class TargetAdvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add"))
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add")
+        )
 
 
 class DisadvantageOnSavingThrow(Trait):
@@ -55,7 +59,8 @@ class DisadvantageOnSavingThrow(Trait):
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add"))
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add")
+        )
 
 
 class AdvantageOnSavingThrow(Trait):
@@ -64,7 +69,8 @@ class AdvantageOnSavingThrow(Trait):
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add"))
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add")
+        )
 
 
 class FailOnSavingThrow(Trait):

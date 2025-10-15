@@ -12,11 +12,12 @@ from agent.actions.wait import WaitAction
 from agent.character.resources import SpellSlots
 from agent.character.stats import Attributes, Modifier, Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
+from agent.equipment.spells import AttackSpell, Spell, SupportSpell
+from agent.equipment.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.enums import DamageType, WeaponType
 from agent.models.position import Position
-from agent.models.weapons import AttackSpell, FinesseWeapon, MeleeWeapon, RangedWeapon, Spell, SupportSpell
 
 
 class Party(BaseModel):

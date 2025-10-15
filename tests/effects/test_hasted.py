@@ -3,12 +3,13 @@ from unittest.mock import MagicMock
 from agent.character.character import Character, Party
 from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
+from agent.equipment.spells import SupportSpell
+from agent.equipment.weapons import MeleeWeapon
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.enums import TargetingType, WeaponType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
-from agent.models.weapons import MeleeWeapon, SupportSpell
 from tests.conftest import advance_turn
 
 
