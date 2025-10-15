@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from pytest_mock import mocker, MockerFixture
+from pytest_mock import MockerFixture
 
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.state import DecisionResult, State
@@ -36,6 +36,4 @@ def advance_turn(state: State, result: DecisionResult) -> State:
 
     state = DecisionNode(llm=llm, system_prompt="")(state)
     state = CombatEngineNode()(state)
-    state = EndCombatNode()(state)
-
-    return state
+    return EndCombatNode()(state)

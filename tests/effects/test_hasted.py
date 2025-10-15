@@ -5,14 +5,16 @@ from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
-from agent.models.enums import DamageType, TargetingType, WeaponType
+from agent.models.enums import TargetingType, WeaponType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
 from agent.models.weapons import MeleeWeapon, SupportSpell
 from tests.conftest import advance_turn
 
 
-def test_hasted(config: AgentConfig, ) -> None:
+def test_hasted(
+    config: AgentConfig,
+) -> None:
     hero_id = "hero"
     orc_id = "orc"
 
@@ -61,9 +63,8 @@ def test_hasted(config: AgentConfig, ) -> None:
     # Turn 1.1: Hero casts Haste on self
     state = advance_turn(state, result=DecisionResult(action_id="cast_haste", target_ids=[hero_id], description=""))
     hero = state.characters[hero_id]
-    effects = [eff for eff in hero.status_effects]
-    assert effects[0].type == EffectType.HASTED
-    assert effects[0].duration == 2
+    assert hero.status_effects[0].type == EffectType.HASTED
+    assert hero.status_effects[0].duration == 2
     assert hero.attributes._modifiers["ac"][0].value == 2
     assert hero.attributes._modifiers["speed"][0].value == 2
     assert hero.attributes._modifiers["dex_save_advantage"][0].value == 1
@@ -78,20 +79,22 @@ def test_hasted(config: AgentConfig, ) -> None:
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.1: Hero double action -> haste expires, lethargy takes place at the end of turn
-    effects = [eff for eff in state.current_actor.status_effects]
-    assert effects[0].type == EffectType.HASTED
-    assert effects[0].duration == 1
-    state = advance_turn(state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description=""))
-    state = advance_turn(state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description=""))
+    assert state.current_actor.status_effects[0].type == EffectType.HASTED
+    assert state.current_actor.status_effects[0].duration == 1
+    state = advance_turn(
+        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+    )
+    state = advance_turn(
+        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+    )
 
     hero._dice = MagicMock()  # fail save
     hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     hero = state.characters[hero_id]
-    effects = [eff for eff in hero.status_effects]
-    assert effects[0].type == EffectType.LETHARGIC
-    assert effects[0].duration == 1
+    assert hero.status_effects[0].type == EffectType.LETHARGIC
+    assert hero.status_effects[0].duration == 1
     assert hero.attributes._modifiers["speed"][0].value == 0.5
     assert hero.attributes._modifiers["wis_save_advantage"][0].value == -1
 
@@ -102,4 +105,3 @@ def test_hasted(config: AgentConfig, ) -> None:
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert state.action is not None
     assert len(state.current_actor.status_effects) == 0
-

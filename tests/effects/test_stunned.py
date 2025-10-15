@@ -9,7 +9,9 @@ from agent.models.weapons import MeleeWeapon
 from tests.conftest import advance_turn
 
 
-def test_stunned(config: AgentConfig, ) -> None:
+def test_stunned(
+    config: AgentConfig,
+) -> None:
     hero_id = "hero"
     orc_id = "orc"
 
@@ -23,7 +25,7 @@ def test_stunned(config: AgentConfig, ) -> None:
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Stunned(duration=2, chance=1)],
+        status_effects=[Stunned(duration=2)],
     )
     hero = Character(
         id=hero_id,
@@ -49,12 +51,12 @@ def test_stunned(config: AgentConfig, ) -> None:
     )
 
     # Turn 1.1: Hero attacks and applies stun
-    state = advance_turn(state,
-                         result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description=""))
+    state = advance_turn(
+        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+    )
     orc = state.characters[orc_id]
-    effects = [eff for eff in orc.status_effects]
-    assert effects[0].type == EffectType.STUNNED
-    assert effects[0].duration == 2
+    assert orc.status_effects[0].type == EffectType.STUNNED
+    assert orc.status_effects[0].duration == 2
     assert orc.attributes._modifiers["defense_advantage"][0].value == 1
     assert orc.attributes.compute_advantage("defense") == 1
 
@@ -66,9 +68,8 @@ def test_stunned(config: AgentConfig, ) -> None:
     assert state.decision is None
 
     orc = state.characters[orc_id]
-    effects = [eff for eff in orc.status_effects]
-    assert effects[0].type == EffectType.STUNNED
-    assert effects[0].duration == 1
+    assert orc.status_effects[0].type == EffectType.STUNNED
+    assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Pass
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))

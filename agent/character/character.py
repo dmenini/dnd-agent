@@ -139,6 +139,30 @@ class Character(BaseModel):
     def end_round(self) -> None:
         pass
 
+    def try_apply_status(self, effect: StatusEffect) -> bool:
+        event = ""
+        # Check immunity
+        if self.is_immune_to(effect.type):
+            event += f" {self.name} is immune to {effect.type.value} effect."
+            return False
+
+        # Saving throw
+        if effect.save_dc:
+            roll = self.save_roll(save_stat=effect.save_stat)
+            if roll.total >= effect.save_dc:
+                event += (
+                    f" {self.name} resists {effect.type.value} with a "
+                    f"{effect.save_stat.name} save ({roll} vs DC {effect.save_dc})!"
+                )
+                # Negate effect
+                return False
+
+        # Apply the effect
+        self.apply_status(effect)
+
+        # TODO: return event
+        return True
+
     def apply_status(self, effect: StatusEffect) -> None:
         if not self.has_effect(effect.type):
             self.status_effects.append(effect)

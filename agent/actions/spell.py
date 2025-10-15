@@ -93,8 +93,9 @@ class SupportSpellAction(Action):
     def _execute_on_target(self, target: Character) -> str:
         event = ""
         for effect in self.status_effects:
-            effect.try_apply(target)
-            event += f" {target.name} is {effect.type.value}."
+            affected = target.try_apply_status(effect)
+            if affected:
+                event += f" {target.name} is {effect.type.value}."
         return event
 
     def finalize(self, actor: Character) -> None:

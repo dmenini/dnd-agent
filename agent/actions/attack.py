@@ -69,7 +69,7 @@ class AttackAction(Action):
 
         # Try to apply status effects
         for effect in self.status_effects:
-            applied = effect.try_apply(target)
+            applied = target.try_apply_status(effect)
             if applied:
                 event += f" {target.name} is {effect.type.value}."
 

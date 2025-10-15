@@ -39,4 +39,4 @@ class Hasted(StatusEffect):
 
     def on_expire(self, target: Character) -> None:
         super().on_expire(target)
-        Lethargic(duration=1).try_apply(target)
+        target.try_apply_status(Lethargic(duration=1))
