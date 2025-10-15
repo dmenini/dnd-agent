@@ -121,11 +121,16 @@ class Character(BaseModel):
         self.status_effects = [eff for eff in self.status_effects if not eff.is_expired()]
 
     def end_turn(self) -> None:
+        effects = []
         for effect in self.status_effects:
             effect.on_turn_end(self)
 
-        # Remove expired effects
-        self.status_effects = [eff for eff in self.status_effects if not eff.is_expired()]
+            if effect.is_expired():
+                effect.on_expire(self)
+            else:
+                effects.append(effect)
+
+        self.status_effects = effects
 
         self.turn_done = True
 

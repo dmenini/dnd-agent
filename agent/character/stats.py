@@ -54,6 +54,7 @@ class Attributes(BaseModel):
     base_attack_advantage: int = 0
     base_defense_advantage: int = 0
     base_dex_save_advantage: int = 0
+    base_wis_save_advantage: int = 0
     base_autocrit: bool = False
 
     hp: int = 8

@@ -20,6 +20,7 @@ class EffectType(str, Enum):
     DODGING = "dodging"
     HASTED = "hasted"
     RESTRAINED = "restrained"
+    LETHARGIC = "lethargic"
 
 
 class StatusEffect(BaseModel):

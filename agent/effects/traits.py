@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
-from agent.character.stats import Modifier
+from agent.character.stats import Modifier, StatType
 from agent.models.enums import DamageType
 
 if TYPE_CHECKING:
@@ -17,38 +18,67 @@ class Trait:
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):
-    ATTR = "defense_advantage"
+    attr = "defense_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.ATTR, value=-1, operation="add"))
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
-    ATTR = "defense_advantage"
+    attr = "defense_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.ATTR, value=+1, operation="add"))
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=+1, operation="add"))
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
-    ATTR = "attack_advantage"
+    attr = "attack_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.ATTR, value=-1, operation="add"))
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
 
 
 class TargetAdvantageOnAttackRoll(Trait):
-    ATTR = "attack_advantage"
+    attr = "attack_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.ATTR, value=+1, operation="add"))
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=+1, operation="add"))
 
 
-class DisadvantageOnDexSavingThrow(Trait):
-    ATTR = "dex_save_advantage"
+class AdvantageOnSavingThrow(Trait):
+    def __init__(self, stat: StatType) -> None:
+        self.attr = f"{stat.value}_save_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.ATTR, value=-1, operation="add"))
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=1, operation="add"))
+
+
+class DisadvantageOnSavingThrow(Trait):
+    def __init__(self, stat: StatType) -> None:
+        self.attr = f"{stat.value}_save_advantage"
+
+    def on_apply(self, target: Character) -> None:
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
+
+
+class SpeedBonus(Trait):
+    attr = "speed"
+
+    def __init__(self, mult: float) -> None:
+        self.mult = mult
+
+    def on_apply(self, target: Character) -> None:
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=self.mult, operation="mul"))
+
+
+class ACBonus(Trait):
+    attr = "ac"
+
+    def __init__(self, val: int) -> None:
+        self.val = val
+
+    def on_apply(self, target: Character) -> None:
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=self.val, operation="add"))
 
 
 class AutoCritIfMelee(Trait):
@@ -81,3 +111,9 @@ class ExtraAction(Trait):
     def on_turn_start(self, target: Character) -> None:
         if target.action_economy.standard_actions > 0:
             target.action_economy.standard_actions += 1
+
+
+class HalveActions(Trait):
+    def on_turn_start(self, target: Character) -> None:
+        if target.action_economy.standard_actions > 1:
+            target.action_economy.standard_actions = math.ceil(target.action_economy.standard_actions / 2)

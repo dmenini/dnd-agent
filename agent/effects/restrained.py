@@ -6,7 +6,7 @@ from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
     AttackerAdvantageOnAttackRoll,
     CannotMove,
-    DisadvantageOnDexSavingThrow,
+    DisadvantageOnSavingThrow,
     TargetDisadvantageOnAttackRoll,
     Trait,
 )
@@ -19,7 +19,7 @@ class Restrained(StatusEffect):
     type: EffectType = EffectType.RESTRAINED
     _traits: list[Trait] = [
         CannotMove(),
-        DisadvantageOnDexSavingThrow(),
+        DisadvantageOnSavingThrow(),
         AttackerAdvantageOnAttackRoll(),
         TargetDisadvantageOnAttackRoll(),
     ]
