@@ -19,12 +19,19 @@ class Hasted(StatusEffect):
     """
 
     type: EffectType = EffectType.HASTED
+    save_dc: int = 0  # Skip save throw as it's cast on a willing creature
+
     _traits: list[Trait] = [
         ExtraAction(),
         SpeedBonus(mult=2),
         ACBonus(val=2),
         AdvantageOnSavingThrow(stat=StatType.DEX),
     ]
+
+    def on_apply(self, target: Character) -> None:
+        super().on_apply(target)
+        # Add a turn to take into account the current turn, since we decrease duration on the same turn end
+        self.duration += 1
 
     def on_turn_end(self, target: Character) -> None:
         super().on_turn_end(target)

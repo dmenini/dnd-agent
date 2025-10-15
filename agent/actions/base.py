@@ -27,7 +27,8 @@ class ActionType(str, Enum):
     SPECIAL = "special"
     DASH = "dash"
     MOVE = "move"
-    DODGE = "DODGE"
+    DODGE = "dodge"
+    WAIT = "pass"
 
 
 class Action(BaseModel):

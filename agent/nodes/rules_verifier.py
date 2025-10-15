@@ -39,8 +39,7 @@ class RulesVerifierNode:
             return state
 
         if not state.action or not state.decision:
-            msg = "State is missing action and decision"
-            raise ValueError(msg)
+            return state
 
         reasons = []
         for check in self.checks:

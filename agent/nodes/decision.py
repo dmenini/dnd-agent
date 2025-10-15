@@ -29,6 +29,9 @@ class DecisionNode:
 
         actions = actor.available_actions()
         if not actions:
+            state.action = None
+            state.decision = None
+            state.verification_result = None
             return state
 
         actor_str = {

@@ -8,6 +8,7 @@ from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.wait import WaitAction
 from agent.character.resources import SpellSlots
 from agent.character.stats import Attributes, Modifier, Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
@@ -47,7 +48,9 @@ class Character(BaseModel):
 
     spell_slots: SpellSlots = SpellSlots()
     action_economy: ActionEconomy = ActionEconomy()
-    turn_done: bool = False
+    turn_done: bool = True
+
+    _dice: DiceRoller = DiceRoller()
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -114,24 +117,23 @@ class Character(BaseModel):
         self.turn_done = False
         self.action_economy.restore_all()
 
-        for effect in self.status_effects:
+        for effect in list(self.status_effects):
             effect.on_turn_start(self)
+            if effect.is_expired():
+                effect.on_expire(self)
 
         # Remove expired effects
         self.status_effects = [eff for eff in self.status_effects if not eff.is_expired()]
 
     def end_turn(self) -> None:
-        effects = []
-        for effect in self.status_effects:
+        # Copy the list since effects may modify self.status_effects in-place
+        for effect in list(self.status_effects):
             effect.on_turn_end(self)
-
             if effect.is_expired():
                 effect.on_expire(self)
-            else:
-                effects.append(effect)
 
-        self.status_effects = effects
-
+        # Remove expired effects
+        self.status_effects = [e for e in self.status_effects if not e.is_expired()]
         self.turn_done = True
 
     def end_round(self) -> None:
@@ -168,6 +170,7 @@ class Character(BaseModel):
             MovementAction(range=self.current_speed),
             DashAction(range=self.current_speed),
             DodgeAction(),
+            WaitAction(),
         ]
 
         # Equipment-based actions
@@ -203,8 +206,6 @@ class Character(BaseModel):
         return self.pos.manhattan_distance(target)
 
     def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
-        dice = DiceRoller()
-
         # Compute advantage from multiple sources
         sources = [
             self.stats.advantage(attack_stat),
@@ -213,14 +214,13 @@ class Character(BaseModel):
         ]
         advantage = resolve_advantage(sources)
 
-        return dice.roll_with_context(dice_expression="1d20", advantage=advantage)
+        return self._dice.roll_with_context(dice_expression="1d20", advantage=advantage)
 
     def save_roll(self, save_stat: StatType) -> DiceRoll:
         """
         Rolls a saving throw for the given ability type.
         Accounts for modifiers, proficiency, and active status effects.
         """
-        dice = DiceRoller()
 
         # Compute advantage from multiple sources
         sources = [self.stats.advantage(save_stat), self.attributes.compute_advantage("dex_save")]
@@ -231,7 +231,7 @@ class Character(BaseModel):
         prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
         mod = ability_mod + prof_bonus
         expr = f"1d20+{mod}"
-        return dice.roll_with_context(dice_expression=expr, advantage=advantage)
+        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
     def add_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)

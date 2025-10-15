@@ -74,7 +74,7 @@ def main() -> None:
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        status_effects=[Hasted(duration=2)],
+        status_effects=[Hasted(duration=2, chance=1, save_dc=0)],
     )
 
     hero = Character(

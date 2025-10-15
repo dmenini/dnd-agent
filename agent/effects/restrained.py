@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
     AttackerAdvantageOnAttackRoll,
@@ -19,7 +20,7 @@ class Restrained(StatusEffect):
     type: EffectType = EffectType.RESTRAINED
     _traits: list[Trait] = [
         CannotMove(),
-        DisadvantageOnSavingThrow(),
+        DisadvantageOnSavingThrow(stat=StatType.DEX),
         AttackerAdvantageOnAttackRoll(),
         TargetDisadvantageOnAttackRoll(),
     ]

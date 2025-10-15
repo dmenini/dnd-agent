@@ -47,7 +47,7 @@ class TargetAdvantageOnAttackRoll(Trait):
 
 class AdvantageOnSavingThrow(Trait):
     def __init__(self, stat: StatType) -> None:
-        self.attr = f"{stat.value}_save_advantage"
+        self.attr = f"{stat.name.lower()}_save_advantage"
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=1, operation="add"))
@@ -55,7 +55,7 @@ class AdvantageOnSavingThrow(Trait):
 
 class DisadvantageOnSavingThrow(Trait):
     def __init__(self, stat: StatType) -> None:
-        self.attr = f"{stat.value}_save_advantage"
+        self.attr = f"{stat.name.lower()}_save_advantage"
 
     def on_apply(self, target: Character) -> None:
         target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
