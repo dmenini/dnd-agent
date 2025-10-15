@@ -250,9 +250,11 @@ class Character(BaseModel):
         Rolls a saving throw for the given ability type.
         Accounts for modifiers, proficiency, and active status effects.
         """
+        if self.attributes.compute_autofail(f"{save_stat.name.lower()}_save"):
+            return DiceRoll(expression="1d20", rolls=[1], total=1, raw=1)
 
         # Compute advantage from multiple sources
-        sources = [self.stats.advantage(save_stat), self.attributes.compute_advantage("dex_save")]
+        sources = [self.stats.advantage(save_stat), self.attributes.compute_advantage(f"{save_stat.name.lower()}_save")]
         advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)

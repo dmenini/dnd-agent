@@ -11,6 +11,11 @@ if TYPE_CHECKING:
 
 
 class Poisoned(StatusEffect):
+    """
+    * Target has disadvantage on attack rolls and ability checks.
+    * Target takes damage over time.
+    """
+
     type: EffectType = EffectType.POISONED
     damage: int = 1
 

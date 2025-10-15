@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 
 class Lethargic(StatusEffect):
     """
-    Movement speed is halved, and if they can make multiple attacks they may only take
-    half that many attacks per turn (rounded up). They may repeat the saving throw with disadvantage
-    each turn, ending the effect on a success.
+    * Target's movement speed is halved.
+    * Target may only take half actions per turn (rounded up).
+    Target may repeat the WIS saving throw with disadvantage each turn, ending the effect on a success.
     """
 
     type: EffectType = EffectType.LETHARGIC

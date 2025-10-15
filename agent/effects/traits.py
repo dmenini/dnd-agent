@@ -61,6 +61,14 @@ class DisadvantageOnSavingThrow(Trait):
         target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
 
 
+class FailOnSavingThrow(Trait):
+    def __init__(self, stat: StatType) -> None:
+        self.attr = f"{stat.name.lower()}_save_autofail"
+
+    def on_apply(self, target: Character) -> None:
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=True, operation="set"))
+
+
 class SpeedBonus(Trait):
     attr = "speed"
 

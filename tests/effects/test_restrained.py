@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from agent.character.character import Character, Party
 from agent.character.stats import Attributes
 from agent.effects.base import EffectType
-from agent.effects.paralyzed import Paralyzed
+from agent.effects.restrained import Restrained
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.enums import DamageType, TargetingType, WeaponType
@@ -13,7 +13,7 @@ from agent.models.weapons import MeleeWeapon
 from tests.conftest import advance_turn
 
 
-def test_paralyzed(
+def test_restrained(
     config: AgentConfig,
 ) -> None:
     hero_id = "hero"
@@ -29,7 +29,7 @@ def test_paralyzed(
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Paralyzed(duration=2)],
+        status_effects=[Restrained(duration=2)],
     )
     hero = Character(
         id=hero_id,
@@ -49,6 +49,13 @@ def test_paralyzed(
         attributes=Attributes(hp=starting_hp),
         pos=Position(x=4, y=2),
         party=party_enemies,
+        main_hand=MeleeWeapon(
+            name="Sword",
+            damage_dice="2d6",
+            weapon_type=WeaponType.LONGSWORD,
+            range=2,
+            targeting=TargetingType.SINGLE,
+        ),
     )
 
     state = State(
@@ -63,50 +70,42 @@ def test_paralyzed(
     hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value, raw=value)
     hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value * 2, raw=value)
 
-    # Turn 1.1: Hero attacks and applies paralysis
+    # Turn 1.1: Hero attacks and applies restrained
     state = advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
     )
     orc = state.characters[orc_id]
     assert orc.attributes.hp == starting_hp - value
-    assert orc.status_effects[0].type == EffectType.PARALYZED
+    assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 2
     assert orc.attributes._modifiers["defense_advantage"][0].value == 1
-    assert orc.attributes._modifiers["str_save_autofail"][0].value is True
-    assert orc.attributes._modifiers["dex_save_autofail"][0].value is True
-
+    assert orc.attributes._modifiers["attack_advantage"][0].value == -1
+    assert orc.attributes._modifiers["dex_save_advantage"][0].value == -1
     assert orc.attributes.compute_advantage("defense") == 1
-    assert orc.attributes.compute_autofail("str_save") is True
-    assert orc.attributes.compute_autofail("dex_save") is True
+    assert orc.attributes.compute_advantage("attack") == -1
+    assert orc.attributes.compute_advantage("dex_save") == -1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
-    # Turn 1.2: Orc paralyzed -> skip turn
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
-    assert state.action is None
-    assert state.decision is None
+    # Turn 1.2: Orc restrained -> after attack no more actions available and passes (no need to wait)
+    state = advance_turn(
+        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[hero_id], description="")
+    )
 
     orc = state.characters[orc_id]
-    assert orc.status_effects[0].type == EffectType.PARALYZED
+    assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 1
 
-    # Turn 2.1: Hero attacks -> crit
-    state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
-    )
-    crit_damage = value + value
-    assert orc.attributes.hp == starting_hp - value - crit_damage
-
+    # Turn 2.1: Pass
+    assert state.current_actor.id == hero_id
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
-    # Turn 2.2: Orc still paralyzed -> skip turn
+    # Turn 2.2: Orc still restrained -> skip turn
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
-    assert state.action is None
-    assert state.decision is None
 
     # Paralysis expires after 2 turns
     orc = state.current_actor
     assert len(orc.status_effects) == 0
     assert orc.attributes._modifiers["defense_advantage"] == []
-    assert orc.attributes._modifiers["str_save_autofail"] == []
-    assert orc.attributes._modifiers["dex_save_autofail"] == []
+    assert orc.attributes._modifiers["attack_advantage"] == []
+    assert orc.attributes._modifiers["dex_save_advantage"] == []

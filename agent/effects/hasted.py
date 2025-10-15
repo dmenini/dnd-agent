@@ -13,8 +13,10 @@ if TYPE_CHECKING:
 
 class Hasted(StatusEffect):
     """
-    The target's speed is doubled, it gains a +2 bonus to AC, it has advantage
-    on Dexterity saving throws, and it gains an additional action on each of its turns.
+    * Target speed is doubled.
+    * Target gains a +2 bonus to AC.
+    * Target has advantage on Dexterity saving throws.
+    * Target gains an additional action on each of its turns.
     When the effect ends, the target gets lethargy for 1 turn.
     """
 

@@ -58,7 +58,12 @@ def test_stunned(
     assert orc.status_effects[0].type == EffectType.STUNNED
     assert orc.status_effects[0].duration == 2
     assert orc.attributes._modifiers["defense_advantage"][0].value == 1
+    assert orc.attributes._modifiers["str_save_autofail"][0].value is True
+    assert orc.attributes._modifiers["dex_save_autofail"][0].value is True
+
     assert orc.attributes.compute_advantage("defense") == 1
+    assert orc.attributes.compute_autofail("str_save") is True
+    assert orc.attributes.compute_autofail("dex_save") is True
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -83,3 +88,5 @@ def test_stunned(
     orc = state.current_actor
     assert len(orc.status_effects) == 0
     assert orc.attributes._modifiers["defense_advantage"] == []
+    assert orc.attributes._modifiers["str_save_autofail"] == []
+    assert orc.attributes._modifiers["dex_save_autofail"] == []

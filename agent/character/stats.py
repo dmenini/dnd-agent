@@ -53,8 +53,21 @@ class Attributes(BaseModel):
     base_vision_range: float = 10.0
     base_attack_advantage: int = 0
     base_defense_advantage: int = 0
+
+    base_str_save_advantage: int = 0
     base_dex_save_advantage: int = 0
+    base_con_save_advantage: int = 0
+    base_int_save_advantage: int = 0
     base_wis_save_advantage: int = 0
+    base_cha_save_advantage: int = 0
+
+    base_str_save_autofail: bool = False
+    base_dex_save_autofail: bool = False
+    base_con_save_autofail: bool = False
+    base_int_save_autofail: bool = False
+    base_wis_save_autofail: bool = False
+    base_cha_save_autofail: bool = False
+
     base_autocrit: bool = False
 
     hp: int = 8
@@ -82,6 +95,9 @@ class Attributes(BaseModel):
 
     def compute_advantage(self, prefix: str) -> int:
         return self._recompute_attribute(prefix + "_advantage")
+
+    def compute_autofail(self, prefix: str) -> int:
+        return self._recompute_attribute(prefix + "_autofail")
 
     def add_modifier(self, modifier: Modifier) -> None:
         self._modifiers[modifier.attribute].append(modifier)
