@@ -28,6 +28,9 @@ class DecisionNode:
                 state.append_log(str(effect).format(actor=actor.name))
 
         actions = actor.available_actions()
+        if not actions:
+            return state
+
         actor_str = {
             "id": actor.id,
             "name": actor.name,

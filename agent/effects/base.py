@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import random
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PrivateAttr
 
+from agent.effects.traits import Trait
 from agent.models.enums import StatType
 
 if TYPE_CHECKING:
@@ -29,6 +30,8 @@ class StatusEffect(BaseModel):
     chance: float = 1.0
     save_stat: StatType = StatType.CON
     save_dc: int = 12  # Difficulty class
+
+    _traits: list[Trait] = PrivateAttr(default_factory=list)
 
     def try_apply(self, target: Character) -> bool:
         event = ""
@@ -61,38 +64,61 @@ class StatusEffect(BaseModel):
 
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
+        for trait in self._traits:
+            self._trigger_hook(trait, "on_apply", target)
 
     def on_turn_start(self, target: Character) -> None:
         """Call at the start of the target's turn."""
+        for trait in self._traits:
+            self._trigger_hook(trait, "on_turn_start", target)
 
     def on_turn_end(self, target: Character) -> None:
         """Call at the end of the target's turn."""
+        for trait in self._traits:
+            self._trigger_hook(trait, "on_turn_end", target)
 
-    def on_receive_damage(self, target: Character, damage: int) -> int:  # noqa: ARG002
-        """Modify damage taken (e.g., resistance, vulnerability)."""
+    def on_receive_damage(self, target: Character, damage: int) -> int:
+        """Modify damage taken (e.g., resistance, vulnerability). Multiple effects accumulate on each other."""
+        for trait in self._traits:
+            damage += self._trigger_hook(trait, "on_receive_damage", target, damage) or 0
         return damage
 
-    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:  # noqa: ARG002
+    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:
         """Modify attack roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
+        for trait in self._traits:
+            if is_target:
+                return self._trigger_hook(trait, "on_attack_roll_as_target")
+            return self._trigger_hook(trait, "on_attack_roll_as_actor")
         return None
 
-    def on_save_roll(self, stat: StatType) -> bool | None:  # noqa: ARG002
+    def on_save_roll(self, stat: StatType) -> bool | None:
         """Modify save roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
+        for trait in self._traits:
+            return self._trigger_hook(trait, "on_save_roll", stat)
         return None
 
-    def on_attack(self, actor: Character, target: Character, damage: int) -> int:  # noqa: ARG002
+    def on_attack(self, actor: Character, target: Character, damage: int) -> int:
         """Modify outgoing damage (e.g., weaken attacks)."""
+        for trait in self._traits:
+            damage += self._trigger_hook(trait, "on_attack", actor, target, damage) or 0
         return damage
+
+    def is_auto_crit(self, actor: Character, target: Character) -> bool:
+        for trait in self._traits:
+            return self._trigger_hook(trait, "is_auto_crit", actor, target)
+        return False
 
     def is_expired(self) -> bool:
         return self.duration <= 0
 
-    def is_auto_crit(self, actor: Character, target: Character) -> bool:  # noqa: ARG002
-        return False
-
     def __str__(self) -> str:
         return f" {{actor}} is {self.type.value} ({self.duration} turns left)."
+
+    def _trigger_hook(self, trait: Trait, hook_name: str, *args: Any, **kwargs: Any) -> Any:
+        """Call all traits that define the given hook."""
+        method = getattr(trait, hook_name, None)
+        return method(*args, **kwargs) if method is not None else None

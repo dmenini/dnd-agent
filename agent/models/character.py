@@ -11,7 +11,7 @@ from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.effects.base import EffectType, StatusEffect
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
-from agent.models.enums import SpellLevel, StatType, WeaponType
+from agent.models.enums import DamageType, SpellLevel, StatType, WeaponType
 from agent.models.position import Position
 from agent.models.weapons import AttackSpell, FinesseWeapon, MeleeWeapon, RangedWeapon, Spell, SupportSpell
 
@@ -181,7 +181,7 @@ class Character(BaseModel):
             damage = effect.on_receive_damage(self, damage)
         self.apply_damage(damage)
 
-    def apply_damage(self, damage: int) -> None:
+    def apply_damage(self, damage: int, damage_type: DamageType | None = None) -> None:  # noqa: ARG002
         self.attributes.current_hp = max(0, self.attributes.current_hp - damage)
 
     def heal(self, amount: int) -> None:

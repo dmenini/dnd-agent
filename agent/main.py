@@ -9,7 +9,7 @@ from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
 from agent.graph import build_graph
-from agent.models.character import MeleeWeapon, Party, RangedWeapon, Stats
+from agent.models.character import Attributes, MeleeWeapon, Party, RangedWeapon, Stats
 from agent.models.config import Config
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position
@@ -41,7 +41,7 @@ def main() -> None:
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Stunned(duration=1, chance=0.25)],
+        status_effects=[Stunned(duration=1, chance=1)],
     )
     bow = RangedWeapon(
         name="Bow",
@@ -80,6 +80,7 @@ def main() -> None:
         id="pc_alfred",
         name="Alfred",
         icon="⚔️",
+        attributes=Attributes(base_hp=20, current_hp=20),
         pos=Position(x=2, y=2),
         is_player=True,
         party=party_players,
@@ -100,10 +101,9 @@ def main() -> None:
             damage_dice="1d3",
             damage_type=DamageType.BLUDGEONING,
             weapon_type=WeaponType.OTHER,
-            range=1,
+            range=2,
             targeting=TargetingType.SINGLE,
         ),
-        ranged=bow,
     )
 
     goblin = Character(

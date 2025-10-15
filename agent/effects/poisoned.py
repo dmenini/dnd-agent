@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from agent.effects.base import EffectType, StatusEffect
+from agent.effects.traits import DamageOverTime, TargetDisadvantageOnAttackRoll
+from agent.models.enums import DamageType
 
 if TYPE_CHECKING:
     from agent.models.character import Character
@@ -12,11 +14,12 @@ class Poisoned(StatusEffect):
     type: EffectType = EffectType.POISONED
     damage: int = 1
 
-    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:
-        """Attack rolls of a poisoned actor have disadvantage (also for ability checks, but not implemented yet)."""
-        return False if not is_target else None
+    def model_post_init(self, _: Any) -> None:
+        self._traits = [
+            TargetDisadvantageOnAttackRoll(),
+            DamageOverTime(damage=self.damage, dtype=DamageType.POISON),
+        ]
 
     def on_turn_end(self, target: Character) -> None:
-        """Target takes poison damage at the end of its turn."""
-        target.apply_damage(self.damage)
+        super().on_turn_end(target)
         self.duration -= 1
