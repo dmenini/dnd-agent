@@ -53,8 +53,7 @@ class DecisionNode:
                 "hp": f"{c.attributes.current_hp}/{c.max_hp}",
                 "distance": actor.distance(c.pos),
             }
-            for c in state.characters.values()
-            if c.is_alive and c.id != actor.id
+            for c in state.alive_characters.values() if c.id != actor.id
         ]
 
         history = self.group_messages(

@@ -148,7 +148,7 @@ class RulesVerifierNode:
         if dist > max_dist:
             return False, f"Position {pos} is out of range ({dist:.1f} > {max_dist})"
 
-        for char in state.characters.values():
+        for char in state.alive_characters.values():
             if char.pos == pos:
                 return False, f"Position {pos} is already taken by character {char.name}"
 
