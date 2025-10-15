@@ -6,14 +6,14 @@ from agent.actions.attack import AttackAction
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.effects.base import StatusEffect
 from agent.models.enums import (
-    SpellLevel,
-    StatType,
     TargetingType,
     WeaponType,
 )
+from agent.character.resources import SpellLevel
+from agent.character.stats import StatType
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
     from agent.models.weapons import AttackSpell, SupportSpell
 
 

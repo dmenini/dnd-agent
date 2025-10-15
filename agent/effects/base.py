@@ -8,10 +8,10 @@ from pydantic import BaseModel, PrivateAttr
 
 from agent.effects.traits import Trait
 from agent.mechanics.advantage import resolve_advantage
-from agent.models.enums import StatType
+from agent.character.stats import StatType
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 
 class EffectType(str, Enum):

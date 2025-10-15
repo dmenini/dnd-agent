@@ -7,7 +7,7 @@ from agent.effects.dodge import Dodge
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 
 class DodgeAction(Action):

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent.models.enums import DamageType, StatType
+from agent.models.enums import DamageType
+from agent.character.stats import StatType
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 MELEE_RANGE = 5
 

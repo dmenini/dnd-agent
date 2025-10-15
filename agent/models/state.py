@@ -4,7 +4,7 @@ from rich.table import Table
 from rich.text import Text
 
 from agent.actions.base import Action
-from agent.models.character import Character, Party
+from agent.character.character import Character, Party
 from agent.models.position import Position
 
 CELL_WIDTH = 2

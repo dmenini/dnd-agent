@@ -4,15 +4,6 @@ from typing import Literal
 PartyType = Literal["players", "enemies", "neutrals"]
 
 
-class StatType(str, Enum):
-    STR = "strength"
-    DEX = "dexterity"
-    CON = "constitution"
-    INT = "intelligence"
-    WIS = "wisdom"
-    CHA = "charisma"
-
-
 class DamageType(str, Enum):
     BLUDGEONING = "bludgeoning"
     PIERCING = "piercing"
@@ -86,10 +77,3 @@ class WeaponType(str, Enum):
     # Other / Custom
     OTHER = "other"
     SPELL = "spell"
-
-
-class SpellLevel(Enum):
-    CANTRIP = 0
-    LEVEL_1 = 1
-    LEVEL_2 = 2
-    LEVEL_3 = 3

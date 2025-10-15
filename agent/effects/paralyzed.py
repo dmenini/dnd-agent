@@ -6,7 +6,7 @@ from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import AttackerAdvantageOnAttackRoll, AutoCritIfMelee, CannotAct, CannotMove, Trait
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 MIN_AUTOCRIT_DISTANCE = 5
 

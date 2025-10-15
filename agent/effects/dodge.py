@@ -6,7 +6,7 @@ from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import AttackerDisadvantageOnAttackRoll, Trait
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 
 class Dodge(StatusEffect):

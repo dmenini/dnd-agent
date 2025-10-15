@@ -4,7 +4,9 @@ from pydantic import BaseModel
 
 from agent.actions.base import ActionCategory
 from agent.effects.base import StatusEffect
-from agent.models.enums import DamageType, SpellLevel, StatType, TargetingType, WeaponType
+from agent.models.enums import DamageType, TargetingType, WeaponType
+from agent.character.resources import SpellLevel
+from agent.character.stats import StatType
 
 
 class Equipment(ABC, BaseModel):

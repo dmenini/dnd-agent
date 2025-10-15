@@ -7,7 +7,7 @@ from agent.effects.traits import DamageOverTime, TargetDisadvantageOnAttackRoll
 from agent.models.enums import DamageType
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 
 class Poisoned(StatusEffect):

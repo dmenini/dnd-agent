@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from agent.character.resources import ActionEconomy
+
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 
 class ActionCategory(str, Enum):
@@ -26,22 +28,6 @@ class ActionType(str, Enum):
     DASH = "dash"
     MOVE = "move"
     DODGE = "DODGE"
-
-
-class ActionEconomy(BaseModel):
-    standard_actions: int = 1
-    max_standard_actions: int = 1
-    bonus_actions: int = 1
-    max_bonus_actions: int = 1
-    reaction_available: bool = True
-    movement_available: bool = True
-
-    def restore_all(self) -> None:
-        """Restore all resources. Must be done after each round."""
-        self.standard_actions = self.max_standard_actions
-        self.bonus_actions = self.max_bonus_actions
-        self.movement_available = True
-        self.reaction_available = True
 
 
 class Action(BaseModel):

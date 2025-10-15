@@ -12,7 +12,7 @@ from agent.effects.traits import (
 )
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
 
 
 class Restrained(StatusEffect):

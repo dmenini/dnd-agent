@@ -9,7 +9,8 @@ from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
 from agent.graph import build_graph
-from agent.models.character import Attributes, MeleeWeapon, Party, RangedWeapon, Stats
+from agent.character.character import MeleeWeapon, Party, RangedWeapon
+from agent.character.stats import Attributes, Stats
 from agent.models.config import Config
 from agent.models.enums import DamageType, TargetingType, WeaponType
 from agent.models.position import Position

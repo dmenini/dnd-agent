@@ -6,7 +6,7 @@ from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
-    from agent.models.character import Character
+    from agent.character.character import Character
     from agent.models.position import Position
 
 
