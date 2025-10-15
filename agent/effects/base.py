@@ -65,7 +65,9 @@ class StatusEffect(BaseModel):
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
         """Modify crit chance."""
         for trait in self._traits:
-            return self._trigger_hook(trait, "is_auto_crit", actor, target)
+            res = self._trigger_hook(trait, "is_auto_crit", actor, target)
+            if res is not None:
+                return res
         return False
 
     def is_expired(self) -> bool:

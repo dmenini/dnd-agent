@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Self
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import (
     DamageType,
     TargetingType,
@@ -30,7 +29,6 @@ class AttackAction(Action):
     status_effects: list[StatusEffect] = []
 
     def execute(self, actor: Character, target: Character) -> str:
-        dice = DiceRoller()
         event = ""
 
         # Attack roll
@@ -39,14 +37,12 @@ class AttackAction(Action):
         is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
 
         mod = self._attack_modifier(actor)
+        expr = f"{self.damage_dice}+{mod}"
 
         if is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
             event += f" {actor.name} rolls a NATURAL 20! Critical hit!"
-            roll1 = dice.roll_once(self.damage_dice)
-            roll2 = dice.roll_once(self.damage_dice)
-            damage = roll1.raw + roll2.raw + mod
-
+            damage = actor.damage_roll(expr=expr, is_critical=True).total
         else:
             # Check attack roll result
             if roll.total < target.ac:
@@ -54,8 +50,7 @@ class AttackAction(Action):
                 return event
 
             # Damage roll
-            roll = dice.roll_once(self.damage_dice)
-            damage = roll.total + mod
+            damage = actor.damage_roll(expr=expr, is_critical=False).total
 
         # Let status effects modify outgoing damage
         damage = actor.modify_outgoing_damage(target, damage)

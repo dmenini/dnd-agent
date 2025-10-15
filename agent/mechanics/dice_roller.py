@@ -27,6 +27,16 @@ class DiceRoller:
             raw=sum(rolls),
         )
 
+    def roll_twice(self, expr: str) -> DiceRoll:
+        n, sides, mod = self._parse_expression(expr)
+        rolls = [self.random.randint(1, sides) for _ in range(n * 2)]
+        return DiceRoll(
+            expression=expr,
+            rolls=rolls,
+            total=sum(rolls) + mod,
+            raw=sum(rolls),
+        )
+
     def sides(self, expr: str) -> int:
         _, sides, _ = self._parse_expression(expr)
         return sides

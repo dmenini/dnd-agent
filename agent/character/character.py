@@ -240,6 +240,11 @@ class Character(BaseModel):
 
         return self._dice.roll_with_context(dice_expression="1d20", advantage=advantage)
 
+    def damage_roll(self, *, expr: str, is_critical: bool = False) -> DiceRoll:
+        if is_critical:
+            return self._dice.roll_twice(expr)
+        return self._dice.roll_once(expr)
+
     def save_roll(self, save_stat: StatType) -> DiceRoll:
         """
         Rolls a saving throw for the given ability type.
