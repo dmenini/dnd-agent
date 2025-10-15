@@ -4,7 +4,7 @@ import math
 from typing import TYPE_CHECKING
 
 from agent.character.stats import Modifier, StatType
-from agent.models.enums import DamageType
+from agent.models.enums import Advantage, DamageType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -21,36 +21,32 @@ class AttackerDisadvantageOnAttackRoll(Trait):
     attr = "defense_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
+        target.add_modifier(
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add"))
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
     attr = "defense_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=+1, operation="add"))
+        target.add_modifier(
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add"))
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
     attr = "attack_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
+        target.add_modifier(
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add"))
 
 
 class TargetAdvantageOnAttackRoll(Trait):
     attr = "attack_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=+1, operation="add"))
-
-
-class AdvantageOnSavingThrow(Trait):
-    def __init__(self, stat: StatType) -> None:
-        self.attr = f"{stat.name.lower()}_save_advantage"
-
-    def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=1, operation="add"))
+        target.add_modifier(
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add"))
 
 
 class DisadvantageOnSavingThrow(Trait):
@@ -58,7 +54,17 @@ class DisadvantageOnSavingThrow(Trait):
         self.attr = f"{stat.name.lower()}_save_advantage"
 
     def on_apply(self, target: Character) -> None:
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=self.attr, value=-1, operation="add"))
+        target.add_modifier(
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.DISADVANTAGE, operation="add"))
+
+
+class AdvantageOnSavingThrow(Trait):
+    def __init__(self, stat: StatType) -> None:
+        self.attr = f"{stat.name.lower()}_save_advantage"
+
+    def on_apply(self, target: Character) -> None:
+        target.add_modifier(
+            Modifier(source_id=str(id(self)), attribute=self.attr, value=Advantage.ADVANTAGE, operation="add"))
 
 
 class FailOnSavingThrow(Trait):

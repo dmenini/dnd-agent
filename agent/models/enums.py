@@ -4,6 +4,12 @@ from typing import Literal
 PartyType = Literal["players", "enemies", "neutrals"]
 
 
+class Advantage(int, Enum):
+    ADVANTAGE = 1
+    NEUTRAL = 0
+    DISADVANTAGE = -1
+
+
 class DamageType(str, Enum):
     BLUDGEONING = "bludgeoning"
     PIERCING = "piercing"

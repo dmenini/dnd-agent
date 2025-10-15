@@ -4,6 +4,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, PrivateAttr
 
+from agent.models.enums import Advantage
+
 DEFAULT_STAT = 10
 ADVANTAGE_THRESHOLD = 16
 DISADVANTAGE_THRESHOLD = 8
@@ -37,16 +39,18 @@ class Stats(BaseModel):
         val = self.__getattribute__(stat.value)
         return (val - DEFAULT_STAT) // 2
 
-    def advantage(self, stat: StatType) -> int:
+    def advantage(self, stat: StatType) -> Advantage:
         val = self.__getattribute__(stat.value)
         if val and val >= ADVANTAGE_THRESHOLD:
-            return 1
+            return Advantage.ADVANTAGE
         if val and val <= DISADVANTAGE_THRESHOLD:
-            return -1
-        return 0
+            return Advantage.DISADVANTAGE
+        return Advantage.NEUTRAL
 
 
 class Attributes(BaseModel):
+    hp: int = 8
+
     base_hp: int = 8
     base_ac: int = 2
     base_speed: float = 6.0
@@ -69,8 +73,6 @@ class Attributes(BaseModel):
     base_cha_save_autofail: bool = False
 
     base_autocrit: bool = False
-
-    hp: int = 8
 
     _modifiers: dict[str, list[Modifier]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
