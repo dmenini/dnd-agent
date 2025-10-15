@@ -7,6 +7,7 @@ from pydantic import BaseModel, PrivateAttr
 
 from agent.character.stats import StatType
 from agent.effects.traits import Trait
+from agent.equipment.weapons import DamageType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -50,16 +51,16 @@ class StatusEffect(BaseModel):
         for trait in self._traits:
             self._trigger_hook(trait, "on_turn_end", target)
 
-    def on_receive_damage(self, target: Character, damage: int) -> int:
+    def on_receive_damage(self, target: Character, damage: int, dtype: DamageType) -> int:
         """Modify damage taken (e.g., resistance, vulnerability). Multiple effects accumulate on each other."""
         for trait in self._traits:
-            damage += self._trigger_hook(trait, "on_receive_damage", target, damage) or 0
+            damage += self._trigger_hook(trait, "on_receive_damage", target, damage, dtype) or 0
         return damage
 
-    def on_attack(self, actor: Character, target: Character, damage: int) -> int:
+    def on_apply_damage(self, actor: Character, target: Character, damage: int, dtype: DamageType) -> int:
         """Modify outgoing damage (e.g., weaken attacks)."""
         for trait in self._traits:
-            damage += self._trigger_hook(trait, "on_attack", actor, target, damage) or 0
+            damage += self._trigger_hook(trait, "on_apply_damage", actor, target, damage, dtype) or 0
         return damage
 
     def is_auto_crit(self, actor: Character, target: Character) -> bool:

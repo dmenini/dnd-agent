@@ -1,4 +1,4 @@
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel, computed_field
 
@@ -54,6 +54,20 @@ class Character(BaseModel):
     turn_done: bool = True
 
     _dice: DiceRoller = DiceRoller()
+
+    def model_post_init(self, context: Any, /) -> None:
+        # Equip to apply traits
+        if self.armor:
+            self.armor.on_equip(self)
+        if self.accessories:
+            for acc in self.accessories:
+                acc.on_equip(self)
+        if self.main_hand:
+            self.main_hand.on_equip(self)
+        if self.off_hand:
+            self.off_hand.on_equip(self)
+        if self.ranged:
+            self.ranged.on_equip(self)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -175,14 +189,14 @@ class Character(BaseModel):
 
         effect.on_apply(self)
 
-    def modify_incoming_damage(self, damage: int) -> int:
+    def modify_incoming_damage(self, damage: int, dtype: DamageType) -> int:
         for effect in self.status_effects:
-            damage = effect.on_receive_damage(self, damage)
+            damage = effect.on_receive_damage(target=self, damage=damage, dtype=dtype)
         return damage
 
-    def modify_outgoing_damage(self, target: Self, damage: int) -> int:
+    def modify_outgoing_damage(self, target: Self, damage: int, dtype: DamageType) -> int:
         for effect in self.status_effects:
-            damage = effect.on_attack(self, target, damage)
+            damage = effect.on_apply_damage(actor=self, target=target, damage=damage, dtype=dtype)
         return damage
 
     def has_resources(self) -> bool:

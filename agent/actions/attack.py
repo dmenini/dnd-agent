@@ -29,7 +29,7 @@ class AttackAction(Action):
 
         # Attack roll
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
-        is_critical = roll.raw == CRIT_ROLL_VAL
+        is_critical = roll.raw == actor.attributes.compute_crit_roll()
         is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
 
         mod = self._attack_modifier(actor)
