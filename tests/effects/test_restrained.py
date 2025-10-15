@@ -4,10 +4,10 @@ from agent.character.character import Character, Party
 from agent.character.stats import Attributes
 from agent.effects.base import EffectType
 from agent.effects.restrained import Restrained
-from agent.equipment.weapons import MeleeWeapon
+from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
-from agent.models.enums import DamageType, TargetingType, WeaponType
+from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
 from tests.conftest import advance_turn
@@ -26,10 +26,10 @@ def test_restrained(
         name="Sword",
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
-        weapon_type=WeaponType.LONGSWORD,
+        weapon_type=WeaponType.MARTIAL_MELEE,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Restrained(duration=2)],
+        effects=[Restrained(duration=2)],
     )
     hero = Character(
         id=hero_id,
@@ -52,9 +52,10 @@ def test_restrained(
         main_hand=MeleeWeapon(
             name="Sword",
             damage_dice="2d6",
-            weapon_type=WeaponType.LONGSWORD,
             range=2,
             targeting=TargetingType.SINGLE,
+            weapon_type=WeaponType.SIMPLE_MELEE,
+            damage_type=DamageType.SLASHING,
         ),
     )
 

@@ -11,9 +11,10 @@ from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
 from agent.equipment.spells import AttackSpell, SupportSpell
+from agent.equipment.weapons import UNARMED, DamageType, WeaponType
 from agent.graph import build_graph
 from agent.models.config import Config
-from agent.models.enums import DamageType, TargetingType, WeaponType
+from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import Character, State
 
@@ -39,16 +40,16 @@ def main() -> None:
         description="Heavy sword that may stun the enemy",
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
-        weapon_type=WeaponType.LONGSWORD,
+        weapon_type=WeaponType.MARTIAL_MELEE,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Stunned(duration=1)],
+        effects=[Stunned(duration=1)],
     )
     bow = RangedWeapon(
         name="Bow",
         damage_dice="1d6",
         damage_type=DamageType.PIERCING,
-        weapon_type=WeaponType.LONGBOW,
+        weapon_type=WeaponType.SIMPLE_RANGE,
         range=10,
         targeting=TargetingType.SINGLE,
     )
@@ -57,15 +58,15 @@ def main() -> None:
         description="Poisonous dagger",
         damage_dice="1d5",
         damage_type=DamageType.SLASHING,
-        weapon_type=WeaponType.DAGGER,
+        weapon_type=WeaponType.SIMPLE_MELEE,
         range=1,
         targeting=TargetingType.SINGLE,
-        status_effects=[Poisoned(duration=3, damage=1)],
+        effects=[Poisoned(duration=3, damage=1)],
     )
     fire_ball = AttackSpell(
         name="Fire Ball",
         damage_dice="1d6",
-        damage_type=DamageType.MAGIC,
+        damage_type=DamageType.FIRE,
         range=5,
         targeting=TargetingType.SINGLE,
     )
@@ -74,7 +75,7 @@ def main() -> None:
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        status_effects=[Hasted(duration=2, save_dc=0)],
+        effects=[Hasted(duration=2, save_dc=0)],
     )
 
     hero = Character(
@@ -97,14 +98,7 @@ def main() -> None:
         pos=Position(x=4, y=2),
         party=party_enemies,
         stats=Stats(),
-        main_hand=MeleeWeapon(
-            name="Fist",
-            damage_dice="1d3",
-            damage_type=DamageType.BLUDGEONING,
-            weapon_type=WeaponType.OTHER,
-            range=2,
-            targeting=TargetingType.SINGLE,
-        ),
+        main_hand=UNARMED,
     )
 
     goblin = Character(

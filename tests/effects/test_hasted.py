@@ -4,7 +4,7 @@ from agent.character.character import Character, Party
 from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
 from agent.equipment.spells import SupportSpell
-from agent.equipment.weapons import MeleeWeapon
+from agent.equipment.weapons import DamageType, MeleeWeapon
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.enums import TargetingType, WeaponType
@@ -28,6 +28,7 @@ def test_hasted(
         weapon_type=WeaponType.LONGSWORD,
         range=5,
         targeting=TargetingType.SINGLE,
+        damage_type=DamageType.SLASHING,
     )
 
     haste = SupportSpell(
@@ -35,7 +36,7 @@ def test_hasted(
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        status_effects=[Hasted(duration=1)],
+        effects=[Hasted(duration=1)],
     )
     hero = Character(
         id=hero_id,

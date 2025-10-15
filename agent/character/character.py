@@ -12,11 +12,11 @@ from agent.actions.wait import WaitAction
 from agent.character.resources import SpellSlots
 from agent.character.stats import Attributes, Modifier, Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
+from agent.equipment.armor import Accessory, Armor
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
-from agent.equipment.weapons import FinesseWeapon, MeleeWeapon, RangedWeapon
+from agent.equipment.weapons import UNARMED, DamageType, MeleeWeapon, RangedWeapon, WeaponType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
-from agent.models.enums import DamageType, WeaponType
 from agent.models.position import Position
 
 
@@ -41,8 +41,10 @@ class Character(BaseModel):
     proficiencies: list[WeaponType] = []
     proficient_saves: list[StatType] = []
 
-    main_hand: MeleeWeapon | FinesseWeapon | None = None
-    off_hand: MeleeWeapon | FinesseWeapon | None = None
+    armor: Armor | None = None
+    accessories: list[Accessory] = []
+    main_hand: MeleeWeapon | None = UNARMED
+    off_hand: MeleeWeapon | None = None
     ranged: RangedWeapon | None = None
     spells: list[Spell] = []
     special_abilities: list[Action] = []

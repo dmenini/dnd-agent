@@ -25,7 +25,7 @@ def test_stunned(
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Stunned(duration=2)],
+        effects=[Stunned(duration=2)],
     )
     hero = Character(
         id=hero_id,

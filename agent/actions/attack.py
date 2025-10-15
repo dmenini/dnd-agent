@@ -5,15 +5,11 @@ from typing import TYPE_CHECKING, Self
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.models.enums import (
-    DamageType,
-    TargetingType,
-    WeaponType,
-)
+from agent.equipment.weapons import DamageType, RangedWeapon, Weapon, WeaponType
+from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.equipment.weapons import RangedWeapon, Weapon
 
 CRIT_ROLL_VAL = 20
 
@@ -97,7 +93,7 @@ class MainHandAttackAction(AttackAction):
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
-            status_effects=weapon.status_effects,
+            status_effects=weapon.effects,
         )
 
 
@@ -119,7 +115,7 @@ class OffHandAttackAction(AttackAction):
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
-            status_effects=weapon.status_effects,
+            status_effects=weapon.effects,
         )
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
@@ -150,5 +146,5 @@ class RangedAttackAction(AttackAction):
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
-            status_effects=weapon.status_effects,
+            status_effects=weapon.effects,
         )

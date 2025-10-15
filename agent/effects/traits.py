@@ -4,7 +4,8 @@ import math
 from typing import TYPE_CHECKING
 
 from agent.character.stats import Modifier, StatType
-from agent.models.enums import Advantage, DamageType
+from agent.equipment.weapons import DamageType
+from agent.models.enums import Advantage
 
 if TYPE_CHECKING:
     from agent.character.character import Character

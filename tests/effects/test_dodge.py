@@ -1,6 +1,6 @@
 from agent.character.character import Character, Party
 from agent.effects.base import EffectType
-from agent.equipment.weapons import MeleeWeapon
+from agent.equipment.weapons import DamageType, MeleeWeapon
 from agent.models.config import AgentConfig
 from agent.models.enums import TargetingType, WeaponType
 from agent.models.position import Position
@@ -23,6 +23,7 @@ def test_dodge(
         weapon_type=WeaponType.LONGSWORD,
         range=5,
         targeting=TargetingType.SINGLE,
+        damage_type=DamageType.SLASHING,
     )
     hero = Character(
         id=hero_id,

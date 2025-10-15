@@ -29,7 +29,7 @@ def test_paralyzed(
         weapon_type=WeaponType.LONGSWORD,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Paralyzed(duration=2)],
+        effects=[Paralyzed(duration=2)],
     )
     hero = Character(
         id=hero_id,
