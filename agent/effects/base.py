@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, PrivateAttr
 
-from agent.effects.traits import Trait
-from agent.mechanics.advantage import resolve_advantage
 from agent.character.stats import StatType
+from agent.effects.traits import Trait
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -66,6 +65,11 @@ class StatusEffect(BaseModel):
         for trait in self._traits:
             self._trigger_hook(trait, "on_apply", target)
 
+    def on_expire(self, target: Character) -> None:
+        """Call when the effect is first applied."""
+        for trait in self._traits:
+            self._trigger_hook(trait, "on_expire", target)
+
     def on_turn_start(self, target: Character) -> None:
         """Call at the start of the target's turn."""
         for trait in self._traits:
@@ -81,25 +85,6 @@ class StatusEffect(BaseModel):
         for trait in self._traits:
             damage += self._trigger_hook(trait, "on_receive_damage", target, damage) or 0
         return damage
-
-    def on_attack_roll(self, actor: Character | None = None, target: Character | None = None) -> bool | None:
-        """Modify attack roll advantage/disadvantage.
-        Return False to signal disadvantage, True for advantage, or None for neutral.
-        """
-        results = []
-        for trait in self._traits:
-            if target:
-                results.append(self._trigger_hook(trait, "on_attack_roll_as_target"))
-            if actor:
-                results.append(self._trigger_hook(trait, "on_attack_roll_as_actor"))
-        return resolve_advantage(results)
-
-    def on_save_roll(self, stat: StatType) -> bool | None:
-        """Modify save roll advantage/disadvantage.
-        Return False to signal disadvantage, True for advantage, or None for neutral.
-        """
-        results = [self._trigger_hook(trait, "on_save_roll", stat) for trait in self._traits]
-        return resolve_advantage(results)
 
     def on_attack(self, actor: Character, target: Character, damage: int) -> int:
         """Modify outgoing damage (e.g., weaken attacks)."""

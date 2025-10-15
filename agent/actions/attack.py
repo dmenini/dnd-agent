@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
+from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import (
@@ -10,7 +11,6 @@ from agent.models.enums import (
     TargetingType,
     WeaponType,
 )
-from agent.character.stats import StatType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -65,7 +65,7 @@ class AttackAction(Action):
 
         # Apply damage
         target.apply_damage(damage=damage)
-        event += f" {actor.name} hits {target.name} for {damage} damage (HP now {target.attributes.current_hp})."
+        event += f" {actor.name} hits {target.name} for {damage} damage (HP now {target.attributes.hp})."
 
         # Try to apply status effects
         for effect in self.status_effects:

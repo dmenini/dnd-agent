@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, Self
 
 from agent.actions.attack import AttackAction
 from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.resources import SpellLevel
+from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.models.enums import (
     TargetingType,
     WeaponType,
 )
-from agent.character.resources import SpellLevel
-from agent.character.stats import StatType
 
 if TYPE_CHECKING:
     from agent.character.character import Character

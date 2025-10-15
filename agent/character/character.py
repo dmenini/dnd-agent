@@ -9,7 +9,7 @@ from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.character.resources import SpellSlots
-from agent.character.stats import Attributes, Stats, StatType
+from agent.character.stats import Attributes, Modifier, Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
@@ -70,12 +70,17 @@ class Character(BaseModel):
     def speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats)
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def current_speed(self) -> float:
+        return self.attributes.compute_speed(stats=self.stats) - self.action_economy.movement_used
+
     def move(self, destination: Position, *, dash: bool = False) -> None:
         self.pos = destination
         distance_cost = self.distance(destination)
         if dash:
             distance_cost /= 2  # Dash halves cost
-        self.attributes.current_movement = max(self.attributes.current_movement - distance_cost, 0)
+        self.action_economy.movement_used = distance_cost
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -84,7 +89,7 @@ class Character(BaseModel):
 
     @property
     def is_alive(self) -> bool:
-        return self.attributes.current_hp > 0
+        return self.attributes.hp > 0
 
     def receive_damage(self, damage: int) -> None:
         for effect in self.status_effects:
@@ -92,10 +97,10 @@ class Character(BaseModel):
         self.apply_damage(damage)
 
     def apply_damage(self, damage: int, damage_type: DamageType | None = None) -> None:  # noqa: ARG002
-        self.attributes.current_hp = max(0, self.attributes.current_hp - damage)
+        self.attributes.hp = max(0, self.attributes.hp - damage)
 
     def heal(self, amount: int) -> None:
-        self.attributes.current_hp = min(self.attributes.current_hp + amount, self.max_hp)
+        self.attributes.hp = min(self.attributes.hp + amount, self.max_hp)
 
     def has_effect(self, cond: EffectType) -> bool:
         existing_conditions = {c.type for c in self.status_effects}
@@ -107,8 +112,6 @@ class Character(BaseModel):
 
     def start_turn(self) -> None:
         self.turn_done = False
-
-        self.attributes.current_movement = self.speed
         self.action_economy.restore_all()
 
         for effect in self.status_effects:
@@ -157,8 +160,8 @@ class Character(BaseModel):
 
     def available_actions(self) -> dict[str, Action]:
         all_actions: list[Action] = [
-            MovementAction(range=self.speed),
-            DashAction(range=self.speed),
+            MovementAction(range=self.current_speed),
+            DashAction(range=self.current_speed),
             DodgeAction(),
         ]
 
@@ -198,9 +201,11 @@ class Character(BaseModel):
         dice = DiceRoller()
 
         # Compute advantage from multiple sources
-        sources = [self.stats.advantage(attack_stat)]
-        sources += [effect.on_attack_roll(actor=self) for effect in self.status_effects]
-        sources += [effect.on_attack_roll(target=target) for effect in target.status_effects]
+        sources = [
+            self.stats.advantage(attack_stat),
+            self.attributes.compute_advantage("attack"),
+            target.attributes.compute_advantage("defense"),
+        ]
         advantage = resolve_advantage(sources)
 
         return dice.roll_with_context(dice_expression="1d20", advantage=advantage)
@@ -213,8 +218,7 @@ class Character(BaseModel):
         dice = DiceRoller()
 
         # Compute advantage from multiple sources
-        sources = [self.stats.advantage(save_stat)]
-        sources += [effect.on_save_roll(save_stat) for effect in self.status_effects]
+        sources = [self.stats.advantage(save_stat), self.attributes.compute_advantage("dex_save")]
         advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)
@@ -223,3 +227,9 @@ class Character(BaseModel):
         mod = ability_mod + prof_bonus
         expr = f"1d20+{mod}"
         return dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def add_modifier(self, modifier: Modifier) -> None:
+        self.attributes.add_modifier(modifier)
+
+    def remove_modifier(self, source_id: str) -> None:
+        self.attributes.remove_modifier(source_id)
