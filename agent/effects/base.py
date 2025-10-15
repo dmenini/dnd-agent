@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, PrivateAttr
 
 from agent.effects.traits import Trait
+from agent.mechanics.advantage import resolve_advantage
 from agent.models.enums import StatType
 
 if TYPE_CHECKING:
@@ -17,8 +18,6 @@ class EffectType(str, Enum):
     STUNNED = "stunned"
     PARALYZED = "paralyzed"
     POISONED = "poisoned"
-    PRONE = "prone"
-    UNCONSCIOUS = "unconscious"
     DODGING = "dodging"
     HASTED = "hasted"
     RESTRAINED = "restrained"
@@ -83,23 +82,24 @@ class StatusEffect(BaseModel):
             damage += self._trigger_hook(trait, "on_receive_damage", target, damage) or 0
         return damage
 
-    def on_attack_roll(self, *, is_target: bool = False) -> bool | None:
+    def on_attack_roll(self, actor: Character | None = None, target: Character | None = None) -> bool | None:
         """Modify attack roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
+        results = []
         for trait in self._traits:
-            if is_target:
-                return self._trigger_hook(trait, "on_attack_roll_as_target")
-            return self._trigger_hook(trait, "on_attack_roll_as_actor")
-        return None
+            if target:
+                results.append(self._trigger_hook(trait, "on_attack_roll_as_target"))
+            if actor:
+                results.append(self._trigger_hook(trait, "on_attack_roll_as_actor"))
+        return resolve_advantage(results)
 
     def on_save_roll(self, stat: StatType) -> bool | None:
         """Modify save roll advantage/disadvantage.
         Return False to signal disadvantage, True for advantage, or None for neutral.
         """
-        for trait in self._traits:
-            return self._trigger_hook(trait, "on_save_roll", stat)
-        return None
+        results = [self._trigger_hook(trait, "on_save_roll", stat) for trait in self._traits]
+        return resolve_advantage(results)
 
     def on_attack(self, actor: Character, target: Character, damage: int) -> int:
         """Modify outgoing damage (e.g., weaken attacks)."""
@@ -108,6 +108,7 @@ class StatusEffect(BaseModel):
         return damage
 
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
+        """Modify crit chance."""
         for trait in self._traits:
             return self._trigger_hook(trait, "is_auto_crit", actor, target)
         return False

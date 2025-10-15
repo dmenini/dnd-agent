@@ -54,24 +54,18 @@ class DamageOverTime(Trait):
 
 
 class CannotMove(Trait):
-    """Target cannot move."""
-
     def on_turn_start(self, target: Character) -> None:
         target.action_economy.movement_available = False  # Cannot move
 
 
 class CannotAct(Trait):
-    """Target cannot act."""
-
     def on_turn_start(self, target: Character) -> None:
-        target.action_economy.standard_actions = -1  # Cannot act
-        target.action_economy.bonus_actions = -1  # Cannot act
+        target.action_economy.standard_actions = -1
+        target.action_economy.bonus_actions = -1
         target.action_economy.reaction_available = False
 
 
 class ExtraAction(Trait):
-    """Grant an extra action."""
-
     def on_turn_start(self, target: Character) -> None:
         if target.action_economy.standard_actions > 0:
             target.action_economy.standard_actions += 1

@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from typing import Self
 
 from pydantic import BaseModel, Field, computed_field
@@ -10,6 +9,7 @@ from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.effects.base import EffectType, StatusEffect
+from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.enums import DamageType, SpellLevel, StatType, WeaponType
 from agent.models.position import Position
@@ -289,8 +289,9 @@ class Character(BaseModel):
 
         # Compute advantage from multiple sources
         sources = [self.stats.advantage(attack_stat)]
-        sources += [effect.on_attack_roll(is_target=True) for effect in target.status_effects]
-        advantage = self._resolve_advantage(sources)
+        sources += [effect.on_attack_roll(actor=self) for effect in self.status_effects]
+        sources += [effect.on_attack_roll(target=target) for effect in target.status_effects]
+        advantage = resolve_advantage(sources)
 
         return dice.roll_with_context(dice_expression="1d20", advantage=advantage)
 
@@ -304,7 +305,7 @@ class Character(BaseModel):
         # Compute advantage from multiple sources
         sources = [self.stats.advantage(save_stat)]
         sources += [effect.on_save_roll(save_stat) for effect in self.status_effects]
-        advantage = self._resolve_advantage(sources)
+        advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)
         ability_mod = self.stats.modifier(save_stat)
@@ -312,16 +313,3 @@ class Character(BaseModel):
         mod = ability_mod + prof_bonus
         expr = f"1d20+{mod}"
         return dice.roll_with_context(dice_expression=expr, advantage=advantage)
-
-    def _resolve_advantage(self, sources: Iterable[bool | None]) -> bool | None:
-        """
-        Resolves multiple advantage/disadvantage sources into a final state.
-        Returns True for advantage, False for disadvantage, or None for neutral.
-        """
-        advantages = sum(1 for s in sources if s is True)
-        disadvantages = sum(1 for s in sources if s is False)
-        if advantages > disadvantages:
-            return True
-        if disadvantages > advantages:
-            return False
-        return None
