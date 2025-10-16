@@ -5,8 +5,9 @@ from pathlib import Path
 import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
+from agent.character.attributes import Attributes
 from agent.character.character import MeleeWeapon, Party, RangedWeapon
-from agent.character.stats import Attributes, Stats
+from agent.character.stats import Stats
 from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned

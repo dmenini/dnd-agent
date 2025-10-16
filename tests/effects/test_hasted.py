@@ -1,13 +1,14 @@
 from unittest.mock import MagicMock
 
 from agent.character.character import Character, Party
+from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
 from agent.equipment.spells import SupportSpell
-from agent.equipment.weapons import DamageType, MeleeWeapon
+from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
-from agent.models.enums import TargetingType, WeaponType
+from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
 from tests.conftest import advance_turn
@@ -25,7 +26,7 @@ def test_hasted(
     sword = MeleeWeapon(
         name="Sword",
         damage_dice="1d5",
-        weapon_type=WeaponType.LONGSWORD,
+        weapon_type=WeaponType.MARTIAL_MELEE,
         range=5,
         targeting=TargetingType.SINGLE,
         damage_type=DamageType.SLASHING,
@@ -69,11 +70,11 @@ def test_hasted(
     assert hero.status_effects[0].duration == 2
     assert hero.attributes._modifiers["ac"][0].value == 2
     assert hero.attributes._modifiers["speed"][0].value == 2
-    assert hero.attributes._modifiers["dex_save_advantage"][0].value == 1
+    assert hero.attributes._modifiers["save_advantage.dex"][0].value == 1
 
     assert hero.ac == 4
     assert hero.current_speed == 12.0
-    assert hero.attributes.compute_advantage("dex_save") == 1
+    assert hero.attributes.compute_save_advantage(StatType.DEX) == 1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -98,7 +99,10 @@ def test_hasted(
     assert hero.status_effects[0].type == EffectType.LETHARGIC
     assert hero.status_effects[0].duration == 1
     assert hero.attributes._modifiers["speed"][0].value == 0.5
-    assert hero.attributes._modifiers["wis_save_advantage"][0].value == -1
+    assert hero.attributes._modifiers["save_advantage.wis"][0].value == -1
+
+    assert hero.current_speed == 3
+    assert hero.attributes.compute_save_advantage(StatType.WIS) == -1
 
     # Turn 2.2: Pass
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))

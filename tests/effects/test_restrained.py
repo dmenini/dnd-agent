@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
+from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
-from agent.character.stats import Attributes
+from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.restrained import Restrained
 from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
@@ -79,12 +80,12 @@ def test_restrained(
     assert orc.attributes.hp == starting_hp - value
     assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 2
-    assert orc.attributes._modifiers["defense_advantage"][0].value == 1
-    assert orc.attributes._modifiers["attack_advantage"][0].value == -1
-    assert orc.attributes._modifiers["dex_save_advantage"][0].value == -1
+    assert orc.attributes._modifiers["advantage.defense"][0].value == 1
+    assert orc.attributes._modifiers["advantage.attack"][0].value == -1
+    assert orc.attributes._modifiers["save_advantage.dex"][0].value == -1
     assert orc.attributes.compute_advantage("defense") == 1
     assert orc.attributes.compute_advantage("attack") == -1
-    assert orc.attributes.compute_advantage("dex_save") == -1
+    assert orc.attributes.compute_save_advantage(StatType.DEX) == -1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 

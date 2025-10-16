@@ -1,8 +1,8 @@
 from agent.character.character import Character, Party
 from agent.effects.base import EffectType
-from agent.equipment.weapons import DamageType, MeleeWeapon
+from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
 from agent.models.config import AgentConfig
-from agent.models.enums import TargetingType, WeaponType
+from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
 from tests.conftest import advance_turn
@@ -20,7 +20,7 @@ def test_dodge(
     sword = MeleeWeapon(
         name="Sword",
         damage_dice="1d5",
-        weapon_type=WeaponType.LONGSWORD,
+        weapon_type=WeaponType.MARTIAL_MELEE,
         range=5,
         targeting=TargetingType.SINGLE,
         damage_type=DamageType.SLASHING,
@@ -53,7 +53,7 @@ def test_dodge(
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.DODGING
     assert hero.status_effects[0].duration == 1
-    assert hero.attributes._modifiers["defense_advantage"][0].value == -1
+    assert hero.attributes._modifiers["advantage.defense"][0].value == -1
 
     assert hero.attributes.compute_advantage("defense") == -1
 
