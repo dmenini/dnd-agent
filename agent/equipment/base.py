@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.effects.traits import Trait
+
+if TYPE_CHECKING:
+    from agent.character.character import Character
 
 
 class Rarity(str, Enum):
