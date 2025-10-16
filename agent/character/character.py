@@ -9,8 +9,9 @@ from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.wait import WaitAction
+from agent.character.attributes import Attributes, Modifier
 from agent.character.resources import SpellSlots
-from agent.character.stats import Attributes, Modifier, Stats, StatType
+from agent.character.stats import Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.equipment.armor import Accessory, Armor
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
@@ -55,7 +56,7 @@ class Character(BaseModel):
 
     _dice: DiceRoller = DiceRoller()
 
-    def model_post_init(self, context: Any, /) -> None:
+    def model_post_init(self, _: Any, /) -> None:
         # Equip to apply traits
         if self.armor:
             self.armor.on_equip(self)
@@ -110,11 +111,6 @@ class Character(BaseModel):
     @property
     def is_alive(self) -> bool:
         return self.attributes.hp > 0
-
-    def receive_damage(self, damage: int) -> None:
-        for effect in self.status_effects:
-            damage = effect.on_receive_damage(self, damage)
-        self.apply_damage(damage)
 
     def apply_damage(self, damage: int, damage_type: DamageType | None = None) -> None:  # noqa: ARG002
         self.attributes.hp = max(0, self.attributes.hp - damage)
@@ -190,9 +186,12 @@ class Character(BaseModel):
         effect.on_apply(self)
 
     def modify_incoming_damage(self, damage: int, dtype: DamageType) -> int:
+        # TODO: Damage can have multiple types
+        resistance = self.attributes.compute_resistance(dtype)
         for effect in self.status_effects:
             damage = effect.on_receive_damage(target=self, damage=damage, dtype=dtype)
-        return damage
+
+        return damage * (1 - resistance)
 
     def modify_outgoing_damage(self, target: Self, damage: int, dtype: DamageType) -> int:
         for effect in self.status_effects:
@@ -267,11 +266,11 @@ class Character(BaseModel):
         Rolls a saving throw for the given ability type.
         Accounts for modifiers, proficiency, and active status effects.
         """
-        if self.attributes.compute_autofail(f"{save_stat.name.lower()}_save"):
+        if self.attributes.compute_save_autofail(save_stat):
             return DiceRoll(expression="1d20", rolls=[1], total=1, raw=1)
 
         # Compute advantage from multiple sources
-        sources = [self.stats.advantage(save_stat), self.attributes.compute_advantage(f"{save_stat.name.lower()}_save")]
+        sources = [self.stats.advantage(save_stat), self.attributes.compute_save_advantage(save_stat)]
         advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)

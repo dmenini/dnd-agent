@@ -49,10 +49,10 @@ class AttackAction(Action):
             damage = actor.damage_roll(expr=expr, is_critical=False).total
 
         # Let status effects modify outgoing damage
-        damage = actor.modify_outgoing_damage(target, damage)
+        damage = actor.modify_outgoing_damage(target, damage=damage, dtype=self.damage_type)
 
         # Let target status effects modify incoming damage
-        damage = target.modify_incoming_damage(damage)
+        damage = target.modify_incoming_damage(damage=damage, dtype=self.damage_type)
 
         # Apply damage
         target.apply_damage(damage=damage)
