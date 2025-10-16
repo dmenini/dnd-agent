@@ -1,7 +1,7 @@
 import math
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class DamageType(str, Enum):
@@ -17,7 +17,7 @@ class DamageType(str, Enum):
 
 
 class DamageComponent(BaseModel):
-    value: int
+    value: float
     type: DamageType
 
 
@@ -31,9 +31,11 @@ class DamageVulnerability(DamageComponent):
 
 class Damage(BaseModel):
     components: list[DamageComponent]
-    resistances: list[DamageResistance]
-    vulnerabilities: list[DamageVulnerability]
+    resistances: list[DamageResistance] = []
+    vulnerabilities: list[DamageVulnerability] = []
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def total(
         self,
     ) -> int:

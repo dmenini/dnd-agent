@@ -4,8 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, PrivateAttr
 
 from agent.character.stats import Stats, StatType
-from agent.models.damage import DamageType
-from agent.models.enums import Advantage
+from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 
 
 class Modifier(BaseModel):
@@ -26,12 +25,11 @@ class Attributes(BaseModel):
     base_vision_range: float = 10.0
 
     # Base nested attributes
-    base_advantage: defaultdict[str, Advantage] = Field(default_factory=lambda: defaultdict(lambda: Advantage.NEUTRAL))
-    base_save_advantage: defaultdict[str, Advantage] = Field(
-        default_factory=lambda: defaultdict(lambda: Advantage.NEUTRAL)
-    )
+    base_advantage: defaultdict[str, int] = Field(default_factory=lambda: defaultdict(lambda: 0))
+    base_save_advantage: defaultdict[str, int] = Field(default_factory=lambda: defaultdict(lambda: 0))
     base_save_autofail: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
     base_resistance: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
+    base_vulnerability: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
 
     _modifiers: defaultdict[str, list[Modifier]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
@@ -66,8 +64,13 @@ class Attributes(BaseModel):
     def compute_save_autofail(self, stat: StatType) -> bool:
         return self._recompute_attribute(f"save_autofail.{stat.name.lower()}")
 
-    def compute_resistance(self, dtype: DamageType) -> bool:
-        return self._recompute_attribute(f"resistance.{dtype.value}")
+    def compute_resistance(self, dtype: DamageType) -> DamageResistance:
+        value = self._recompute_attribute(f"resistance.{dtype.value}")
+        return DamageResistance(value=value, type=dtype)
+
+    def compute_vulnerability(self, dtype: DamageType) -> DamageVulnerability:
+        value = self._recompute_attribute(f"vulnerability.{dtype.value}")
+        return DamageVulnerability(value=value, type=dtype)
 
     def add_modifier(self, modifier: Modifier) -> None:
         self._modifiers[modifier.attribute].append(modifier)

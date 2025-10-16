@@ -22,7 +22,7 @@ class Poisoned(StatusEffect):
     def model_post_init(self, _: Any) -> None:
         self._traits = [
             TargetDisadvantageOnAttackRoll(),
-            DamageOverTime(damage=self.damage, damage_type=DamageType.POISON),
+            DamageOverTime(value=self.damage, damage_type=DamageType.POISON),
         ]
 
     def on_turn_end(self, target: Character) -> None:

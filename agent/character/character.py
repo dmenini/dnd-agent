@@ -18,7 +18,7 @@ from agent.equipment.spells import AttackSpell, Spell, SupportSpell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
-from agent.models.damage import DamageType
+from agent.models.damage import Damage
 from agent.models.position import Position
 
 
@@ -113,7 +113,7 @@ class Character(BaseModel):
     def is_alive(self) -> bool:
         return self.attributes.hp > 0
 
-    def apply_damage(self, damage: int, damage_type: DamageType | None = None) -> None:  # noqa: ARG002
+    def apply_damage(self, damage: int) -> None:
         self.attributes.hp = max(0, self.attributes.hp - damage)
 
     def heal(self, amount: int) -> None:
@@ -186,17 +186,15 @@ class Character(BaseModel):
 
         effect.on_apply(self)
 
-    def modify_incoming_damage(self, damage: int, dtype: DamageType) -> int:
-        # TODO: Damage can have multiple types
-        resistance = self.attributes.compute_resistance(dtype)
-        for effect in self.status_effects:
-            damage = effect.on_receive_damage(target=self, damage=damage, dtype=dtype)
+    def modify_incoming_damage(self, damage: Damage) -> Damage:
+        resistances, vulnerabilities = [], []
+        for comp in damage.components:
+            resistances.append(self.attributes.compute_resistance(comp.type))
+            vulnerabilities.append(self.attributes.compute_vulnerability(comp.type))
 
-        return damage * (1 - resistance)
+        damage.resistances.extend(resistances)
+        damage.vulnerabilities.extend(vulnerabilities)
 
-    def modify_outgoing_damage(self, target: Self, damage: int, dtype: DamageType) -> int:
-        for effect in self.status_effects:
-            damage = effect.on_apply_damage(actor=self, target=target, damage=damage, dtype=dtype)
         return damage
 
     def has_resources(self) -> bool:
