@@ -5,15 +5,11 @@ from typing import TYPE_CHECKING, Self
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.models.enums import (
-    DamageType,
-    TargetingType,
-    WeaponType,
-)
+from agent.equipment.weapons import DamageType, RangedWeapon, Weapon, WeaponType
+from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.models.weapons import RangedWeapon, Weapon
 
 CRIT_ROLL_VAL = 20
 
@@ -33,7 +29,7 @@ class AttackAction(Action):
 
         # Attack roll
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
-        is_critical = roll.raw == CRIT_ROLL_VAL
+        is_critical = roll.raw == actor.attributes.compute_crit_roll()
         is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
 
         mod = self._attack_modifier(actor)
@@ -53,10 +49,10 @@ class AttackAction(Action):
             damage = actor.damage_roll(expr=expr, is_critical=False).total
 
         # Let status effects modify outgoing damage
-        damage = actor.modify_outgoing_damage(target, damage)
+        damage = actor.modify_outgoing_damage(target, damage=damage, dtype=self.damage_type)
 
         # Let target status effects modify incoming damage
-        damage = target.modify_incoming_damage(damage)
+        damage = target.modify_incoming_damage(damage=damage, dtype=self.damage_type)
 
         # Apply damage
         target.apply_damage(damage=damage)
@@ -97,7 +93,7 @@ class MainHandAttackAction(AttackAction):
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
-            status_effects=weapon.status_effects,
+            status_effects=weapon.effects,
         )
 
 
@@ -119,7 +115,7 @@ class OffHandAttackAction(AttackAction):
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
-            status_effects=weapon.status_effects,
+            status_effects=weapon.effects,
         )
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
@@ -150,5 +146,5 @@ class RangedAttackAction(AttackAction):
             damage_type=weapon.damage_type,
             stat=weapon.stat,
             range=weapon.range,
-            status_effects=weapon.status_effects,
+            status_effects=weapon.effects,
         )

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.lethargic import Lethargic
-from agent.effects.traits import ACBonus, AdvantageOnSavingThrow, ExtraAction, SpeedBonus, Trait
+from agent.effects.traits import ACBonus, AdvantageOnSavingThrow, ExtraActions, SpeedMultiplier, Trait
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -24,9 +24,9 @@ class Hasted(StatusEffect):
     save_dc: int = 0  # Skip save throw as it's cast on a willing creature
 
     _traits: list[Trait] = [
-        ExtraAction(),
-        SpeedBonus(mult=2),
-        ACBonus(val=2),
+        ExtraActions(),
+        SpeedMultiplier(value=2),
+        ACBonus(value=2),
         AdvantageOnSavingThrow(stat=StatType.DEX),
     ]
 

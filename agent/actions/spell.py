@@ -7,14 +7,14 @@ from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
+from agent.equipment.weapons import WeaponType
 from agent.models.enums import (
     TargetingType,
-    WeaponType,
 )
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.models.weapons import AttackSpell, SupportSpell
+    from agent.equipment.spells import AttackSpell, SupportSpell
 
 
 class AttackSpellAction(AttackAction):
@@ -33,7 +33,7 @@ class AttackSpellAction(AttackAction):
             description=f"Cast attack spell: {spell.description}",
             source=spell.name,
             action_type=ActionType.SPELL,
-            weapon_type=WeaponType.SPELL,
+            weapon_type=WeaponType.MAGIC,
             category=spell.casting_time,
             targeting=spell.targeting,
             damage_dice=spell.damage_dice,
@@ -41,7 +41,7 @@ class AttackSpellAction(AttackAction):
             stat=spell.stat,
             range=spell.range,
             level=spell.level,
-            status_effects=spell.status_effects,
+            status_effects=spell.effects,
         )
 
     def finalize(self, actor: Character) -> None:
@@ -76,7 +76,7 @@ class SupportSpellAction(Action):
             stat=spell.stat,
             range=spell.range,
             level=spell.level,
-            status_effects=spell.status_effects,
+            status_effects=spell.effects,
         )
 
     def execute(self, actor: Character, target: Character | None) -> str:

@@ -1,11 +1,12 @@
 from agent.character.character import Character, Party
+from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.stunned import Stunned
+from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
 from agent.models.config import AgentConfig
-from agent.models.enums import DamageType, TargetingType, WeaponType
+from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
-from agent.models.weapons import MeleeWeapon
 from tests.conftest import advance_turn
 
 
@@ -22,10 +23,10 @@ def test_stunned(
         name="Sword",
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
-        weapon_type=WeaponType.LONGSWORD,
+        weapon_type=WeaponType.MARTIAL_MELEE,
         range=2,
         targeting=TargetingType.SINGLE,
-        status_effects=[Stunned(duration=2)],
+        effects=[Stunned(duration=2)],
     )
     hero = Character(
         id=hero_id,
@@ -57,13 +58,13 @@ def test_stunned(
     orc = state.characters[orc_id]
     assert orc.status_effects[0].type == EffectType.STUNNED
     assert orc.status_effects[0].duration == 2
-    assert orc.attributes._modifiers["defense_advantage"][0].value == 1
-    assert orc.attributes._modifiers["str_save_autofail"][0].value is True
-    assert orc.attributes._modifiers["dex_save_autofail"][0].value is True
+    assert orc.attributes._modifiers["advantage.defense"][0].value == 1
+    assert orc.attributes._modifiers["save_autofail.str"][0].value is True
+    assert orc.attributes._modifiers["save_autofail.dex"][0].value is True
 
     assert orc.attributes.compute_advantage("defense") == 1
-    assert orc.attributes.compute_autofail("str_save") is True
-    assert orc.attributes.compute_autofail("dex_save") is True
+    assert orc.attributes.compute_save_autofail(StatType.STR) is True
+    assert orc.attributes.compute_save_autofail(StatType.DEX) is True
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -87,6 +88,6 @@ def test_stunned(
     # Stunned expires after 2 turns
     orc = state.current_actor
     assert len(orc.status_effects) == 0
-    assert orc.attributes._modifiers["defense_advantage"] == []
-    assert orc.attributes._modifiers["str_save_autofail"] == []
-    assert orc.attributes._modifiers["dex_save_autofail"] == []
+    assert orc.attributes._modifiers["advantage.defense"] == []
+    assert orc.attributes._modifiers["save_autofail.str"] == []
+    assert orc.attributes._modifiers["save_autofail.dec"] == []

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import DamageOverTime, TargetDisadvantageOnAttackRoll
-from agent.models.enums import DamageType
+from agent.equipment.weapons import DamageType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -22,7 +22,7 @@ class Poisoned(StatusEffect):
     def model_post_init(self, _: Any) -> None:
         self._traits = [
             TargetDisadvantageOnAttackRoll(),
-            DamageOverTime(damage=self.damage, dtype=DamageType.POISON),
+            DamageOverTime(damage=self.damage, damage_type=DamageType.POISON),
         ]
 
     def on_turn_end(self, target: Character) -> None:

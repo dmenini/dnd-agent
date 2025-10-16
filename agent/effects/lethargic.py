@@ -6,8 +6,8 @@ from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
     DisadvantageOnSavingThrow,
-    HalveActions,
-    SpeedBonus,
+    HalfActions,
+    SpeedMultiplier,
     Trait,
 )
 
@@ -24,7 +24,7 @@ class Lethargic(StatusEffect):
 
     type: EffectType = EffectType.LETHARGIC
     save_stat: StatType = StatType.WIS
-    _traits: list[Trait] = [SpeedBonus(mult=0.5), DisadvantageOnSavingThrow(stat=StatType.WIS), HalveActions()]
+    _traits: list[Trait] = [SpeedMultiplier(value=0.5), DisadvantageOnSavingThrow(stat=StatType.WIS), HalfActions()]
 
     def on_turn_end(self, target: Character) -> None:
         super().on_turn_end(target)
