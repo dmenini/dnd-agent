@@ -15,9 +15,10 @@ from agent.character.stats import Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.equipment.armor import Accessory, Armor
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
-from agent.equipment.weapons import UNARMED, DamageType, MeleeWeapon, RangedWeapon, WeaponType
+from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
+from agent.models.damage import DamageType
 from agent.models.position import Position
 
 

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from agent.character.attributes import Modifier
 from agent.character.stats import StatType
-from agent.equipment.weapons import DamageType
+from agent.models.damage import DamageType
 from agent.models.enums import Advantage
 
 if TYPE_CHECKING:

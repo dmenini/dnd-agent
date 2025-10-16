@@ -7,7 +7,7 @@ from pydantic import BaseModel, PrivateAttr
 
 from agent.character.stats import StatType
 from agent.effects.traits import Trait
-from agent.equipment.weapons import DamageType
+from agent.models.damage import DamageType
 
 if TYPE_CHECKING:
     from agent.character.character import Character

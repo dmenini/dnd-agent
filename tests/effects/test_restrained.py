@@ -5,9 +5,10 @@ from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.restrained import Restrained
-from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
+from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State

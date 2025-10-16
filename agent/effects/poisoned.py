@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import DamageOverTime, TargetDisadvantageOnAttackRoll
-from agent.equipment.weapons import DamageType
+from agent.models.damage import DamageType
 
 if TYPE_CHECKING:
     from agent.character.character import Character

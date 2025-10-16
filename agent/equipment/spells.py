@@ -2,7 +2,7 @@ from agent.actions.base import ActionCategory
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.equipment.base import Equipment
-from agent.equipment.weapons import DamageType
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
 

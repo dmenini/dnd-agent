@@ -12,9 +12,10 @@ from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
 from agent.equipment.spells import AttackSpell, SupportSpell
-from agent.equipment.weapons import UNARMED, DamageType, WeaponType
+from agent.equipment.weapons import UNARMED, WeaponType
 from agent.graph import build_graph
 from agent.models.config import Config
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import Character, State

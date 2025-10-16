@@ -4,7 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, PrivateAttr
 
 from agent.character.stats import Stats, StatType
-from agent.equipment.weapons import DamageType
+from agent.models.damage import DamageType
 from agent.models.enums import Advantage
 
 

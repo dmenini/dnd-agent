@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING, Self
 from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.equipment.weapons import DamageType, RangedWeapon, Weapon, WeaponType
+from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-
-CRIT_ROLL_VAL = 20
 
 
 class AttackAction(Action):
