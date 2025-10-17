@@ -43,7 +43,7 @@ class Action(BaseModel):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.standard_actions > 0
 
-    def execute(self, actor: Character, target: Any) -> str:
+    def execute(self, actor: Character, target: Any) -> None:
         raise NotImplementedError
 
     def finalize(self, actor: Character) -> None:

@@ -77,10 +77,10 @@ class StatusEffect(BaseModel):
     def is_expired(self) -> bool:
         return self.duration <= 0
 
-    def __str__(self) -> str:
-        return f" {{actor}} is {self.type.value} ({self.duration} turns left)."
-
     def _trigger_hook(self, trait: Trait, hook_name: str, *args: Any, **kwargs: Any) -> Any:
         """Call all traits that define the given hook."""
         method = getattr(trait, hook_name, None)
         return method(*args, **kwargs) if method is not None else None
+
+    def __str__(self) -> str:
+        return f"{self.type.value} ({self.duration} turns left)"

@@ -25,9 +25,8 @@ class DashAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.standard_actions > 0 and action_economy.movement_available
 
-    def execute(self, actor: Character, target: Position) -> str:
+    def execute(self, actor: Character, target: Position) -> None:
         actor.move(target, dash=True)
-        return f" {actor.name} moves to position {target}."
 
     def finalize(self, actor: Character) -> None:
         """Consume standard action point and movement."""

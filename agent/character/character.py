@@ -16,10 +16,14 @@ from agent.effects.base import EffectType, StatusEffect
 from agent.equipment.armor import Accessory, Armor
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
+from agent.logs.events import Event, EventType, Icon
+from agent.logs.log_registry import get_log_registry
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.damage import Damage
 from agent.models.position import Position
+
+registry = get_log_registry()
 
 
 class Party(BaseModel):
@@ -103,6 +107,7 @@ class Character(BaseModel):
         if dash:
             distance_cost /= 2  # Dash halves cost
         self.action_economy.movement_used = distance_cost
+        self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -128,26 +133,14 @@ class Character(BaseModel):
         return False
 
     def start_turn(self) -> None:
+        self.log_event(f"{self.name} starts turn", event_type=EventType.DEBUG)
         self.turn_done = False
         self.action_economy.restore_all()
-
-        for effect in list(self.status_effects):
-            effect.on_turn_start(self)
-            if effect.is_expired():
-                effect.on_expire(self)
-
-        # Remove expired effects
-        self.status_effects = [eff for eff in self.status_effects if not eff.is_expired()]
+        self._try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
-        # Copy the list since effects may modify self.status_effects in-place
-        for effect in list(self.status_effects):
-            effect.on_turn_end(self)
-            if effect.is_expired():
-                effect.on_expire(self)
-
-        # Remove expired effects
-        self.status_effects = [e for e in self.status_effects if not e.is_expired()]
+        self.log_event(f"{self.name} ends turn", event_type=EventType.DEBUG)
+        self._try_expire_effects(is_start=False)
         self.turn_done = True
 
     def end_round(self) -> None:
@@ -155,27 +148,24 @@ class Character(BaseModel):
 
     def try_apply_status(self, effect: StatusEffect) -> bool:
         """Apply status effect in case there are no immunities and save throw fails."""
-        event = ""
         # Check immunity
         if self.is_immune_to(effect.type):
-            event += f" {self.name} is immune to {effect.type.value} effect."
+            self.log_event(f"{self.name} is immune to {effect.type.value} effect")
             return False
 
         # Saving throw
         if effect.save_dc:
             roll = self.save_roll(save_stat=effect.save_stat)
+            self.log_event(f"{effect.save_stat.name} save throw: {roll.total} vs DC {effect.save_dc}", icon=Icon.ROLL)
+
             if roll.total >= effect.save_dc:
-                event += (
-                    f" {self.name} resists {effect.type.value} with a "
-                    f"{effect.save_stat.name} save ({roll} vs DC {effect.save_dc})!"
-                )
                 # Negate effect
+                self.log_event(f"{self.name} resists being {effect.type.value}!", icon=Icon.DEFENSE)
                 return False
 
         # Apply the effect
         self.apply_status(effect)
 
-        # TODO: return event
         return True
 
     def apply_status(self, effect: StatusEffect) -> None:
@@ -186,6 +176,7 @@ class Character(BaseModel):
             # No existing effect → just apply it
             self.status_effects.append(effect)
             effect.on_apply(self)
+            self.log_event(f"{self.name} is {effect}", icon=Icon.EFFECT_APPLIED)
             return
 
         # There is already an effect of this type -> remove old one, apply new
@@ -193,16 +184,26 @@ class Character(BaseModel):
         self.status_effects.remove(existing_effect)
         self.status_effects.append(effect)
         effect.on_apply(self)
+        self.log_event(f"{self.name} is again {effect}", icon=Icon.EFFECT_APPLIED)
+
+    def _try_expire_effects(self, *, is_start: bool = True) -> None:
+        # Copy the list since effects may modify self.status_effects in-place
+        for effect in list(self.status_effects):
+            effect.on_turn_start(self) if is_start else effect.on_turn_end(self)
+            if effect.is_expired():
+                effect.on_expire(self)
+                self.log_event(f"{self.name} is not {effect.type.value} anymore!", icon=Icon.EFFECT_EXPIRED)
+
+        # Remove expired effects
+        self.status_effects = [e for e in self.status_effects if not e.is_expired()]
 
     def modify_incoming_damage(self, damage: Damage) -> Damage:
         """Apply resistances and vulnerabilities to damage."""
-        resistances, vulnerabilities = [], []
-        for comp in damage.components:
-            resistances.append(self.attributes.compute_resistance(comp.type))
-            vulnerabilities.append(self.attributes.compute_vulnerability(comp.type))
-
-        damage.resistances.extend(resistances)
-        damage.vulnerabilities.extend(vulnerabilities)
+        for dtype in {c.type for c in damage.components}:
+            if res := self.attributes.compute_resistance(dtype):
+                damage.resistances.append(res)
+            if vul := self.attributes.compute_vulnerability(dtype):
+                damage.vulnerabilities.append(vul)
         return damage
 
     def has_resources(self) -> bool:
@@ -252,6 +253,12 @@ class Character(BaseModel):
     def distance(self, target: Position) -> float:
         return self.pos.manhattan_distance(target)
 
+    def initiative_roll(self) -> DiceRoll:
+        expr = f"1d20+{self.initiative_modifier}"
+        roll = self._dice.roll_with_context(dice_expression=expr)
+        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=EventType.MAIN)
+        return roll
+
     def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
         # Compute advantage from multiple sources
         sources = [
@@ -289,6 +296,32 @@ class Character(BaseModel):
 
     def add_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)
+        self.log_event(
+            f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
+            icon=Icon.EFFECT_APPLIED,
+            event_type=EventType.DEBUG,
+        )
 
     def remove_modifier(self, source_id: str) -> None:
-        self.attributes.remove_modifier(source_id)
+        modifier = self.attributes.remove_modifier(source_id)
+        if modifier:
+            self.log_event(
+                f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
+                icon=Icon.EFFECT_APPLIED,
+                event_type=EventType.DEBUG,
+            )
+
+    def log_event(
+        self, message: str, *, event_type: EventType = EventType.DETAIL, icon: str = "", show_ai: bool = False
+    ) -> None:
+        icon = self.icon if event_type == EventType.MAIN else icon
+        show_ai = True if event_type == EventType.MAIN else show_ai
+        event = Event(
+            actor_id=self.id,
+            icon=icon or self.icon,
+            is_player=self.is_player,
+            message=message,
+            type=event_type,
+            show_ai=show_ai,
+        )
+        registry.append(event)

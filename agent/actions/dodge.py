@@ -21,7 +21,6 @@ class DodgeAction(Action):
 
     targeting: TargetingType = TargetingType.SELF
 
-    def execute(self, actor: Character, target: Any) -> str:  # noqa: ARG002
+    def execute(self, actor: Character, target: Any) -> None:  # noqa: ARG002
         effect = Dodge(duration=1)
         actor.apply_status(effect)
-        return f" {actor.name} prepares to dodge."

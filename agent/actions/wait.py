@@ -23,8 +23,8 @@ class WaitAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.standard_actions > 0 or action_economy.movement_available
 
-    def execute(self, actor: Character, _: Character) -> str:
-        return f" {actor.name} passes turn."
+    def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
+        return
 
     def finalize(self, actor: Character) -> None:
         """Consume all resources."""

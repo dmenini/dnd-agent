@@ -22,13 +22,25 @@ class DamageComponent(BaseModel):
     type: DamageType
     operation: Literal["add", "mul"] = "add"
 
+    def __str__(self) -> str:
+        op_symbol = "+" if self.operation == "add" else "x"
+        return f"{self.type.value} {op_symbol}{self.value}"
+
 
 class DamageResistance(DamageComponent):
     value: float = Field(ge=0, le=1)
+    operation: Literal["add"] = "add"
+
+    def __str__(self) -> str:
+        return f"{self.type.value} RES: {self.value:.0%}"
 
 
 class DamageVulnerability(DamageComponent):
     value: float = Field(ge=0, le=1)
+    operation: Literal["add"] = "add"
+
+    def __str__(self) -> str:
+        return f"{self.type.value} VUL: {self.value:.0%}"
 
 
 class Damage(BaseModel):
@@ -79,3 +91,23 @@ class Damage(BaseModel):
         factor -= sum(res.value for res in self.resistances if res.type == dtype)
         factor += sum(vul.value for vul in self.vulnerabilities if vul.type == dtype)
         return factor
+
+    def __str__(self) -> str:
+        parts = []
+
+        # Raw components
+        comp_str = ", ".join(str(c) for c in self.components)
+        if comp_str:
+            parts.append(comp_str)
+
+        # Resistances
+        if self.resistances:
+            res_str = ", ".join(str(r) for r in self.resistances)
+            parts.append(res_str)
+
+        # Vulnerabilities
+        if self.vulnerabilities:
+            vul_str = ", ".join(str(v) for v in self.vulnerabilities)
+            parts.append(vul_str)
+
+        return " | ".join(parts)

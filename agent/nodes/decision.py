@@ -3,7 +3,9 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.models.state import DecisionResult, Event, State
+from agent.logs.events import EventType
+from agent.logs.log_registry import LogRegistry
+from agent.models.state import DecisionResult, State
 
 log = getLogger(__name__)
 
@@ -22,10 +24,9 @@ class DecisionNode:
             return state
 
         if actor.turn_done:
+            state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
+            state.draw_map()
             actor.start_turn()
-
-            for effect in actor.status_effects:
-                state.append_log(str(effect).format(actor=actor.name))
 
         actions = actor.available_actions()
         if not actions:
@@ -37,13 +38,14 @@ class DecisionNode:
         actor_str = {
             "id": actor.id,
             "name": actor.name,
-            "pos": actor.pos,
+            "pos": str(actor.pos),
             "party": actor.party.model_dump_json(),
             "is_player": actor.is_player,
             "level": actor.level,
             "hp": f"{actor.attributes.hp}/{actor.max_hp}",
             "movement": f"{actor.current_speed}/{actor.speed}",
             "stats": actor.stats.model_dump_json(),
+            "status_effects": [str(eff) for eff in actor.status_effects],
             "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
         }
 
@@ -51,21 +53,21 @@ class DecisionNode:
             {
                 "id": c.id,
                 "name": c.name,
-                "pos": c.pos,
+                "pos": str(c.pos),
                 "party": c.party.model_dump_json(),
                 "hp": f"{c.attributes.hp}/{c.max_hp}",
                 "distance": actor.distance(c.pos),
+                "status_effects": [str(eff) for eff in c.status_effects],
             }
             for c in state.alive_characters.values()
             if c.id != actor.id
         ]
 
-        history = self.group_messages(
-            events=state.event_log,
-            player_team={c.id for c in state.get_party_members(actor.party.id)},
-        )
+        history = self.group_messages(state.log)
 
         if state.verification_result and not state.verification_result.valid and state.verification_result.input:
+            # Hide the previous decision that lead to a validation error
+            state.log.hide_last_event(event_type=EventType.MAIN)
             validation_event = (
                 f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
                 f"for the following reasons:\n{state.verification_result.reason}"
@@ -94,32 +96,39 @@ class DecisionNode:
         # Reset verification
         state.verification_result = None
 
+        state.log.log_newline()
+        action_names = [a.name for a in actions.values()]
+        actor.log_event(result.description, event_type=EventType.MAIN)
+        actor.log_event(f"Available actions: {action_names}")
+
         return state
 
-    def group_messages(self, events: list[Event], player_team: set[str]) -> list[BaseMessage]:
+    def group_messages(self, registry: LogRegistry) -> list[BaseMessage]:
         """Group sequential events into HumanMessage or AIMessage based on which team the actor belongs to."""
         messages: list[BaseMessage] = []
         current_group: list[str] = []
         current_is_player = None
 
+        limit = 30
+        events = registry.filter(types=[EventType.MAIN])[-limit:]
         for event in events:
-            if not event.actor_id:
+            if not event.show_ai:
                 continue
-            is_player = event.actor_id in player_team
+            is_player = event.is_player
             # Start a new group if this is the first event or if team changes
             if current_is_player is None or is_player != current_is_player:
                 if current_group:
                     role = HumanMessage if current_is_player else AIMessage
-                    messages.append(role(content="".join(current_group)))
+                    messages.append(role(content="\n".join(current_group)))
                     current_group = []
                 current_is_player = is_player
 
             # Format the line
-            current_group.append(f"{event.actor_id}: {event.message}\n")
+            current_group.append(str(event))
 
         # Append the last group
         if current_group:
             role = HumanMessage if current_is_player else AIMessage
-            messages.append(role(content="".join(current_group)))
+            messages.append(role(content="\n".join(current_group)))
 
         return messages

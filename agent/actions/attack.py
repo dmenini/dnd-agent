@@ -6,6 +6,7 @@ from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
+from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import TargetingType
@@ -24,8 +25,8 @@ class AttackAction(Action):
     range: float
     status_effects: list[StatusEffect] = []
 
-    def execute(self, actor: Character, target: Character) -> str:
-        ctx = CombatContext(event="")
+    def execute(self, actor: Character, target: Character) -> None:
+        ctx = CombatContext()
 
         # Attack roll
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
@@ -40,20 +41,25 @@ class AttackAction(Action):
 
         if is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
-            ctx.event += f" {actor.name} rolls a NATURAL 20! Critical hit!"
+            actor.log_event("Rolls a NATURAL 20! Critical hit!", icon=Icon.ROLL)
             droll = actor.damage_roll(expr=expr, is_critical=True)
         else:
             # Check attack roll result
+            actor.log_event(f"Attack roll: {roll.total} vs AC {target.ac}", icon=Icon.ROLL)
+
             if roll.total < target.ac:
-                ctx.event += f" {actor.name} misses..."
+                actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
                 ctx.is_hit = False
-                return ctx.event
+                return
+
+            actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
 
             # Damage roll
             droll = actor.damage_roll(expr=expr, is_critical=False)
 
         ctx.is_hit = True
         ctx.damage_roll = droll
+        actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
 
         ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
 
@@ -71,18 +77,16 @@ class AttackAction(Action):
         # Apply damage
         total_damage = ctx.damage.total
         target.apply_damage(damage=total_damage)
-        ctx.event += f" {actor.name} hits {target.name} for {total_damage} damage (HP now {target.attributes.hp})."
+        actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE)
+        target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
+
+        if not target.is_alive:
+            target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
+            return
 
         # Try to apply status effects
         for effect in self.status_effects:
-            applied = target.try_apply_status(effect)
-            if applied:
-                ctx.event += f" {target.name} is {effect.type.value}."
-
-        if not target.is_alive:
-            ctx.event += f" {target.name} is defeated!"
-
-        return ctx.event
+            target.try_apply_status(effect)
 
     def _attack_modifier(self, actor: Character) -> int:
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
@@ -101,7 +105,7 @@ class MainHandAttackAction(AttackAction):
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
             source=weapon.name,
-            description=f"Base Attack with main hand weapon: {weapon.description}",
+            description=f"Base Attack with main hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
@@ -123,7 +127,7 @@ class OffHandAttackAction(AttackAction):
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
             source=weapon.name,
-            description=f"Bonus Attack with off hand weapon: {weapon.description}",
+            description=f"Bonus Attack with off hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
@@ -154,7 +158,7 @@ class RangedAttackAction(AttackAction):
     def from_weapon(cls, weapon: RangedWeapon) -> Self:
         return cls(
             source=weapon.name,
-            description=f"Ranged Attack: {weapon.description}",
+            description=f"Ranged Attack with {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,

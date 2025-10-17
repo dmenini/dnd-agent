@@ -25,9 +25,8 @@ class MovementAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.movement_available
 
-    def execute(self, actor: Character, target: Position) -> str:
+    def execute(self, actor: Character, target: Position) -> None:
         actor.move(target, dash=False)
-        return f" {actor.name} moves to position {target}."
 
     def finalize(self, actor: Character) -> None:
         """Consume movement."""

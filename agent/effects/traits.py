@@ -190,7 +190,7 @@ class IgnoreResistance(Trait):
 
     def on_apply_damage(self, _: Character, target: Character, context: CombatContext) -> None:
         res = target.attributes.compute_resistance(self.damage_type)
-        if res.value > 0 and context.damage is not None:
+        if res and res.value > 0 and context.damage is not None:
             # Balance the resistance by adding the opposite vulnerability component
             context.damage.vulnerabilities.append(DamageVulnerability(value=res.value, type=self.damage_type))
 
