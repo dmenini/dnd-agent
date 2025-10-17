@@ -135,10 +135,10 @@ class Character(BaseModel):
     def start_turn(self) -> None:
         self.turn_done = False
         self.action_economy.restore_all()
-        self._try_expire_effects()
+        self._try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
-        self._try_expire_effects()
+        self._try_expire_effects(is_start=False)
         self.turn_done = True
 
     def end_round(self) -> None:
@@ -188,10 +188,10 @@ class Character(BaseModel):
             f"{self.name} is {effect.type.value} again ({effect.duration} turns left)", icon=Icon.EFFECT_APPLIED
         )
 
-    def _try_expire_effects(self) -> None:
+    def _try_expire_effects(self, *, is_start: bool = True) -> None:
         # Copy the list since effects may modify self.status_effects in-place
         for effect in list(self.status_effects):
-            effect.on_turn_end(self)
+            effect.on_turn_start(self) if is_start else effect.on_turn_end(self)
             if effect.is_expired():
                 effect.on_expire(self)
                 self.log_event(f"{self.name} is not {effect.type.value} anymore!", icon=Icon.EFFECT_EXPIRED)

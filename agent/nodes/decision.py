@@ -24,9 +24,8 @@ class DecisionNode:
 
         if actor.turn_done:
             state.append_title_log(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
-            actor.start_turn()
-
             state.draw_map()
+            actor.start_turn()
 
         actions = actor.available_actions()
         if not actions:
