@@ -44,7 +44,6 @@ class State(BaseModel):
     decision: DecisionResult | None = None
     action: Action | None = None
     verification_result: VerificationResult | None = None
-    event_log: list[Event] = []
     done: bool = False
 
     @property
@@ -69,7 +68,7 @@ class State(BaseModel):
 
     def log_event(self, message: str, event_type: EventType = EventType.DETAIL, icon: str = "") -> None:
         """Log an event."""
-        event = Event(message=message, type=event_type, icon=icon)
+        event = Event(message=message, type=event_type, icon=icon, show_ai=False)
         registry.append(event)
 
     def log_newline(self) -> None:
@@ -87,3 +86,9 @@ class State(BaseModel):
         map_str = "\n".join(" ".join(row) for row in grid)
         map_event = Event(message=map_str, actor_id=None, type=EventType.MAP)
         registry.append(map_event)
+
+    def hide_last_event(self, event_type: EventType = EventType.MAIN) -> None:
+        for event in reversed(registry.events):
+            if event.type == event_type:
+                event.show_ai = False
+                return

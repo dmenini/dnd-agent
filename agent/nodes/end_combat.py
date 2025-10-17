@@ -60,5 +60,6 @@ class EndCombatNode:
                     )
                 else:
                     state.log_event(
-                        f"The enemies prevail... Party '{winner.name}' wins the battle.", event_type=EventType.SYSTEM
+                        f"The enemies prevail... Party '{winner.name}' wins the battle.",
+                        event_type=EventType.SYSTEM,
                     )

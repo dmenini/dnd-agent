@@ -174,9 +174,7 @@ class Character(BaseModel):
             # No existing effect → just apply it
             self.status_effects.append(effect)
             effect.on_apply(self)
-            self.log_event(
-                f"{self.name} is {effect.type.value} ({effect.duration} turns left)", icon=Icon.EFFECT_APPLIED
-            )
+            self.log_event(f"{self.name} is {effect}", icon=Icon.EFFECT_APPLIED)
             return
 
         # There is already an effect of this type -> remove old one, apply new
@@ -184,9 +182,7 @@ class Character(BaseModel):
         self.status_effects.remove(existing_effect)
         self.status_effects.append(effect)
         effect.on_apply(self)
-        self.log_event(
-            f"{self.name} is {effect.type.value} again ({effect.duration} turns left)", icon=Icon.EFFECT_APPLIED
-        )
+        self.log_event(f"{self.name} is again {effect}", icon=Icon.EFFECT_APPLIED)
 
     def _try_expire_effects(self, *, is_start: bool = True) -> None:
         # Copy the list since effects may modify self.status_effects in-place
@@ -302,13 +298,17 @@ class Character(BaseModel):
     def remove_modifier(self, source_id: str) -> None:
         self.attributes.remove_modifier(source_id)
 
-    def log_event(self, message: str, event_type: EventType = EventType.DETAIL, icon: str = "") -> None:
+    def log_event(
+        self, message: str, *, event_type: EventType = EventType.DETAIL, icon: str = "", show_ai: bool = False
+    ) -> None:
         icon = self.icon if event_type == EventType.MAIN else icon
+        show_ai = True if event_type == EventType.MAIN else show_ai
         event = Event(
             actor_id=self.id,
             icon=icon or self.icon,
             is_player=self.is_player,
             message=message,
             type=event_type,
+            show_ai=show_ai,
         )
         registry.append(event)

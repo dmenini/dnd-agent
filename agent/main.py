@@ -84,7 +84,7 @@ def main() -> None:
     hero = Character(
         id="pc_alfred",
         name="Alfred",
-        icon="⚔️",
+        icon="🤡",
         attributes=Attributes(base_hp=20, hp=20),
         pos=Position(x=2, y=2),
         is_player=True,

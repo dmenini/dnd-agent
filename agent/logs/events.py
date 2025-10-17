@@ -32,8 +32,7 @@ class Event(BaseModel):
     message: str
     type: EventType = EventType.MAIN
     timestamp: datetime = datetime.now(tz=UTC)
-
-    # Optional attributes for richer display
+    show_ai: bool = False
     actor_name: str | None = None
     is_player: bool | None = None
     verbosity: int = 2  # 1 = narrative only, 2 = include details, 3 = debug
@@ -43,7 +42,7 @@ class Event(BaseModel):
         if self.is_player is True:
             return "cyan"
         if self.is_player is False:
-            return "red"
+            return "magenta"
         return "white"
 
     def _highlight_numbers(self, text: str) -> str:
@@ -70,8 +69,7 @@ class Event(BaseModel):
         if self.type == EventType.SYSTEM:
             return Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
 
-        if self.type == EventType.MAP:
-            return Text.from_markup(f"[bold magenta]{msg}[/bold magenta]")
-
-        # Fallback for unknown types
         return Text(msg)
+
+    def __str__(self) -> str:
+        return f"{self.actor_id or 'system'}: {self.message}"
