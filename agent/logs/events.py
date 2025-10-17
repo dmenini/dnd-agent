@@ -61,27 +61,31 @@ class Event(BaseModel):
 
         color = self._color_for_actor()
         msg = self._highlight_numbers(self.message)
+        result = Text(msg)
 
         # Event formatting based on type
         if self.type == EventType.HEADER:
             header_line = Text(self.message, style=f"bold {color}")
             separator = Text("─" * 40, style="dim")
-            return Text.assemble("\n", header_line, "\n", separator)
+            result = Text.assemble("\n", header_line, "\n", separator)
 
-        if self.type == EventType.MAIN:
+        elif self.type == EventType.MAIN:
             icon = self.icon or "⚔️"
-            return Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
+            result = Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
 
-        if self.type == EventType.DETAIL and verbosity >= Verbosity.DETAIL:
-            return Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
+        elif (self.type == EventType.DETAIL and verbosity >= Verbosity.DETAIL) or (
+            self.type == EventType.DEBUG and verbosity >= Verbosity.DEBUG
+        ):
+            result = Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
 
-        if self.type == EventType.DEBUG and verbosity >= Verbosity.DEBUG:
-            return Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
+        elif self.type == EventType.SYSTEM:
+            result = Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
 
-        if self.type == EventType.SYSTEM:
-            return Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
+        elif self.type == EventType.MAP:
+            separator = Text("─" * 40, style="dim")
+            result = Text.assemble(msg, "\n", separator)
 
-        return Text(msg)
+        return result
 
     def __str__(self) -> str:
         return f"{self.actor_id or 'system'}: {self.message}"

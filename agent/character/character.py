@@ -133,11 +133,13 @@ class Character(BaseModel):
         return False
 
     def start_turn(self) -> None:
+        self.log_event(f"{self.name} starts turn", event_type=EventType.DEBUG)
         self.turn_done = False
         self.action_economy.restore_all()
         self._try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
+        self.log_event(f"{self.name} ends turn", event_type=EventType.DEBUG)
         self._try_expire_effects(is_start=False)
         self.turn_done = True
 
@@ -294,13 +296,19 @@ class Character(BaseModel):
 
     def add_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)
-        self.log_event(f"Added modifier {modifier.attribute}={modifier.value} to {self.name}", icon=Icon.EFFECT_APPLIED)
+        self.log_event(
+            f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
+            icon=Icon.EFFECT_APPLIED,
+            event_type=EventType.DEBUG,
+        )
 
     def remove_modifier(self, source_id: str) -> None:
         modifier = self.attributes.remove_modifier(source_id)
         if modifier:
             self.log_event(
-                f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}", icon=Icon.EFFECT_APPLIED
+                f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
+                icon=Icon.EFFECT_APPLIED,
+                event_type=EventType.DEBUG,
             )
 
     def log_event(

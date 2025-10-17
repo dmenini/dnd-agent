@@ -7,6 +7,7 @@ from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import SupportSpellAction
+from agent.actions.wait import WaitAction
 from agent.models.state import State
 
 ATTACK_ROLL_EXPR = "1d20"
@@ -40,11 +41,15 @@ class CombatEngineNode:
                 action.execute(actor=actor, target=target)
 
         elif isinstance(state.action, (DashAction, MovementAction)):
-            actor.log_event(f"{actor.name} performs {state.action.name} to position {decision.target_position}")
+            actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}")
             action.execute(actor=actor, target=decision.target_position)
 
         elif isinstance(state.action, DodgeAction):
-            actor.log_event(f"{actor.name} performs {state.action.name} on self")
+            actor.log_event(f"{actor.name} performs {action.name} on self")
+            action.execute(actor=actor, target=None)
+
+        elif isinstance(state.action, WaitAction):
+            actor.log_event(f"{actor.name} performs {action.name} to pass the turn")
             action.execute(actor=actor, target=None)
 
         action.finalize(actor)
