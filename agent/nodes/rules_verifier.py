@@ -39,6 +39,7 @@ class RulesVerifierNode:
             return state
 
         if not state.action or not state.decision:
+            state.verification_result = VerificationResult(valid=valid)
             return state
 
         reasons = []
