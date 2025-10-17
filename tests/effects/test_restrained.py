@@ -81,9 +81,9 @@ def test_restrained(
     assert orc.attributes.hp == starting_hp - value
     assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 2
-    assert orc.attributes._modifiers["advantage.defense"][0].value is True
-    assert orc.attributes._modifiers["disadvantage.attack"][0].value is True
-    assert orc.attributes._modifiers["save_disadvantage.dex"][0].value is True
+    assert orc.attributes.get_modifiers("advantage.defense")[0].value is True
+    assert orc.attributes.get_modifiers("disadvantage.attack")[0].value is True
+    assert orc.attributes.get_modifiers("save_disadvantage.dex")[0].value is True
     assert orc.attributes.compute_advantage("defense") == 1
     assert orc.attributes.compute_advantage("attack") == -1
     assert orc.attributes.compute_save_advantage(StatType.DEX) == -1
@@ -109,6 +109,6 @@ def test_restrained(
     # Paralysis expires after 2 turns
     orc = state.current_actor
     assert len(orc.status_effects) == 0
-    assert orc.attributes._modifiers["defense_advantage"] == []
-    assert orc.attributes._modifiers["attack_advantage"] == []
-    assert orc.attributes._modifiers["dex_save_advantage"] == []
+    assert orc.attributes.get_modifiers("defense_advantage") == []
+    assert orc.attributes.get_modifiers("attack_advantage") == []
+    assert orc.attributes.get_modifiers("dex_save_advantage") == []

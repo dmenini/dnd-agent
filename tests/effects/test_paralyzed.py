@@ -73,9 +73,9 @@ def test_paralyzed(
     assert orc.attributes.hp == starting_hp - value
     assert orc.status_effects[0].type == EffectType.PARALYZED
     assert orc.status_effects[0].duration == 2
-    assert orc.attributes._modifiers["advantage.defense"][0].value is True
-    assert orc.attributes._modifiers["save_autofail.str"][0].value is True
-    assert orc.attributes._modifiers["save_autofail.dex"][0].value is True
+    assert orc.attributes.get_modifiers("advantage.defense")[0].value is True
+    assert orc.attributes.get_modifiers("save_autofail.str")[0].value is True
+    assert orc.attributes.get_modifiers("save_autofail.dex")[0].value is True
 
     assert orc.attributes.compute_advantage("defense") == 1
     assert orc.attributes.compute_save_autofail(StatType.STR) is True
@@ -109,6 +109,6 @@ def test_paralyzed(
     # Paralysis expires after 2 turns
     orc = state.current_actor
     assert len(orc.status_effects) == 0
-    assert orc.attributes._modifiers["defense_advantage"] == []
-    assert orc.attributes._modifiers["str_save_autofail"] == []
-    assert orc.attributes._modifiers["dex_save_autofail"] == []
+    assert orc.attributes.get_modifiers("defense_advantage") == []
+    assert orc.attributes.get_modifiers("str_save_autofail") == []
+    assert orc.attributes.get_modifiers("dex_save_autofail") == []

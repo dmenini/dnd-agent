@@ -39,24 +39,24 @@ def test_same_effects() -> None:
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
-    assert hero.attributes._modifiers["resistance.fire"][0].value == 0.25
-    assert hero.attributes._modifiers["resistance.cold"][0].value == 0.25
+    assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
+    assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
     hero.end_turn()
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 1
-    assert hero.attributes._modifiers["resistance.fire"][0].value == 0.25
-    assert hero.attributes._modifiers["resistance.cold"][0].value == 0.25
+    assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
+    assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
     hero.apply_status(effect2)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
-    assert len(hero.attributes._modifiers["resistance.fire"]) == 1
-    assert len(hero.attributes._modifiers["resistance.cold"]) == 1
-    assert hero.attributes._modifiers["resistance.fire"][0].value == 0.25
-    assert hero.attributes._modifiers["resistance.cold"][0].value == 0.25
+    assert len(hero.attributes.get_modifiers("resistance.fire")) == 1
+    assert len(hero.attributes.get_modifiers("resistance.cold")) == 1
+    assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
+    assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
 
 def test_different_traits() -> None:
@@ -77,8 +77,8 @@ def test_different_traits() -> None:
     )
 
     attrs = hero.attributes
-    assert attrs._modifiers["resistance.fire"][0].value == value
-    assert attrs._modifiers["vulnerability.fire"][0].value == value
+    assert attrs.get_modifiers("resistance.fire")[0].value == value
+    assert attrs.get_modifiers("vulnerability.fire")[0].value == value
 
     assert attrs.compute_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
     assert attrs.compute_vulnerability(DamageType.FIRE) == DamageVulnerability(value=value, type=DamageType.FIRE)
@@ -87,8 +87,8 @@ def test_different_traits() -> None:
     hero.end_turn()
 
     # Traits don't expire
-    assert attrs._modifiers["resistance.fire"][0].value == value
-    assert attrs._modifiers["vulnerability.fire"][0].value == value
+    assert attrs.get_modifiers("resistance.fire")[0].value == value
+    assert attrs.get_modifiers("vulnerability.fire")[0].value == value
 
 
 def test_same_traits() -> None:
@@ -109,8 +109,8 @@ def test_same_traits() -> None:
     )
 
     attrs = hero.attributes
-    assert len(attrs._modifiers["resistance.fire"]) == 2
-    assert attrs._modifiers["resistance.fire"][0].value == value
-    assert attrs._modifiers["resistance.fire"][1].value == value
+    assert len(attrs.get_modifiers("resistance.fire")) == 2
+    assert attrs.get_modifiers("resistance.fire")[0].value == value
+    assert attrs.get_modifiers("resistance.fire")[1].value == value
 
     assert attrs.compute_resistance(DamageType.FIRE) == DamageResistance(value=value * 2, type=DamageType.FIRE)

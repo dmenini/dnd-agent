@@ -1,3 +1,4 @@
+import ast
 from collections import defaultdict
 from typing import Any, Literal
 
@@ -12,6 +13,22 @@ class Modifier(BaseModel):
     attribute: str
     value: Any
     operation: Literal["set", "add", "mul"] = "set"
+
+
+class ModifierRegistry(BaseModel):
+    attr: str
+    mods: list[Modifier]
+    stacking_rule: Literal["min", "max", "sum"] = "sum"
+
+    def stack(self, op: Literal["set", "add", "mul"]) -> Any:
+        if op == "set":
+            for mod in reversed(self.mods):
+                if mod.operation == op:
+                    return mod.value  # last wins
+            return None
+
+        mode = ast.literal_eval(self.stacking_rule)
+        return mode(mod.value for mod in self.mods if mod.operation == op)
 
 
 class Attributes(BaseModel):
@@ -33,7 +50,7 @@ class Attributes(BaseModel):
     base_resistance: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
     base_vulnerability: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
 
-    _modifiers: defaultdict[str, list[Modifier]] = PrivateAttr(default_factory=lambda: defaultdict(list))
+    _modifiers: dict[str, ModifierRegistry] = PrivateAttr(default={})
 
     def compute_max_hp(self, level: int, stats: Stats) -> int:
         """HP grows with level and Constitution modifier."""
@@ -79,12 +96,22 @@ class Attributes(BaseModel):
         value = self._recompute_attribute(f"vulnerability.{dtype.value}")
         return DamageVulnerability(value=value, type=dtype)
 
-    def add_modifier(self, modifier: Modifier) -> None:
-        self._modifiers[modifier.attribute].append(modifier)
+    def get_modifiers(self, attr: str) -> list[Modifier]:
+        if registry := self._modifiers.get(attr):
+            return registry.mods
+        return []
+
+    def add_modifier(self, modifier: Modifier, stacking_rule: Literal["min", "max", "sum"] = "sum") -> None:
+        if modifier.attribute in self._modifiers:
+            self.get_modifiers(modifier.attribute).append(modifier)
+        else:
+            self._modifiers[modifier.attribute] = ModifierRegistry(
+                attr=modifier.attribute, mods=[modifier], stacking_rule=stacking_rule
+            )
 
     def remove_modifier(self, source_id: str) -> None:
-        for attr, mods in self._modifiers.items():
-            self._modifiers[attr] = [m for m in mods if m.source_id != source_id]
+        for registry in self._modifiers.values():
+            registry.mods = [m for m in registry.mods if m.source_id != source_id]
 
     def _recompute_attribute(self, attr: str) -> Any:
         """
@@ -100,15 +127,17 @@ class Attributes(BaseModel):
             base_value = getattr(self, f"base_{attr}")
 
         # Priority: add -> mul -> set
-        mods = self._modifiers.get(attr, [])
+        registry = self._modifiers.get(attr)
+        if not registry:
+            return base_value
 
-        add_mod = sum(mod.value for mod in mods if mod.operation == "add")
-        mul_mod = sum(mod.value for mod in mods if mod.operation == "mul") or 1
+        add_mod = registry.stack("add")
+        mul_mod = registry.stack("mul") or 1
 
         value = (base_value + add_mod) * mul_mod
 
-        for mod in mods:
-            if mod.operation == "set":
-                value = mod.value  # last wins
+        override_val = registry.stack("set")
+        if override_val:
+            value = override_val
 
         return value
