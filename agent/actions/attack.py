@@ -80,12 +80,13 @@ class AttackAction(Action):
         actor.log_event(f"Damage dealt: {total_damage}", icon=Icon.DAMAGE)
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
+        if not target.is_alive:
+            target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
+            return
+
         # Try to apply status effects
         for effect in self.status_effects:
             target.try_apply_status(effect)
-
-        if not target.is_alive:
-            target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
 
     def _attack_modifier(self, actor: Character) -> int:
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
