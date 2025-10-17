@@ -75,7 +75,7 @@ class Attributes(BaseModel):
 
     # Base scalar attributes
     base_hp: int = 8
-    base_ac: int = 2
+    base_ac: int = 0
     base_speed: float = 6.0
     base_crit_roll_bonus: int = 0
     base_vision_range: float = 10.0
@@ -95,12 +95,9 @@ class Attributes(BaseModel):
         """HP grows with level and Constitution modifier."""
         return self.base_hp + (level - 1) * (5 + stats.modifier(StatType.CON))
 
-    def compute_ac(self, stats: Stats, dex_cap: int | None = None) -> int:
-        """Base AC + DEX modifier (possibly capped by armor)."""
-        dex_mod = stats.modifier(StatType.DEX)
-        if dex_cap is not None:
-            dex_mod = min(dex_mod, dex_cap)
-        return self._recompute_attribute("ac") + dex_mod
+    def compute_ac_bonus(self) -> int:
+        """Compute Armor Class bonus from modifiers."""
+        return self._recompute_attribute("ac")
 
     def compute_initiative(self, stats: Stats) -> int:
         """Derived initiative bonus."""

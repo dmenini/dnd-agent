@@ -67,18 +67,18 @@ def test_restrained(
         turn_order=[hero_id, orc_id],
     )
 
-    hero._dice = MagicMock()  # fail attack roll, but with autocrit attacks anyway
-    value = 5
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value, raw=value)
-    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value, raw=value)
-    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value * 2, raw=value)
+    hero._dice = MagicMock()
+    value1 = 15
+    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
 
     # Turn 1.1: Hero attacks and applies restrained
     state = advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
     )
     orc = state.characters[orc_id]
-    assert orc.attributes.hp == starting_hp - value
+    assert orc.attributes.hp == starting_hp - value1
     assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 2
     assert orc.attributes.get_modifiers("advantage.defense")[0].value is True

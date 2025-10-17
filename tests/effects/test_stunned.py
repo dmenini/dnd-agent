@@ -1,8 +1,12 @@
+from unittest.mock import MagicMock
+
+from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.stunned import Stunned
 from agent.equipment.weapons import MeleeWeapon, WeaponType
+from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -43,6 +47,7 @@ def test_stunned(
         name="Orc Grunt",
         icon="👹",
         pos=Position(x=4, y=2),
+        attributes=Attributes(hp=20),
         party=party_enemies,
     )
 
@@ -51,6 +56,12 @@ def test_stunned(
         parties={party_players.id: party_players, party_enemies.id: party_enemies},
         turn_order=[hero_id, orc_id],
     )
+
+    hero._dice = MagicMock()
+    value1 = 15
+    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    orc._dice = MagicMock()
+    orc._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
 
     # Turn 1.1: Hero attacks and applies stun
     state = advance_turn(

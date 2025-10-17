@@ -73,7 +73,7 @@ def test_hasted(
     assert hero.attributes.get_modifiers("speed")[0].value == 2
     assert hero.attributes.get_modifiers("save_advantage.dex")[0].value is True
 
-    assert hero.ac == 4
+    assert hero.armor_class == 12
     assert hero.current_speed == 12.0
     assert hero.attributes.compute_save_advantage(StatType.DEX) == 1
 

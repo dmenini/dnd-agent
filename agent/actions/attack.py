@@ -45,9 +45,9 @@ class AttackAction(Action):
             droll = actor.damage_roll(expr=expr, is_critical=True)
         else:
             # Check attack roll result
-            actor.log_event(f"Attack roll: {roll.total} vs AC {target.ac}", icon=Icon.ROLL)
+            actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
 
-            if roll.total < target.ac:
+            if roll.total < target.armor_class:
                 actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
                 ctx.is_hit = False
                 return

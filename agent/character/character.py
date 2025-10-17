@@ -13,7 +13,7 @@ from agent.character.attributes import Attributes, Modifier
 from agent.character.resources import SpellSlots
 from agent.character.stats import Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
-from agent.equipment.armor import Accessory, Armor
+from agent.equipment.armor import Accessory, Armor, ArmorType, Shield
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.events import Event, EventType, Icon
@@ -48,6 +48,7 @@ class Character(BaseModel):
     proficient_saves: list[StatType] = []
 
     armor: Armor | None = None
+    shield: Shield | None = None
     accessories: list[Accessory] = []
     main_hand: MeleeWeapon | None = UNARMED
     off_hand: MeleeWeapon | None = None
@@ -65,6 +66,8 @@ class Character(BaseModel):
         # Equip to apply traits
         if self.armor:
             self.armor.on_equip(self)
+        if self.shield:
+            self.shield.on_equip(self)
         if self.accessories:
             for acc in self.accessories:
                 acc.on_equip(self)
@@ -77,9 +80,27 @@ class Character(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def ac(self) -> int:
+    def armor_class(self) -> int:
         """Armor Class is derived from DEX and equipment."""
-        return self.attributes.compute_ac(stats=self.stats)
+        ac = self.attributes.compute_ac_bonus()
+
+        if not self.armor:
+            ac += 10 + self.stats.modifier(StatType.DEX)
+
+        elif self.armor.armor_type == ArmorType.LIGHT:
+            ac += self.armor.base_ac + self.stats.modifier(StatType.DEX)
+
+        elif self.armor.armor_type == ArmorType.MEDIUM:
+            dex_bonus = min(self.stats.modifier(StatType.DEX), self.armor.max_dex_bonus or 2)
+            ac += self.armor.base_ac + dex_bonus
+
+        elif self.armor.armor_type == ArmorType.HEAVY:
+            ac += self.armor.base_ac
+
+        if self.shield:
+            ac += self.shield.ac_bonus
+
+        return ac
 
     @computed_field  # type: ignore[prop-decorator]
     @property
