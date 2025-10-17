@@ -21,14 +21,14 @@ class EndCombatNode:
 
         # End of round
         if state.turn_index >= len(state.characters):
+            state.log_event(f"Turn {state.round + 1} over!", event_type=EventType.SYSTEM)
+
             # Reset resources
             for char in state.alive_characters.values():
                 char.end_round()
 
             state.round += 1
             state.turn_index = 0
-
-            state.draw_map()
 
         self._check_victory_conditions(state)
 
