@@ -1,19 +1,77 @@
+import re
 from datetime import UTC, datetime
+from enum import Enum
 
 from pydantic import BaseModel
+from rich.text import Text
+
+
+class Icon:
+    ATTACK = "⚔️"
+    DAMAGE = "💥"
+    DEATH = "☠️"
+    DEFENSE = "🛡️"
+    ROLL = "🎲"
+    MOVE = "🏃"
+    EFFECT_APPLIED = "🌀"
+    EFFECT_EXPIRED = "✨"
+
+
+class EventType(str, Enum):
+    HEADER = "header"  # Narrative main events
+    MAIN = "main"  # Narrative main events
+    DETAIL = "detail"  # Step-by-step debug info
+    SYSTEM = "system"  # Global system events
+    MAP = "map"  # Map / spatial events (optional)
+    CUSTOM = "custom"
 
 
 class Event(BaseModel):
     actor_id: str | None = None
-    actor_icon: str | None = None
+    icon: str | None = "⚙️"
     message: str
-    turn: str
-    type: str = "system"
+    type: EventType = EventType.MAIN
     timestamp: datetime = datetime.now(tz=UTC)
 
-    def __str__(self) -> str:
-        if self.type == "actor":
-            return f"Turn {self.turn} {self.actor_icon} -> {self.message}"
-        if self.type == "system":
-            return f"Turn {self.turn} -> {self.message}"
-        return self.message
+    # Optional attributes for richer display
+    actor_name: str | None = None
+    is_player: bool | None = None
+    verbosity: int = 2  # 1 = narrative only, 2 = include details, 3 = debug
+
+    def _color_for_actor(self) -> str:
+        """Return a color depending on the actor's faction."""
+        if self.is_player is True:
+            return "cyan"
+        if self.is_player is False:
+            return "red"
+        return "white"
+
+    def _highlight_numbers(self, text: str) -> str:
+        """Highlight numbers in yellow for readability."""
+        return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
+
+    def __rich__(self) -> Text:
+        color = self._color_for_actor()
+        msg = self._highlight_numbers(self.message)
+
+        # Event formatting based on type
+        if self.type == EventType.HEADER:
+            header_line = Text(self.message, style=f"bold {color}")
+            separator = Text("─" * 40, style="dim")
+            return Text.assemble("\n", header_line, "\n", separator)
+
+        if self.type == EventType.MAIN:
+            icon = self.icon or "⚔️"
+            return Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
+
+        if self.type == EventType.DETAIL:
+            return Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
+
+        if self.type == EventType.SYSTEM:
+            return Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
+
+        if self.type == EventType.MAP:
+            return Text.from_markup(f"[bold magenta]{msg}[/bold magenta]")
+
+        # Fallback for unknown types
+        return Text(msg)

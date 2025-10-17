@@ -2,15 +2,13 @@ from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
-from agent.logs.events import Event
-from agent.logs.log_registry import LogRegistry
-from agent.logs.subscribers import rich_printer
+from agent.logs.events import Event, EventType
+from agent.logs.log_registry import get_log_registry
 from agent.models.position import Position
 
 CELL_WIDTH = 2
 
-registry = LogRegistry.instance()
-registry.subscribe(rich_printer)
+registry = get_log_registry()
 
 
 class VerificationResult(BaseModel):
@@ -64,17 +62,19 @@ class State(BaseModel):
             members = [m for m in members if m.is_alive]
         return members
 
-    def append_log(self, message: str) -> None:
-        """Append a log event associated to a certain actor. It will be part of the agent history."""
-        actor = self.current_actor
-        turn = f"{self.round + 1}.{self.turn_index + 1}"
-        event = Event(message=message, turn=turn, actor_id=actor.id, actor_icon=actor.icon, type="actor")
+    def append_title_log(self, message: str, event_type: EventType = EventType.HEADER) -> None:
+        """Log an event as header."""
+        event = Event(message=message, type=event_type)
         registry.append(event)
 
-    def append_system_log(self, message: str) -> None:
-        """Append a system log event. It will be excluded from the agent history"""
-        turn = f"{self.round + 1}.{self.turn_index + 1}"
-        event = Event(message=message, turn=turn, type="system")
+    def log_event(self, message: str, event_type: EventType = EventType.DETAIL, icon: str = "") -> None:
+        """Log an event."""
+        event = Event(message=message, type=event_type, icon=icon)
+        registry.append(event)
+
+    def log_newline(self) -> None:
+        """Log a newline."""
+        event = Event(message="", type=EventType.CUSTOM)
         registry.append(event)
 
     def draw_map(self) -> None:
@@ -85,5 +85,5 @@ class State(BaseModel):
             grid[char.pos.y][char.pos.x] = char.icon
 
         map_str = "\n".join(" ".join(row) for row in grid)
-        map_event = Event(message=map_str, turn=str(self.round), actor_id=None, type="map")
+        map_event = Event(message=map_str, actor_id=None, type=EventType.MAP)
         registry.append(map_event)

@@ -1,5 +1,6 @@
 from logging import getLogger
 
+from agent.logs.events import EventType, Icon
 from agent.models.state import State
 
 log = getLogger(__name__)
@@ -38,7 +39,7 @@ class EndCombatNode:
         defeated_parties = [p for p in state.parties.values() if not state.get_party_members(p.id, alive_only=True)]
         defeated_parties_ids = [p.id for p in defeated_parties]
         for defeated in defeated_parties:
-            state.append_system_log(f"Party '{defeated.name}' has been defeated!")
+            state.log_event(f"Party '{defeated.name}' has been defeated!", icon=Icon.DEATH)
 
         # Determine if only one party remains
         alive_parties = [p for p in state.parties.values() if p.id not in defeated_parties_ids]
@@ -48,11 +49,16 @@ class EndCombatNode:
             state.done = True
 
             if not alive_parties:
-                state.append_system_log("All parties have fallen. It's a draw.")
+                state.log_event("All parties have fallen. It's a draw.", event_type=EventType.SYSTEM)
             else:
                 winner = alive_parties[0]
 
                 if winner.is_player_party:
-                    state.append_system_log(f"🎉 The players are victorious! Party '{winner.name}' stands triumphant!")
+                    state.log_event(
+                        f"The players are victorious! Party '{winner.name}' stands triumphant!",
+                        event_type=EventType.SYSTEM,
+                    )
                 else:
-                    state.append_system_log(f"💀 The enemies prevail... Party '{winner.name}' wins the battle.")
+                    state.log_event(
+                        f"The enemies prevail... Party '{winner.name}' wins the battle.", event_type=EventType.SYSTEM
+                    )

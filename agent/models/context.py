@@ -11,4 +11,3 @@ class CombatContext(BaseModel):
     is_critical: bool = False
     is_hit: bool | None = None
     metadata: dict = {}  # flexible space for anything added by traits
-    event: str

@@ -1,7 +1,9 @@
 from collections.abc import Callable
+from functools import lru_cache
 from typing import Self
 
 from agent.logs.events import Event
+from agent.logs.subscribers import rich_printer
 
 
 class LogRegistry:
@@ -32,3 +34,10 @@ class LogRegistry:
         if actor_ids is not None:
             results = [e for e in results if e.actor_id in actor_ids]
         return results
+
+
+@lru_cache
+def get_log_registry() -> LogRegistry:
+    registry = LogRegistry.instance()
+    registry.subscribe(rich_printer)
+    return registry

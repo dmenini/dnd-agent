@@ -3,7 +3,7 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.logs.events import Event
+from agent.logs.events import Event, EventType
 from agent.models.state import DecisionResult, State
 
 log = getLogger(__name__)
@@ -23,10 +23,8 @@ class DecisionNode:
             return state
 
         if actor.turn_done:
+            state.append_title_log(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
             actor.start_turn()
-
-            for effect in actor.status_effects:
-                state.append_log(str(effect).format(actor=actor.name))
 
         actions = actor.available_actions()
         if not actions:
@@ -94,6 +92,11 @@ class DecisionNode:
 
         # Reset verification
         state.verification_result = None
+
+        state.log_newline()
+        action_names = [a.name for a in actions.values()]
+        actor.log_event(result.description, event_type=EventType.MAIN)
+        actor.log_event(f"Available actions: {action_names}")
 
         return state
 

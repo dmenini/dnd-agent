@@ -5,6 +5,7 @@ from logging import getLogger
 from agent.actions.attack import AttackAction
 from agent.actions.dash import DashAction
 from agent.actions.move import MovementAction
+from agent.logs.events import EventType
 from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import State, VerificationResult
@@ -54,7 +55,7 @@ class RulesVerifierNode:
 
         state.verification_result = VerificationResult(valid=valid, reason="; ".join(reasons), input=state.action)
         if not valid:
-            state.append_system_log(f"Validation error: {state.verification_result.reason}")
+            state.log_event(f"Validation error: {state.verification_result.reason}", event_type=EventType.SYSTEM)
 
         return state
 

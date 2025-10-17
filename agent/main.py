@@ -26,6 +26,7 @@ log = getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 getLogger("botocore").setLevel(logging.INFO)
+getLogger("langchain_aws").setLevel(logging.WARNING)
 
 
 def main() -> None:
@@ -119,7 +120,6 @@ def main() -> None:
     )
 
     graph = build_graph(config=config.agent)
-    print(graph.get_graph().draw_mermaid())
 
     graph.invoke(state, RunnableConfig(recursion_limit=100))
 

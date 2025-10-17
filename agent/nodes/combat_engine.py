@@ -28,9 +28,6 @@ class CombatEngineNode:
         if not actor.is_alive:
             return state
 
-        event = f"{actor.name} performs {action.name}: {decision.description}"
-        event = event if event.endswith(".") else event + "."
-
         # Handle the main combat actions
         if isinstance(state.action, (AttackAction, SupportSpellAction)):
             if not decision.target_ids:
@@ -39,15 +36,17 @@ class CombatEngineNode:
 
             targets = [state.characters[tid] for tid in decision.target_ids if tid in state.characters]
             for target in targets:
-                event += action.execute(actor=actor, target=target)
+                actor.log_event(f"{actor.name} performs {action.name} on target {target.name}: {action.description}")
+                action.execute(actor=actor, target=target)
 
         elif isinstance(state.action, (DashAction, MovementAction)):
-            event += action.execute(actor=actor, target=decision.target_position)
+            actor.log_event(f"{actor.name} performs {state.action.name} to position {decision.target_position}")
+            action.execute(actor=actor, target=decision.target_position)
 
         elif isinstance(state.action, DodgeAction):
-            event += action.execute(actor=actor, target=None)
+            actor.log_event(f"{actor.name} performs {state.action.name} on self")
+            action.execute(actor=actor, target=None)
 
         action.finalize(actor)
 
-        state.append_log(event)
         return state

@@ -79,16 +79,13 @@ class SupportSpellAction(Action):
             status_effects=spell.effects,
         )
 
-    def execute(self, actor: Character, target: Character | None) -> str:
-        event = ""
+    def execute(self, actor: Character, target: Character | None) -> None:
         if self.targeting == TargetingType.SELF:
             self._execute_on_target(target=actor)
         else:
             if target is None:
                 raise ValueError
             self._execute_on_target(target=target)
-
-        return event
 
     def _execute_on_target(self, target: Character) -> str:
         event = ""
