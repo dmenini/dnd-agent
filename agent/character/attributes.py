@@ -79,6 +79,7 @@ class Attributes(BaseModel):
     base_speed: float = 6.0
     base_crit_roll_bonus: int = 0
     base_vision_range: float = 10.0
+    base_spell_save_dc: int = 8
 
     # Base nested attributes
     base_advantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
@@ -115,6 +116,9 @@ class Attributes(BaseModel):
         adv = self._recompute_attribute(f"advantage.{kind}")
         dis = self._recompute_attribute(f"disadvantage.{kind}")
         return int(adv) - int(dis)
+
+    def compute_spell_save_dc(self) -> int:
+        return self._recompute_attribute("spell_save_dc")
 
     def compute_save_advantage(self, stat: StatType) -> int:
         adv = self._recompute_attribute(f"save_advantage.{stat.name.lower()}")

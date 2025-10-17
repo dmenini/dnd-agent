@@ -28,7 +28,13 @@ class AttackAction(Action):
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
 
-        # Attack roll
+        self._resolve_attack(actor, target, ctx)
+
+        # Apply damage if any
+        if ctx.damage:
+            self._apply_damage(actor, target, ctx)
+
+    def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
         is_critical = roll.raw == actor.attributes.compute_crit_roll()
         is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
@@ -36,13 +42,9 @@ class AttackAction(Action):
         ctx.hit_roll = roll
         ctx.is_critical = is_critical
 
-        mod = self._attack_modifier(actor)
-        expr = f"{self.damage_dice}+{mod}"
-
-        if is_critical:
+        if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
             actor.log_event("Rolls a NATURAL 20! Critical hit!", icon=Icon.ROLL)
-            droll = actor.damage_roll(expr=expr, is_critical=True)
         else:
             # Check attack roll result
             actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
@@ -50,27 +52,33 @@ class AttackAction(Action):
             if roll.total < target.armor_class:
                 actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
                 ctx.is_hit = False
-                return
+                return ctx
 
             actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
 
-            # Damage roll
-            droll = actor.damage_roll(expr=expr, is_critical=False)
-
         ctx.is_hit = True
+
+        mod = self._attack_modifier(actor)
+        expr = f"{self.damage_dice}+{mod}"
+        droll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
         ctx.damage_roll = droll
+        ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
 
-        ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
+        return ctx
 
-        # Apply actor status effects (e.g. additional damage from traits)
+    def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        if ctx.damage is None:
+            return ctx
+
+        # Apply actor status effects
         for effect in actor.status_effects:
             effect.on_apply_damage(actor, target, ctx)
 
-        # Apply resistance and vulnerability modifiers
+        # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)
 
-        # Apply target status effects (e.g. shield)
+        # Apply target status effects
         for effect in target.status_effects:
             effect.on_receive_damage(actor, target, ctx)
 
@@ -82,11 +90,13 @@ class AttackAction(Action):
 
         if not target.is_alive:
             target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
-            return
+            return ctx
 
         # Try to apply status effects
         for effect in self.status_effects:
             target.try_apply_status(effect)
+
+        return ctx
 
     def _attack_modifier(self, actor: Character) -> int:
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0

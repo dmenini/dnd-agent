@@ -46,6 +46,7 @@ class Character(BaseModel):
     status_effects: list[StatusEffect] = []
     proficiencies: list[WeaponType] = []
     proficient_saves: list[StatType] = []
+    spellcasting_stat: StatType = StatType.INT
 
     armor: Armor | None = None
     shield: Shield | None = None
@@ -114,6 +115,18 @@ class Character(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
+    def proficiency_bonus(self) -> int:
+        return 2 + (self.level - 1) // 4
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def spell_save_dc(self) -> int:
+        # TODO: spell stat depends on class
+        spell_mod = self.stats.modifier(self.spellcasting_stat)
+        return self.attributes.compute_spell_save_dc() + self.proficiency_bonus + spell_mod
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats)
 
@@ -129,11 +142,6 @@ class Character(BaseModel):
             distance_cost /= 2  # Dash halves cost
         self.action_economy.movement_used = distance_cost
         self.log_event(f"New position: {destination}", icon=Icon.MOVE)
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def proficiency_bonus(self) -> int:
-        return 2 + (self.level - 1) // 4
 
     @property
     def is_alive(self) -> bool:
