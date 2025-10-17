@@ -2,24 +2,6 @@
 
 Agent to play Dungeon & Dragons games.
 
-```mermaid
-graph TD;
-        __start__(<p>__start__</p>)
-        start(start)
-        decide(decide)
-        verify(verify)
-        execute(execute)
-        end(end)
-        __end__(<p>__end__</p>)
-        __start__ --> start;
-        decide --> verify;
-        start --> decide;
-        verify --> __end__;
-        classDef default fill:#f2f0ff,line-height:1.2
-        classDef first fill-opacity:0
-        classDef last fill:#bfb6fc
-```
-
 ## Local Development
 
 ### Prerequisites
