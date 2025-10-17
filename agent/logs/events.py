@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import UTC, datetime
 from enum import Enum
@@ -24,6 +25,13 @@ class EventType(str, Enum):
     SYSTEM = "system"  # Global system events
     MAP = "map"  # Map / spatial events (optional)
     CUSTOM = "custom"
+    DEBUG = "debug"
+
+
+class Verbosity:
+    MAIN = 0
+    DETAIL = 1
+    DEBUG = 2
 
 
 class Event(BaseModel):
@@ -35,7 +43,6 @@ class Event(BaseModel):
     show_ai: bool = False
     actor_name: str | None = None
     is_player: bool | None = None
-    verbosity: int = 2  # 1 = narrative only, 2 = include details, 3 = debug
 
     def _color_for_actor(self) -> str:
         """Return a color depending on the actor's faction."""
@@ -50,6 +57,8 @@ class Event(BaseModel):
         return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
 
     def __rich__(self) -> Text:
+        verbosity = int(os.getenv("VERBOSITY", Verbosity.DETAIL))
+
         color = self._color_for_actor()
         msg = self._highlight_numbers(self.message)
 
@@ -63,7 +72,10 @@ class Event(BaseModel):
             icon = self.icon or "⚔️"
             return Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
 
-        if self.type == EventType.DETAIL:
+        if self.type == EventType.DETAIL and verbosity >= Verbosity.DETAIL:
+            return Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
+
+        if self.type == EventType.DEBUG and verbosity >= Verbosity.DEBUG:
             return Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
 
         if self.type == EventType.SYSTEM:

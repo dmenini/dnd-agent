@@ -26,12 +26,21 @@ class ModifierRegistry(BaseModel):
             self._stacking_rules[attr] = stacking_rule
         self._modifiers[attr].append(modifier)
 
-    def remove(self, source_id: str) -> None:
+    def remove(self, source_id: str) -> Modifier | None:
         for attr, mods in list(self._modifiers.items()):
-            self._modifiers[attr] = [m for m in mods if m.source_id != source_id]
-            if not self._modifiers[attr]:
-                del self._modifiers[attr]
-                del self._stacking_rules[attr]
+            for i, m in enumerate(mods):
+                if m.source_id == source_id:
+                    # Pop the modifier from the list
+                    removed = mods.pop(i)
+
+                    # Clean up empty modifier lists
+                    if not mods:
+                        del self._modifiers[attr]
+                        self._stacking_rules.pop(attr, None)
+
+                    return removed
+
+        return None
 
     def get(self, attr: str) -> list[Modifier]:
         return self._modifiers.get(attr, [])
@@ -136,8 +145,8 @@ class Attributes(BaseModel):
     def add_modifier(self, modifier: Modifier, stacking_rule: Literal["min", "max", "sum"] = "sum") -> None:
         self._registry.add(modifier, stacking_rule)
 
-    def remove_modifier(self, source_id: str) -> None:
-        self._registry.remove(source_id)
+    def remove_modifier(self, source_id: str) -> Modifier | None:
+        return self._registry.remove(source_id)
 
     def _recompute_attribute(self, attr: str) -> Any:
         """

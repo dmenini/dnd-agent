@@ -294,9 +294,14 @@ class Character(BaseModel):
 
     def add_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)
+        self.log_event(f"Added modifier {modifier.attribute}={modifier.value} to {self.name}", icon=Icon.EFFECT_APPLIED)
 
     def remove_modifier(self, source_id: str) -> None:
-        self.attributes.remove_modifier(source_id)
+        modifier = self.attributes.remove_modifier(source_id)
+        if modifier:
+            self.log_event(
+                f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}", icon=Icon.EFFECT_APPLIED
+            )
 
     def log_event(
         self, message: str, *, event_type: EventType = EventType.DETAIL, icon: str = "", show_ai: bool = False
