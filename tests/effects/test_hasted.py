@@ -71,7 +71,7 @@ def test_hasted(
     assert hero.status_effects[0].duration == 2
     assert hero.attributes._modifiers["ac"][0].value == 2
     assert hero.attributes._modifiers["speed"][0].value == 2
-    assert hero.attributes._modifiers["save_advantage.dex"][0].value == 1
+    assert hero.attributes._modifiers["save_advantage.dex"][0].value is True
 
     assert hero.ac == 4
     assert hero.current_speed == 12.0
@@ -100,7 +100,7 @@ def test_hasted(
     assert hero.status_effects[0].type == EffectType.LETHARGIC
     assert hero.status_effects[0].duration == 1
     assert hero.attributes._modifiers["speed"][0].value == 0.5
-    assert hero.attributes._modifiers["save_advantage.wis"][0].value == -1
+    assert hero.attributes._modifiers["save_disadvantage.wis"][0].value is True
 
     assert hero.current_speed == 3
     assert hero.attributes.compute_save_advantage(StatType.WIS) == -1

@@ -154,6 +154,7 @@ class Character(BaseModel):
         pass
 
     def try_apply_status(self, effect: StatusEffect) -> bool:
+        """Apply status effect in case there are no immunities and save throw fails."""
         event = ""
         # Check immunity
         if self.is_immune_to(effect.type):
@@ -178,15 +179,23 @@ class Character(BaseModel):
         return True
 
     def apply_status(self, effect: StatusEffect) -> None:
-        if not self.has_effect(effect.type):
-            self.status_effects.append(effect)
-        else:
-            existing_effect = next(eff for eff in self.status_effects if eff.type == effect.type)
-            existing_effect.duration = effect.duration
+        """Apply status effect, overriding any ongoing status effect of same type."""
+        existing_effect = next((eff for eff in self.status_effects if eff.type == effect.type), None)
 
+        if not existing_effect:
+            # No existing effect → just apply it
+            self.status_effects.append(effect)
+            effect.on_apply(self)
+            return
+
+        # There is already an effect of this type -> remove old one, apply new
+        existing_effect.on_expire(self)
+        self.status_effects.remove(existing_effect)
+        self.status_effects.append(effect)
         effect.on_apply(self)
 
     def modify_incoming_damage(self, damage: Damage) -> Damage:
+        """Apply resistances and vulnerabilities to damage."""
         resistances, vulnerabilities = [], []
         for comp in damage.components:
             resistances.append(self.attributes.compute_resistance(comp.type))
@@ -194,7 +203,6 @@ class Character(BaseModel):
 
         damage.resistances.extend(resistances)
         damage.vulnerabilities.extend(vulnerabilities)
-
         return damage
 
     def has_resources(self) -> bool:

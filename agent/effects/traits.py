@@ -3,13 +3,12 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.character.attributes import Modifier
 from agent.character.stats import StatType
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
-from agent.models.enums import Advantage
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -24,44 +23,34 @@ class Trait(BaseModel):
 
 class AttackerDisadvantageOnAttackRoll(Trait):
     def on_apply(self, target: Character) -> None:
-        attr = "advantage.defense"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.DISADVANTAGE, operation="add")
-        )
+        attr = "disadvantage.defense"
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
     def on_apply(self, target: Character) -> None:
         attr = "advantage.defense"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.ADVANTAGE, operation="add")
-        )
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
     def on_apply(self, target: Character) -> None:
-        attr = "advantage.attack"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.DISADVANTAGE, operation="add")
-        )
+        attr = "disadvantage.attack"
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class TargetAdvantageOnAttackRoll(Trait):
     def on_apply(self, target: Character) -> None:
         attr = "advantage.attack"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.ADVANTAGE, operation="add")
-        )
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class DisadvantageOnSavingThrow(Trait):
     stat: StatType
 
     def on_apply(self, target: Character) -> None:
-        attr = f"save_advantage.{self.stat.name.lower()}"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.DISADVANTAGE, operation="add")
-        )
+        attr = f"save_disadvantage.{self.stat.name.lower()}"
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class AdvantageOnSavingThrow(Trait):
@@ -69,9 +58,7 @@ class AdvantageOnSavingThrow(Trait):
 
     def on_apply(self, target: Character) -> None:
         attr = f"save_advantage.{self.stat.name.lower()}"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.ADVANTAGE, operation="add")
-        )
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class FailOnSavingThrow(Trait):
@@ -83,7 +70,7 @@ class FailOnSavingThrow(Trait):
 
 
 class SpeedMultiplier(Trait):
-    value: float
+    value: float = Field(ge=0)
 
     def on_apply(self, target: Character) -> None:
         attr = "speed"
@@ -115,7 +102,7 @@ class CriticalRollBonus(Trait):
     value: int
 
     def on_apply(self, target: Character) -> None:
-        attr = "crit_roll"
+        attr = "crit_roll_bonus"
         target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=-self.value, operation="add"))
 
 
@@ -183,7 +170,16 @@ class DamageBonus(Trait):
 
     def on_apply_damage(self, actor: Character, target: Character, context: CombatContext) -> None:  # noqa: ARG002
         if context.damage is not None:
-            context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type))
+            context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type, operation="add"))
+
+
+class DamageMultiplier(Trait):
+    value: int = Field(ge=0)
+    damage_type: DamageType
+
+    def on_apply_damage(self, actor: Character, target: Character, context: CombatContext) -> None:  # noqa: ARG002
+        if context.damage is not None:
+            context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type, operation="mul"))
 
 
 class IgnoreResistance(Trait):
@@ -192,6 +188,7 @@ class IgnoreResistance(Trait):
     def on_apply_damage(self, _: Character, target: Character, context: CombatContext) -> None:
         res = target.attributes.compute_resistance(self.damage_type)
         if res.value > 0 and context.damage is not None:
+            # Balance the resistance by adding the opposite vulnerability component
             context.damage.vulnerabilities.append(DamageVulnerability(value=res.value, type=self.damage_type))
 
 
@@ -204,6 +201,14 @@ class Resistance(Trait):
         target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=self.value, operation="add"))
 
 
+class Immunity(Trait):
+    damage_type: DamageType
+
+    def on_apply(self, target: Character) -> None:
+        attr = f"resistance.{self.damage_type.value}"
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=1.0, operation="add"))
+
+
 class Vulnerability(Trait):
     value: float
     damage_type: DamageType
@@ -213,30 +218,18 @@ class Vulnerability(Trait):
         target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=self.value, operation="add"))
 
 
-class Immunity(Trait):
-    damage_type: DamageType
-
-    def on_apply(self, target: Character) -> None:
-        attr = f"resistance.{self.damage_type.value}"
-        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=1.0, operation="add"))
-
-
 class SpellResistance(Trait):
     # TODO: Implement check in spell action
     def on_apply(self, target: Character) -> None:
         attr = "advantage.spell_save"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.ADVANTAGE, operation="add")
-        )
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class StealthDisadvantage(Trait):
     # TODO: Implement check
     def on_apply(self, target: Character) -> None:
-        attr = "advantage.stealth"
-        target.add_modifier(
-            Modifier(source_id=str(id(self)), attribute=attr, value=Advantage.DISADVANTAGE, operation="add")
-        )
+        attr = "disadvantage.stealth"
+        target.add_modifier(Modifier(source_id=str(id(self)), attribute=attr, value=True, operation="set"))
 
 
 class Regeneration(Trait):

@@ -54,7 +54,7 @@ def test_dodge(
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.DODGING
     assert hero.status_effects[0].duration == 1
-    assert hero.attributes._modifiers["advantage.defense"][0].value == -1
+    assert hero.attributes._modifiers["disadvantage.defense"][0].value is True
 
     assert hero.attributes.compute_advantage("defense") == -1
 

@@ -21,12 +21,14 @@ class Attributes(BaseModel):
     base_hp: int = 8
     base_ac: int = 2
     base_speed: float = 6.0
-    base_crit_roll: int = 20
+    base_crit_roll_bonus: int = 0
     base_vision_range: float = 10.0
 
     # Base nested attributes
-    base_advantage: defaultdict[str, int] = Field(default_factory=lambda: defaultdict(lambda: 0))
-    base_save_advantage: defaultdict[str, int] = Field(default_factory=lambda: defaultdict(lambda: 0))
+    base_advantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
+    base_disadvantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
+    base_save_advantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
+    base_save_disadvantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
     base_save_autofail: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
     base_resistance: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
     base_vulnerability: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
@@ -53,13 +55,18 @@ class Attributes(BaseModel):
         return self._recompute_attribute("speed")
 
     def compute_crit_roll(self) -> int:
-        return self._recompute_attribute("crit_roll")
+        crit_roll = 20
+        return crit_roll - self._recompute_attribute("crit_roll_bonus")
 
     def compute_advantage(self, kind: str) -> int:
-        return self._recompute_attribute(f"advantage.{kind}")
+        adv = self._recompute_attribute(f"advantage.{kind}")
+        dis = self._recompute_attribute(f"disadvantage.{kind}")
+        return int(adv) - int(dis)
 
     def compute_save_advantage(self, stat: StatType) -> int:
-        return self._recompute_attribute(f"save_advantage.{stat.name.lower()}")
+        adv = self._recompute_attribute(f"save_advantage.{stat.name.lower()}")
+        dis = self._recompute_attribute(f"save_disadvantage.{stat.name.lower()}")
+        return int(adv) - int(dis)
 
     def compute_save_autofail(self, stat: StatType) -> bool:
         return self._recompute_attribute(f"save_autofail.{stat.name.lower()}")
@@ -83,6 +90,7 @@ class Attributes(BaseModel):
         """
         Recompute the effective value from base + active modifiers.
         Supports nested attributes (e.g. 'save_advantage.STR', 'resistance.fire').
+        Priority: Additive factors -> Multiplicative factors -> Override with last.
         """
         if "." in attr:
             base_name, key = attr.split(".", 1)
@@ -91,13 +99,16 @@ class Attributes(BaseModel):
         else:
             base_value = getattr(self, f"base_{attr}")
 
-        value = base_value
-        for mod in self._modifiers.get(attr, []):
+        # Priority: add -> mul -> set
+        mods = self._modifiers.get(attr, [])
+
+        add_mod = sum(mod.value for mod in mods if mod.operation == "add")
+        mul_mod = sum(mod.value for mod in mods if mod.operation == "mul") or 1
+
+        value = (base_value + add_mod) * mul_mod
+
+        for mod in mods:
             if mod.operation == "set":
-                value = mod.value
-            elif mod.operation == "add":
-                value += mod.value
-            elif mod.operation == "mul":
-                value *= mod.value
+                value = mod.value  # last wins
 
         return value
