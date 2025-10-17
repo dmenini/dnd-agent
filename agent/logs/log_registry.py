@@ -1,33 +1,13 @@
-from datetime import datetime
-from typing import Callable, Self
+from collections.abc import Callable
+from typing import Self
 
-from pydantic import BaseModel
-from rich.console import Console
-from rich.text import Text
-
-console = Console()
-
-
-class Event(BaseModel):
-    actor_id: str | None = None
-    actor_icon: str | None = None
-    message: str
-    turn: str
-    type: str = "system"
-    timestamp: datetime = datetime.now()
-
-    def __str__(self) -> str:
-        if self.type == "actor":
-            return f"Turn {self.turn} {self.actor_icon} -> {self.message}"
-        if self.type == "system":
-            return f"Turn {self.turn} -> {self.message}"
-        return self.message
+from agent.logs.events import Event
 
 
 class LogRegistry:
     _instance: Self | None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.events: list[Event] = []
         self.subscribers: list[Callable[[Event], None]] = []
 
@@ -52,13 +32,3 @@ class LogRegistry:
         if actor_ids is not None:
             results = [e for e in results if e.actor_id in actor_ids]
         return results
-
-
-def rich_printer(event: Event) -> None:
-    color = {
-        "system": "yellow",
-        "map": None,
-        "actor": "green",
-    }
-    text = Text(str(event), style=color[event.type])
-    console.print(text)

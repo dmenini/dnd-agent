@@ -2,7 +2,9 @@ from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
-from agent.models.log_registry import Event, LogRegistry, rich_printer
+from agent.logs.events import Event
+from agent.logs.log_registry import LogRegistry
+from agent.logs.subscribers import rich_printer
 from agent.models.position import Position
 
 CELL_WIDTH = 2
@@ -83,14 +85,5 @@ class State(BaseModel):
             grid[char.pos.y][char.pos.x] = char.icon
 
         map_str = "\n".join(" ".join(row) for row in grid)
-        map_event = Event(
-            message=map_str,
-            turn=str(self.round),
-            actor_id=None,
-            type="map"
-        )
+        map_event = Event(message=map_str, turn=str(self.round), actor_id=None, type="map")
         registry.append(map_event)
-
-
-class Context(BaseModel):
-    pass
