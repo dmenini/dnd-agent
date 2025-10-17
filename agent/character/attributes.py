@@ -1,4 +1,4 @@
-import ast
+import builtins
 from collections import defaultdict
 from typing import Any, Literal
 
@@ -16,19 +16,49 @@ class Modifier(BaseModel):
 
 
 class ModifierRegistry(BaseModel):
-    attr: str
-    mods: list[Modifier]
-    stacking_rule: Literal["min", "max", "sum"] = "sum"
+    _modifiers: dict[str, list[Modifier]] = PrivateAttr(default_factory=dict)
+    _stacking_rules: dict[str, Literal["sum", "min", "max"]] = PrivateAttr(default_factory=dict)
 
-    def stack(self, op: Literal["set", "add", "mul"]) -> Any:
+    def add(self, modifier: Modifier, stacking_rule: Literal["sum", "min", "max"] = "sum") -> None:
+        attr = modifier.attribute
+        if attr not in self._modifiers:
+            self._modifiers[attr] = []
+            self._stacking_rules[attr] = stacking_rule
+        self._modifiers[attr].append(modifier)
+
+    def remove(self, source_id: str) -> None:
+        for attr, mods in list(self._modifiers.items()):
+            self._modifiers[attr] = [m for m in mods if m.source_id != source_id]
+            if not self._modifiers[attr]:
+                del self._modifiers[attr]
+                del self._stacking_rules[attr]
+
+    def get(self, attr: str) -> list[Modifier]:
+        return self._modifiers.get(attr, [])
+
+    def attributes(self) -> list[str]:
+        """Return all attributes currently affected by modifiers."""
+        return list(self._modifiers.keys())
+
+    def stack(self, attr: str, op: Literal["set", "add", "mul"]) -> Any:
+        """
+        Select a final modifier value for the given attribute and operation based on the configured stacking rule.
+        """
+        neutral_el = 1 if op == "mul" else 0
+        mods = self._modifiers.get(attr, [])
+        if not mods:
+            return neutral_el
+
         if op == "set":
-            for mod in reversed(self.mods):
+            # Most recent 'set' overrides previous ones
+            for mod in reversed(mods):
                 if mod.operation == op:
-                    return mod.value  # last wins
+                    return mod.value
             return None
 
-        mode = ast.literal_eval(self.stacking_rule)
-        return mode(mod.value for mod in self.mods if mod.operation == op)
+        stacking_rule = self._stacking_rules[attr]
+        mode_fn = getattr(builtins, stacking_rule)
+        return mode_fn(mod.value for mod in mods if mod.operation == op) or neutral_el
 
 
 class Attributes(BaseModel):
@@ -50,7 +80,7 @@ class Attributes(BaseModel):
     base_resistance: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
     base_vulnerability: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
 
-    _modifiers: dict[str, ModifierRegistry] = PrivateAttr(default={})
+    _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
 
     def compute_max_hp(self, level: int, stats: Stats) -> int:
         """HP grows with level and Constitution modifier."""
@@ -97,21 +127,13 @@ class Attributes(BaseModel):
         return DamageVulnerability(value=value, type=dtype)
 
     def get_modifiers(self, attr: str) -> list[Modifier]:
-        if registry := self._modifiers.get(attr):
-            return registry.mods
-        return []
+        return self._registry.get(attr)
 
     def add_modifier(self, modifier: Modifier, stacking_rule: Literal["min", "max", "sum"] = "sum") -> None:
-        if modifier.attribute in self._modifiers:
-            self.get_modifiers(modifier.attribute).append(modifier)
-        else:
-            self._modifiers[modifier.attribute] = ModifierRegistry(
-                attr=modifier.attribute, mods=[modifier], stacking_rule=stacking_rule
-            )
+        self._registry.add(modifier, stacking_rule)
 
     def remove_modifier(self, source_id: str) -> None:
-        for registry in self._modifiers.values():
-            registry.mods = [m for m in registry.mods if m.source_id != source_id]
+        self._registry.remove(source_id)
 
     def _recompute_attribute(self, attr: str) -> Any:
         """
@@ -127,16 +149,12 @@ class Attributes(BaseModel):
             base_value = getattr(self, f"base_{attr}")
 
         # Priority: add -> mul -> set
-        registry = self._modifiers.get(attr)
-        if not registry:
-            return base_value
-
-        add_mod = registry.stack("add")
-        mul_mod = registry.stack("mul") or 1
+        add_mod = self._registry.stack(attr, "add")
+        mul_mod = self._registry.stack(attr, "mul")
 
         value = (base_value + add_mod) * mul_mod
 
-        override_val = registry.stack("set")
+        override_val = self._registry.stack(attr, "set")
         if override_val:
             value = override_val
 
