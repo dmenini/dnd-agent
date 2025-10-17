@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.effects.traits import Trait
 
@@ -32,8 +31,6 @@ class EquipmentType(str, Enum):
 
 class Equipment(BaseModel):
     name: str
-    stat: StatType
-    range: float
     description: str = ""
     traits: list[Trait] = []  # passive effects
     effects: list[StatusEffect] = []  # triggered effects

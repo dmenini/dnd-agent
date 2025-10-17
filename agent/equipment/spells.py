@@ -12,6 +12,7 @@ class Spell(Equipment):
     level: SpellLevel = SpellLevel.LEVEL_1
     casting_time: ActionCategory = ActionCategory.STANDARD
     targeting: TargetingType
+    range: float
 
 
 class AttackSpell(Spell):
