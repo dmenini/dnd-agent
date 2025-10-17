@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
-from agent.logs.events import Event, EventType
-from agent.logs.log_registry import get_log_registry
+from agent.logs.events import EventType
+from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.position import Position
 
 CELL_WIDTH = 2
@@ -61,20 +61,9 @@ class State(BaseModel):
             members = [m for m in members if m.is_alive]
         return members
 
-    def append_title_log(self, message: str, event_type: EventType = EventType.HEADER) -> None:
-        """Log an event as header."""
-        event = Event(message=message, type=event_type)
-        registry.append(event)
-
-    def log_event(self, message: str, event_type: EventType = EventType.DETAIL, icon: str = "") -> None:
-        """Log an event."""
-        event = Event(message=message, type=event_type, icon=icon, show_ai=False)
-        registry.append(event)
-
-    def log_newline(self) -> None:
-        """Log a newline."""
-        event = Event(message="", type=EventType.CUSTOM)
-        registry.append(event)
+    @property
+    def log(self) -> LogRegistry:
+        return get_log_registry()
 
     def draw_map(self) -> None:
         # The chosen char aligns well with emoticons
@@ -84,11 +73,4 @@ class State(BaseModel):
             grid[char.pos.y][char.pos.x] = char.icon
 
         map_str = "\n".join(" ".join(row) for row in grid)
-        map_event = Event(message=map_str, actor_id=None, type=EventType.MAP)
-        registry.append(map_event)
-
-    def hide_last_event(self, event_type: EventType = EventType.MAIN) -> None:
-        for event in reversed(registry.events):
-            if event.type == event_type:
-                event.show_ai = False
-                return
+        self.log.log_event(message=map_str, event_type=EventType.MAP)

@@ -2,7 +2,7 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import Self
 
-from agent.logs.events import Event
+from agent.logs.events import Event, EventType
 from agent.logs.subscribers import rich_printer
 
 
@@ -24,6 +24,21 @@ class LogRegistry:
         for subscriber in self.subscribers:
             subscriber(event)
 
+    def log_header(self, message: str) -> None:
+        """Log an event as header."""
+        event = Event(message=message, type=EventType.HEADER)
+        self.append(event)
+
+    def log_event(self, message: str, event_type: EventType = EventType.DETAIL, icon: str = "") -> None:
+        """Log an event."""
+        event = Event(message=message, type=event_type, icon=icon, show_ai=False)
+        self.append(event)
+
+    def log_newline(self) -> None:
+        """Log a newline."""
+        event = Event(message="", type=EventType.CUSTOM)
+        self.append(event)
+
     def subscribe(self, callback: Callable[[Event], None]) -> None:
         self.subscribers.append(callback)
 
@@ -34,6 +49,12 @@ class LogRegistry:
         if actor_ids is not None:
             results = [e for e in results if e.actor_id in actor_ids]
         return results
+
+    def hide_last_event(self, event_type: EventType = EventType.MAIN) -> None:
+        for event in reversed(self.events):
+            if event.type == event_type:
+                event.show_ai = False
+                return
 
 
 @lru_cache

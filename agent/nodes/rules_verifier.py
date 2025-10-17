@@ -55,7 +55,7 @@ class RulesVerifierNode:
 
         state.verification_result = VerificationResult(valid=valid, reason="; ".join(reasons), input=state.action)
         if not valid:
-            state.log_event(f"Validation error: {state.verification_result.reason}", event_type=EventType.SYSTEM)
+            state.log.log_event(f"Validation error: {state.verification_result.reason}", event_type=EventType.SYSTEM)
 
         return state
 

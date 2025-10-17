@@ -3,8 +3,8 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.logs.events import Event, EventType
-from agent.logs.log_registry import get_log_registry
+from agent.logs.events import EventType
+from agent.logs.log_registry import LogRegistry
 from agent.models.state import DecisionResult, State
 
 log = getLogger(__name__)
@@ -24,7 +24,7 @@ class DecisionNode:
             return state
 
         if actor.turn_done:
-            state.append_title_log(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
+            state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
             state.draw_map()
             actor.start_turn()
 
@@ -63,11 +63,11 @@ class DecisionNode:
             if c.id != actor.id
         ]
 
-        history = self.group_messages(events=get_log_registry().events)
+        history = self.group_messages(state.log)
 
         if state.verification_result and not state.verification_result.valid and state.verification_result.input:
             # Hide the previous decision that lead to a validation error
-            state.hide_last_event(event_type=EventType.MAIN)
+            state.log.hide_last_event(event_type=EventType.MAIN)
             validation_event = (
                 f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
                 f"for the following reasons:\n{state.verification_result.reason}"
@@ -96,19 +96,21 @@ class DecisionNode:
         # Reset verification
         state.verification_result = None
 
-        state.log_newline()
+        state.log.log_newline()
         action_names = [a.name for a in actions.values()]
         actor.log_event(result.description, event_type=EventType.MAIN)
         actor.log_event(f"Available actions: {action_names}")
 
         return state
 
-    def group_messages(self, events: list[Event]) -> list[BaseMessage]:
+    def group_messages(self, registry: LogRegistry) -> list[BaseMessage]:
         """Group sequential events into HumanMessage or AIMessage based on which team the actor belongs to."""
         messages: list[BaseMessage] = []
         current_group: list[str] = []
         current_is_player = None
 
+        limit = 30
+        events = registry.filter(types=[EventType.MAIN])[-limit:]
         for event in events:
             if not event.show_ai:
                 continue

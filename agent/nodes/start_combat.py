@@ -16,7 +16,7 @@ class StartCombatNode:
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        state.append_title_log("Starting combat!", event_type=EventType.HEADER)
+        state.log.log_header("Starting combat!")
 
         rolls = []
         for cid, char in state.characters.items():
@@ -31,7 +31,7 @@ class StartCombatNode:
         # Sort by total roll, then Dex modifier, then random tie-breaker
         state.turn_order = [cid for _, _, _, cid in sorted(rolls, reverse=True)]
         state.turn_index = 0
-        state.log_event(
+        state.log.log_event(
             "Initiative order: " + " → ".join(state.characters[cid].name for cid in state.turn_order),
             event_type=EventType.SYSTEM,
         )
