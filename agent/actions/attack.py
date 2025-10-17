@@ -77,7 +77,7 @@ class AttackAction(Action):
         # Apply damage
         total_damage = ctx.damage.total
         target.apply_damage(damage=total_damage)
-        actor.log_event(f"Damage dealt: {total_damage}", icon=Icon.DAMAGE)
+        actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE)
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
         if not target.is_alive:

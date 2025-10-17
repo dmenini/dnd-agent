@@ -118,12 +118,16 @@ class Attributes(BaseModel):
     def compute_save_autofail(self, stat: StatType) -> bool:
         return self._recompute_attribute(f"save_autofail.{stat.name.lower()}")
 
-    def compute_resistance(self, dtype: DamageType) -> DamageResistance:
+    def compute_resistance(self, dtype: DamageType) -> DamageResistance | None:
         value = self._recompute_attribute(f"resistance.{dtype.value}")
+        if not value:
+            return None
         return DamageResistance(value=value, type=dtype)
 
-    def compute_vulnerability(self, dtype: DamageType) -> DamageVulnerability:
+    def compute_vulnerability(self, dtype: DamageType) -> DamageVulnerability | None:
         value = self._recompute_attribute(f"vulnerability.{dtype.value}")
+        if not value:
+            return None
         return DamageVulnerability(value=value, type=dtype)
 
     def get_modifiers(self, attr: str) -> list[Modifier]:

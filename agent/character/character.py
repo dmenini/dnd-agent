@@ -201,13 +201,11 @@ class Character(BaseModel):
 
     def modify_incoming_damage(self, damage: Damage) -> Damage:
         """Apply resistances and vulnerabilities to damage."""
-        resistances, vulnerabilities = [], []
-        for comp in damage.components:
-            resistances.append(self.attributes.compute_resistance(comp.type))
-            vulnerabilities.append(self.attributes.compute_vulnerability(comp.type))
-
-        damage.resistances.extend(resistances)
-        damage.vulnerabilities.extend(vulnerabilities)
+        for dtype in {c.type for c in damage.components}:
+            if res := self.attributes.compute_resistance(dtype):
+                damage.resistances.append(res)
+            if vul := self.attributes.compute_vulnerability(dtype):
+                damage.vulnerabilities.append(vul)
         return damage
 
     def has_resources(self) -> bool:
