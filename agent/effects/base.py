@@ -7,7 +7,7 @@ from pydantic import BaseModel, PrivateAttr
 
 from agent.character.stats import StatType
 from agent.effects.traits import Trait
-from agent.equipment.weapons import DamageType
+from agent.models.context import CombatContext
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -21,6 +21,7 @@ class EffectType(str, Enum):
     HASTED = "hasted"
     RESTRAINED = "restrained"
     LETHARGIC = "lethargic"
+    CUSTOM = "custom"
 
 
 class StatusEffect(BaseModel):
@@ -51,17 +52,19 @@ class StatusEffect(BaseModel):
         for trait in self._traits:
             self._trigger_hook(trait, "on_turn_end", target)
 
-    def on_receive_damage(self, target: Character, damage: int, dtype: DamageType) -> int:
-        """Modify damage taken (e.g., resistance, vulnerability). Multiple effects accumulate on each other."""
+    def on_receive_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Modify damage taken."""
+        if ctx.damage is None:
+            return
         for trait in self._traits:
-            damage += self._trigger_hook(trait, "on_receive_damage", target, damage, dtype) or 0
-        return damage
+            self._trigger_hook(trait, "on_receive_damage", actor, target, ctx)
 
-    def on_apply_damage(self, actor: Character, target: Character, damage: int, dtype: DamageType) -> int:
-        """Modify outgoing damage (e.g., weaken attacks)."""
+    def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Modify outgoing damage."""
+        if ctx.damage is None:
+            return
         for trait in self._traits:
-            damage += self._trigger_hook(trait, "on_apply_damage", actor, target, damage, dtype) or 0
-        return damage
+            self._trigger_hook(trait, "on_apply_damage", actor, target, ctx)
 
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
         """Modify crit chance."""

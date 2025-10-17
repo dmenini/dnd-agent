@@ -4,6 +4,7 @@ from pydantic import Field
 
 from agent.character.stats import StatType
 from agent.equipment.base import Equipment, EquipmentType
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
 
@@ -13,18 +14,6 @@ class WeaponType(str, Enum):
     SIMPLE_RANGE = "simple_range"
     MARTIAL_RANGE = "martial_range"
     MAGIC = "magic"
-
-
-class DamageType(str, Enum):
-    SLASHING = "slashing"
-    PIERCING = "piercing"
-    BLUDGEONING = "bludgeoning"
-    FIRE = "fire"
-    COLD = "cold"
-    POISON = "poison"
-    LIGHTNING = "lightning"
-    NECROTIC = "necrotic"
-    RADIANT = "radiant"
 
 
 class Weapon(Equipment):

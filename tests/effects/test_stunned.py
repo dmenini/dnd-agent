@@ -2,8 +2,9 @@ from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.stunned import Stunned
-from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
+from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.models.config import AgentConfig
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
@@ -58,9 +59,9 @@ def test_stunned(
     orc = state.characters[orc_id]
     assert orc.status_effects[0].type == EffectType.STUNNED
     assert orc.status_effects[0].duration == 2
-    assert orc.attributes._modifiers["advantage.defense"][0].value == 1
-    assert orc.attributes._modifiers["save_autofail.str"][0].value is True
-    assert orc.attributes._modifiers["save_autofail.dex"][0].value is True
+    assert orc.attributes.get_modifiers("advantage.defense")[0].value == 1
+    assert orc.attributes.get_modifiers("save_autofail.str")[0].value is True
+    assert orc.attributes.get_modifiers("save_autofail.dex")[0].value is True
 
     assert orc.attributes.compute_advantage("defense") == 1
     assert orc.attributes.compute_save_autofail(StatType.STR) is True
@@ -88,6 +89,6 @@ def test_stunned(
     # Stunned expires after 2 turns
     orc = state.current_actor
     assert len(orc.status_effects) == 0
-    assert orc.attributes._modifiers["advantage.defense"] == []
-    assert orc.attributes._modifiers["save_autofail.str"] == []
-    assert orc.attributes._modifiers["save_autofail.dec"] == []
+    assert orc.attributes.get_modifiers("advantage.defense") == []
+    assert orc.attributes.get_modifiers("save_autofail.str") == []
+    assert orc.attributes.get_modifiers("save_autofail.dec") == []

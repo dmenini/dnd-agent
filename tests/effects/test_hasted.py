@@ -5,9 +5,10 @@ from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
 from agent.equipment.spells import SupportSpell
-from agent.equipment.weapons import DamageType, MeleeWeapon, WeaponType
+from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
@@ -68,9 +69,9 @@ def test_hasted(
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
     assert hero.status_effects[0].duration == 2
-    assert hero.attributes._modifiers["ac"][0].value == 2
-    assert hero.attributes._modifiers["speed"][0].value == 2
-    assert hero.attributes._modifiers["save_advantage.dex"][0].value == 1
+    assert hero.attributes.get_modifiers("ac")[0].value == 2
+    assert hero.attributes.get_modifiers("speed")[0].value == 2
+    assert hero.attributes.get_modifiers("save_advantage.dex")[0].value is True
 
     assert hero.ac == 4
     assert hero.current_speed == 12.0
@@ -98,8 +99,8 @@ def test_hasted(
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.LETHARGIC
     assert hero.status_effects[0].duration == 1
-    assert hero.attributes._modifiers["speed"][0].value == 0.5
-    assert hero.attributes._modifiers["save_advantage.wis"][0].value == -1
+    assert hero.attributes.get_modifiers("speed")[0].value == 0.5
+    assert hero.attributes.get_modifiers("save_disadvantage.wis")[0].value is True
 
     assert hero.current_speed == 3
     assert hero.attributes.compute_save_advantage(StatType.WIS) == -1

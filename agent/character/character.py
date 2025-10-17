@@ -15,9 +15,10 @@ from agent.character.stats import Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.equipment.armor import Accessory, Armor
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
-from agent.equipment.weapons import UNARMED, DamageType, MeleeWeapon, RangedWeapon, WeaponType
+from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
+from agent.models.damage import Damage
 from agent.models.position import Position
 
 
@@ -112,7 +113,7 @@ class Character(BaseModel):
     def is_alive(self) -> bool:
         return self.attributes.hp > 0
 
-    def apply_damage(self, damage: int, damage_type: DamageType | None = None) -> None:  # noqa: ARG002
+    def apply_damage(self, damage: int) -> None:
         self.attributes.hp = max(0, self.attributes.hp - damage)
 
     def heal(self, amount: int) -> None:
@@ -153,6 +154,7 @@ class Character(BaseModel):
         pass
 
     def try_apply_status(self, effect: StatusEffect) -> bool:
+        """Apply status effect in case there are no immunities and save throw fails."""
         event = ""
         # Check immunity
         if self.is_immune_to(effect.type):
@@ -177,25 +179,30 @@ class Character(BaseModel):
         return True
 
     def apply_status(self, effect: StatusEffect) -> None:
-        if not self.has_effect(effect.type):
-            self.status_effects.append(effect)
-        else:
-            existing_effect = next(eff for eff in self.status_effects if eff.type == effect.type)
-            existing_effect.duration = effect.duration
+        """Apply status effect, overriding any ongoing status effect of same type."""
+        existing_effect = next((eff for eff in self.status_effects if eff.type == effect.type), None)
 
+        if not existing_effect:
+            # No existing effect → just apply it
+            self.status_effects.append(effect)
+            effect.on_apply(self)
+            return
+
+        # There is already an effect of this type -> remove old one, apply new
+        existing_effect.on_expire(self)
+        self.status_effects.remove(existing_effect)
+        self.status_effects.append(effect)
         effect.on_apply(self)
 
-    def modify_incoming_damage(self, damage: int, dtype: DamageType) -> int:
-        # TODO: Damage can have multiple types
-        resistance = self.attributes.compute_resistance(dtype)
-        for effect in self.status_effects:
-            damage = effect.on_receive_damage(target=self, damage=damage, dtype=dtype)
+    def modify_incoming_damage(self, damage: Damage) -> Damage:
+        """Apply resistances and vulnerabilities to damage."""
+        resistances, vulnerabilities = [], []
+        for comp in damage.components:
+            resistances.append(self.attributes.compute_resistance(comp.type))
+            vulnerabilities.append(self.attributes.compute_vulnerability(comp.type))
 
-        return damage * (1 - resistance)
-
-    def modify_outgoing_damage(self, target: Self, damage: int, dtype: DamageType) -> int:
-        for effect in self.status_effects:
-            damage = effect.on_apply_damage(actor=self, target=target, damage=damage, dtype=dtype)
+        damage.resistances.extend(resistances)
+        damage.vulnerabilities.extend(vulnerabilities)
         return damage
 
     def has_resources(self) -> bool:
