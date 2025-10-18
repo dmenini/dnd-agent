@@ -3,14 +3,14 @@ from typing import Any, Self
 from pydantic import BaseModel, computed_field
 
 from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
-from agent.actions.base import Action, ActionEconomy
+from agent.actions.base import Action
 from agent.actions.dash import DashAction
 from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.wait import WaitAction
 from agent.character.attributes import Attributes, Modifier
-from agent.character.resources import SpellSlots
+from agent.character.resources import ActionEconomy, SpellSlots
 from agent.character.stats import Stats, StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.equipment.armor import Accessory, Armor, ArmorType, Shield
@@ -135,12 +135,8 @@ class Character(BaseModel):
     def current_speed(self) -> float:
         return self.attributes.compute_speed(stats=self.stats) - self.action_economy.movement_used
 
-    def move(self, destination: Position, *, dash: bool = False) -> None:
+    def move(self, destination: Position) -> None:
         self.pos = destination
-        distance_cost = self.distance(destination)
-        if dash:
-            distance_cost /= 2  # Dash halves cost
-        self.action_economy.movement_used = distance_cost
         self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
     @property
@@ -164,7 +160,7 @@ class Character(BaseModel):
     def start_turn(self) -> None:
         self.log_event(f"{self.name} starts turn", event_type=EventType.DEBUG)
         self.turn_done = False
-        self.action_economy.restore_all()
+        self.action_economy.restore_turn()
         self._try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
@@ -173,7 +169,7 @@ class Character(BaseModel):
         self.turn_done = True
 
     def end_round(self) -> None:
-        pass
+        self.action_economy.restore_reaction()
 
     def try_apply_status(self, effect: StatusEffect) -> bool:
         """Apply status effect in case there are no immunities and save throw fails."""
@@ -236,10 +232,10 @@ class Character(BaseModel):
         return damage
 
     def has_resources(self) -> bool:
-        has_bonus = self.off_hand is not None and (self.action_economy.bonus_actions > 0)
+        has_bonus = self.off_hand is not None and (self.action_economy.can_use_bonus())
         main_hand = self.main_hand or self.ranged or self.spells
-        has_main = main_hand is not None and (self.action_economy.standard_actions > 0)
-        has_movement = self.action_economy.movement_available
+        has_main = main_hand is not None and (self.action_economy.can_use_standard())
+        has_movement = self.action_economy.can_move(self.current_speed)
         return has_main or has_bonus or has_movement
 
     def available_actions(self) -> dict[str, Action]:

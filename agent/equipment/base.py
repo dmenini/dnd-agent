@@ -36,11 +36,11 @@ class Equipment(BaseModel):
     effects: list[StatusEffect] = []  # triggered effects
 
     def on_equip(self, character: Character) -> None:
-        for trait in self.traits:
+        for trait in sorted(self.traits, key=lambda t: t.priority):
             if hasattr(trait, "on_apply"):
                 trait.on_apply(character)
 
     def on_unequip(self, character: Character) -> None:
-        for trait in self.traits:
+        for trait in sorted(self.traits, key=lambda t: t.priority):
             if hasattr(trait, "on_expire"):
                 trait.on_expire(character)
