@@ -2,6 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from agent.actions.base import ActionType
+
 
 class SpellLevel(Enum):
     CANTRIP = 0
@@ -11,21 +13,86 @@ class SpellLevel(Enum):
 
 
 class ActionEconomy(BaseModel):
+    # Core resources
     standard_actions: int = 1
     max_standard_actions: int = 1
     bonus_actions: int = 1
     max_bonus_actions: int = 1
     reaction_available: bool = True
-    movement_available: bool = True
-    movement_used: float = 0.0
 
-    def restore_all(self) -> None:
-        """Restore all resources. Must be done after each round."""
+    # Movement tracking
+    movement_used: float = 0.0
+    movement_available: bool = True
+
+    # Tracking what actions were used
+    last_standard_action: ActionType | None = None
+    last_bonus_action: ActionType | None = None
+    reaction_trigger: str | None = None
+
+    def restore_turn(self) -> None:
+        """Restore per-turn actions and movement (start of your turn)."""
         self.standard_actions = self.max_standard_actions
         self.bonus_actions = self.max_bonus_actions
-        self.movement_available = True
-        self.reaction_available = True
         self.movement_used = 0.0
+        self.movement_available = True
+        self.last_standard_action = None
+        self.last_bonus_action = None
+
+    def restore_reaction(self) -> None:
+        """Restore reaction (start of your next turn)."""
+        self.reaction_available = True
+        self.reaction_trigger = None
+
+    def can_use_standard(self, action_type: ActionType | None = None) -> bool:
+        if action_type is None or action_type in [
+            ActionType.MAIN_HAND_ATTACK,
+            ActionType.CAST_SPELL,
+            ActionType.RANGED_ATTACK,
+            ActionType.DASH,
+            ActionType.DODGE,
+            ActionType.USE_OBJECT,
+        ]:
+            return self.standard_actions > 0
+        return False
+
+    def use_standard(self, action_type: ActionType | None = None) -> None:
+        if action_type and not self.can_use_standard(action_type):
+            raise RuntimeError("No standard action remaining this turn.")
+        self.standard_actions -= 1
+        self.last_standard_action = action_type
+
+    def can_use_bonus(self, action_type: ActionType | None = None) -> bool:
+        if action_type is None or action_type in [
+            ActionType.OFF_HAND_ATTACK,
+        ]:
+            return self.bonus_actions > 0
+        return False
+
+    def use_bonus(self, action_type: ActionType | None = None) -> None:
+        if action_type and not self.can_use_bonus(action_type):
+            raise RuntimeError("No bonus action remaining this turn.")
+        self.bonus_actions -= 1
+        self.last_bonus_action = action_type
+
+    def can_use_reaction(self) -> bool:
+        return self.reaction_available
+
+    def use_reaction(self, trigger: str | None = None) -> None:
+        if trigger and not self.reaction_available:
+            raise RuntimeError("Reaction already used this round.")
+        self.reaction_available = False
+        self.reaction_trigger = trigger
+
+    def can_move(self, distance: float, speed_available: float | None = None) -> bool:
+        if speed_available is not None:
+            return self.movement_available and self.movement_used + distance <= speed_available
+        return self.movement_available
+
+    def use_movement(self, distance: float) -> None:
+        # The AI doesn't work well if we keep the movement as a float,
+        # so after one movement action prevents it from using it again in the same turn
+        self.movement_used += distance
+        self.movement_available = False
 
 
 class SpellSlots(BaseModel):

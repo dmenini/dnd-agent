@@ -24,7 +24,7 @@ class AttackSpellAction(AttackAction):
     id: str
     name: str
     description: str = ""
-    action_type: ActionType = ActionType.SPELL
+    action_type: ActionType = ActionType.CAST_SPELL
     category: ActionCategory = ActionCategory.STANDARD
     level: SpellLevel
 
@@ -35,7 +35,7 @@ class AttackSpellAction(AttackAction):
             name=spell.name,
             description=f"Cast attack spell: {spell.description}",
             source=spell.name,
-            action_type=ActionType.SPELL,
+            action_type=ActionType.CAST_SPELL,
             weapon_type=WeaponType.MAGIC,
             category=spell.casting_time,
             targeting=spell.targeting,
@@ -90,7 +90,7 @@ class SupportSpellAction(Action):
     id: str
     name: str
     description: str = ""
-    action_type: ActionType = ActionType.SPELL
+    action_type: ActionType = ActionType.CAST_SPELL
     category: ActionCategory = ActionCategory.STANDARD
     level: SpellLevel
     source: str
@@ -106,7 +106,7 @@ class SupportSpellAction(Action):
             name=spell.name,
             description=f"Cast support spell: {spell.description}",
             source=spell.name,
-            action_type=ActionType.SPELL,
+            action_type=ActionType.CAST_SPELL,
             category=spell.casting_time,
             targeting=spell.targeting,
             stat=spell.stat,

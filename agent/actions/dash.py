@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
+from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.resources import ActionEconomy
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
@@ -23,15 +24,12 @@ class DashAction(Action):
     range: float
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.standard_actions > 0 and action_economy.movement_available
+        return action_economy.can_use_standard(self.action_type) and action_economy.can_move(self.range)
 
     def execute(self, actor: Character, target: Position) -> None:
-        actor.move(target, dash=True)
+        actor.move(target)
 
     def finalize(self, actor: Character) -> None:
         """Consume standard action point and movement."""
         super().finalize(actor)
-
-        if not actor.action_economy.movement_available:
-            raise ValueError("Already moved")
-        actor.action_economy.movement_available = False
+        actor.action_economy.use_movement(distance=self.range)

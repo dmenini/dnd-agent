@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
+from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
@@ -152,9 +153,7 @@ class OffHandAttackAction(AttackAction):
 
     def finalize(self, actor: Character) -> None:
         """Consume bonus point."""
-        if actor.action_economy.bonus_actions <= 0:
-            raise ValueError("No bonus actions left")
-        actor.action_economy.bonus_actions -= 1
+        actor.action_economy.can_use_bonus(self.action_type)
 
 
 class RangedAttackAction(AttackAction):

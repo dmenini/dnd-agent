@@ -5,10 +5,31 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
-from agent.character.resources import ActionEconomy
-
 if TYPE_CHECKING:
     from agent.character.character import Character
+    from agent.character.resources import ActionEconomy
+
+"""
+| Type            | Frequency                    | When usable                                                 |
+| --------------- | ---------------------------- | ----------------------------------------------------------- |
+| Movement        | once per turn (can be split) | During your turn                                            |
+| Standard Action | once per turn                | During your turn                                            |
+| Bonus Action    | once per turn                | During your turn, only if you have something that grants it |
+| Reaction        | at most once per round       | When triggered (can be during another creature's turn)      |
+
+| Action Type  | Description                                 | Notes                                 |
+| ------------ | ------------------------------------------- | ------------------------------------- |
+| Attack       | Make one or more weapon attacks             | Replaced by *Extra Attack* feature    |
+| Cast a Spell | Cast any spell with a 1-action casting time | Can't also cast a leveled bonus spell |
+| Dash         | Move extra distance equal to your speed     | No attack                             |
+| Disengage    | Avoid opportunity attacks                   | Defensive                             |
+| Dodge        | Gain disadvantage to attackers              | Defensive                             |
+| Help         | Give advantage to ally                      | Utility                               |
+| Hide         | Attempt to become unseen                    | Requires cover                        |
+| Ready        | Prepare an action + reaction trigger        | Uses reaction later                   |
+| Search       | Look for something specific                 | DM discretion                         |
+| Use Object   | Interact with complex objects               | Usually free once                     |
+"""
 
 
 class ActionCategory(str, Enum):
@@ -22,9 +43,8 @@ class ActionType(str, Enum):
     MAIN_HAND_ATTACK = "main_attack"
     OFF_HAND_ATTACK = "off_attack"
     RANGED_ATTACK = "ranged_attack"
-    SPELL = "spell"
-    UTILITY = "utility"
-    SPECIAL = "special"
+    CAST_SPELL = "cast_spell"
+    USE_OBJECT = "use_object"
     DASH = "dash"
     MOVE = "move"
     DODGE = "dodge"
@@ -41,13 +61,11 @@ class Action(BaseModel):
     category: ActionCategory
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.standard_actions > 0
+        return action_economy.can_use_standard(self.action_type)
 
     def execute(self, actor: Character, target: Any) -> None:
         raise NotImplementedError
 
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
-        if actor.action_economy.standard_actions <= 0:
-            raise ValueError("No standard actions left")
-        actor.action_economy.standard_actions -= 1
+        actor.action_economy.use_standard(self.action_type)

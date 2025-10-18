@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent.actions.base import Action, ActionCategory, ActionEconomy, ActionType
+from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.resources import ActionEconomy
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
@@ -23,15 +24,11 @@ class MovementAction(Action):
     range: float
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.movement_available
+        return action_economy.can_move(distance=self.range)
 
     def execute(self, actor: Character, target: Position) -> None:
-        actor.move(target, dash=False)
+        actor.move(target)
 
     def finalize(self, actor: Character) -> None:
         """Consume movement."""
-        if not actor.action_economy.movement_available:
-            raise ValueError("Already moved")
-        # The AI doesn't work well if we keep the movement as a float,
-        # so after one movement action prevents it from using it again in the same turn
-        actor.action_economy.movement_available = False
+        actor.action_economy.use_movement(distance=self.range)

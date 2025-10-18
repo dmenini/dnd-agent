@@ -140,7 +140,7 @@ class ExtraActions(Trait):
             target.action_economy.standard_actions += self.value
 
 
-class HalfActions(Trait):
+class HalfAttacks(Trait):
     def on_turn_start(self, target: Character) -> None:
         # TODO: Should be limited to attacks
         if target.action_economy.standard_actions > 1:
