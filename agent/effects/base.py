@@ -32,43 +32,47 @@ class StatusEffect(BaseModel):
 
     _traits: list[Trait] = PrivateAttr(default_factory=list)
 
+    @property
+    def traits(self) -> list[Trait]:
+        return sorted(self._traits, key=lambda t: t.priority)
+
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
-        for trait in self._traits:
+        for trait in self.traits:
             self._trigger_hook(trait, "on_apply", target)
 
     def on_expire(self, target: Character) -> None:
         """Call when the effect is first applied."""
-        for trait in self._traits:
+        for trait in self.traits:
             self._trigger_hook(trait, "on_expire", target)
 
     def on_turn_start(self, target: Character) -> None:
         """Call at the start of the target's turn."""
-        for trait in self._traits:
+        for trait in self.traits:
             self._trigger_hook(trait, "on_turn_start", target)
 
     def on_turn_end(self, target: Character) -> None:
         """Call at the end of the target's turn."""
-        for trait in self._traits:
+        for trait in self.traits:
             self._trigger_hook(trait, "on_turn_end", target)
 
     def on_receive_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Modify damage taken."""
         if ctx.damage is None:
             return
-        for trait in self._traits:
+        for trait in self.traits:
             self._trigger_hook(trait, "on_receive_damage", actor, target, ctx)
 
     def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Modify outgoing damage."""
         if ctx.damage is None:
             return
-        for trait in self._traits:
+        for trait in self.traits:
             self._trigger_hook(trait, "on_apply_damage", actor, target, ctx)
 
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
         """Modify crit chance."""
-        for trait in self._traits:
+        for trait in self.traits:
             res = self._trigger_hook(trait, "is_auto_crit", actor, target)
             if res is not None:
                 return res

@@ -19,38 +19,59 @@ if TYPE_CHECKING:
 MELEE_RANGE = 5
 
 
+class Priority:
+    HIGH: int = -100
+    MEDIUM: int = 0
+    LOW: int = 100
+
+
 class Trait(BaseModel):
     _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
+    _priority: int = PrivateAttr(default_factory=lambda: Priority.MEDIUM)
+
+    @property
+    def priority(self) -> int:
+        return self._priority
 
     def on_expire(self, target: Character) -> None:
         target.remove_modifier(self._id)
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):
+    """Give disadvantage on attack roll to attacker."""
+
     def on_apply(self, target: Character) -> None:
         attr = "disadvantage.defense"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
+    """Give advantage on attack roll to attacker."""
+
     def on_apply(self, target: Character) -> None:
         attr = "advantage.defense"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
+    """Give disadvantage on attack roll to target."""
+
     def on_apply(self, target: Character) -> None:
         attr = "disadvantage.attack"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class TargetAdvantageOnAttackRoll(Trait):
+    """Give advantage on attack roll to target."""
+
     def on_apply(self, target: Character) -> None:
         attr = "advantage.attack"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class DisadvantageOnSavingThrow(Trait):
+    """Give disadvantage on saving throw to target."""
+
     stat: StatType
 
     def on_apply(self, target: Character) -> None:
@@ -59,6 +80,8 @@ class DisadvantageOnSavingThrow(Trait):
 
 
 class AdvantageOnSavingThrow(Trait):
+    """Give advantage on saving throw to target."""
+
     stat: StatType
 
     def on_apply(self, target: Character) -> None:
@@ -67,6 +90,8 @@ class AdvantageOnSavingThrow(Trait):
 
 
 class FailOnSavingThrow(Trait):
+    """Give automatic fail on saving throw to target."""
+
     stat: StatType
 
     def on_apply(self, target: Character) -> None:
@@ -75,6 +100,8 @@ class FailOnSavingThrow(Trait):
 
 
 class SpeedMultiplier(Trait):
+    """Multiply the target movement speed by a given factor."""
+
     value: float = Field(ge=0)
 
     def on_apply(self, target: Character) -> None:
@@ -83,6 +110,8 @@ class SpeedMultiplier(Trait):
 
 
 class SpeedBonus(Trait):
+    """Add a bonus to the target movement speed."""
+
     value: float
 
     def on_apply(self, target: Character) -> None:
@@ -91,6 +120,8 @@ class SpeedBonus(Trait):
 
 
 class ACBonus(Trait):
+    """Add a bonus to the target Armor Class (AC)."""
+
     value: int
 
     def on_apply(self, target: Character) -> None:
@@ -99,11 +130,15 @@ class ACBonus(Trait):
 
 
 class AutoCritIfMelee(Trait):
+    """Give automatic critical in melee range to target."""
+
     def is_auto_crit(self, actor: Character, target: Character) -> bool:
         return actor.distance(target.pos) <= MELEE_RANGE
 
 
 class CriticalRollBonus(Trait):
+    """Add a bonus to the target critical roll (e.g. value=1 -> target can roll 19 for a critical instead of 20."""
+
     value: int
 
     def on_apply(self, target: Character) -> None:
@@ -112,36 +147,45 @@ class CriticalRollBonus(Trait):
 
 
 class DamageOverTime(Trait):
+    """The target receives extra damage of the given type every turn."""
+
     value: int
     damage_type: DamageType
+    _priority = Priority.HIGH
 
     def on_turn_end(self, target: Character) -> None:
-        # TODO: Should it bypass the resistances? Maybe it's more deterministic as the resistances may have expired
         damage = Damage(components=[DamageComponent(value=self.value, type=self.damage_type)])
         damage = target.modify_incoming_damage(damage)
         target.apply_damage(damage=damage.total)
 
 
 class CannotMove(Trait):
+    """Target cannot move."""
+
     def on_turn_start(self, target: Character) -> None:
         target.action_economy.movement_available = False
 
 
 class CannotAct(Trait):
+    """Target cannot take actions (include standard, bonus and reaction)."""
+
     def on_turn_start(self, target: Character) -> None:
         target.action_economy.can_act = False
 
 
 class ExtraActions(Trait):
+    """Give extra actions to the target."""
+
     extensions: list[ActionExtension]
 
     def on_turn_start(self, target: Character) -> None:
         target.action_economy.action_extensions.extend(self.extensions)
 
 
-# TODO: introduce priority
 class HalfAttacks(Trait):
-    """Halves the number of attack-type actions granted by effects."""
+    """Halve the number of attack-type actions granted by effects."""
+
+    _priority: int = Priority.LOW
 
     def on_turn_start(self, target: Character) -> None:
         economy = target.action_economy
@@ -165,6 +209,9 @@ class HalfAttacks(Trait):
 
 
 class ReflectMeleeDamage(Trait):
+    """Target reflects constant damage of the given type to the attacker."""
+
+    # TODO: make this a ratio
     value: int
     damage_type: DamageType
 
@@ -176,7 +223,9 @@ class ReflectMeleeDamage(Trait):
 
 
 class LifeSteal(Trait):
-    ratio: float = 0.1
+    """Attacker heals by a portion of the damage inflicted to the target."""
+
+    ratio: float = Field(default=0.1, ge=0, le=1)
 
     def on_apply_damage(self, actor: Character, _: Character, context: CombatContext) -> None:
         if context.damage is not None:
@@ -185,6 +234,8 @@ class LifeSteal(Trait):
 
 
 class DamageBonus(Trait):
+    """Add a bonus damage component of a given type."""
+
     value: int
     damage_type: DamageType
 
@@ -194,6 +245,8 @@ class DamageBonus(Trait):
 
 
 class DamageMultiplier(Trait):
+    """Multiply the damage component of a given type by a given factor."""
+
     value: int = Field(ge=0)
     damage_type: DamageType
 
@@ -203,6 +256,8 @@ class DamageMultiplier(Trait):
 
 
 class IgnoreResistance(Trait):
+    """Ignore target resistance to a given damage type."""
+
     damage_type: DamageType
 
     def on_apply_damage(self, _: Character, target: Character, context: CombatContext) -> None:
@@ -213,6 +268,8 @@ class IgnoreResistance(Trait):
 
 
 class Resistance(Trait):
+    """Give resistance to a given damage type to target."""
+
     value: float
     damage_type: DamageType
 
@@ -222,6 +279,8 @@ class Resistance(Trait):
 
 
 class Immunity(Trait):
+    """Give immunity to a given damage type to target."""
+
     damage_type: DamageType
 
     def on_apply(self, target: Character) -> None:
@@ -230,6 +289,8 @@ class Immunity(Trait):
 
 
 class Vulnerability(Trait):
+    """Give vulnerability to a given damage type to target."""
+
     value: float
     damage_type: DamageType
 
@@ -239,18 +300,24 @@ class Vulnerability(Trait):
 
 
 class SpellResistance(Trait):
+    """Give spell save advantage to target."""
+
     def on_apply(self, target: Character) -> None:
         attr = "save_advantage.spell"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class SpellWeakness(Trait):
+    """Give spell save disadvantage to target."""
+
     def on_apply(self, target: Character) -> None:
         attr = "save_disadvantage.spell"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class StealthDisadvantage(Trait):
+    """Give stealth check disadvantage to target."""
+
     # TODO: Implement check
     def on_apply(self, target: Character) -> None:
         attr = "disadvantage.stealth"
@@ -258,6 +325,8 @@ class StealthDisadvantage(Trait):
 
 
 class Regeneration(Trait):
+    """Heal target by the given amount every turn."""
+
     value: int
 
     def on_turn_start(self, target: Character) -> None:
