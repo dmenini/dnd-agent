@@ -109,7 +109,7 @@ class MainHandAttackAction(AttackAction):
     id: str = "main_hand_attack"
     name: str = "Main Hand Attack"
     description: str = "Base attack with main hand weapon."
-    action_type: ActionType = ActionType.MAIN_HAND_ATTACK
+    action_type: ActionType = ActionType.ATTACK
     category: ActionCategory = ActionCategory.STANDARD
 
     @classmethod
@@ -160,7 +160,7 @@ class RangedAttackAction(AttackAction):
     id: str = "ranged_attack"
     name: str = "Ranged Attack"
     description: str = ""
-    action_type: ActionType = ActionType.RANGED_ATTACK
+    action_type: ActionType = ActionType.ATTACK
     category: ActionCategory = ActionCategory.STANDARD
 
     @classmethod

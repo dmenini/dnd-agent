@@ -196,7 +196,7 @@ class HalfAttacks(Trait):
             for ext in economy.action_extensions
             if ext.category == ActionCategory.STANDARD
             and ext.allowed_actions
-            and any(a in ext.allowed_actions for a in (ActionType.MAIN_HAND_ATTACK, ActionType.RANGED_ATTACK))
+            and ActionType.ATTACK in ext.allowed_actions
         ]
 
         # If there are multiple attack extensions we keep half of them active rounded up

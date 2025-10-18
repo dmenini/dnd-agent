@@ -64,11 +64,9 @@ class ActionEconomy(BaseModel):
         if not self.can_act:
             return False
 
-        # TODO: We need a single type for attack to simplify
         base_allowed = [
-            ActionType.MAIN_HAND_ATTACK,
+            ActionType.ATTACK,
             ActionType.CAST_SPELL,
-            ActionType.RANGED_ATTACK,
             ActionType.DASH,
             ActionType.DODGE,
             ActionType.USE_OBJECT,

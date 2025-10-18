@@ -40,9 +40,8 @@ class ActionCategory(str, Enum):
 
 
 class ActionType(str, Enum):
-    MAIN_HAND_ATTACK = "main_attack"
+    ATTACK = "attack"
     OFF_HAND_ATTACK = "off_attack"
-    RANGED_ATTACK = "ranged_attack"
     CAST_SPELL = "cast_spell"
     USE_OBJECT = "use_object"
     DASH = "dash"

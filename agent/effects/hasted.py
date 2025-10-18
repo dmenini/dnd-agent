@@ -32,8 +32,7 @@ class Hasted(StatusEffect):
                     source="haste",
                     category=ActionCategory.STANDARD,
                     allowed_actions=[
-                        ActionType.MAIN_HAND_ATTACK,  # TODO: Limit to 1 hand attack
-                        ActionType.RANGED_ATTACK,
+                        ActionType.ATTACK,  # TODO: Limit to 1 hand attack or ranged
                         ActionType.DASH,
                         ActionType.DISENGAGE,
                         ActionType.HIDE,
