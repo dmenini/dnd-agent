@@ -49,6 +49,9 @@ class ActionType(str, Enum):
     MOVE = "move"
     DODGE = "dodge"
     WAIT = "pass"
+    DISENGAGE = "disengage"
+    HELP = "help"
+    HIDE = "hide"
 
 
 class Action(BaseModel):

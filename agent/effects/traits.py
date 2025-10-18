@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field, PrivateAttr
 
 from agent.character.attributes import Modifier
+from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
@@ -122,22 +123,19 @@ class DamageOverTime(Trait):
 
 class CannotMove(Trait):
     def on_turn_start(self, target: Character) -> None:
-        target.action_economy.movement_available = False  # Cannot move
+        target.action_economy.movement_available = False
 
 
 class CannotAct(Trait):
     def on_turn_start(self, target: Character) -> None:
-        target.action_economy.standard_actions = -1
-        target.action_economy.bonus_actions = -1
-        target.action_economy.reaction_available = False
+        target.action_economy.can_act = False
 
 
 class ExtraActions(Trait):
-    value: int = 1
+    extensions: list[ActionExtension]
 
     def on_turn_start(self, target: Character) -> None:
-        if target.action_economy.standard_actions > 0:
-            target.action_economy.standard_actions += self.value
+        target.action_economy.action_extensions.extend(self.extensions)
 
 
 class HalfAttacks(Trait):
