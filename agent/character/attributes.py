@@ -120,6 +120,11 @@ class Attributes(BaseModel):
     def compute_spell_save_dc(self) -> int:
         return self._recompute_attribute("spell_save_dc")
 
+    def compute_spell_save_advantage(self) -> int:
+        adv = self._recompute_attribute("save_advantage.spell")
+        dis = self._recompute_attribute("save_disadvantage.spell")
+        return int(adv) - int(dis)
+
     def compute_save_advantage(self, stat: StatType) -> int:
         adv = self._recompute_attribute(f"save_advantage.{stat.name.lower()}")
         dis = self._recompute_attribute(f"save_disadvantage.{stat.name.lower()}")

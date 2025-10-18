@@ -58,7 +58,7 @@ class AttackSpellAction(AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
         dc = actor.spell_save_dc
-        save_roll = target.save_roll(save_stat=self.stat)
+        save_roll = target.save_roll(save_stat=self.stat, is_spell=True)
 
         ctx.hit_roll = save_roll
         ctx.is_hit = save_roll.total < dc
@@ -123,13 +123,9 @@ class SupportSpellAction(Action):
                 raise ValueError
             self._execute_on_target(target=target)
 
-    def _execute_on_target(self, target: Character) -> str:
-        event = ""
+    def _execute_on_target(self, target: Character) -> None:
         for effect in self.status_effects:
-            affected = target.try_apply_status(effect)
-            if affected:
-                event += f" {target.name} is {effect.type.value}."
-        return event
+            target.try_apply_status(effect)
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""

@@ -304,7 +304,7 @@ class Character(BaseModel):
             return self._dice.roll_twice(expr)
         return self._dice.roll_once(expr)
 
-    def save_roll(self, save_stat: StatType) -> DiceRoll:
+    def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
         """
         Rolls a saving throw for the given ability type.
         Accounts for modifiers, proficiency, and active status effects.
@@ -313,7 +313,12 @@ class Character(BaseModel):
             return DiceRoll(expression="1d20", rolls=[1], total=1, raw=1)
 
         # Compute advantage from multiple sources
-        sources = [self.stats.advantage(save_stat), self.attributes.compute_save_advantage(save_stat)]
+        sources = [
+            self.stats.advantage(save_stat),
+            self.attributes.compute_save_advantage(save_stat),
+        ]
+        if is_spell:
+            sources.append(self.attributes.compute_spell_save_advantage())
         advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)

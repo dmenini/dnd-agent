@@ -222,9 +222,14 @@ class Vulnerability(Trait):
 
 
 class SpellResistance(Trait):
-    # TODO: Implement check in spell action
     def on_apply(self, target: Character) -> None:
-        attr = "advantage.spell_save"
+        attr = "save_advantage.spell"
+        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+
+
+class SpellWeakness(Trait):
+    def on_apply(self, target: Character) -> None:
+        attr = "save_disadvantage.spell"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
