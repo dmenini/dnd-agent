@@ -20,9 +20,9 @@ MELEE_RANGE = 5
 
 
 class Priority:
-    HIGH: int = -100
+    HIGH: int = -100  # Execute first
     MEDIUM: int = 0
-    LOW: int = 100
+    LOW: int = 100  # Execute last
 
 
 class Trait(BaseModel):
@@ -209,23 +209,25 @@ class HalfAttacks(Trait):
 
 
 class ReflectMeleeDamage(Trait):
-    """Target reflects constant damage of the given type to the attacker."""
+    """Reflect a portion of the received damage of the given type to the attacker."""
 
-    # TODO: make this a ratio
-    value: int
+    ratio: int = Field(default=0.1, ge=0, le=1)
     damage_type: DamageType
+    _priority = Priority.LOW  # Execute last
 
-    def on_receive_damage(self, actor: Character, target: Character, _: CombatContext) -> None:
+    def on_receive_damage(self, actor: Character, target: Character, context: CombatContext) -> None:
         if actor.distance(target.pos) <= MELEE_RANGE:
-            damage = Damage(components=[DamageComponent(value=self.value, type=self.damage_type)])
+            value = context.damage.total * self.ratio
+            damage = Damage(components=[DamageComponent(value=value, type=self.damage_type)])
             damage = actor.modify_incoming_damage(damage)
             actor.apply_damage(damage=damage.total)
 
 
 class LifeSteal(Trait):
-    """Attacker heals by a portion of the damage inflicted to the target."""
+    """Heal target by a portion of the damage inflicted."""
 
     ratio: float = Field(default=0.1, ge=0, le=1)
+    _priority = Priority.LOW  # Execute last
 
     def on_apply_damage(self, actor: Character, _: Character, context: CombatContext) -> None:
         if context.damage is not None:
