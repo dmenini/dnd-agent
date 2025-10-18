@@ -18,7 +18,7 @@ class Hasted(StatusEffect):
     * Target speed is doubled.
     * Target gains a +2 bonus to AC.
     * Target has advantage on Dexterity saving throws.
-    * Target gains an additional action on each of its turns.
+    * Target gains an additional action on each of its turns (limited to Attack, Dash, Disengage, Hide, Use Object).
     When the effect ends, the target gets lethargy for 1 turn.
     """
 
@@ -32,7 +32,8 @@ class Hasted(StatusEffect):
                     source="haste",
                     category=ActionCategory.STANDARD,
                     allowed_actions=[
-                        ActionType.MAIN_HAND_ATTACK,
+                        ActionType.MAIN_HAND_ATTACK,  # TODO: Limit to 1 hand attack
+                        ActionType.RANGED_ATTACK,
                         ActionType.DASH,
                         ActionType.DISENGAGE,
                         ActionType.HIDE,

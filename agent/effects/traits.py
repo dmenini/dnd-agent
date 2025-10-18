@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, PrivateAttr
 
+from agent.actions.base import ActionCategory, ActionType
 from agent.character.attributes import Modifier
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
@@ -138,11 +139,29 @@ class ExtraActions(Trait):
         target.action_economy.action_extensions.extend(self.extensions)
 
 
+# TODO: introduce priority
 class HalfAttacks(Trait):
+    """Halves the number of attack-type actions granted by effects."""
+
     def on_turn_start(self, target: Character) -> None:
-        # TODO: Should be limited to attacks
-        if target.action_economy.standard_actions > 1:
-            target.action_economy.standard_actions = math.ceil(target.action_economy.standard_actions / 2)
+        economy = target.action_economy
+
+        # Collect all extensions that add extra standard actions
+        attack_extensions = [
+            ext
+            for ext in economy.action_extensions
+            if ext.category == ActionCategory.STANDARD
+            and ext.allowed_actions
+            and any(a in ext.allowed_actions for a in (ActionType.MAIN_HAND_ATTACK, ActionType.RANGED_ATTACK))
+        ]
+
+        # If there are multiple attack extensions we keep half of them active rounded up
+        keep_count = math.ceil(len(attack_extensions) / 2)
+
+        # Limit the number of usable attack-type extensions
+        to_remove = attack_extensions[keep_count:]
+        for ext in to_remove:
+            economy.action_extensions.remove(ext)
 
 
 class ReflectMeleeDamage(Trait):

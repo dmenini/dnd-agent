@@ -64,6 +64,7 @@ class ActionEconomy(BaseModel):
         if not self.can_act:
             return False
 
+        # TODO: We need a single type for attack to simplify
         base_allowed = [
             ActionType.MAIN_HAND_ATTACK,
             ActionType.CAST_SPELL,
@@ -100,12 +101,7 @@ class ActionEconomy(BaseModel):
             self.standard_actions -= 1
         else:
             # Consumed via an extension, so we remove it once used
-            for ext in list(self.action_extensions):
-                if ext.category == ActionCategory.STANDARD and (
-                    ext.allowed_actions is None or action_type in ext.allowed_actions
-                ):
-                    self.action_extensions.remove(ext)
-                    break
+            self.remove_extension(category=ActionCategory.STANDARD, types=action_type)
 
         self.last_standard_action = action_type
         return True
@@ -143,15 +139,16 @@ class ActionEconomy(BaseModel):
             self.bonus_actions -= 1
         else:
             # Consumed via an extension, so we remove it once used
-            for ext in list(self.action_extensions):
-                if ext.category == ActionCategory.BONUS and (
-                    ext.allowed_actions is None or action_type in ext.allowed_actions
-                ):
-                    self.action_extensions.remove(ext)
-                    break
+            self.remove_extension(category=ActionCategory.BONUS, types=action_type)
 
         self.last_bonus_action = action_type
         return True
+
+    def remove_extension(self, category: ActionCategory, types: ActionType | None) -> None:
+        for ext in list(self.action_extensions):
+            if ext.category == category and (ext.allowed_actions is None or types in ext.allowed_actions):
+                self.action_extensions.remove(ext)
+                return
 
     def can_use_reaction(self) -> bool:
         if not self.can_act:
