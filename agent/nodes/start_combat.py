@@ -23,7 +23,7 @@ class StartCombatNode:
             # First check roll result
             init_roll = char.initiative_roll()
             # Include Dexterity modifier as a secondary sort key
-            dex_mod = char.stats.modifier(StatType.DEX)
+            dex_mod = char.attributes.stat_modifier(StatType.DEX)
             # Include a random value as a final tie-breaker
             tie_breaker = random.random()  # noqa: S311
             rolls.append((init_roll.total, dex_mod, tie_breaker, cid))

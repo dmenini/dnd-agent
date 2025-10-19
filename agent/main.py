@@ -7,7 +7,6 @@ from langchain_core.runnables import RunnableConfig
 
 from agent.character.attributes import Attributes
 from agent.character.character import MeleeWeapon, Party, RangedWeapon
-from agent.character.stats import Stats
 from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
@@ -89,7 +88,6 @@ def main() -> None:
         pos=Position(x=2, y=2),
         is_player=True,
         party=party_players,
-        stats=Stats(),
         main_hand=sword,
         ranged=bow,
         spells=[fire_ball, haste],
@@ -100,7 +98,6 @@ def main() -> None:
         icon="👹",
         pos=Position(x=4, y=2),
         party=party_enemies,
-        stats=Stats(),
         main_hand=UNARMED,
     )
 
@@ -110,7 +107,6 @@ def main() -> None:
         icon="🧌",
         pos=Position(x=8, y=4),
         party=party_enemies,
-        stats=Stats(),
         main_hand=dagger,
         spells=[fire_ball],
     )

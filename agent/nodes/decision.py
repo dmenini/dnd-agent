@@ -3,6 +3,16 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
+from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
+from agent.actions.base import Action
+from agent.actions.dash import DashAction
+from agent.actions.dodge import DodgeAction
+from agent.actions.move import MovementAction
+from agent.actions.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.wait import WaitAction
+from agent.character.character import Character
+from agent.character.stats import Stats
+from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.logs.events import EventType
 from agent.logs.log_registry import LogRegistry
 from agent.models.state import DecisionResult, State
@@ -28,7 +38,7 @@ class DecisionNode:
             state.draw_map()
             actor.start_turn()
 
-        actions = actor.available_actions()
+        actions = self.available_actions(actor)
         if not actions:
             state.action = None
             state.decision = None
@@ -44,7 +54,7 @@ class DecisionNode:
             "level": actor.level,
             "hp": f"{actor.attributes.hp}/{actor.max_hp}",
             "movement": f"{actor.current_speed}/{actor.speed}",
-            "stats": actor.stats.model_dump_json(),
+            "stats": Stats.model_validate(actor.attributes.model_dump()).model_dump_json(),
             "status_effects": [str(eff) for eff in actor.status_effects],
             "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
         }
@@ -132,3 +142,40 @@ class DecisionNode:
             messages.append(role(content="\n".join(current_group)))
 
         return messages
+
+    def available_actions(self, actor: Character) -> dict[str, Action]:
+        all_actions: list[Action] = [
+            MovementAction(range=actor.current_speed),
+            DashAction(range=actor.current_speed),
+            DodgeAction(),
+            WaitAction(),
+        ]
+
+        # Equipment-based actions
+        equipment_map = [
+            (actor.main_hand, MainHandAttackAction),
+            (actor.off_hand, OffHandAttackAction),
+            (actor.ranged, RangedAttackAction),
+        ]
+
+        for eq, action_cls in equipment_map:
+            if eq:
+                action = action_cls.from_weapon(weapon=eq)  # type: ignore[attr-defined]
+                all_actions.append(action)
+
+        # Spells (only if action available and slot available)
+        for spell in actor.spells:
+            if actor.spell_slots.has_slot(spell.level):
+                if isinstance(spell, AttackSpell):
+                    action = AttackSpellAction.from_spell(spell)
+                elif isinstance(spell, SupportSpell):
+                    action = SupportSpellAction.from_spell(spell)
+                else:
+                    raise NotImplementedError
+
+                all_actions.append(action)
+
+        # Special abilities (can have their own categories)
+        all_actions += actor.special_abilities
+
+        return {action.id: action for action in all_actions if action.is_available(actor.action_economy)}
