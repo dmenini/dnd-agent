@@ -35,7 +35,7 @@ def test_hasted(
 
     haste = SupportSpell(
         name="Haste",
-        description="Gain 1 extra action on the next 2 turns",
+        description="Gain 1 extra action on the next turn",
         range=1,
         targeting=TargetingType.SELF,
         effects=[Hasted(duration=1)],

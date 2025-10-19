@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent.actions.base import ActionCategory, ActionType
+from agent.character.manager import CharacterManager
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
@@ -59,4 +60,5 @@ class Hasted(StatusEffect):
 
     def on_expire(self, target: Character) -> None:
         super().on_expire(target)
-        target.try_apply_status(Lethargic(duration=1))
+        effect_manager = CharacterManager(character=target)
+        effect_manager.try_apply_status(Lethargic(duration=1))

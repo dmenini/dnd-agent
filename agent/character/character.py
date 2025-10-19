@@ -2,19 +2,13 @@ from typing import Any, Self
 
 from pydantic import BaseModel, computed_field
 
-from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
 from agent.actions.base import Action
-from agent.actions.dash import DashAction
-from agent.actions.dodge import DodgeAction
-from agent.actions.move import MovementAction
-from agent.actions.spell import AttackSpellAction, SupportSpellAction
-from agent.actions.wait import WaitAction
 from agent.character.attributes import Attributes, Modifier
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.equipment.armor import Accessory, Armor, Shield
-from agent.equipment.spells import AttackSpell, Spell, SupportSpell
+from agent.equipment.spells import Spell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.events import Event, EventType, Icon
 from agent.logs.log_registry import get_log_registry
@@ -140,78 +134,9 @@ class Character(BaseModel):
     def heal(self, amount: int) -> None:
         self.attributes.hp = min(self.attributes.hp + amount, self.max_hp)
 
-    def has_effect(self, cond: EffectType) -> bool:
-        existing_conditions = {c.type for c in self.status_effects}
-        return cond in existing_conditions
-
     def is_immune_to(self, cond: EffectType) -> bool:  # noqa: ARG002
         # TODO: Implement this
         return False
-
-    def start_turn(self) -> None:
-        self.log_event(f"{self.name} starts turn", event_type=EventType.DEBUG)
-        self.turn_done = False
-        self.action_economy.restore_turn()
-        self._try_expire_effects(is_start=True)
-
-    def end_turn(self) -> None:
-        self.log_event(f"{self.name} ends turn", event_type=EventType.DEBUG)
-        self._try_expire_effects(is_start=False)
-        self.turn_done = True
-
-    def end_round(self) -> None:
-        self.action_economy.restore_reaction()
-
-    def try_apply_status(self, effect: StatusEffect) -> bool:
-        """Apply status effect in case there are no immunities and save throw fails."""
-        # Check immunity
-        if self.is_immune_to(effect.type):
-            self.log_event(f"{self.name} is immune to {effect.type.value} effect")
-            return False
-
-        # Saving throw
-        if effect.save_dc:
-            roll = self.save_roll(save_stat=effect.save_stat)
-            self.log_event(f"{effect.save_stat.name} save throw: {roll.total} vs DC {effect.save_dc}", icon=Icon.ROLL)
-
-            if roll.total >= effect.save_dc:
-                # Negate effect
-                self.log_event(f"{self.name} resists being {effect.type.value}!", icon=Icon.DEFENSE)
-                return False
-
-        # Apply the effect
-        self.apply_status(effect)
-
-        return True
-
-    def apply_status(self, effect: StatusEffect) -> None:
-        """Apply status effect, overriding any ongoing status effect of same type."""
-        existing_effect = next((eff for eff in self.status_effects if eff.type == effect.type), None)
-
-        if not existing_effect:
-            # No existing effect → just apply it
-            self.status_effects.append(effect)
-            effect.on_apply(self)
-            self.log_event(f"{self.name} is {effect}", icon=Icon.EFFECT_APPLIED)
-            return
-
-        # There is already an effect of this type -> remove old one, apply new
-        existing_effect.on_expire(self)
-        self.status_effects.remove(existing_effect)
-        self.status_effects.append(effect)
-        effect.on_apply(self)
-        self.log_event(f"{self.name} is again {effect}", icon=Icon.EFFECT_APPLIED)
-
-    def _try_expire_effects(self, *, is_start: bool = True) -> None:
-        # Copy the list since effects may modify self.status_effects in-place
-        for effect in list(self.status_effects):
-            effect.on_turn_start(self) if is_start else effect.on_turn_end(self)
-            if effect.is_expired():
-                effect.on_expire(self)
-                self.log_event(f"{self.name} is not {effect.type.value} anymore!", icon=Icon.EFFECT_EXPIRED)
-
-        # Remove expired effects
-        self.status_effects = [e for e in self.status_effects if not e.is_expired()]
 
     def modify_incoming_damage(self, damage: Damage) -> Damage:
         """Apply resistances and vulnerabilities to damage."""
@@ -228,43 +153,6 @@ class Character(BaseModel):
         has_main = main_hand is not None and (self.action_economy.can_use_standard())
         has_movement = self.action_economy.can_move(self.current_speed)
         return has_main or has_bonus or has_movement
-
-    def available_actions(self) -> dict[str, Action]:
-        all_actions: list[Action] = [
-            MovementAction(range=self.current_speed),
-            DashAction(range=self.current_speed),
-            DodgeAction(),
-            WaitAction(),
-        ]
-
-        # Equipment-based actions
-        equipment_map = [
-            (self.main_hand, MainHandAttackAction),
-            (self.off_hand, OffHandAttackAction),
-            (self.ranged, RangedAttackAction),
-        ]
-
-        for eq, action_cls in equipment_map:
-            if eq:
-                action = action_cls.from_weapon(weapon=eq)  # type: ignore[attr-defined]
-                all_actions.append(action)
-
-        # Spells (only if action available and slot available)
-        for spell in self.spells:
-            if self.spell_slots.has_slot(spell.level):
-                if isinstance(spell, AttackSpell):
-                    action = AttackSpellAction.from_spell(spell)
-                elif isinstance(spell, SupportSpell):
-                    action = SupportSpellAction.from_spell(spell)
-                else:
-                    raise NotImplementedError
-
-                all_actions.append(action)
-
-        # Special abilities (can have their own categories)
-        all_actions += self.special_abilities
-
-        return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 
     def distance(self, target: Position) -> float:
         return self.pos.manhattan_distance(target)

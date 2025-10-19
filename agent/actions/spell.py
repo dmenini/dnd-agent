@@ -1,23 +1,18 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from agent.actions.attack import AttackAction
 from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.character import Character
+from agent.character.manager import CharacterManager
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
+from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.equipment.weapons import WeaponType
 from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent
-from agent.models.enums import (
-    TargetingType,
-)
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
-    from agent.equipment.spells import AttackSpell, SupportSpell
+from agent.models.enums import TargetingType
 
 
 class AttackSpellAction(AttackAction):
@@ -124,8 +119,9 @@ class SupportSpellAction(Action):
             self._execute_on_target(target=target)
 
     def _execute_on_target(self, target: Character) -> None:
+        manager = CharacterManager(character=target)
         for effect in self.status_effects:
-            target.try_apply_status(effect)
+            manager.try_apply_status(effect)
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""

@@ -1,8 +1,8 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.character import Character
+from agent.character.manager import CharacterManager
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
@@ -11,9 +11,6 @@ from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import TargetingType
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 
 class AttackAction(Action):
@@ -94,8 +91,9 @@ class AttackAction(Action):
             return ctx
 
         # Try to apply status effects
+        manager = CharacterManager(character=target)
         for effect in self.status_effects:
-            target.try_apply_status(effect)
+            manager.try_apply_status(effect)
 
         return ctx
 
