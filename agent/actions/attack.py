@@ -37,7 +37,7 @@ class AttackAction(Action):
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
-        is_critical = roll.raw == actor.attributes.compute_crit_roll()
+        is_critical = roll.raw == actor.attributes.crit_roll()
         is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
 
         ctx.hit_roll = roll
@@ -101,7 +101,7 @@ class AttackAction(Action):
 
     def _attack_modifier(self, actor: Character) -> int:
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
-        mod = actor.stats.modifier(self.stat)
+        mod = actor.attributes.stat_modifier(self.stat)
         return mod + prof_bonus
 
 

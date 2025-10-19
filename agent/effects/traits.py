@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field, PrivateAttr
 
 from agent.actions.base import ActionCategory, ActionType
-from agent.character.attributes import Modifier
+from agent.character.modifier import Modifier
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
 from agent.models.context import CombatContext
@@ -211,12 +211,12 @@ class HalfAttacks(Trait):
 class ReflectMeleeDamage(Trait):
     """Reflect a portion of the received damage of the given type to the attacker."""
 
-    ratio: int = Field(default=0.1, ge=0, le=1)
+    ratio: float = Field(default=0.1, ge=0, le=1)
     damage_type: DamageType
     _priority = Priority.LOW  # Execute last
 
     def on_receive_damage(self, actor: Character, target: Character, context: CombatContext) -> None:
-        if actor.distance(target.pos) <= MELEE_RANGE:
+        if context.damage and actor.distance(target.pos) <= MELEE_RANGE:
             value = context.damage.total * self.ratio
             damage = Damage(components=[DamageComponent(value=value, type=self.damage_type)])
             damage = actor.modify_incoming_damage(damage)
@@ -263,7 +263,7 @@ class IgnoreResistance(Trait):
     damage_type: DamageType
 
     def on_apply_damage(self, _: Character, target: Character, context: CombatContext) -> None:
-        res = target.attributes.compute_resistance(self.damage_type)
+        res = target.attributes.damage_resistance(self.damage_type)
         if res and res.value > 0 and context.damage is not None:
             # Balance the resistance by adding the opposite vulnerability component
             context.damage.vulnerabilities.append(DamageVulnerability(value=res.value, type=self.damage_type))

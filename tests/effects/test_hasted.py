@@ -75,7 +75,7 @@ def test_hasted(
 
     assert hero.armor_class == 12
     assert hero.current_speed == 12.0
-    assert hero.attributes.compute_save_advantage(StatType.DEX) == 1
+    assert hero.attributes.stat_save_advantage(StatType.DEX) == 1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -103,7 +103,7 @@ def test_hasted(
     assert hero.attributes.get_modifiers("save_disadvantage.wis")[0].value is True
 
     assert hero.current_speed == 3
-    assert hero.attributes.compute_save_advantage(StatType.WIS) == -1
+    assert hero.attributes.stat_save_advantage(StatType.WIS) == -1
 
     # Turn 2.2: Pass
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))

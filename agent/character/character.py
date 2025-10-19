@@ -11,9 +11,9 @@ from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.wait import WaitAction
 from agent.character.attributes import Attributes, Modifier
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.character.stats import Stats, StatType
+from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
-from agent.equipment.armor import Accessory, Armor, ArmorType, Shield
+from agent.equipment.armor import Accessory, Armor, Shield
 from agent.equipment.spells import AttackSpell, Spell, SupportSpell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.events import Event, EventType, Icon
@@ -42,11 +42,9 @@ class Character(BaseModel):
     level: int = 1
     experience: int = 0
     attributes: Attributes = Attributes()
-    stats: Stats = Stats()
     status_effects: list[StatusEffect] = []
     proficiencies: list[WeaponType] = []
     proficient_saves: list[StatType] = []
-    spellcasting_stat: StatType = StatType.INT
 
     armor: Armor | None = None
     shield: Shield | None = None
@@ -83,20 +81,15 @@ class Character(BaseModel):
     @property
     def armor_class(self) -> int:
         """Armor Class is derived from DEX and equipment."""
-        ac = self.attributes.compute_ac_bonus()
-
-        if not self.armor:
-            ac += 10 + self.stats.modifier(StatType.DEX)
-
-        elif self.armor.armor_type == ArmorType.LIGHT:
-            ac += self.armor.base_ac + self.stats.modifier(StatType.DEX)
-
-        elif self.armor.armor_type == ArmorType.MEDIUM:
-            dex_bonus = min(self.stats.modifier(StatType.DEX), self.armor.max_dex_bonus or 2)
-            ac += self.armor.base_ac + dex_bonus
-
-        elif self.armor.armor_type == ArmorType.HEAVY:
+        if self.armor:
+            ac = self.attributes.ac_bonus(
+                armor_type=self.armor.armor_type,
+                max_dex_bonus=self.armor.max_dex_bonus,
+            )
             ac += self.armor.base_ac
+
+        else:
+            ac = self.attributes.ac_bonus(armor_type=None)
 
         if self.shield:
             ac += self.shield.ac_bonus
@@ -106,42 +99,40 @@ class Character(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def max_hp(self) -> int:
-        return self.attributes.compute_max_hp(stats=self.stats, level=self.level)
+        return self.attributes.max_hp(level=self.level)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def initiative_modifier(self) -> int:
-        return self.attributes.compute_initiative(stats=self.stats)
+        return self.attributes.initiative()
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def proficiency_bonus(self) -> int:
-        return 2 + (self.level - 1) // 4
+        return self.attributes.proficiency_bonus(level=self.level)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def spell_save_dc(self) -> int:
-        # TODO: spell stat depends on class
-        spell_mod = self.stats.modifier(self.spellcasting_stat)
-        return self.attributes.compute_spell_save_dc() + self.proficiency_bonus + spell_mod
+        return self.attributes.spell_save_dc(level=self.level)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def speed(self) -> float:
-        return self.attributes.compute_speed(stats=self.stats)
+        return self.attributes.speed()
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def current_speed(self) -> float:
-        return self.attributes.compute_speed(stats=self.stats) - self.action_economy.movement_used
-
-    def move(self, destination: Position) -> None:
-        self.pos = destination
-        self.log_event(f"New position: {destination}", icon=Icon.MOVE)
+        return self.attributes.speed() - self.action_economy.movement_used
 
     @property
     def is_alive(self) -> bool:
         return self.attributes.hp > 0
+
+    def move(self, destination: Position) -> None:
+        self.pos = destination
+        self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
     def apply_damage(self, damage: int) -> None:
         self.attributes.hp = max(0, self.attributes.hp - damage)
@@ -225,9 +216,9 @@ class Character(BaseModel):
     def modify_incoming_damage(self, damage: Damage) -> Damage:
         """Apply resistances and vulnerabilities to damage."""
         for dtype in {c.type for c in damage.components}:
-            if res := self.attributes.compute_resistance(dtype):
+            if res := self.attributes.damage_resistance(dtype):
                 damage.resistances.append(res)
-            if vul := self.attributes.compute_vulnerability(dtype):
+            if vul := self.attributes.damage_vulnerability(dtype):
                 damage.vulnerabilities.append(vul)
         return damage
 
@@ -287,9 +278,9 @@ class Character(BaseModel):
     def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
         # Compute advantage from multiple sources
         sources = [
-            self.stats.advantage(attack_stat),
-            self.attributes.compute_advantage("attack"),
-            target.attributes.compute_advantage("defense"),
+            self.attributes.stat_advantage(attack_stat),
+            self.attributes.advantage("attack"),
+            target.attributes.advantage("defense"),
         ]
         advantage = resolve_advantage(sources)
 
@@ -305,20 +296,20 @@ class Character(BaseModel):
         Rolls a saving throw for the given ability type.
         Accounts for modifiers, proficiency, and active status effects.
         """
-        if self.attributes.compute_save_autofail(save_stat):
+        if self.attributes.save_autofail(save_stat):
             return DiceRoll(expression="1d20", rolls=[1], total=1, raw=1)
 
         # Compute advantage from multiple sources
         sources = [
-            self.stats.advantage(save_stat),
-            self.attributes.compute_save_advantage(save_stat),
+            self.attributes.stat_advantage(save_stat),
+            self.attributes.stat_save_advantage(save_stat),
         ]
         if is_spell:
-            sources.append(self.attributes.compute_spell_save_advantage())
+            sources.append(self.attributes.spell_save_advantage())
         advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)
-        ability_mod = self.stats.modifier(save_stat)
+        ability_mod = self.attributes.stat_modifier(save_stat)
         prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
         mod = ability_mod + prof_bonus
         expr = f"1d20+{mod}"

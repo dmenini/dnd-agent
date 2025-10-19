@@ -80,8 +80,8 @@ def test_different_traits() -> None:
     assert attrs.get_modifiers("resistance.fire")[0].value == value
     assert attrs.get_modifiers("vulnerability.fire")[0].value == value
 
-    assert attrs.compute_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
-    assert attrs.compute_vulnerability(DamageType.FIRE) == DamageVulnerability(value=value, type=DamageType.FIRE)
+    assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
+    assert attrs.damage_vulnerability(DamageType.FIRE) == DamageVulnerability(value=value, type=DamageType.FIRE)
 
     hero.start_turn()
     hero.end_turn()
@@ -113,4 +113,4 @@ def test_same_traits() -> None:
     assert attrs.get_modifiers("resistance.fire")[0].value == value
     assert attrs.get_modifiers("resistance.fire")[1].value == value
 
-    assert attrs.compute_resistance(DamageType.FIRE) == DamageResistance(value=value * 2, type=DamageType.FIRE)
+    assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value * 2, type=DamageType.FIRE)

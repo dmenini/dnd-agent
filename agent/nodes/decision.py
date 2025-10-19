@@ -3,6 +3,7 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
+from agent.character.stats import Stats
 from agent.logs.events import EventType
 from agent.logs.log_registry import LogRegistry
 from agent.models.state import DecisionResult, State
@@ -44,7 +45,7 @@ class DecisionNode:
             "level": actor.level,
             "hp": f"{actor.attributes.hp}/{actor.max_hp}",
             "movement": f"{actor.current_speed}/{actor.speed}",
-            "stats": actor.stats.model_dump_json(),
+            "stats": Stats.model_validate(actor.attributes.model_dump()).model_dump_json(),
             "status_effects": [str(eff) for eff in actor.status_effects],
             "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
         }

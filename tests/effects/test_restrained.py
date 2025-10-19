@@ -84,9 +84,9 @@ def test_restrained(
     assert orc.attributes.get_modifiers("advantage.defense")[0].value is True
     assert orc.attributes.get_modifiers("disadvantage.attack")[0].value is True
     assert orc.attributes.get_modifiers("save_disadvantage.dex")[0].value is True
-    assert orc.attributes.compute_advantage("defense") == 1
-    assert orc.attributes.compute_advantage("attack") == -1
-    assert orc.attributes.compute_save_advantage(StatType.DEX) == -1
+    assert orc.attributes.advantage("defense") == 1
+    assert orc.attributes.advantage("attack") == -1
+    assert orc.attributes.stat_save_advantage(StatType.DEX) == -1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
