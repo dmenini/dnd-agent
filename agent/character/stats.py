@@ -26,11 +26,11 @@ class Stats(BaseModel):
     wisdom: int = DEFAULT_STAT
     charisma: int = DEFAULT_STAT
 
-    def modifier(self, stat: StatType) -> int:
+    def stat_modifier(self, stat: StatType) -> int:
         val = self.__getattribute__(stat.value)
         return (val - DEFAULT_STAT) // 2
 
-    def advantage(self, stat: StatType) -> Advantage:
+    def stat_advantage(self, stat: StatType) -> Advantage:
         val = self.__getattribute__(stat.value)
         if val and val >= ADVANTAGE_THRESHOLD:
             return Advantage.ADVANTAGE

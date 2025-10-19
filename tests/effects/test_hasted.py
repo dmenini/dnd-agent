@@ -1,12 +1,9 @@
-from unittest.mock import MagicMock
-
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
 from agent.equipment.spells import SupportSpell
 from agent.equipment.weapons import MeleeWeapon, WeaponType
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -35,7 +32,7 @@ def test_hasted(
 
     haste = SupportSpell(
         name="Haste",
-        description="Gain 1 extra action on the next 2 turns",
+        description="Gain 1 extra action on the next turn",
         range=1,
         targeting=TargetingType.SELF,
         effects=[Hasted(duration=1)],
@@ -68,14 +65,14 @@ def test_hasted(
     state = advance_turn(state, result=DecisionResult(action_id="cast_haste", target_ids=[hero_id], description=""))
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
-    assert hero.status_effects[0].duration == 2
+    assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("ac")[0].value == 2
     assert hero.attributes.get_modifiers("speed")[0].value == 2
     assert hero.attributes.get_modifiers("save_advantage.dex")[0].value is True
 
     assert hero.armor_class == 12
     assert hero.current_speed == 12.0
-    assert hero.attributes.compute_save_advantage(StatType.DEX) == 1
+    assert hero.attributes.stat_save_advantage(StatType.DEX) == 1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -92,9 +89,7 @@ def test_hasted(
         state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
     )
 
-    hero._dice = MagicMock()  # fail save
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""), roll_results=[1])
 
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.LETHARGIC
@@ -103,7 +98,7 @@ def test_hasted(
     assert hero.attributes.get_modifiers("save_disadvantage.wis")[0].value is True
 
     assert hero.current_speed == 3
-    assert hero.attributes.compute_save_advantage(StatType.WIS) == -1
+    assert hero.attributes.stat_save_advantage(StatType.WIS) == -1
 
     # Turn 2.2: Pass
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))

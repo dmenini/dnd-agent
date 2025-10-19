@@ -56,7 +56,7 @@ def test_dodge(
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("disadvantage.defense")[0].value is True
 
-    assert hero.attributes.compute_advantage("defense") == -1
+    assert hero.attributes.advantage("defense") == -1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 

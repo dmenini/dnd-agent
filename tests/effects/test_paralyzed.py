@@ -6,7 +6,6 @@ from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.paralyzed import Paralyzed
 from agent.equipment.weapons import MeleeWeapon, WeaponType
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -61,13 +60,12 @@ def test_paralyzed(
 
     hero._dice = MagicMock()
     value1 = 15
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
 
     # Turn 1.1: Hero attacks and applies paralysis
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state,
+        result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description=""),
+        roll_results=[value1, 1],
     )
     orc = state.characters[orc_id]
     assert orc.attributes.hp == starting_hp - value1
@@ -77,9 +75,9 @@ def test_paralyzed(
     assert orc.attributes.get_modifiers("save_autofail.str")[0].value is True
     assert orc.attributes.get_modifiers("save_autofail.dex")[0].value is True
 
-    assert orc.attributes.compute_advantage("defense") == 1
-    assert orc.attributes.compute_save_autofail(StatType.STR) is True
-    assert orc.attributes.compute_save_autofail(StatType.DEX) is True
+    assert orc.attributes.advantage("defense") == 1
+    assert orc.attributes.save_autofail(StatType.STR) is True
+    assert orc.attributes.save_autofail(StatType.DEX) is True
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -93,14 +91,11 @@ def test_paralyzed(
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Hero attacks -> crit
-    hero._dice = MagicMock()
     value2 = 5
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
-    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
-    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value2 * 2, raw=value2)
-
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state,
+        result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description=""),
+        roll_results=[value2, 19],
     )
     crit_damage = value2 + value2
     assert orc.attributes.hp == starting_hp - value1 - crit_damage

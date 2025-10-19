@@ -1,13 +1,11 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from agent.actions.base import Action, ActionCategory, ActionType
+from agent.character.character import Character
 from agent.effects.dodge import Dodge
+from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
+from agent.systems.character_controller import CharacterController
 
 
 class DodgeAction(Action):
@@ -21,6 +19,7 @@ class DodgeAction(Action):
 
     targeting: TargetingType = TargetingType.SELF
 
-    def execute(self, actor: Character, target: Any) -> None:  # noqa: ARG002
+    def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
         effect = Dodge(duration=1)
-        actor.apply_status(effect)
+        controller = CharacterController(character=actor, dice=ctx.dice)
+        controller.apply_status(effect)

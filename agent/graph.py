@@ -6,7 +6,6 @@ from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig
 from agent.models.state import State
 from agent.nodes.combat_engine import CombatEngineNode
@@ -14,6 +13,7 @@ from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
 from agent.nodes.rules_verifier import RulesVerifierNode
 from agent.nodes.start_combat import StartCombatNode
+from agent.systems.dice_roller import DiceRoller
 
 
 class TurnPhase(str, Enum):
@@ -54,7 +54,7 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     agent = DecisionNode(llm=llm, system_prompt=config.prompts.system)
     verifier = RulesVerifierNode()
     start_combat = StartCombatNode(dice=DiceRoller())
-    combat = CombatEngineNode()
+    combat = CombatEngineNode(dice=DiceRoller())
     end_combat = EndCombatNode()
 
     # Register nodes

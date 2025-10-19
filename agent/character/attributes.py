@@ -1,77 +1,17 @@
-import builtins
 from collections import defaultdict
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import Field, PrivateAttr
 
+from agent.character.modifier import Modifier, ModifierRegistry
 from agent.character.stats import Stats, StatType
+from agent.equipment.armor import ArmorType
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 
 
-class Modifier(BaseModel):
-    source_id: str
-    attribute: str
-    value: Any
-    operation: Literal["set", "add", "mul"] = "set"
-
-
-class ModifierRegistry(BaseModel):
-    _modifiers: dict[str, list[Modifier]] = PrivateAttr(default_factory=dict)
-    _stacking_rules: dict[str, Literal["sum", "min", "max"]] = PrivateAttr(default_factory=dict)
-
-    def add(self, modifier: Modifier, stacking_rule: Literal["sum", "min", "max"] = "sum") -> None:
-        attr = modifier.attribute
-        if attr not in self._modifiers:
-            self._modifiers[attr] = []
-            self._stacking_rules[attr] = stacking_rule
-        self._modifiers[attr].append(modifier)
-
-    def remove(self, source_id: str) -> Modifier | None:
-        for attr, mods in list(self._modifiers.items()):
-            for i, m in enumerate(mods):
-                if m.source_id == source_id:
-                    # Pop the modifier from the list
-                    removed = mods.pop(i)
-
-                    # Clean up empty modifier lists
-                    if not mods:
-                        del self._modifiers[attr]
-                        self._stacking_rules.pop(attr, None)
-
-                    return removed
-
-        return None
-
-    def get(self, attr: str) -> list[Modifier]:
-        return self._modifiers.get(attr, [])
-
-    def attributes(self) -> list[str]:
-        """Return all attributes currently affected by modifiers."""
-        return list(self._modifiers.keys())
-
-    def stack(self, attr: str, op: Literal["set", "add", "mul"]) -> Any:
-        """
-        Select a final modifier value for the given attribute and operation based on the configured stacking rule.
-        """
-        neutral_el = 1 if op == "mul" else 0
-        mods = self._modifiers.get(attr, [])
-        if not mods:
-            return neutral_el
-
-        if op == "set":
-            # Most recent 'set' overrides previous ones
-            for mod in reversed(mods):
-                if mod.operation == op:
-                    return mod.value
-            return None
-
-        stacking_rule = self._stacking_rules[attr]
-        mode_fn = getattr(builtins, stacking_rule)
-        return mode_fn(mod.value for mod in mods if mod.operation == op) or neutral_el
-
-
-class Attributes(BaseModel):
+class Attributes(Stats):
     hp: int = 8
+    spellcasting_stat: StatType = StatType.INT
 
     # Base scalar attributes
     base_hp: int = 8
@@ -92,54 +32,71 @@ class Attributes(BaseModel):
 
     _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
 
-    def compute_max_hp(self, level: int, stats: Stats) -> int:
+    def max_hp(self, level: int) -> int:
         """HP grows with level and Constitution modifier."""
-        return self.base_hp + (level - 1) * (5 + stats.modifier(StatType.CON))
+        return self.base_hp + (level - 1) * (5 + self.stat_modifier(StatType.CON))
 
-    def compute_ac_bonus(self) -> int:
+    def ac_bonus(self, armor_type: ArmorType | None, max_dex_bonus: int | None = 2) -> int:
         """Compute Armor Class bonus from modifiers."""
-        return self._recompute_attribute("ac")
+        ac = self._recompute_attribute("ac")
+        dex_mod = self.stat_modifier(StatType.DEX)
 
-    def compute_initiative(self, stats: Stats) -> int:
+        if not armor_type:
+            ac += 10 + dex_mod
+        elif armor_type == ArmorType.LIGHT:
+            ac += dex_mod
+        elif armor_type == ArmorType.MEDIUM:
+            dex_bonus = min(dex_mod, max_dex_bonus or 2)
+            ac += dex_bonus
+
+        return ac
+
+    def initiative(self) -> int:
         """Derived initiative bonus."""
-        return stats.modifier(StatType.DEX)
+        return self.stat_modifier(StatType.DEX)
 
-    def compute_speed(self, stats: Stats) -> float:  # noqa: ARG002
+    def proficiency_bonus(self, level: int) -> int:
+        return 2 + (level - 1) // 4
+
+    def speed(self) -> float:
         """Base speed, possibly affected by conditions later."""
         return self._recompute_attribute("speed")
 
-    def compute_crit_roll(self) -> int:
+    def crit_roll(self) -> int:
         crit_roll = 20
         return crit_roll - self._recompute_attribute("crit_roll_bonus")
 
-    def compute_advantage(self, kind: str) -> int:
+    def advantage(self, kind: str) -> int:
         adv = self._recompute_attribute(f"advantage.{kind}")
         dis = self._recompute_attribute(f"disadvantage.{kind}")
         return int(adv) - int(dis)
 
-    def compute_spell_save_dc(self) -> int:
-        return self._recompute_attribute("spell_save_dc")
+    def spell_save_dc(self, level: int) -> int:
+        dc = self._recompute_attribute("spell_save_dc")
+        spell_mod = self.stat_modifier(self.spellcasting_stat)
+        prof = self.proficiency_bonus(level=level)
+        return dc + prof + spell_mod
 
-    def compute_spell_save_advantage(self) -> int:
+    def spell_save_advantage(self) -> int:
         adv = self._recompute_attribute("save_advantage.spell")
         dis = self._recompute_attribute("save_disadvantage.spell")
         return int(adv) - int(dis)
 
-    def compute_save_advantage(self, stat: StatType) -> int:
+    def stat_save_advantage(self, stat: StatType) -> int:
         adv = self._recompute_attribute(f"save_advantage.{stat.name.lower()}")
         dis = self._recompute_attribute(f"save_disadvantage.{stat.name.lower()}")
         return int(adv) - int(dis)
 
-    def compute_save_autofail(self, stat: StatType) -> bool:
+    def save_autofail(self, stat: StatType) -> bool:
         return self._recompute_attribute(f"save_autofail.{stat.name.lower()}")
 
-    def compute_resistance(self, dtype: DamageType) -> DamageResistance | None:
+    def damage_resistance(self, dtype: DamageType) -> DamageResistance | None:
         value = self._recompute_attribute(f"resistance.{dtype.value}")
         if not value:
             return None
         return DamageResistance(value=value, type=dtype)
 
-    def compute_vulnerability(self, dtype: DamageType) -> DamageVulnerability | None:
+    def damage_vulnerability(self, dtype: DamageType) -> DamageVulnerability | None:
         value = self._recompute_attribute(f"vulnerability.{dtype.value}")
         if not value:
             return None

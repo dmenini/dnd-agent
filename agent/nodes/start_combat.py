@@ -3,8 +3,9 @@ from logging import getLogger
 
 from agent.character.stats import StatType
 from agent.logs.events import EventType
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
+from agent.systems.combat_system import CombatSystem
+from agent.systems.dice_roller import DiceRoller
 
 log = getLogger(__name__)
 
@@ -19,11 +20,12 @@ class StartCombatNode:
         state.log.log_header("Starting combat!")
 
         rolls = []
+        combat = CombatSystem(dice=DiceRoller())
         for cid, char in state.characters.items():
             # First check roll result
-            init_roll = char.initiative_roll()
+            init_roll = combat.initiative_roll(char)
             # Include Dexterity modifier as a secondary sort key
-            dex_mod = char.stats.modifier(StatType.DEX)
+            dex_mod = char.attributes.stat_modifier(StatType.DEX)
             # Include a random value as a final tie-breaker
             tie_breaker = random.random()  # noqa: S311
             rolls.append((init_roll.total, dex_mod, tie_breaker, cid))

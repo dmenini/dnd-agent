@@ -2,6 +2,7 @@ from logging import getLogger
 
 from agent.logs.events import EventType, Icon
 from agent.models.state import State
+from agent.systems.character_controller import CharacterController
 
 log = getLogger(__name__)
 
@@ -12,11 +13,12 @@ class EndCombatNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         actor = state.current_actor
+        controller = CharacterController(character=actor)
 
         # Advance to next character if resources exhausted
         # TODO: Improve this by avoid looping over dead characters, just remove them from initiative order
         if not actor.is_alive or not actor.has_resources():
-            actor.end_turn()
+            controller.end_turn()
             state.turn_index += 1
 
         # End of round
@@ -25,7 +27,8 @@ class EndCombatNode:
 
             # Reset resources
             for char in state.alive_characters.values():
-                char.end_round()
+                controller = CharacterController(character=char)
+                controller.end_round()
 
             state.round += 1
             state.turn_index = 0
