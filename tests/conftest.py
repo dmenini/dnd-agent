@@ -4,6 +4,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
+from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.state import DecisionResult, State
 from agent.nodes.combat_engine import CombatEngineNode
@@ -29,11 +30,20 @@ def fake_llm(mocker: MockerFixture) -> BaseChatModel:
     return llm
 
 
-def advance_turn(state: State, result: DecisionResult) -> State:
-    llm = MagicMock(stub=BaseChatModel)
+def advance_turn(state: State, result: DecisionResult, roll_results: list[int] | None = None) -> State:
+    llm = MagicMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
     llm.invoke.return_value = result
 
+    dice = MagicMock(spec=DiceRoller)  # fail save
+    roll_results = roll_results or [19]
+    rolls = [DiceRoll(expression="1d20", rolls=[], total=result, raw=result) for result in roll_results]
+    crit_rolls = [DiceRoll(expression="1d20", rolls=[], total=result * 2, raw=result * 2) for result in roll_results]
+
+    dice.roll_once.side_effect = rolls
+    dice.roll_twice.side_effect = crit_rolls
+    dice.roll_with_context.side_effect = rolls
+
     state = DecisionNode(llm=llm, system_prompt="")(state)
-    state = CombatEngineNode()(state)
+    state = CombatEngineNode(dice=dice)(state)
     return EndCombatNode()(state)

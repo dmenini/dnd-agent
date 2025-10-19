@@ -11,12 +11,12 @@ from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.wait import WaitAction
 from agent.character.character import Character
-from agent.character.controller import CharacterController
 from agent.character.stats import Stats
 from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.logs.events import EventType
 from agent.logs.log_registry import LogRegistry
 from agent.models.state import DecisionResult, State
+from agent.systems.character_controller import CharacterController
 
 log = getLogger(__name__)
 

@@ -1,8 +1,8 @@
 from logging import getLogger
 
-from agent.character.controller import CharacterController
 from agent.logs.events import EventType, Icon
 from agent.models.state import State
+from agent.systems.character_controller import CharacterController
 
 log = getLogger(__name__)
 

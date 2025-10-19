@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
+from agent.models.context import CombatContext
+
 if TYPE_CHECKING:
     from agent.character.character import Character
     from agent.character.resources import ActionEconomy
@@ -65,7 +67,7 @@ class Action(BaseModel):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.can_use_standard(self.action_type)
 
-    def execute(self, actor: Character, target: Any) -> None:
+    def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:
         raise NotImplementedError
 
     def finalize(self, actor: Character) -> None:

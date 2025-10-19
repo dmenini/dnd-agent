@@ -1,12 +1,9 @@
-from unittest.mock import MagicMock
-
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.restrained import Restrained
 from agent.equipment.weapons import MeleeWeapon, WeaponType
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -67,15 +64,13 @@ def test_restrained(
         turn_order=[hero_id, orc_id],
     )
 
-    hero._dice = MagicMock()
     value1 = 15
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
 
     # Turn 1.1: Hero attacks and applies restrained
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state,
+        result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description=""),
+        roll_results=[value1, 1],
     )
     orc = state.characters[orc_id]
     assert orc.attributes.hp == starting_hp - value1

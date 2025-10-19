@@ -1,4 +1,4 @@
-from typing import Any, Self
+from typing import Any
 
 from pydantic import BaseModel, computed_field
 
@@ -12,14 +12,10 @@ from agent.equipment.spells import Spell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.events import Event, EventType, Icon
 from agent.logs.log_registry import get_log_registry
-from agent.mechanics.advantage import resolve_advantage
-from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.damage import Damage
 from agent.models.position import Position
 
 registry = get_log_registry()
-
-D20 = "1d20"
 
 
 class Party(BaseModel):
@@ -54,8 +50,6 @@ class Character(BaseModel):
     spell_slots: SpellSlots = SpellSlots()
     action_economy: ActionEconomy = ActionEconomy()
     turn_done: bool = True
-
-    _dice: DiceRoller = DiceRoller()
 
     def model_post_init(self, _: Any, /) -> None:
         # Equip to apply traits
@@ -158,52 +152,6 @@ class Character(BaseModel):
 
     def distance(self, target: Position) -> float:
         return self.pos.manhattan_distance(target)
-
-    def initiative_roll(self) -> DiceRoll:
-        expr = f"{D20}+{self.initiative_modifier}"
-        roll = self._dice.roll_with_context(dice_expression=expr)
-        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=EventType.MAIN)
-        return roll
-
-    def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
-        # Compute advantage from multiple sources
-        sources = [
-            self.attributes.stat_advantage(attack_stat),
-            self.attributes.advantage("attack"),
-            target.attributes.advantage("defense"),
-        ]
-        advantage = resolve_advantage(sources)
-
-        return self._dice.roll_with_context(dice_expression=D20, advantage=advantage)
-
-    def damage_roll(self, *, expr: str, is_critical: bool = False) -> DiceRoll:
-        if is_critical:
-            return self._dice.roll_twice(expr)
-        return self._dice.roll_once(expr)
-
-    def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
-        """
-        Rolls a saving throw for the given ability type.
-        Accounts for modifiers, proficiency, and active status effects.
-        """
-        if self.attributes.save_autofail(save_stat):
-            return DiceRoll(expression=D20, rolls=[1], total=1, raw=1)
-
-        # Compute advantage from multiple sources
-        sources = [
-            self.attributes.stat_advantage(save_stat),
-            self.attributes.stat_save_advantage(save_stat),
-        ]
-        if is_spell:
-            sources.append(self.attributes.spell_save_advantage())
-        advantage = resolve_advantage(sources)
-
-        # Roll the d20 (with advantage/disadvantage if applicable)
-        ability_mod = self.attributes.stat_modifier(save_stat)
-        prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
-        mod = ability_mod + prof_bonus
-        expr = f"{D20}+{mod}"
-        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
     def add_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)

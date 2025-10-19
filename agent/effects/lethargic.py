@@ -1,4 +1,5 @@
-from agent.character.character import Character
+from typing import Literal
+
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
@@ -18,9 +19,5 @@ class Lethargic(StatusEffect):
 
     type: EffectType = EffectType.LETHARGIC
     save_stat: StatType = StatType.WIS
+    save_mode: Literal["start"] = "start"
     _traits: list[Trait] = [SpeedMultiplier(value=0.5), DisadvantageOnSavingThrow(stat=StatType.WIS), HalfAttacks()]
-
-    def on_turn_start(self, target: Character) -> None:
-        super().on_turn_start(target)
-        if target.save_roll(self.save_stat).total >= self.save_dc:
-            self.duration = 0

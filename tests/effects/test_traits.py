@@ -1,10 +1,10 @@
 from agent.character.character import Character, Party
-from agent.character.controller import CharacterController
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import Resistance, Trait, Vulnerability
 from agent.equipment.armor import Accessory
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 from agent.models.position import Position
+from agent.systems.character_controller import CharacterController
 
 
 class CustomEffect(StatusEffect):

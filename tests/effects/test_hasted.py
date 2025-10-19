@@ -1,12 +1,9 @@
-from unittest.mock import MagicMock
-
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.hasted import Hasted
 from agent.equipment.spells import SupportSpell
 from agent.equipment.weapons import MeleeWeapon, WeaponType
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -92,9 +89,7 @@ def test_hasted(
         state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
     )
 
-    hero._dice = MagicMock()  # fail save
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""), roll_results=[1])
 
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.LETHARGIC

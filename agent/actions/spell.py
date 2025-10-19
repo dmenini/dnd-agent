@@ -3,7 +3,6 @@ from typing import Self
 from agent.actions.attack import AttackAction
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.character import Character
-from agent.character.controller import CharacterController
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
@@ -13,6 +12,8 @@ from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent
 from agent.models.enums import TargetingType
+from agent.systems.character_controller import CharacterController
+from agent.systems.combat_system import CombatSystem
 
 
 class AttackSpellAction(AttackAction):
@@ -42,9 +43,7 @@ class AttackSpellAction(AttackAction):
             status_effects=spell.effects,
         )
 
-    def execute(self, actor: Character, target: Character) -> None:
-        ctx = CombatContext()
-
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         self._resolve_saving_throw(actor, target, ctx)
 
         # Apply damage if any
@@ -52,8 +51,9 @@ class AttackSpellAction(AttackAction):
             self._apply_damage(actor, target, ctx)
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        combat = CombatSystem(dice=ctx.dice)
         dc = actor.spell_save_dc
-        save_roll = target.save_roll(save_stat=self.stat, is_spell=True)
+        save_roll = combat.save_roll(save_stat=self.stat, target=target, is_spell=True)
 
         ctx.hit_roll = save_roll
         ctx.is_hit = save_roll.total < dc
@@ -68,7 +68,7 @@ class AttackSpellAction(AttackAction):
             # Only apply damage if save failed
             mod = self._attack_modifier(actor)
             expr = f"{self.damage_dice}+{mod}"
-            droll = actor.damage_roll(expr=expr, is_critical=False)
+            droll = combat.damage_roll(expr=expr, is_critical=False)
             ctx.damage_roll = droll
             ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
             actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
@@ -110,16 +110,16 @@ class SupportSpellAction(Action):
             status_effects=spell.effects,
         )
 
-    def execute(self, actor: Character, target: Character | None) -> None:
+    def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:
         if self.targeting == TargetingType.SELF:
-            self._execute_on_target(target=actor)
+            self._execute_on_target(target=actor, ctx=ctx)
         else:
             if target is None:
                 raise ValueError
-            self._execute_on_target(target=target)
+            self._execute_on_target(target=target, ctx=ctx)
 
-    def _execute_on_target(self, target: Character) -> None:
-        controller = CharacterController(character=target)
+    def _execute_on_target(self, target: Character, ctx: CombatContext) -> None:
+        controller = CharacterController(character=target, dice=ctx.dice)
         for effect in self.status_effects:
             controller.try_apply_status(effect)
 

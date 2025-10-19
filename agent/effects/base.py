@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import PrivateAttr
 
@@ -29,6 +29,8 @@ class StatusEffect(Trait):
     duration: int
     save_stat: StatType = StatType.CON
     save_dc: int = 12  # Difficulty class
+    save_mode: Literal["none", "start", "end"] = "none"
+    followup: StatusEffect | None = None
 
     _traits: list[Trait] = PrivateAttr(default_factory=list)
 

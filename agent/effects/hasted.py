@@ -1,6 +1,4 @@
 from agent.actions.base import ActionCategory, ActionType
-from agent.character.character import Character
-from agent.character.controller import CharacterController
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
@@ -42,8 +40,4 @@ class Hasted(StatusEffect):
         ACBonus(value=2),
         AdvantageOnSavingThrow(stat=StatType.DEX),
     ]
-
-    def on_expire(self, target: Character) -> None:
-        super().on_expire(target)
-        controller = CharacterController(character=target)
-        controller.try_apply_status(Lethargic(duration=1))
+    followup: StatusEffect = Lethargic(duration=1)

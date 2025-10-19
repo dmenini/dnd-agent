@@ -5,6 +5,7 @@ from agent.character.stats import StatType
 from agent.logs.events import EventType
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
+from agent.systems.combat_system import CombatSystem
 
 log = getLogger(__name__)
 
@@ -19,9 +20,10 @@ class StartCombatNode:
         state.log.log_header("Starting combat!")
 
         rolls = []
+        combat = CombatSystem(dice=DiceRoller())
         for cid, char in state.characters.items():
             # First check roll result
-            init_roll = char.initiative_roll()
+            init_roll = combat.initiative_roll(char)
             # Include Dexterity modifier as a secondary sort key
             dex_mod = char.attributes.stat_modifier(StatType.DEX)
             # Include a random value as a final tie-breaker

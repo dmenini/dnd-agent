@@ -2,7 +2,6 @@ from typing import Self
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.character import Character
-from agent.character.controller import CharacterController
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
@@ -11,6 +10,8 @@ from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import TargetingType
+from agent.systems.character_controller import CharacterController
+from agent.systems.combat_system import CombatSystem
 
 
 class AttackAction(Action):
@@ -23,9 +24,7 @@ class AttackAction(Action):
     range: float
     status_effects: list[StatusEffect] = []
 
-    def execute(self, actor: Character, target: Character) -> None:
-        ctx = CombatContext()
-
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         self._resolve_attack(actor, target, ctx)
 
         # Apply damage if any
@@ -33,7 +32,8 @@ class AttackAction(Action):
             self._apply_damage(actor, target, ctx)
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
-        roll = actor.attack_roll(attack_stat=self.stat, target=target)
+        combat = CombatSystem(dice=ctx.dice)
+        roll = combat.attack_roll(attack_stat=self.stat, actor=actor, target=target)
         is_critical = roll.raw == actor.attributes.crit_roll()
         is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
 
@@ -58,7 +58,7 @@ class AttackAction(Action):
 
         mod = self._attack_modifier(actor)
         expr = f"{self.damage_dice}+{mod}"
-        droll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
+        droll = combat.damage_roll(expr=expr, is_critical=ctx.is_critical)
         ctx.damage_roll = droll
         ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
@@ -91,7 +91,7 @@ class AttackAction(Action):
             return ctx
 
         # Try to apply status effects
-        controller = CharacterController(character=target)
+        controller = CharacterController(character=target, dice=ctx.dice)
         for effect in self.status_effects:
             controller.try_apply_status(effect)
 

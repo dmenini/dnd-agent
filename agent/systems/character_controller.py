@@ -1,11 +1,14 @@
 from agent.character.character import Character
 from agent.effects.base import StatusEffect
 from agent.logs.events import EventType, Icon
+from agent.mechanics.dice_roller import DiceRoller
+from agent.systems.combat_system import CombatSystem
 
 
 class CharacterController:
-    def __init__(self, character: Character) -> None:
+    def __init__(self, character: Character, dice: DiceRoller | None = None) -> None:
         self.character = character
+        self.combat = CombatSystem(dice=dice or DiceRoller())
 
     def start_turn(self) -> None:
         self.character.log_event(f"{self.character.name} starts turn", event_type=EventType.DEBUG)
@@ -30,7 +33,7 @@ class CharacterController:
 
         # Saving throw
         if effect.save_dc:
-            roll = self.character.save_roll(save_stat=effect.save_stat)
+            roll = self.combat.save_roll(save_stat=effect.save_stat, target=self.character)
             self.character.log_event(
                 f"{effect.save_stat.name} save throw: {roll.total} vs DC {effect.save_dc}", icon=Icon.ROLL
             )
@@ -69,13 +72,25 @@ class CharacterController:
             if is_start:
                 effect.duration -= 1
                 effect.on_turn_start(self.character)
+                if effect.save_mode == "start":
+                    self._try_break_free(effect)
             else:
                 effect.on_turn_end(self.character)
+                if effect.save_mode == "end":
+                    self._try_break_free(effect)
+
             if effect.is_expired():
                 effect.on_expire(self.character)
                 self.character.log_event(
                     f"{self.character.name} is not {effect.type.value} anymore!", icon=Icon.EFFECT_EXPIRED
                 )
+                if effect.followup:
+                    self.try_apply_status(effect.followup)
 
         # Remove expired effects
         self.character.status_effects = [e for e in self.character.status_effects if not e.is_expired()]
+
+    def _try_break_free(self, effect: StatusEffect) -> None:
+        roll = self.combat.save_roll(save_stat=effect.save_stat, target=self.character)
+        if roll.total >= effect.save_dc:
+            effect.duration = 0
