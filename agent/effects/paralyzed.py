@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
@@ -12,9 +8,6 @@ from agent.effects.traits import (
     FailOnSavingThrow,
     Trait,
 )
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 MIN_AUTOCRIT_DISTANCE = 5
 
@@ -37,7 +30,3 @@ class Paralyzed(StatusEffect):
         FailOnSavingThrow(stat=StatType.STR),
         FailOnSavingThrow(stat=StatType.DEX),
     ]
-
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
-        self.duration -= 1

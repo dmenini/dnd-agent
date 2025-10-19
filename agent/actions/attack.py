@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import Self, TYPE_CHECKING
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
@@ -29,19 +29,21 @@ class AttackAction(Action):
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
 
+        self._fire_start_events(actor, target, ctx)
         self._resolve_attack(actor, target, ctx)
 
         # Apply damage if any
-        if ctx.damage:
+        if ctx.is_hit:
             self._apply_damage(actor, target, ctx)
 
-    def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        self._fire_end_events(actor, target, ctx)
+
+    def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
-        is_critical = roll.raw == actor.attributes.crit_roll()
-        is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
+        ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
         ctx.hit_roll = roll
-        ctx.is_critical = is_critical
+        ctx.is_hit = ctx.is_critical or roll.total >= target.armor_class
 
         if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
@@ -49,28 +51,21 @@ class AttackAction(Action):
         else:
             # Check attack roll result
             actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
-
-            if roll.total < target.armor_class:
+            if ctx.is_hit:
+                actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
+            else:
                 actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
-                ctx.is_hit = False
-                return ctx
 
-            actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
+        return ctx.is_hit
 
-        ctx.is_hit = True
-
+    def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        # Damage roll
         mod = self._attack_modifier(actor)
         expr = f"{self.damage_dice}+{mod}"
         droll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
         ctx.damage_roll = droll
         ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
-
-        return ctx
-
-    def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
-        if ctx.damage is None:
-            return ctx
 
         # Apply actor status effects
         for effect in actor.status_effects:
@@ -103,6 +98,20 @@ class AttackAction(Action):
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
         mod = actor.attributes.stat_modifier(self.stat)
         return mod + prof_bonus
+
+    def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        for eff in actor.status_effects:
+            eff.on_combat_start(actor, target, ctx)
+
+        for eff in target.status_effects:
+            eff.on_combat_start(actor, target, ctx)
+
+    def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        for eff in actor.status_effects:
+            eff.on_combat_end(actor, target, ctx)
+
+        for eff in target.status_effects:
+            eff.on_combat_end(actor, target, ctx)
 
 
 class MainHandAttackAction(AttackAction):

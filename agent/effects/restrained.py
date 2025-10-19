@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
@@ -11,9 +7,6 @@ from agent.effects.traits import (
     TargetDisadvantageOnAttackRoll,
     Trait,
 )
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 
 class Restrained(StatusEffect):
@@ -32,7 +25,3 @@ class Restrained(StatusEffect):
         AttackerAdvantageOnAttackRoll(),
         TargetDisadvantageOnAttackRoll(),
     ]
-
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
-        self.duration -= 1

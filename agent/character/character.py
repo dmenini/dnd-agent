@@ -195,13 +195,29 @@ class Character(BaseModel):
     def _try_expire_effects(self, *, is_start: bool = True) -> None:
         # Copy the list since effects may modify self.status_effects in-place
         for effect in list(self.status_effects):
-            effect.on_turn_start(self) if is_start else effect.on_turn_end(self)
+            if is_start:
+                effect.duration -= 1
+                effect.on_turn_start(self)
+                if effect.save_mode == "start":
+                    self._try_break_free(effect)
+            else:
+                effect.on_turn_end(self)
+                if effect.save_mode == "end":
+                    self._try_break_free(effect)
+
             if effect.is_expired():
                 effect.on_expire(self)
                 self.log_event(f"{self.name} is not {effect.type.value} anymore!", icon=Icon.EFFECT_EXPIRED)
+                if effect.followup:
+                    self.try_apply_status(effect.followup)
 
         # Remove expired effects
         self.status_effects = [e for e in self.status_effects if not e.is_expired()]
+
+    def _try_break_free(self, effect: StatusEffect) -> None:
+        roll = self.save_roll(save_stat=effect.save_stat)
+        if roll.total >= effect.save_dc:
+            effect.duration = 0
 
     def modify_incoming_damage(self, damage: Damage) -> Damage:
         """Apply resistances and vulnerabilities to damage."""
