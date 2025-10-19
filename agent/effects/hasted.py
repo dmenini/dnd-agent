@@ -1,17 +1,11 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from agent.actions.base import ActionCategory, ActionType
+from agent.character.character import Character
 from agent.character.manager import CharacterManager
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.lethargic import Lethargic
 from agent.effects.traits import ACBonus, AdvantageOnSavingThrow, ExtraActions, SpeedMultiplier, Trait
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 
 class Hasted(StatusEffect):
@@ -48,15 +42,6 @@ class Hasted(StatusEffect):
         ACBonus(value=2),
         AdvantageOnSavingThrow(stat=StatType.DEX),
     ]
-
-    def on_apply(self, target: Character) -> None:
-        super().on_apply(target)
-        # Add a turn to take into account the current turn, since we decrease duration on the same turn end
-        self.duration += 1
-
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
-        self.duration -= 1
 
     def on_expire(self, target: Character) -> None:
         super().on_expire(target)

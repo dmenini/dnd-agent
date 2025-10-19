@@ -68,7 +68,7 @@ def test_hasted(
     state = advance_turn(state, result=DecisionResult(action_id="cast_haste", target_ids=[hero_id], description=""))
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
-    assert hero.status_effects[0].duration == 2
+    assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("ac")[0].value == 2
     assert hero.attributes.get_modifiers("speed")[0].value == 2
     assert hero.attributes.get_modifiers("save_advantage.dex")[0].value is True

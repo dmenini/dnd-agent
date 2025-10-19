@@ -1,13 +1,8 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import DamageOverTime, TargetDisadvantageOnAttackRoll
 from agent.models.damage import DamageType
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 
 class Poisoned(StatusEffect):
@@ -24,7 +19,3 @@ class Poisoned(StatusEffect):
             TargetDisadvantageOnAttackRoll(),
             DamageOverTime(value=self.damage, damage_type=DamageType.POISON),
         ]
-
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
-        self.duration -= 1

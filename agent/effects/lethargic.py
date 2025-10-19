@@ -1,7 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
+from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import (
@@ -10,9 +7,6 @@ from agent.effects.traits import (
     SpeedMultiplier,
     Trait,
 )
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 
 class Lethargic(StatusEffect):
@@ -26,9 +20,7 @@ class Lethargic(StatusEffect):
     save_stat: StatType = StatType.WIS
     _traits: list[Trait] = [SpeedMultiplier(value=0.5), DisadvantageOnSavingThrow(stat=StatType.WIS), HalfAttacks()]
 
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
+    def on_turn_start(self, target: Character) -> None:
+        super().on_turn_start(target)
         if target.save_roll(self.save_stat).total >= self.save_dc:
             self.duration = 0
-        else:
-            self.duration -= 1

@@ -66,7 +66,11 @@ class CharacterManager:
     def _try_expire_effects(self, *, is_start: bool = True) -> None:
         # Copy the list since effects may modify self.status_effects in-place
         for effect in list(self.character.status_effects):
-            effect.on_turn_start(self.character) if is_start else effect.on_turn_end(self.character)
+            if is_start:
+                effect.duration -= 1
+                effect.on_turn_start(self.character)
+            else:
+                effect.on_turn_end(self.character)
             if effect.is_expired():
                 effect.on_expire(self.character)
                 self.character.log_event(
