@@ -1,5 +1,5 @@
 from agent.character.character import Character, Party
-from agent.character.manager import CharacterManager
+from agent.character.controller import CharacterController
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import Resistance, Trait, Vulnerability
 from agent.equipment.armor import Accessory
@@ -31,27 +31,27 @@ def test_same_effects() -> None:
         party=party_players,
     )
 
-    effect_manager = CharacterManager(character=hero)
-    effect_manager.start_turn()
+    controller = CharacterController(character=hero)
+    controller.start_turn()
 
     effect1 = CustomEffect()
     effect2 = CustomEffect()
 
-    effect_manager.apply_status(effect1)
+    controller.apply_status(effect1)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
     assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    effect_manager.end_turn()
+    controller.end_turn()
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    effect_manager.apply_status(effect2)
+    controller.apply_status(effect2)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
@@ -77,7 +77,7 @@ def test_different_traits() -> None:
         party=party_players,
         accessories=[acc1, acc2],
     )
-    manager = CharacterManager(character=hero)
+    controller = CharacterController(character=hero)
 
     attrs = hero.attributes
     assert attrs.get_modifiers("resistance.fire")[0].value == value
@@ -86,8 +86,8 @@ def test_different_traits() -> None:
     assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
     assert attrs.damage_vulnerability(DamageType.FIRE) == DamageVulnerability(value=value, type=DamageType.FIRE)
 
-    manager.start_turn()
-    manager.end_turn()
+    controller.start_turn()
+    controller.end_turn()
 
     # Traits don't expire
     assert attrs.get_modifiers("resistance.fire")[0].value == value

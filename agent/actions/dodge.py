@@ -2,7 +2,7 @@ from typing import Any
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.character import Character
-from agent.character.manager import CharacterManager
+from agent.character.controller import CharacterController
 from agent.effects.dodge import Dodge
 from agent.models.enums import TargetingType
 
@@ -20,5 +20,5 @@ class DodgeAction(Action):
 
     def execute(self, actor: Character, target: Any) -> None:  # noqa: ARG002
         effect = Dodge(duration=1)
-        manager = CharacterManager(character=actor)
-        manager.apply_status(effect)
+        controller = CharacterController(character=actor)
+        controller.apply_status(effect)

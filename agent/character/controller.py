@@ -3,7 +3,7 @@ from agent.effects.base import StatusEffect
 from agent.logs.events import EventType, Icon
 
 
-class CharacterManager:
+class CharacterController:
     def __init__(self, character: Character) -> None:
         self.character = character
 

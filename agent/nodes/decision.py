@@ -11,7 +11,7 @@ from agent.actions.move import MovementAction
 from agent.actions.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.wait import WaitAction
 from agent.character.character import Character
-from agent.character.manager import CharacterManager
+from agent.character.controller import CharacterController
 from agent.character.stats import Stats
 from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.logs.events import EventType
@@ -37,8 +37,8 @@ class DecisionNode:
         if actor.turn_done:
             state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
             state.draw_map()
-            manager = CharacterManager(character=actor)
-            manager.start_turn()
+            controller = CharacterController(character=actor)
+            controller.start_turn()
 
         actions = self.available_actions(actor)
         if not actions:

@@ -3,7 +3,7 @@ from typing import Self
 from agent.actions.attack import AttackAction
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.character import Character
-from agent.character.manager import CharacterManager
+from agent.character.controller import CharacterController
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
@@ -119,9 +119,9 @@ class SupportSpellAction(Action):
             self._execute_on_target(target=target)
 
     def _execute_on_target(self, target: Character) -> None:
-        manager = CharacterManager(character=target)
+        controller = CharacterController(character=target)
         for effect in self.status_effects:
-            manager.try_apply_status(effect)
+            controller.try_apply_status(effect)
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""
