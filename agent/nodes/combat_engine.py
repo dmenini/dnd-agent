@@ -8,9 +8,9 @@ from agent.actions.dodge import DodgeAction
 from agent.actions.move import MovementAction
 from agent.actions.spell import SupportSpellAction
 from agent.actions.wait import WaitAction
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.context import CombatContext
 from agent.models.state import State
+from agent.systems.dice_roller import DiceRoller
 
 ATTACK_ROLL_EXPR = "1d20"
 

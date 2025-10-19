@@ -3,9 +3,9 @@ from logging import getLogger
 
 from agent.character.stats import StatType
 from agent.logs.events import EventType
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
 from agent.systems.combat_system import CombatSystem
+from agent.systems.dice_roller import DiceRoller
 
 log = getLogger(__name__)
 

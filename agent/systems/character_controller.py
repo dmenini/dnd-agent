@@ -1,8 +1,8 @@
 from agent.character.character import Character
 from agent.effects.base import StatusEffect
 from agent.logs.events import EventType, Icon
-from agent.mechanics.dice_roller import DiceRoller
 from agent.systems.combat_system import CombatSystem
+from agent.systems.dice_roller import DiceRoller
 
 
 class CharacterController:

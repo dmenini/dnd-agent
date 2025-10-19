@@ -74,13 +74,17 @@ class StatusEffect(Trait):
         for trait in self.traits:
             trait.on_apply_damage(actor, target, ctx)
 
-    def is_auto_crit(self, actor: Character, target: Character) -> bool:
-        """Modify crit chance."""
+    def on_combat_start(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Call at the start of combat."""
+        super().on_combat_start(actor, target, ctx)
         for trait in self.traits:
-            res = trait.is_auto_crit(actor, target)
-            if res is not None:
-                return res
-        return False
+            trait.on_combat_start(actor, target, ctx)
+
+    def on_combat_end(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Call at the end of combat."""
+        super().on_combat_end(actor, target, ctx)
+        for trait in self.traits:
+            trait.on_combat_end(actor, target, ctx)
 
     def is_expired(self) -> bool:
         return self.duration <= 0

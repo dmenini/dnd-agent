@@ -46,15 +46,17 @@ class Trait(BaseModel):
     def on_turn_end(self, target: Character) -> None:
         """Call at the end of the target's turn."""
 
+    def on_combat_start(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Call at the start of the combat turn."""
+
+    def on_combat_end(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Call at the end of the combat turn."""
+
     def on_receive_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Modify damage taken."""
 
     def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Modify outgoing damage."""
-
-    def is_auto_crit(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
-        """Modify crit chance."""
-        return None
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):
@@ -152,8 +154,10 @@ class ACBonus(Trait):
 class AutoCritIfMelee(Trait):
     """Give automatic critical in melee range to target."""
 
-    def is_auto_crit(self, actor: Character, target: Character) -> bool:
-        return actor.distance(target.pos) <= MELEE_RANGE
+    def on_combat_start(self, actor: Character, target: Character, context: CombatContext) -> None:
+        is_melee = actor.distance(target.pos) <= MELEE_RANGE
+        if is_melee:
+            context.is_critical = True
 
 
 class CriticalRollBonus(Trait):

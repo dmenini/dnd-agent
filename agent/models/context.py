@@ -1,8 +1,8 @@
 from anthropic import BaseModel
 from pydantic import ConfigDict
 
-from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.damage import Damage
+from agent.systems.dice_roller import DiceRoll, DiceRoller
 
 
 class CombatContext(BaseModel):

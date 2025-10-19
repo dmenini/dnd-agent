@@ -4,12 +4,12 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
-from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.state import DecisionResult, State
 from agent.nodes.combat_engine import CombatEngineNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
+from agent.systems.dice_roller import DiceRoll, DiceRoller
 
 
 @pytest.fixture

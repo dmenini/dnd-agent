@@ -1,10 +1,10 @@
 from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.logs.events import EventType, Icon
-from agent.mechanics.advantage import resolve_advantage
-from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent
+from agent.systems.dice_roller import DiceRoll, DiceRoller
+from agent.systems.utils import resolve_advantage
 
 D20 = "1d20"
 
@@ -60,13 +60,13 @@ class CombatSystem:
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
     def resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
+        self._fire_start_events(actor, target, ctx)
+
         roll = self.attack_roll(attack_stat=ctx.metadata["stat"], actor=actor, target=target)
-        is_critical = roll.raw == actor.attributes.crit_roll()
-        is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
+        ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
         ctx.hit_roll = roll
-        ctx.is_critical = is_critical
-        ctx.is_hit = is_critical or roll.total >= target.armor_class
+        ctx.is_hit = ctx.is_critical or roll.total >= target.armor_class
 
         if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
@@ -81,6 +81,8 @@ class CombatSystem:
         return ctx.is_hit
 
     def resolve_save_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
+        self._fire_start_events(actor, target, ctx)
+
         dc = actor.spell_save_dc
         stat: StatType = ctx.metadata["stat"]
         save_roll = self.save_roll(save_stat=stat, target=target, is_spell=True)
@@ -123,6 +125,8 @@ class CombatSystem:
         actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE)
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
+        self._fire_end_events(actor, target, ctx)
+
         if not target.is_alive:
             target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
             return ctx
@@ -133,3 +137,17 @@ class CombatSystem:
         prof_bonus = actor.proficiency_bonus if ctx.metadata["weapon_type"] in actor.proficiencies else 0
         mod = actor.attributes.stat_modifier(ctx.metadata["stat"])
         return mod + prof_bonus
+
+    def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        for eff in actor.status_effects:
+            eff.on_combat_start(actor, target, ctx)
+
+        for eff in target.status_effects:
+            eff.on_combat_start(actor, target, ctx)
+
+    def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        for eff in actor.status_effects:
+            eff.on_combat_end(actor, target, ctx)
+
+        for eff in target.status_effects:
+            eff.on_combat_end(actor, target, ctx)
