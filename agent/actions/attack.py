@@ -6,9 +6,8 @@ from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
-from agent.logs.events import Icon
 from agent.models.context import CombatContext
-from agent.models.damage import Damage, DamageComponent, DamageType
+from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.systems.character_controller import CharacterController
 from agent.systems.combat_system import CombatSystem
@@ -25,82 +24,17 @@ class AttackAction(Action):
     status_effects: list[StatusEffect] = []
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        self._resolve_attack(actor, target, ctx)
-
-        # Apply damage if any
-        if ctx.damage:
-            self._apply_damage(actor, target, ctx)
-
-    def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        ctx.metadata = ctx.metadata | self.model_dump()
         combat = CombatSystem(dice=ctx.dice)
-        roll = combat.attack_roll(attack_stat=self.stat, actor=actor, target=target)
-        is_critical = roll.raw == actor.attributes.crit_roll()
-        is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
+        is_hit = combat.resolve_attack(actor, target, ctx)
 
-        ctx.hit_roll = roll
-        ctx.is_critical = is_critical
+        if is_hit:
+            combat.apply_damage(actor, target, ctx)
 
-        if ctx.is_critical:
-            # Critical guarantees a hit -> direct damage roll with critical
-            actor.log_event("Rolls a NATURAL 20! Critical hit!", icon=Icon.ROLL)
-        else:
-            # Check attack roll result
-            actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
-
-            if roll.total < target.armor_class:
-                actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
-                ctx.is_hit = False
-                return ctx
-
-            actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
-
-        ctx.is_hit = True
-
-        mod = self._attack_modifier(actor)
-        expr = f"{self.damage_dice}+{mod}"
-        droll = combat.damage_roll(expr=expr, is_critical=ctx.is_critical)
-        ctx.damage_roll = droll
-        ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
-        actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
-
-        return ctx
-
-    def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
-        if ctx.damage is None:
-            return ctx
-
-        # Apply actor status effects
-        for effect in actor.status_effects:
-            effect.on_apply_damage(actor, target, ctx)
-
-        # Apply target resistances and vulnerabilities
-        ctx.damage = target.modify_incoming_damage(ctx.damage)
-
-        # Apply target status effects
-        for effect in target.status_effects:
-            effect.on_receive_damage(actor, target, ctx)
-
-        # Apply damage
-        total_damage = ctx.damage.total
-        target.apply_damage(damage=total_damage)
-        actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE)
-        target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
-
-        if not target.is_alive:
-            target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
-            return ctx
-
-        # Try to apply status effects
-        controller = CharacterController(character=target, dice=ctx.dice)
-        for effect in self.status_effects:
-            controller.try_apply_status(effect)
-
-        return ctx
-
-    def _attack_modifier(self, actor: Character) -> int:
-        prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
-        mod = actor.attributes.stat_modifier(self.stat)
-        return mod + prof_bonus
+            # Try to apply status effects
+            controller = CharacterController(character=target, dice=ctx.dice)
+            for effect in self.status_effects:
+                controller.try_apply_status(effect)
 
 
 class MainHandAttackAction(AttackAction):

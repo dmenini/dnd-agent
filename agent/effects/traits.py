@@ -52,9 +52,9 @@ class Trait(BaseModel):
     def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Modify outgoing damage."""
 
-    def is_auto_crit(self, actor: Character, target: Character) -> bool:  # noqa: ARG002
+    def is_auto_crit(self, actor: Character, target: Character) -> bool | None:  # noqa: ARG002
         """Modify crit chance."""
-        return False
+        return None
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):

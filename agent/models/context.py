@@ -11,7 +11,7 @@ class CombatContext(BaseModel):
     damage: Damage | None = None
     is_critical: bool = False
     is_hit: bool | None = None
-    metadata: dict = {}  # flexible space for anything added by traits
+    metadata: dict = {}
     dice: DiceRoller
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

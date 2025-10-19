@@ -8,9 +8,7 @@ from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
 from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.equipment.weapons import WeaponType
-from agent.logs.events import Icon
 from agent.models.context import CombatContext
-from agent.models.damage import Damage, DamageComponent
 from agent.models.enums import TargetingType
 from agent.systems.character_controller import CharacterController
 from agent.systems.combat_system import CombatSystem
@@ -44,36 +42,17 @@ class AttackSpellAction(AttackAction):
         )
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        self._resolve_saving_throw(actor, target, ctx)
-
-        # Apply damage if any
-        if ctx.damage:
-            self._apply_damage(actor, target, ctx)
-
-    def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        ctx.metadata = ctx.metadata | self.model_dump()
         combat = CombatSystem(dice=ctx.dice)
-        dc = actor.spell_save_dc
-        save_roll = combat.save_roll(save_stat=self.stat, target=target, is_spell=True)
+        is_hit = combat.resolve_save_throw(actor, target, ctx)
 
-        ctx.hit_roll = save_roll
-        ctx.is_hit = save_roll.total < dc
+        if is_hit:
+            combat.apply_damage(actor, target, ctx)
 
-        actor.log_event(f"{self.stat.name} save: {save_roll.total} vs DC {dc}", icon=Icon.ROLL)
-
-        if ctx.is_hit:
-            actor.log_event(f"Save roll passed -> Target resists {self.name}!", icon=Icon.DEFENSE)
-        else:
-            actor.log_event("Save roll failed → Hits target!", icon=Icon.ATTACK)
-
-            # Only apply damage if save failed
-            mod = self._attack_modifier(actor)
-            expr = f"{self.damage_dice}+{mod}"
-            droll = combat.damage_roll(expr=expr, is_critical=False)
-            ctx.damage_roll = droll
-            ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
-            actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
-
-        return ctx
+            # Try to apply status effects
+            controller = CharacterController(character=target, dice=ctx.dice)
+            for effect in self.status_effects:
+                controller.try_apply_status(effect)
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""
