@@ -33,8 +33,27 @@ class Trait(BaseModel):
     def priority(self) -> int:
         return self._priority
 
+    def on_apply(self, target: Character) -> None:
+        """Call when the effect is first applied."""
+
     def on_expire(self, target: Character) -> None:
+        """Call when the effect is first applied."""
         target.remove_modifier(self._id)
+
+    def on_turn_start(self, target: Character) -> None:
+        """Call at the start of the target's turn."""
+
+    def on_turn_end(self, target: Character) -> None:
+        """Call at the end of the target's turn."""
+
+    def on_receive_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Modify damage taken."""
+
+    def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        """Modify outgoing damage."""
+
+    def is_auto_crit(self, actor: Character, target: Character) -> bool:
+        """Modify crit chance."""
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):

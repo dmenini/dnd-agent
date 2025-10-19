@@ -19,6 +19,8 @@ from agent.models.position import Position
 
 registry = get_log_registry()
 
+D20 = "1d20"
+
 
 class Party(BaseModel):
     id: str
@@ -158,7 +160,7 @@ class Character(BaseModel):
         return self.pos.manhattan_distance(target)
 
     def initiative_roll(self) -> DiceRoll:
-        expr = f"1d20+{self.initiative_modifier}"
+        expr = f"{D20}+{self.initiative_modifier}"
         roll = self._dice.roll_with_context(dice_expression=expr)
         self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=EventType.MAIN)
         return roll
@@ -172,7 +174,7 @@ class Character(BaseModel):
         ]
         advantage = resolve_advantage(sources)
 
-        return self._dice.roll_with_context(dice_expression="1d20", advantage=advantage)
+        return self._dice.roll_with_context(dice_expression=D20, advantage=advantage)
 
     def damage_roll(self, *, expr: str, is_critical: bool = False) -> DiceRoll:
         if is_critical:
@@ -185,7 +187,7 @@ class Character(BaseModel):
         Accounts for modifiers, proficiency, and active status effects.
         """
         if self.attributes.save_autofail(save_stat):
-            return DiceRoll(expression="1d20", rolls=[1], total=1, raw=1)
+            return DiceRoll(expression=D20, rolls=[1], total=1, raw=1)
 
         # Compute advantage from multiple sources
         sources = [
@@ -200,7 +202,7 @@ class Character(BaseModel):
         ability_mod = self.attributes.stat_modifier(save_stat)
         prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
         mod = ability_mod + prof_bonus
-        expr = f"1d20+{mod}"
+        expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
     def add_modifier(self, modifier: Modifier) -> None:
