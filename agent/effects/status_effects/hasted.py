@@ -7,7 +7,7 @@ from agent.effects.base import EffectType, StatusEffect
 from agent.effects.registry import TraitRegistry
 from agent.effects.status_effects.lethargic import Lethargic
 from agent.effects.traits import Trait
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 
 StandardActionExtension = ActionExtension(
     source="haste",

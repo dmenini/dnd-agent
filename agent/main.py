@@ -5,12 +5,14 @@ from pathlib import Path
 import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
+from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.character.attributes import Attributes
 from agent.character.character import Party
+from agent.character.resources import SpellLevel
+from agent.character.stats import StatType
 from agent.effects.status_effects.hasted import Hasted
 from agent.effects.status_effects.poisoned import Poisoned
 from agent.effects.status_effects.stunned import Stunned
-from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.graph import build_graph
 from agent.models.config import Config
@@ -69,19 +71,25 @@ def main() -> None:
         targeting=TargetingType.SINGLE,
         effects=[Poisoned(duration=3, damage=1)],
     )
-    fire_ball = AttackSpell(
+    fire_ball = AttackSpellAction(
+        id="fire_ball",
         name="Fire Ball",
         damage_dice="1d6",
         damage_type=DamageType.FIRE,
         range=5,
         targeting=TargetingType.SINGLE,
+        stat=StatType.INT,
+        level=SpellLevel.LEVEL_1,
     )
-    haste = SupportSpell(
+    haste = SupportSpellAction(
+        id="haste",
         name="Haste",
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        effects=[Hasted(duration=2, save_dc=0)],
+        status_effects=[Hasted(duration=2, save_dc=0)],
+        stat=StatType.INT,
+        level=SpellLevel.LEVEL_1,
     )
 
     hero = Character(

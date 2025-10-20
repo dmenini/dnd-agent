@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.actions.common.attack import AttackAction
@@ -16,7 +16,6 @@ from agent.models.enums import (
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.equipment.spells import AttackSpell, SupportSpell
 
 
 class AttackSpellAction(AttackAction):
@@ -25,26 +24,8 @@ class AttackSpellAction(AttackAction):
     description: str = ""
     action_type: ActionType = ActionType.CAST_SPELL
     category: ActionCategory = ActionCategory.STANDARD
+    weapon_type: WeaponType = WeaponType.MAGIC
     level: SpellLevel
-
-    @classmethod
-    def from_spell(cls, spell: AttackSpell) -> Self:
-        return cls(
-            id=f"cast_{spell.name.lower().replace(' ', '_')}",
-            name=spell.name,
-            description=f"Cast attack spell: {spell.description}",
-            source=spell.name,
-            action_type=ActionType.CAST_SPELL,
-            weapon_type=WeaponType.MAGIC,
-            category=spell.casting_time,
-            targeting=spell.targeting,
-            damage_dice=spell.damage_dice,
-            damage_type=spell.damage_type,
-            stat=spell.stat,
-            range=spell.range,
-            level=spell.level,
-            status_effects=spell.effects,
-        )
 
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
@@ -86,27 +67,10 @@ class SupportSpellAction(Action):
     action_type: ActionType = ActionType.CAST_SPELL
     category: ActionCategory = ActionCategory.STANDARD
     level: SpellLevel
-    source: str
     targeting: TargetingType
     stat: StatType
     range: float
     status_effects: list[StatusEffect] = []
-
-    @classmethod
-    def from_spell(cls, spell: SupportSpell) -> Self:
-        return cls(
-            id=f"cast_{spell.name.lower().replace(' ', '_')}",
-            name=spell.name,
-            description=f"Cast support spell: {spell.description}",
-            source=spell.name,
-            action_type=ActionType.CAST_SPELL,
-            category=spell.casting_time,
-            targeting=spell.targeting,
-            stat=spell.stat,
-            range=spell.range,
-            level=spell.level,
-            status_effects=spell.effects,
-        )
 
     def execute(self, actor: Character, target: Character | None) -> None:
         if self.targeting == TargetingType.SELF:

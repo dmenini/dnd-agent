@@ -2,7 +2,7 @@ from typing import Any
 
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.registry import TraitRegistry
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 from agent.models.damage import DamageType
 
 

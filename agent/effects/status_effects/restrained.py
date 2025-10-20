@@ -6,7 +6,7 @@ from agent.effects.registry import TraitRegistry
 from agent.effects.traits import (
     Trait,
 )
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 
 
 class Restrained(StatusEffect):

@@ -4,7 +4,7 @@ from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.registry import TraitRegistry
 from agent.effects.traits import Trait
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 
 MIN_AUTOCRIT_DISTANCE = 5
 

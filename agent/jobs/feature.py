@@ -1,5 +1,13 @@
 from enum import Enum
 
+from pydantic import BaseModel
+
+
+class FeatureType(str, Enum):
+    PASSIVE = "passive"  # trait
+    ACTIVE = "active"  # action
+    SPELL = "spell"
+
 
 class FeatureId(str, Enum):
     """Identifiers for all registered gameplay traits and features."""
@@ -57,3 +65,16 @@ class FeatureId(str, Enum):
 
     # Spells
     MAGIC_MISSILE = "magic_missile"
+    HASTE = "haste"
+
+
+class JobFeature(BaseModel):
+    """Declarative definition of a class feature that becomes a trait or action."""
+
+    ref_id: FeatureId
+    name: str
+    description: str
+    type: FeatureType
+    level_required: int = 1
+    uses_per_rest: int | None = None
+    kwargs: dict = {}

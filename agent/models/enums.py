@@ -23,3 +23,4 @@ class TargetingType(str, Enum):
     SINGLE = "single"
     AREA = "area"
     SELF = "self"
+    MULTI = "multi"

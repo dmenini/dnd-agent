@@ -1,7 +1,7 @@
 from typing import Any
 
 from agent.actions.base import Action
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 
 
 class ActionRegistry:

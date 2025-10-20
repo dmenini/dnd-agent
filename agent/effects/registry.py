@@ -1,7 +1,7 @@
 from typing import Any
 
 from agent.effects.base import Trait
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 
 
 class TraitRegistry:

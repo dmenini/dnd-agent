@@ -1,9 +1,10 @@
 from agent.actions.base import Action
+from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.registry import TraitRegistry
-from agent.equipment.spells import Spell
-from agent.jobs.base import CharacterJob, FeatureType, JobFeature
+from agent.jobs.base import CharacterJob, JobFeature
+from agent.jobs.feature import FeatureType
 from agent.jobs.fighter import Fighter
 from agent.logs.events import LogLevel
 
@@ -11,7 +12,7 @@ from agent.logs.events import LogLevel
 class JobResolver(CharacterBase):
     job: CharacterJob = Fighter
 
-    spells: list[Spell] = []
+    spells: list[AttackSpellAction | SupportSpellAction] = []
     abilities: list[Action] = []
 
     def apply_job_features(self) -> None:
@@ -23,7 +24,7 @@ class JobResolver(CharacterBase):
     def _apply_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
             action = ActionRegistry.create(
-                id_=feature.reference_id,
+                id_=feature.ref_id,
                 name=feature.name,
                 description=feature.description,
                 uses_per_rest=feature.uses_per_rest,
@@ -32,9 +33,21 @@ class JobResolver(CharacterBase):
             self.abilities.append(action)
             self.log_event(f"{self.name} gained ability: {feature.name}", event_type=LogLevel.DETAIL)
 
+        if feature.type == FeatureType.SPELL:
+            spell = ActionRegistry.create(
+                id_=feature.ref_id,
+                name=feature.name,
+                description=feature.description,
+                stat=self.attributes.spellcasting_stat,
+                **feature.kwargs,
+            )
+            if isinstance(spell, (AttackSpellAction, SupportSpellAction)):
+                self.spells.append(spell)
+                self.log_event(f"{self.name} gained spell: {feature.name}", event_type=LogLevel.DETAIL)
+
         elif feature.type == FeatureType.PASSIVE:
             trait = TraitRegistry.create(
-                id_=feature.reference_id,
+                id_=feature.ref_id,
                 source=feature.name,
                 description=feature.description,
                 **feature.kwargs,

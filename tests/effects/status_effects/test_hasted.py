@@ -1,11 +1,13 @@
 from unittest.mock import MagicMock
 
+from agent.actions.common.spell import SupportSpellAction
 from agent.character.character import Character, Party
+from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.status_effects.hasted import Hasted
-from agent.equipment.spells import SupportSpell
 from agent.equipment.weapons import MeleeWeapon, WeaponType
+from agent.jobs.feature import FeatureId
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
@@ -33,12 +35,15 @@ def test_hasted(
         damage_type=DamageType.SLASHING,
     )
 
-    haste = SupportSpell(
+    haste = SupportSpellAction(
+        id=FeatureId.HASTE.value,
         name="Haste",
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        effects=[Hasted(duration=1)],
+        status_effects=[Hasted(duration=1)],
+        level=SpellLevel.LEVEL_1,
+        stat=StatType.WIS,
     )
     hero = Character(
         id=hero_id,
@@ -65,7 +70,7 @@ def test_hasted(
     )
 
     # Turn 1.1: Hero casts Haste on self
-    state = advance_turn(state, result=DecisionResult(action_id="cast_haste", target_ids=[hero_id], description=""))
+    state = advance_turn(state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_ids=[hero_id], description=""))
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
     assert hero.status_effects[0].duration == 1

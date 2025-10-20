@@ -1,5 +1,5 @@
 from agent.character.character import Character
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 from agent.jobs.fighter import Fighter
 
 

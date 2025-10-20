@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class AttackAction(Action):
-    source: str
     targeting: TargetingType
     damage_dice: str
     damage_type: DamageType
@@ -117,7 +116,6 @@ class MainHandAttackAction(AttackAction):
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
-            source=weapon.name,
             description=f"Base Attack with main hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
@@ -139,7 +137,6 @@ class OffHandAttackAction(AttackAction):
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
-            source=weapon.name,
             description=f"Bonus Attack with off hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
@@ -168,7 +165,6 @@ class RangedAttackAction(AttackAction):
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:
         return cls(
-            source=weapon.name,
             description=f"Ranged Attack with {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,

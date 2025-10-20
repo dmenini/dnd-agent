@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from agent.actions.jobs.fighter import SecondWindAction
 from agent.character.character import Character
-from agent.jobs.features import FeatureId
+from agent.jobs.feature import FeatureId
 from agent.mechanics.dice_roller import DiceRoll
 
 

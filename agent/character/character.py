@@ -29,6 +29,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.equip_all()
         self.apply_job_features()
         self.save_proficiencies = self.job.save_proficiencies
+        self.attributes.spellcasting_stat = self.job.primary_stat
 
     @computed_field  # type: ignore[prop-decorator]
     @property

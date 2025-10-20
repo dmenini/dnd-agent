@@ -1,26 +1,10 @@
-from enum import Enum
+from pydantic import BaseModel
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from agent.character.stats import StatType
-from agent.jobs.features import FeatureId
-
-
-class FeatureType(str, Enum):
-    PASSIVE = "passive"  # trait
-    ACTIVE = "active"  # action
-
-
-class JobFeature(BaseModel):
-    """Declarative definition of a class feature that becomes a trait or action."""
-
-    name: str
-    description: str
-    level_required: int
-    type: FeatureType
-    reference_id: FeatureId
-    uses_per_rest: int | None = None
-    kwargs: dict = {}
+from agent.jobs.feature import JobFeature
+from agent.jobs.spells import Spell
 
 
 class CharacterJob(BaseModel):
@@ -30,7 +14,8 @@ class CharacterJob(BaseModel):
     hit_die: int
     primary_stat: StatType
     save_proficiencies: list[StatType]
-    features: list[JobFeature] = Field(default_factory=list)
+    features: list[JobFeature] = []
+    spells: list[Spell] = []
 
     def get_features_for_level(self, level: int) -> list[JobFeature]:
         """Return unlocked features up to the given level."""
