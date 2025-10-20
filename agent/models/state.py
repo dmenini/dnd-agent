@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.position import Position
 
@@ -73,4 +73,4 @@ class State(BaseModel):
             grid[char.pos.y][char.pos.x] = char.icon
 
         map_str = "\n".join(" ".join(row) for row in grid)
-        self.log.log_event(message=map_str, event_type=EventType.MAP)
+        self.log.log_event(message=map_str, event_type=LogLevel.MAP)

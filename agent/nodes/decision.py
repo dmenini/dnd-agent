@@ -13,7 +13,7 @@ from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
 from agent.character.stats import Stats
 from agent.equipment.spells import AttackSpell, SupportSpell
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
 from agent.models.state import DecisionResult, State
 
@@ -77,7 +77,7 @@ class DecisionNode:
 
         if state.verification_result and not state.verification_result.valid and state.verification_result.input:
             # Hide the previous decision that lead to a validation error
-            state.log.hide_last_event(event_type=EventType.MAIN)
+            state.log.hide_last_event(event_type=LogLevel.MAIN)
             validation_event = (
                 f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
                 f"for the following reasons:\n{state.verification_result.reason}"
@@ -108,7 +108,7 @@ class DecisionNode:
 
         state.log.log_newline()
         action_names = [a.name for a in actions.values()]
-        actor.log_event(result.description, event_type=EventType.MAIN)
+        actor.log_event(result.description, event_type=LogLevel.MAIN)
         actor.log_event(f"Available actions: {action_names}")
 
         return state
@@ -120,7 +120,7 @@ class DecisionNode:
         current_is_player = None
 
         limit = 30
-        events = registry.filter(types=[EventType.MAIN])[-limit:]
+        events = registry.filter(types=[LogLevel.MAIN])[-limit:]
         for event in events:
             if not event.show_ai:
                 continue
