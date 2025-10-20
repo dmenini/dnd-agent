@@ -18,7 +18,7 @@ from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.position import Position
 from agent.models.state import Character, State
-from agent.registration import register_actions
+from agent.registration import register_actions, register_traits
 
 MAX_ITER = 100
 
@@ -36,6 +36,7 @@ def main() -> None:
         config = Config.model_validate(config)
 
     register_actions()
+    register_traits()
 
     party_players = Party(id="p1", name="Heroes", is_player_party=True)
     party_enemies = Party(id="p2", name="Goblins", is_player_party=False)

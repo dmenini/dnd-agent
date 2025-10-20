@@ -4,7 +4,7 @@ from pydantic import computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.character.stats import StatType
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 
@@ -29,7 +29,7 @@ class RollResolver(CharacterBase):
     def initiative_roll(self) -> DiceRoll:
         expr = f"{D20}+{self.initiative_modifier}"
         roll = self._dice.roll_with_context(dice_expression=expr)
-        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=EventType.MAIN)
+        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=LogLevel.MAIN)
         return roll
 
     def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:

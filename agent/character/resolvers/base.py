@@ -8,7 +8,8 @@ from agent.character.attributes import Attributes
 from agent.character.modifier import Modifier
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.logs.events import Event, EventType, Icon
+from agent.equipment.armor import Armor
+from agent.logs.events import Event, Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.damage import Damage
@@ -27,7 +28,9 @@ class CharacterBase(BaseModel):
     pos: Position
     attributes: Attributes = Attributes()
 
+    # Defined for typing to work
     action_economy: ActionEconomy
+    armor: Armor | None = None
 
     _event_listeners: dict[str, list[tuple[str, Callable]]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
@@ -81,7 +84,7 @@ class CharacterBase(BaseModel):
         self.log_event(
             f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
             icon=Icon.EFFECT_APPLIED,
-            event_type=EventType.DEBUG,
+            event_type=LogLevel.DEBUG,
         )
 
     def unregister_modifier(self, source_id: str) -> None:
@@ -90,13 +93,13 @@ class CharacterBase(BaseModel):
             self.log_event(
                 f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
                 icon=Icon.EFFECT_APPLIED,
-                event_type=EventType.DEBUG,
+                event_type=LogLevel.DEBUG,
             )
 
     def register_listener(self, event: str, callback: Callable, source_id: str) -> None:
         """Register a listener for a given event name."""
         self._event_listeners[event].append((source_id, callback))
-        self.log_event(f"Registered listener {callback.__name__} for {event}", event_type=EventType.DEBUG)
+        self.log_event(f"Registered listener {callback.__name__} for {event}", event_type=LogLevel.DEBUG)
 
     def unregister_listeners(self, source_id: str) -> None:
         """Remove all listeners registered by a given source (e.g., a trait)."""
@@ -105,7 +108,7 @@ class CharacterBase(BaseModel):
             self._event_listeners[event] = [(sid, cb) for sid, cb in listeners if sid != source_id]
             after = len(self._event_listeners[event])
             if before != after:
-                self.log_event(f"Removed {before - after} listeners from event '{event}'", event_type=EventType.DEBUG)
+                self.log_event(f"Removed {before - after} listeners from event '{event}'", event_type=LogLevel.DEBUG)
 
     def trigger_event(self, event: str, *args: Any, **kwargs: Any) -> None:
         """Trigger all listeners for the given event name."""
@@ -113,10 +116,10 @@ class CharacterBase(BaseModel):
             callback(*args, **kwargs)
 
     def log_event(
-        self, message: str, *, event_type: EventType = EventType.DETAIL, icon: str = "", show_ai: bool = False
+        self, message: str, *, event_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
     ) -> None:
-        icon = self.icon if event_type == EventType.MAIN else icon
-        show_ai = True if event_type == EventType.MAIN else show_ai
+        icon = self.icon if event_type == LogLevel.MAIN else icon
+        show_ai = True if event_type == LogLevel.MAIN else show_ai
         event = Event(
             actor_id=self.id,
             icon=icon or self.icon,

@@ -1,10 +1,11 @@
 from agent.actions.base import Action
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
+from agent.effects.registry import TraitRegistry
 from agent.equipment.spells import Spell
 from agent.jobs.base import CharacterJob, FeatureType, JobFeature
 from agent.jobs.fighter import Fighter
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 
 
 class JobResolver(CharacterBase):
@@ -27,4 +28,13 @@ class JobResolver(CharacterBase):
                 description=feature.description,
             )
             self.abilities.append(action)
-            self.log_event(f"{self.name} gained ability: {feature.name}", event_type=EventType.DETAIL)
+            self.log_event(f"{self.name} gained ability: {feature.name}", event_type=LogLevel.DETAIL)
+
+        elif feature.type == FeatureType.PASSIVE:
+            trait = TraitRegistry.create(
+                id_=feature.reference_id,
+                source=feature.name,
+                description=feature.description,
+            )
+            trait.on_apply(self)
+            self.log_event(f"{self.name} gained passive trait: {feature.name}", event_type=LogLevel.DETAIL)

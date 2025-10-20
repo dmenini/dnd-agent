@@ -1,7 +1,8 @@
 from agent.character.resolvers.base import CharacterBase
-from agent.effects.base import TURN_END, TURN_START, EffectType, StatusEffect
+from agent.effects.base import EffectType, StatusEffect
 from agent.logs.events import Icon
 from agent.mechanics.dice_roller import DiceRoller
+from agent.models.constants import EventType
 
 
 class EffectResolver(CharacterBase):
@@ -59,11 +60,11 @@ class EffectResolver(CharacterBase):
             if is_start:
                 effect.duration -= 1
                 # if not effect.is_expired():
-                self.trigger_event(TURN_START, self)
+                self.trigger_event(EventType.TURN_START, self)
                 if effect.save_mode == "start":
                     self._try_break_free(effect)
             else:
-                self.trigger_event(TURN_END, self)
+                self.trigger_event(EventType.TURN_END, self)
 
             if effect.is_expired():
                 effect.on_expire(self)

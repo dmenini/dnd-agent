@@ -12,9 +12,10 @@ from agent.models.state import DecisionResult, State
 from agent.nodes.combat_engine import CombatEngineNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
-from agent.registration import register_actions
+from agent.registration import register_actions, register_traits
 
 register_actions()
+register_traits()
 
 
 @pytest.fixture
