@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 
 class MovementAction(Action):
-    """Option shown to the Agent"""
-
     id: str = "move"
     name: str = "Movement"
     description: str = "Move on the map to a new position within the range."

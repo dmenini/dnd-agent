@@ -41,7 +41,6 @@ class ActionCategory(str, Enum):
 
 class ActionType(str, Enum):
     ATTACK = "attack"
-    OFF_HAND_ATTACK = "off_attack"
     CAST_SPELL = "cast_spell"
     USE_OBJECT = "use_object"
     DASH = "dash"
@@ -51,6 +50,8 @@ class ActionType(str, Enum):
     DISENGAGE = "disengage"
     HELP = "help"
     HIDE = "hide"
+    OFF_HAND_ATTACK = "off_attack"  # bonus
+    SPECIAL = "special"  # bonus
 
 
 class Action(BaseModel):

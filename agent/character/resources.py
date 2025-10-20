@@ -110,6 +110,7 @@ class ActionEconomy(BaseModel):
 
         base_allowed = [
             ActionType.OFF_HAND_ATTACK,
+            ActionType.SPECIAL,
         ]
 
         # Check normal rules

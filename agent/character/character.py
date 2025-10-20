@@ -4,6 +4,7 @@ from pydantic import BaseModel, computed_field
 
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
+from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.logs.events import EventType, Icon
@@ -16,7 +17,7 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(EffectResolver, EquipmentResolver, RollResolver):
+class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     party: Party
 
     spell_slots: SpellSlots = SpellSlots()
@@ -26,6 +27,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver):
     def model_post_init(self, _: Any, /) -> None:
         # Equip to apply traits
         self.equip_all()
+        self.apply_job_features()
 
     @computed_field  # type: ignore[prop-decorator]
     @property

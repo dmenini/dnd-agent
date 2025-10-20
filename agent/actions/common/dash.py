@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 
 class DashAction(Action):
-    """Option shown to the Agent"""
-
     id: str = "dash"
     name: str = "Dash"
     description: str = "Dash on the map to a new position within double the range."

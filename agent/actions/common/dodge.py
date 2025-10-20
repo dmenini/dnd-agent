@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
 
 class DodgeAction(Action):
-    """Option shown to the Agent"""
-
     id: str = "dodge"
     name: str = "Dodge"
     description: str = "Prepare to dodge in the next turn."

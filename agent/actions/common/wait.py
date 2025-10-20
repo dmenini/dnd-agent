@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
 
 class WaitAction(Action):
-    """Option shown to the Agent"""
-
     id: str = "wait"
     name: str = "Wait"
     description: str = "Pass turn."

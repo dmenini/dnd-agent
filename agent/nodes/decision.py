@@ -176,6 +176,6 @@ class DecisionNode:
                 all_actions.append(action)
 
         # Special abilities (can have their own categories)
-        all_actions += actor.special_abilities
+        all_actions += actor.abilities
 
         return {action.id: action for action in all_actions if action.is_available(actor.action_economy)}
