@@ -2,9 +2,9 @@
 
 from logging import getLogger
 
-from agent.actions.attack import AttackAction
-from agent.actions.dash import DashAction
-from agent.actions.move import MovementAction
+from agent.actions.common.attack import AttackAction
+from agent.actions.common.dash import DashAction
+from agent.actions.common.move import MovementAction
 from agent.logs.events import EventType
 from agent.models.enums import TargetingType
 from agent.models.position import Position

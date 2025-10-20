@@ -3,13 +3,13 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
 from agent.actions.base import Action
-from agent.actions.dash import DashAction
-from agent.actions.dodge import DodgeAction
-from agent.actions.move import MovementAction
-from agent.actions.spell import AttackSpellAction, SupportSpellAction
-from agent.actions.wait import WaitAction
+from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
+from agent.actions.common.dash import DashAction
+from agent.actions.common.dodge import DodgeAction
+from agent.actions.common.move import MovementAction
+from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
 from agent.character.stats import Stats
 from agent.equipment.spells import AttackSpell, SupportSpell

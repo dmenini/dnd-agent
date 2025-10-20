@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-from agent.actions.attack import AttackAction
 from agent.actions.base import Action, ActionCategory, ActionType
+from agent.actions.common.attack import AttackAction
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
