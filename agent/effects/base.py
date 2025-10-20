@@ -1,16 +1,29 @@
 from __future__ import annotations
 
+import uuid
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
+from anthropic import BaseModel
 from pydantic import PrivateAttr
 
 from agent.character.stats import StatType
-from agent.effects.traits import Trait
-from agent.models.context import CombatContext
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
+
+TURN_START = "turn_start"
+TURN_END = "turn_end"
+COMBAT_START = "combat_start"
+COMBAT_END = "combat_end"
+APPLY_DAMAGE = "apply_damage"
+RECEIVE_DAMAGE = "receive_damage"
+
+
+class Priority:
+    HIGH: int = -100  # Execute first
+    MEDIUM: int = 0
+    LOW: int = 100  # Execute last
 
 
 class EffectType(str, Enum):
@@ -22,6 +35,23 @@ class EffectType(str, Enum):
     RESTRAINED = "restrained"
     LETHARGIC = "lethargic"
     CUSTOM = "custom"
+
+
+class Trait(BaseModel):
+    _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
+    _priority: int = PrivateAttr(default_factory=lambda: Priority.MEDIUM)
+
+    @property
+    def priority(self) -> int:
+        return self._priority
+
+    def on_apply(self, target: CharacterBase) -> None:
+        """Call when the effect is first applied."""
+
+    def on_expire(self, target: CharacterBase) -> None:
+        """Call when the effect is first applied."""
+        target.unregister_modifier(self._id)
+        target.unregister_listeners(self._id)
 
 
 class StatusEffect(Trait):
@@ -49,42 +79,6 @@ class StatusEffect(Trait):
         super().on_expire(target)
         for trait in self.traits:
             trait.on_expire(target)
-
-    def on_turn_start(self, target: CharacterBase) -> None:
-        """Call at the start of the target's turn."""
-        super().on_turn_start(target)
-        for trait in self.traits:
-            trait.on_turn_start(target)
-
-    def on_turn_end(self, target: CharacterBase) -> None:
-        """Call at the end of the target's turn."""
-        super().on_turn_end(target)
-        for trait in self.traits:
-            trait.on_turn_end(target)
-
-    def on_receive_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Modify damage taken."""
-        super().on_receive_damage(actor, target, ctx)
-        for trait in self.traits:
-            trait.on_receive_damage(actor, target, ctx)
-
-    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Modify outgoing damage."""
-        super().on_apply_damage(actor, target, ctx)
-        for trait in self.traits:
-            trait.on_apply_damage(actor, target, ctx)
-
-    def on_combat_start(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Call at the start of combat."""
-        super().on_combat_start(actor, target, ctx)
-        for trait in self.traits:
-            trait.on_combat_start(actor, target, ctx)
-
-    def on_combat_end(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Call at the end of combat."""
-        super().on_combat_end(actor, target, ctx)
-        for trait in self.traits:
-            trait.on_combat_end(actor, target, ctx)
 
     def is_expired(self) -> bool:
         return self.duration <= 0

@@ -7,9 +7,9 @@ from langchain_core.runnables import RunnableConfig
 
 from agent.character.attributes import Attributes
 from agent.character.character import Party
-from agent.effects.hasted import Hasted
-from agent.effects.poisoned import Poisoned
-from agent.effects.stunned import Stunned
+from agent.effects.status_effects.hasted import Hasted
+from agent.effects.status_effects.poisoned import Poisoned
+from agent.effects.status_effects.stunned import Stunned
 from agent.equipment.spells import AttackSpell, SupportSpell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.graph import build_graph

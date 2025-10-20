@@ -1,62 +1,32 @@
 from __future__ import annotations
 
-import math
-import uuid
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import Field
 
-from agent.actions.base import ActionCategory, ActionType
 from agent.character.modifier import Modifier
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
-from agent.models.context import CombatContext
-from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
+from agent.effects.base import APPLY_DAMAGE, COMBAT_START, RECEIVE_DAMAGE, TURN_END, TURN_START, Priority, Trait
+from agent.effects.trait_effects.damage import (
+    auto_crit_if_melee_effect,
+    damage_bonus_effect,
+    damage_multiplier_effect,
+    damage_over_time_effect,
+    ignore_resistance_effect,
+    reflect_melee_damage_effect,
+)
+from agent.effects.trait_effects.support import life_steal_effect, regeneration_effect
+from agent.effects.trait_effects.turn import (
+    cannot_act_effect,
+    cannot_move_effect,
+    extra_actions_effect,
+    half_attacks_effect,
+)
+from agent.models.damage import DamageType
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
-
-MELEE_RANGE = 5
-
-
-class Priority:
-    HIGH: int = -100  # Execute first
-    MEDIUM: int = 0
-    LOW: int = 100  # Execute last
-
-
-class Trait(BaseModel):
-    _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
-    _priority: int = PrivateAttr(default_factory=lambda: Priority.MEDIUM)
-
-    @property
-    def priority(self) -> int:
-        return self._priority
-
-    def on_apply(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-
-    def on_expire(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-        target.remove_modifier(self._id)
-
-    def on_turn_start(self, target: CharacterBase) -> None:
-        """Call at the start of the target's turn."""
-
-    def on_turn_end(self, target: CharacterBase) -> None:
-        """Call at the end of the target's turn."""
-
-    def on_combat_start(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Call at the start of the combat turn."""
-
-    def on_combat_end(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Call at the end of the combat turn."""
-
-    def on_receive_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Modify damage taken."""
-
-    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
-        """Modify outgoing damage."""
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):
@@ -64,7 +34,7 @@ class AttackerDisadvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.defense"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
@@ -72,7 +42,7 @@ class AttackerAdvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "advantage.defense"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
@@ -80,7 +50,7 @@ class TargetDisadvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.attack"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class TargetAdvantageOnAttackRoll(Trait):
@@ -88,7 +58,7 @@ class TargetAdvantageOnAttackRoll(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "advantage.attack"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class DisadvantageOnSavingThrow(Trait):
@@ -98,7 +68,7 @@ class DisadvantageOnSavingThrow(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = f"save_disadvantage.{self.stat.name.lower()}"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class AdvantageOnSavingThrow(Trait):
@@ -108,7 +78,7 @@ class AdvantageOnSavingThrow(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = f"save_advantage.{self.stat.name.lower()}"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class FailOnSavingThrow(Trait):
@@ -118,7 +88,7 @@ class FailOnSavingThrow(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = f"save_autofail.{self.stat.name.lower()}"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class SpeedMultiplier(Trait):
@@ -128,7 +98,7 @@ class SpeedMultiplier(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "speed"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="mul"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="mul"))
 
 
 class SpeedBonus(Trait):
@@ -138,7 +108,7 @@ class SpeedBonus(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "speed"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
 
 class ACBonus(Trait):
@@ -148,16 +118,7 @@ class ACBonus(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "ac"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
-
-
-class AutoCritIfMelee(Trait):
-    """Give automatic critical in melee range to target."""
-
-    def on_combat_start(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
-        is_melee = actor.distance(target.pos) <= MELEE_RANGE
-        if is_melee:
-            context.is_critical = True
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
 
 class CriticalRollBonus(Trait):
@@ -167,130 +128,7 @@ class CriticalRollBonus(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "crit_roll_bonus"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=-self.value, operation="add"))
-
-
-class DamageOverTime(Trait):
-    """The target receives extra damage of the given type every turn."""
-
-    value: int
-    damage_type: DamageType
-    _priority = Priority.HIGH
-
-    def on_turn_end(self, target: CharacterBase) -> None:
-        damage = Damage(components=[DamageComponent(value=self.value, type=self.damage_type)])
-        damage = target.modify_incoming_damage(damage)
-        target.apply_damage(damage=damage.total)
-
-
-class CannotMove(Trait):
-    """Target cannot move."""
-
-    def on_turn_start(self, target: CharacterBase) -> None:
-        target.action_economy.movement_available = False
-
-
-class CannotAct(Trait):
-    """Target cannot take actions (include standard, bonus and reaction)."""
-
-    def on_turn_start(self, target: CharacterBase) -> None:
-        target.action_economy.can_act = False
-
-
-class ExtraActions(Trait):
-    """Give extra actions to the target."""
-
-    extensions: list[ActionExtension]
-
-    def on_turn_start(self, target: CharacterBase) -> None:
-        target.action_economy.action_extensions.extend(self.extensions)
-
-
-class HalfAttacks(Trait):
-    """Halve the number of attack-type actions granted by effects."""
-
-    _priority: int = Priority.LOW
-
-    def on_turn_start(self, target: CharacterBase) -> None:
-        economy = target.action_economy
-
-        # Collect all extensions that add extra standard actions
-        attack_extensions = [
-            ext
-            for ext in economy.action_extensions
-            if ext.category == ActionCategory.STANDARD
-            and ext.allowed_actions
-            and ActionType.ATTACK in ext.allowed_actions
-        ]
-
-        # If there are multiple attack extensions we keep half of them active rounded up
-        keep_count = math.ceil(len(attack_extensions) / 2)
-
-        # Limit the number of usable attack-type extensions
-        to_remove = attack_extensions[keep_count:]
-        for ext in to_remove:
-            economy.action_extensions.remove(ext)
-
-
-class ReflectMeleeDamage(Trait):
-    """Reflect a portion of the received damage of the given type to the attacker."""
-
-    ratio: float = Field(default=0.1, ge=0, le=1)
-    damage_type: DamageType
-    _priority = Priority.LOW  # Execute last
-
-    def on_receive_damage(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
-        if context.damage and actor.distance(target.pos) <= MELEE_RANGE:
-            value = context.damage.total * self.ratio
-            damage = Damage(components=[DamageComponent(value=value, type=self.damage_type)])
-            damage = actor.modify_incoming_damage(damage)
-            actor.apply_damage(damage=damage.total)
-
-
-class LifeSteal(Trait):
-    """Heal target by a portion of the damage inflicted."""
-
-    ratio: float = Field(default=0.1, ge=0, le=1)
-    _priority = Priority.LOW  # Execute last
-
-    def on_apply_damage(self, actor: CharacterBase, _: CharacterBase, context: CombatContext) -> None:
-        if context.damage is not None:
-            heal = math.ceil(context.damage.total * self.ratio)
-            actor.heal(heal)
-
-
-class DamageBonus(Trait):
-    """Add a bonus damage component of a given type."""
-
-    value: int
-    damage_type: DamageType
-
-    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:  # noqa: ARG002
-        if context.damage is not None:
-            context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type, operation="add"))
-
-
-class DamageMultiplier(Trait):
-    """Multiply the damage component of a given type by a given factor."""
-
-    value: int = Field(ge=0)
-    damage_type: DamageType
-
-    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:  # noqa: ARG002
-        if context.damage is not None:
-            context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type, operation="mul"))
-
-
-class IgnoreResistance(Trait):
-    """Ignore target resistance to a given damage type."""
-
-    damage_type: DamageType
-
-    def on_apply_damage(self, _: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
-        res = target.attributes.damage_resistance(self.damage_type)
-        if res and res.value > 0 and context.damage is not None:
-            # Balance the resistance by adding the opposite vulnerability component
-            context.damage.vulnerabilities.append(DamageVulnerability(value=res.value, type=self.damage_type))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=-self.value, operation="add"))
 
 
 class Resistance(Trait):
@@ -301,7 +139,7 @@ class Resistance(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = f"resistance.{self.damage_type.value}"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
 
 class Immunity(Trait):
@@ -311,7 +149,7 @@ class Immunity(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = f"resistance.{self.damage_type.value}"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=1.0, operation="add"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=1.0, operation="add"))
 
 
 class Vulnerability(Trait):
@@ -322,7 +160,7 @@ class Vulnerability(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = f"vulnerability.{self.damage_type.value}"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
 
 class SpellResistance(Trait):
@@ -330,7 +168,7 @@ class SpellResistance(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "save_advantage.spell"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class SpellWeakness(Trait):
@@ -338,7 +176,7 @@ class SpellWeakness(Trait):
 
     def on_apply(self, target: CharacterBase) -> None:
         attr = "save_disadvantage.spell"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
 class StealthDisadvantage(Trait):
@@ -347,7 +185,135 @@ class StealthDisadvantage(Trait):
     # TODO: Implement check
     def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.stealth"
-        target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+
+
+class AutoCritIfMelee(Trait):
+    """Give automatic critical hits when in melee range."""
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(COMBAT_START, callback=auto_crit_if_melee_effect, source_id=self._id)
+
+
+class DamageOverTime(Trait):
+    """Deals damage each turn."""
+
+    value: int
+    damage_type: DamageType
+    _priority = Priority.HIGH
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            TURN_END,
+            callback=lambda t: damage_over_time_effect(t, self.value, self.damage_type),
+            source_id=self._id,
+        )
+
+
+class CannotMove(Trait):
+    """The target cannot move during its turn."""
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(TURN_START, callback=cannot_move_effect, source_id=self._id)
+
+
+class CannotAct(Trait):
+    """The target cannot take any actions during its turn."""
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(TURN_START, callback=cannot_act_effect, source_id=self._id)
+
+
+class ExtraActions(Trait):
+    """Grants additional actions to the target at the start of its turn."""
+
+    extensions: list[ActionExtension]
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            TURN_START,
+            callback=lambda t: extra_actions_effect(t, self.extensions),
+            source_id=self._id,
+        )
+
+
+class HalfAttacks(Trait):
+    """Reduces the number of attack-type extra actions by half, rounded up."""
+
+    _priority: int = Priority.LOW
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(TURN_START, callback=half_attacks_effect, source_id=self._id)
+
+
+class ReflectMeleeDamage(Trait):
+    """Reflects a portion of melee damage received back to the attacker."""
+
+    ratio: float = Field(default=0.1, ge=0, le=1)
+    damage_type: DamageType
+    _priority = Priority.LOW
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            RECEIVE_DAMAGE,
+            callback=lambda a, t, ctx: reflect_melee_damage_effect(a, t, ctx, self.ratio, self.damage_type),
+            source_id=self._id,
+        )
+
+
+class LifeSteal(Trait):
+    """Heals the attacker by a portion of the damage they deal."""
+
+    ratio: float = Field(default=0.1, ge=0, le=1)
+    _priority = Priority.LOW
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            APPLY_DAMAGE,
+            lambda actor, ctx: life_steal_effect(actor, ctx, self.ratio),
+            source_id=self._id,
+        )
+
+
+class DamageBonus(Trait):
+    """Adds a bonus damage component of a given type to all damage dealt."""
+
+    value: int
+    damage_type: DamageType
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            APPLY_DAMAGE,
+            lambda t, ctx: damage_bonus_effect(t, ctx, self.value, self.damage_type),
+            source_id=self._id,
+        )
+
+
+class DamageMultiplier(Trait):
+    """Multiplies damage of a specific type by the given factor."""
+
+    value: float = Field(ge=0)
+    damage_type: DamageType
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            APPLY_DAMAGE,
+            lambda t, ctx: damage_multiplier_effect(t, ctx, self.value, self.damage_type),
+            source_id=self._id,
+        )
+
+
+class IgnoreResistance(Trait):
+    """Negates the target's resistance to a specific damage type."""
+
+    damage_type: DamageType
+
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            APPLY_DAMAGE,
+            lambda a, t, ctx: ignore_resistance_effect(a, t, ctx, self.damage_type),
+            source_id=self._id,
+        )
 
 
 class Regeneration(Trait):
@@ -355,5 +321,9 @@ class Regeneration(Trait):
 
     value: int
 
-    def on_turn_start(self, target: CharacterBase) -> None:
-        target.heal(self.value)
+    def on_apply(self, target: CharacterBase) -> None:
+        target.register_listener(
+            TURN_START,
+            lambda t: regeneration_effect(t, self.value),
+            source_id=self._id,
+        )

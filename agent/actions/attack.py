@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Self
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import StatusEffect
+from agent.effects.base import APPLY_DAMAGE, COMBAT_END, COMBAT_START, RECEIVE_DAMAGE, StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
 from agent.models.context import CombatContext
@@ -68,15 +68,13 @@ class AttackAction(Action):
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
 
         # Apply actor status effects
-        for effect in actor.status_effects:
-            effect.on_apply_damage(actor, target, ctx)
+        target.trigger_event(APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)
 
         # Apply target status effects
-        for effect in target.status_effects:
-            effect.on_receive_damage(actor, target, ctx)
+        target.trigger_event(RECEIVE_DAMAGE, actor, target, ctx)
 
         # Apply damage
         total_damage = ctx.damage.total
@@ -100,18 +98,12 @@ class AttackAction(Action):
         return mod + prof_bonus
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        for eff in actor.status_effects:
-            eff.on_combat_start(actor, target, ctx)
-
-        for eff in target.status_effects:
-            eff.on_combat_start(actor, target, ctx)
+        actor.trigger_event(COMBAT_START, actor, target, ctx)
+        target.trigger_event(COMBAT_START, actor, target, ctx)
 
     def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        for eff in actor.status_effects:
-            eff.on_combat_end(actor, target, ctx)
-
-        for eff in target.status_effects:
-            eff.on_combat_end(actor, target, ctx)
+        actor.trigger_event(COMBAT_END, actor, target, ctx)
+        target.trigger_event(COMBAT_END, actor, target, ctx)
 
 
 class MainHandAttackAction(AttackAction):

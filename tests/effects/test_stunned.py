@@ -4,7 +4,7 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
-from agent.effects.stunned import Stunned
+from agent.effects.status_effects.stunned import Stunned
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig

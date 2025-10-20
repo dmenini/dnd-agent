@@ -1,4 +1,8 @@
-from pydantic import BaseModel, computed_field
+from collections import defaultdict
+from collections.abc import Callable
+from typing import Any
+
+from pydantic import BaseModel, PrivateAttr, computed_field
 
 from agent.character.attributes import Attributes
 from agent.character.modifier import Modifier
@@ -24,6 +28,8 @@ class CharacterBase(BaseModel):
     attributes: Attributes = Attributes()
 
     action_economy: ActionEconomy
+
+    _event_listeners: dict[str, list[tuple[str, Callable]]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -70,7 +76,7 @@ class CharacterBase(BaseModel):
                 damage.vulnerabilities.append(vul)
         return damage
 
-    def add_modifier(self, modifier: Modifier) -> None:
+    def register_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)
         self.log_event(
             f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
@@ -78,7 +84,7 @@ class CharacterBase(BaseModel):
             event_type=EventType.DEBUG,
         )
 
-    def remove_modifier(self, source_id: str) -> None:
+    def unregister_modifier(self, source_id: str) -> None:
         modifier = self.attributes.remove_modifier(source_id)
         if modifier:
             self.log_event(
@@ -86,6 +92,25 @@ class CharacterBase(BaseModel):
                 icon=Icon.EFFECT_APPLIED,
                 event_type=EventType.DEBUG,
             )
+
+    def register_listener(self, event: str, callback: Callable, source_id: str) -> None:
+        """Register a listener for a given event name."""
+        self._event_listeners[event].append((source_id, callback))
+        self.log_event(f"Registered listener {callback.__name__} for {event}", event_type=EventType.DEBUG)
+
+    def unregister_listeners(self, source_id: str) -> None:
+        """Remove all listeners registered by a given source (e.g., a trait)."""
+        for event, listeners in self._event_listeners.items():
+            before = len(listeners)
+            self._event_listeners[event] = [(sid, cb) for sid, cb in listeners if sid != source_id]
+            after = len(self._event_listeners[event])
+            if before != after:
+                self.log_event(f"Removed {before - after} listeners from event '{event}'", event_type=EventType.DEBUG)
+
+    def trigger_event(self, event: str, *args: Any, **kwargs: Any) -> None:
+        """Trigger all listeners for the given event name."""
+        for _, callback in list(self._event_listeners.get(event, [])):
+            callback(*args, **kwargs)
 
     def log_event(
         self, message: str, *, event_type: EventType = EventType.DETAIL, icon: str = "", show_ai: bool = False

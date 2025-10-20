@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
-from agent.effects.hasted import Hasted
+from agent.effects.status_effects.hasted import Hasted
 from agent.equipment.spells import SupportSpell
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll

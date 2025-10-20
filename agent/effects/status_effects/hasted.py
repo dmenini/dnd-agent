@@ -2,7 +2,7 @@ from agent.actions.base import ActionCategory, ActionType
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
-from agent.effects.lethargic import Lethargic
+from agent.effects.status_effects.lethargic import Lethargic
 from agent.effects.traits import ACBonus, AdvantageOnSavingThrow, ExtraActions, SpeedMultiplier, Trait
 
 
