@@ -1,6 +1,7 @@
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.character import Character
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
+
 
 class SecondWindAction(Action):
     id: str
@@ -13,7 +14,7 @@ class SecondWindAction(Action):
     def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
         heal_amount = actor.damage_roll(expr="1d10").total + actor.level
         actor.heal(heal_amount)
-        actor.log_event(f"{actor.name} heals {heal_amount} HP.", event_type=EventType.DETAIL)
+        actor.log_event(f"{actor.name} heals {heal_amount} HP.", event_type=LogLevel.DETAIL)
 
     def finalize(self, actor: Character) -> None:
         """Consume resources."""

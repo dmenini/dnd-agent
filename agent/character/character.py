@@ -7,7 +7,7 @@ from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.logs.events import EventType, Icon
+from agent.logs.events import Icon, LogLevel
 from agent.models.position import Position
 
 
@@ -39,13 +39,13 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
     def start_turn(self) -> None:
-        self.log_event(f"{self.name} starts turn", event_type=EventType.DEBUG)
+        self.log_event(f"{self.name} starts turn", event_type=LogLevel.DEBUG)
         self.turn_done = False
         self.action_economy.restore_turn()
         self.try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
-        self.log_event(f"{self.name} ends turn", event_type=EventType.DEBUG)
+        self.log_event(f"{self.name} ends turn", event_type=LogLevel.DEBUG)
         self.try_expire_effects(is_start=False)
         self.turn_done = True
 
