@@ -26,6 +26,8 @@ class JobResolver(CharacterBase):
                 id_=feature.reference_id,
                 name=feature.name,
                 description=feature.description,
+                uses_per_rest=feature.uses_per_rest,
+                **feature.kwargs,
             )
             self.abilities.append(action)
             self.log_event(f"{self.name} gained ability: {feature.name}", event_type=LogLevel.DETAIL)
@@ -35,6 +37,7 @@ class JobResolver(CharacterBase):
                 id_=feature.reference_id,
                 source=feature.name,
                 description=feature.description,
+                **feature.kwargs,
             )
             trait.on_apply(self)
             self.log_event(f"{self.name} gained passive trait: {feature.name}", event_type=LogLevel.DETAIL)

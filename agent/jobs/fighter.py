@@ -14,11 +14,12 @@ Fighter = CharacterJob(
             description="+1 to AC while wearing armor.",
             level_required=1,
             type=FeatureType.PASSIVE,
+            kwargs={"value": 1},
         ),
         JobFeature(
             reference_id=FeatureId.SECOND_WIND,
             name="Second Wind",
-            description="Regain 1d10 + level HP as a bonus action once per short rest.",
+            description="Regain 1d10 + level HP as a bonus action once per combat.",
             level_required=1,
             type=FeatureType.ACTIVE,
             uses_per_rest=1,

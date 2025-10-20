@@ -133,6 +133,16 @@ class ACBonusWithArmor(ACBonus):
             super().on_apply(target)
 
 
+class ACBonusWithoutArmor(ACBonus):
+    """Grant a bonus to the target Armor Class (AC) while wearing armor."""
+
+    value: int = Field(default=3)
+
+    def on_apply(self, target: CharacterBase) -> None:
+        if not target.armor:
+            super().on_apply(target)
+
+
 class CriticalRollBonus(Trait):
     """Add a bonus to the target critical roll (e.g. value=1 -> target can roll 19 for a critical instead of 20."""
 

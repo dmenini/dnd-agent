@@ -23,6 +23,7 @@ class FeatureId(str, Enum):
     # Armor / AC
     AC_BONUS = "ac_bonus"
     AC_BONUS_WITH_ARMOR = "ac_bonus_with_armor"
+    AC_BONUS_WITHOUT_ARMOR = "ac_bonus_without_armor"
 
     # Combat Behavior
     CRITICAL_ROLL_BONUS = "critical_roll_bonus"
@@ -48,7 +49,11 @@ class FeatureId(str, Enum):
     # Regeneration & Lifesteal
     REGENERATION = "regeneration"
     LIFE_STEAL = "life_steal"
+    ARCANE_RECOVERY = "arcane_recovery"
 
     # Reflection & Retaliation
     REFLECT_MELEE_DAMAGE = "reflect_melee_damage"
     SECOND_WIND = "second_wind"
+
+    # Spells
+    MAGIC_MISSILE = "magic_missile"

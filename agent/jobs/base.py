@@ -20,6 +20,7 @@ class JobFeature(BaseModel):
     type: FeatureType
     reference_id: FeatureId
     uses_per_rest: int | None = None
+    kwargs: dict = {}
 
 
 class CharacterJob(BaseModel):

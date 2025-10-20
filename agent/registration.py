@@ -1,4 +1,6 @@
+from agent.actions.common.spell import AttackSpellAction
 from agent.actions.jobs.fighter import SecondWindAction
+from agent.actions.jobs.mage import ArcaneRecoveryAction
 from agent.actions.registry import ActionRegistry
 from agent.effects import traits
 from agent.effects.registry import TraitRegistry
@@ -7,6 +9,8 @@ from agent.jobs.features import FeatureId
 
 def register_actions() -> None:
     ActionRegistry.register(FeatureId.SECOND_WIND, SecondWindAction)
+    ActionRegistry.register(FeatureId.MAGIC_MISSILE, AttackSpellAction)
+    ActionRegistry.register(FeatureId.ARCANE_RECOVERY, ArcaneRecoveryAction)
 
 
 def register_traits() -> None:
@@ -29,6 +33,7 @@ def register_traits() -> None:
     # Armor / AC
     TraitRegistry.register(FeatureId.AC_BONUS, traits.ACBonus)
     TraitRegistry.register(FeatureId.AC_BONUS_WITH_ARMOR, traits.ACBonusWithArmor)
+    TraitRegistry.register(FeatureId.AC_BONUS_WITHOUT_ARMOR, traits.ACBonusWithoutArmor)
 
     # Combat and attack behavior
     TraitRegistry.register(FeatureId.CRITICAL_ROLL_BONUS, traits.CriticalRollBonus)
