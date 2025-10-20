@@ -4,7 +4,7 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
-from agent.effects.paralyzed import Paralyzed
+from agent.effects.status_effects.paralyzed import Paralyzed
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
@@ -77,9 +77,9 @@ def test_paralyzed(
     assert orc.attributes.get_modifiers("save_autofail.str")[0].value is True
     assert orc.attributes.get_modifiers("save_autofail.dex")[0].value is True
 
-    assert orc.attributes.compute_advantage("defense") == 1
-    assert orc.attributes.compute_save_autofail(StatType.STR) is True
-    assert orc.attributes.compute_save_autofail(StatType.DEX) is True
+    assert orc.attributes.advantage("defense") == 1
+    assert orc.attributes.save_autofail(StatType.STR) is True
+    assert orc.attributes.save_autofail(StatType.DEX) is True
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 

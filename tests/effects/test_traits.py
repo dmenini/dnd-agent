@@ -14,10 +14,6 @@ class CustomEffect(StatusEffect):
         Resistance(value=0.25, damage_type=DamageType.COLD),
     ]
 
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
-        self.duration -= 1
-
 
 def test_same_effects() -> None:
     party_players = Party(id="p1", name="Heroes", is_player_party=True)
@@ -35,7 +31,7 @@ def test_same_effects() -> None:
     effect1 = CustomEffect()
     effect2 = CustomEffect()
 
-    hero.apply_status(effect1)
+    hero.apply_effect(effect1)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
@@ -43,13 +39,14 @@ def test_same_effects() -> None:
     assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
     hero.end_turn()
+    hero.start_turn()
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    hero.apply_status(effect2)
+    hero.apply_effect(effect2)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
@@ -80,8 +77,8 @@ def test_different_traits() -> None:
     assert attrs.get_modifiers("resistance.fire")[0].value == value
     assert attrs.get_modifiers("vulnerability.fire")[0].value == value
 
-    assert attrs.compute_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
-    assert attrs.compute_vulnerability(DamageType.FIRE) == DamageVulnerability(value=value, type=DamageType.FIRE)
+    assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
+    assert attrs.damage_vulnerability(DamageType.FIRE) == DamageVulnerability(value=value, type=DamageType.FIRE)
 
     hero.start_turn()
     hero.end_turn()
@@ -113,4 +110,4 @@ def test_same_traits() -> None:
     assert attrs.get_modifiers("resistance.fire")[0].value == value
     assert attrs.get_modifiers("resistance.fire")[1].value == value
 
-    assert attrs.compute_resistance(DamageType.FIRE) == DamageResistance(value=value * 2, type=DamageType.FIRE)
+    assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value * 2, type=DamageType.FIRE)

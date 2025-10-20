@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from agent.actions.base import Action, ActionCategory, ActionType
-from agent.effects.dodge import Dodge
+from agent.effects.status_effects.dodge import Dodge
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
@@ -23,4 +23,4 @@ class DodgeAction(Action):
 
     def execute(self, actor: Character, target: Any) -> None:  # noqa: ARG002
         effect = Dodge(duration=1)
-        actor.apply_status(effect)
+        actor.apply_effect(effect)

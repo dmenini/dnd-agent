@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Self
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import StatusEffect
+from agent.effects.base import APPLY_DAMAGE, COMBAT_END, COMBAT_START, RECEIVE_DAMAGE, StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
 from agent.models.context import CombatContext
@@ -29,19 +29,21 @@ class AttackAction(Action):
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
 
+        self._fire_start_events(actor, target, ctx)
         self._resolve_attack(actor, target, ctx)
 
         # Apply damage if any
-        if ctx.damage:
+        if ctx.is_hit:
             self._apply_damage(actor, target, ctx)
 
-    def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        self._fire_end_events(actor, target, ctx)
+
+    def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
-        is_critical = roll.raw == actor.attributes.compute_crit_roll()
-        is_critical = is_critical or any(eff.is_auto_crit(actor, target) for eff in target.status_effects)
+        ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
         ctx.hit_roll = roll
-        ctx.is_critical = is_critical
+        ctx.is_hit = ctx.is_critical or roll.total >= target.armor_class
 
         if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
@@ -49,16 +51,15 @@ class AttackAction(Action):
         else:
             # Check attack roll result
             actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
-
-            if roll.total < target.armor_class:
+            if ctx.is_hit:
+                actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
+            else:
                 actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
-                ctx.is_hit = False
-                return ctx
 
-            actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
+        return ctx.is_hit
 
-        ctx.is_hit = True
-
+    def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        # Damage roll
         mod = self._attack_modifier(actor)
         expr = f"{self.damage_dice}+{mod}"
         droll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
@@ -66,22 +67,14 @@ class AttackAction(Action):
         ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
 
-        return ctx
-
-    def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
-        if ctx.damage is None:
-            return ctx
-
         # Apply actor status effects
-        for effect in actor.status_effects:
-            effect.on_apply_damage(actor, target, ctx)
+        target.trigger_event(APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)
 
         # Apply target status effects
-        for effect in target.status_effects:
-            effect.on_receive_damage(actor, target, ctx)
+        target.trigger_event(RECEIVE_DAMAGE, actor, target, ctx)
 
         # Apply damage
         total_damage = ctx.damage.total
@@ -95,14 +88,22 @@ class AttackAction(Action):
 
         # Try to apply status effects
         for effect in self.status_effects:
-            target.try_apply_status(effect)
+            target.try_apply_effect(effect)
 
         return ctx
 
     def _attack_modifier(self, actor: Character) -> int:
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
-        mod = actor.stats.modifier(self.stat)
+        mod = actor.attributes.stat_modifier(self.stat)
         return mod + prof_bonus
+
+    def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        actor.trigger_event(COMBAT_START, actor, target, ctx)
+        target.trigger_event(COMBAT_START, actor, target, ctx)
+
+    def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        actor.trigger_event(COMBAT_END, actor, target, ctx)
+        target.trigger_event(COMBAT_END, actor, target, ctx)
 
 
 class MainHandAttackAction(AttackAction):

@@ -10,7 +10,6 @@ from agent.effects.base import StatusEffect
 from agent.equipment.weapons import WeaponType
 from agent.logs.events import Icon
 from agent.models.context import CombatContext
-from agent.models.damage import Damage, DamageComponent
 from agent.models.enums import (
     TargetingType,
 )
@@ -49,14 +48,16 @@ class AttackSpellAction(AttackAction):
 
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
-
-        self._resolve_saving_throw(actor, target, ctx)
+        self._fire_start_events(actor, target, ctx)
+        is_hit = self._resolve_saving_throw(actor, target, ctx)
 
         # Apply damage if any
-        if ctx.damage:
+        if is_hit:
             self._apply_damage(actor, target, ctx)
 
-    def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
+        self._fire_end_events(actor, target, ctx)
+
+    def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
         save_roll = target.save_roll(save_stat=self.stat, is_spell=True)
 
@@ -66,19 +67,11 @@ class AttackSpellAction(AttackAction):
         actor.log_event(f"{self.stat.name} save: {save_roll.total} vs DC {dc}", icon=Icon.ROLL)
 
         if ctx.is_hit:
-            actor.log_event(f"Save roll passed -> Target resists {self.name}!", icon=Icon.DEFENSE)
+            actor.log_event(f"Save roll passed → Target resists {self.name}!", icon=Icon.DEFENSE)
         else:
             actor.log_event("Save roll failed → Hits target!", icon=Icon.ATTACK)
 
-            # Only apply damage if save failed
-            mod = self._attack_modifier(actor)
-            expr = f"{self.damage_dice}+{mod}"
-            droll = actor.damage_roll(expr=expr, is_critical=False)
-            ctx.damage_roll = droll
-            ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
-            actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
-
-        return ctx
+        return ctx.is_hit
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""
@@ -125,7 +118,7 @@ class SupportSpellAction(Action):
 
     def _execute_on_target(self, target: Character) -> None:
         for effect in self.status_effects:
-            target.try_apply_status(effect)
+            target.try_apply_effect(effect)
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""

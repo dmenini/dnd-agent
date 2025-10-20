@@ -1,13 +1,6 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import AttackerAdvantageOnAttackRoll, CannotAct, CannotMove, FailOnSavingThrow, Trait
-
-if TYPE_CHECKING:
-    from agent.character.character import Character
 
 
 class Stunned(StatusEffect):
@@ -27,7 +20,3 @@ class Stunned(StatusEffect):
         FailOnSavingThrow(stat=StatType.STR),
         FailOnSavingThrow(stat=StatType.DEX),
     ]
-
-    def on_turn_end(self, target: Character) -> None:
-        super().on_turn_end(target)
-        self.duration -= 1

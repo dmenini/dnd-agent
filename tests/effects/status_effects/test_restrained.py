@@ -4,7 +4,7 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
-from agent.effects.stunned import Stunned
+from agent.effects.status_effects.restrained import Restrained
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
@@ -15,7 +15,7 @@ from agent.models.state import DecisionResult, State
 from tests.conftest import advance_turn
 
 
-def test_stunned(
+def test_restrained(
     config: AgentConfig,
 ) -> None:
     hero_id = "hero"
@@ -31,7 +31,7 @@ def test_stunned(
         weapon_type=WeaponType.MARTIAL_MELEE,
         range=2,
         targeting=TargetingType.SINGLE,
-        effects=[Stunned(duration=2)],
+        effects=[Restrained(duration=2)],
     )
     hero = Character(
         id=hero_id,
@@ -42,13 +42,23 @@ def test_stunned(
         party=party_players,
         main_hand=sword,
     )
+
+    starting_hp = 20
     orc = Character(
         id=orc_id,
         name="Orc Grunt",
         icon="👹",
+        attributes=Attributes(hp=starting_hp),
         pos=Position(x=4, y=2),
-        attributes=Attributes(hp=20),
         party=party_enemies,
+        main_hand=MeleeWeapon(
+            name="Sword",
+            damage_dice="2d6",
+            range=2,
+            targeting=TargetingType.SINGLE,
+            weapon_type=WeaponType.SIMPLE_MELEE,
+            damage_type=DamageType.SLASHING,
+        ),
     )
 
     state = State(
@@ -60,46 +70,45 @@ def test_stunned(
     hero._dice = MagicMock()
     value1 = 15
     hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    orc._dice = MagicMock()
-    orc._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
+    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
 
-    # Turn 1.1: Hero attacks and applies stun
+    # Turn 1.1: Hero attacks and applies restrained
     state = advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
     )
     orc = state.characters[orc_id]
-    assert orc.status_effects[0].type == EffectType.STUNNED
+    assert orc.attributes.hp == starting_hp - value1
+    assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 2
-    assert orc.attributes.get_modifiers("advantage.defense")[0].value == 1
-    assert orc.attributes.get_modifiers("save_autofail.str")[0].value is True
-    assert orc.attributes.get_modifiers("save_autofail.dex")[0].value is True
-
-    assert orc.attributes.compute_advantage("defense") == 1
-    assert orc.attributes.compute_save_autofail(StatType.STR) is True
-    assert orc.attributes.compute_save_autofail(StatType.DEX) is True
+    assert orc.attributes.get_modifiers("advantage.defense")[0].value is True
+    assert orc.attributes.get_modifiers("disadvantage.attack")[0].value is True
+    assert orc.attributes.get_modifiers("save_disadvantage.dex")[0].value is True
+    assert orc.attributes.advantage("defense") == 1
+    assert orc.attributes.advantage("attack") == -1
+    assert orc.attributes.stat_save_advantage(StatType.DEX) == -1
 
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
-    # Turn 1.2: Orc stunned -> skip turn
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
-    assert state.action is None
-    assert state.decision is None
+    # Turn 1.2: Orc restrained -> after attack no more actions available and passes (no need to wait)
+    state = advance_turn(
+        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[hero_id], description="")
+    )
 
     orc = state.characters[orc_id]
-    assert orc.status_effects[0].type == EffectType.STUNNED
+    assert orc.status_effects[0].type == EffectType.RESTRAINED
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Pass
+    assert state.current_actor.id == hero_id
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
-    # Turn 2.2: Orc still stunned -> skip turn
+    # Turn 2.2: Orc still restrained -> skip turn
     state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
-    assert state.action is None
-    assert state.decision is None
 
-    # Stunned expires after 2 turns
+    # Paralysis expires after 2 turns
     orc = state.current_actor
     assert len(orc.status_effects) == 0
-    assert orc.attributes.get_modifiers("advantage.defense") == []
-    assert orc.attributes.get_modifiers("save_autofail.str") == []
-    assert orc.attributes.get_modifiers("save_autofail.dec") == []
+    assert orc.attributes.get_modifiers("defense_advantage") == []
+    assert orc.attributes.get_modifiers("attack_advantage") == []
+    assert orc.attributes.get_modifiers("dex_save_advantage") == []
