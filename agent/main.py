@@ -6,12 +6,12 @@ import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
 from agent.character.attributes import Attributes
-from agent.character.character import MeleeWeapon, Party, RangedWeapon
+from agent.character.character import Party
 from agent.effects.hasted import Hasted
 from agent.effects.poisoned import Poisoned
 from agent.effects.stunned import Stunned
 from agent.equipment.spells import AttackSpell, SupportSpell
-from agent.equipment.weapons import UNARMED, WeaponType
+from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.graph import build_graph
 from agent.models.config import Config
 from agent.models.damage import DamageType

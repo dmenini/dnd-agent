@@ -1,4 +1,5 @@
 from agent.character.character import Character, Party
+from agent.character.resolvers.base import CharacterBase
 from agent.effects.base import EffectType, StatusEffect
 from agent.effects.traits import Resistance, Trait, Vulnerability
 from agent.equipment.armor import Accessory
@@ -14,7 +15,7 @@ class CustomEffect(StatusEffect):
         Resistance(value=0.25, damage_type=DamageType.COLD),
     ]
 
-    def on_turn_end(self, target: Character) -> None:
+    def on_turn_end(self, target: CharacterBase) -> None:
         super().on_turn_end(target)
         self.duration -= 1
 
@@ -35,7 +36,7 @@ def test_same_effects() -> None:
     effect1 = CustomEffect()
     effect2 = CustomEffect()
 
-    hero.apply_status(effect1)
+    hero.apply_effect(effect1)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2
@@ -49,7 +50,7 @@ def test_same_effects() -> None:
     assert hero.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert hero.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    hero.apply_status(effect2)
+    hero.apply_effect(effect2)
 
     assert hero.status_effects[0].type == EffectType.CUSTOM
     assert hero.status_effects[0].duration == 2

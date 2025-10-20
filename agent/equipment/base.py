@@ -9,7 +9,7 @@ from agent.effects.base import StatusEffect
 from agent.effects.traits import Trait
 
 if TYPE_CHECKING:
-    from agent.character.character import Character
+    from agent.character.resolvers.base import CharacterBase
 
 
 class Rarity(str, Enum):
@@ -35,12 +35,10 @@ class Equipment(BaseModel):
     traits: list[Trait] = []  # passive effects
     effects: list[StatusEffect] = []  # triggered effects
 
-    def on_equip(self, character: Character) -> None:
+    def on_equip(self, character: CharacterBase) -> None:
         for trait in sorted(self.traits, key=lambda t: t.priority):
-            if hasattr(trait, "on_apply"):
-                trait.on_apply(character)
+            trait.on_apply(character)
 
-    def on_unequip(self, character: Character) -> None:
+    def on_unequip(self, character: CharacterBase) -> None:
         for trait in sorted(self.traits, key=lambda t: t.priority):
-            if hasattr(trait, "on_expire"):
-                trait.on_expire(character)
+            trait.on_expire(character)

@@ -14,7 +14,7 @@ from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
 
 if TYPE_CHECKING:
-    from agent.character.character import Character
+    from agent.character.resolvers.base import CharacterBase
 
 MELEE_RANGE = 5
 
@@ -33,36 +33,36 @@ class Trait(BaseModel):
     def priority(self) -> int:
         return self._priority
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         """Call when the effect is first applied."""
 
-    def on_expire(self, target: Character) -> None:
+    def on_expire(self, target: CharacterBase) -> None:
         """Call when the effect is first applied."""
         target.remove_modifier(self._id)
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         """Call at the start of the target's turn."""
 
-    def on_turn_end(self, target: Character) -> None:
+    def on_turn_end(self, target: CharacterBase) -> None:
         """Call at the end of the target's turn."""
 
-    def on_combat_start(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_combat_start(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Call at the start of the combat turn."""
 
-    def on_combat_end(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_combat_end(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Call at the end of the combat turn."""
 
-    def on_receive_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_receive_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Modify damage taken."""
 
-    def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Modify outgoing damage."""
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):
     """Give disadvantage on attack roll to attacker."""
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.defense"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -70,7 +70,7 @@ class AttackerDisadvantageOnAttackRoll(Trait):
 class AttackerAdvantageOnAttackRoll(Trait):
     """Give advantage on attack roll to attacker."""
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "advantage.defense"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -78,7 +78,7 @@ class AttackerAdvantageOnAttackRoll(Trait):
 class TargetDisadvantageOnAttackRoll(Trait):
     """Give disadvantage on attack roll to target."""
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.attack"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -86,7 +86,7 @@ class TargetDisadvantageOnAttackRoll(Trait):
 class TargetAdvantageOnAttackRoll(Trait):
     """Give advantage on attack roll to target."""
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "advantage.attack"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -96,7 +96,7 @@ class DisadvantageOnSavingThrow(Trait):
 
     stat: StatType
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = f"save_disadvantage.{self.stat.name.lower()}"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -106,7 +106,7 @@ class AdvantageOnSavingThrow(Trait):
 
     stat: StatType
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = f"save_advantage.{self.stat.name.lower()}"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -116,7 +116,7 @@ class FailOnSavingThrow(Trait):
 
     stat: StatType
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = f"save_autofail.{self.stat.name.lower()}"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -126,7 +126,7 @@ class SpeedMultiplier(Trait):
 
     value: float = Field(ge=0)
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "speed"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="mul"))
 
@@ -136,7 +136,7 @@ class SpeedBonus(Trait):
 
     value: float
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "speed"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
@@ -146,7 +146,7 @@ class ACBonus(Trait):
 
     value: int
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "ac"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
@@ -154,7 +154,7 @@ class ACBonus(Trait):
 class AutoCritIfMelee(Trait):
     """Give automatic critical in melee range to target."""
 
-    def on_combat_start(self, actor: Character, target: Character, context: CombatContext) -> None:
+    def on_combat_start(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
         is_melee = actor.distance(target.pos) <= MELEE_RANGE
         if is_melee:
             context.is_critical = True
@@ -165,7 +165,7 @@ class CriticalRollBonus(Trait):
 
     value: int
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "crit_roll_bonus"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=-self.value, operation="add"))
 
@@ -177,7 +177,7 @@ class DamageOverTime(Trait):
     damage_type: DamageType
     _priority = Priority.HIGH
 
-    def on_turn_end(self, target: Character) -> None:
+    def on_turn_end(self, target: CharacterBase) -> None:
         damage = Damage(components=[DamageComponent(value=self.value, type=self.damage_type)])
         damage = target.modify_incoming_damage(damage)
         target.apply_damage(damage=damage.total)
@@ -186,14 +186,14 @@ class DamageOverTime(Trait):
 class CannotMove(Trait):
     """Target cannot move."""
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         target.action_economy.movement_available = False
 
 
 class CannotAct(Trait):
     """Target cannot take actions (include standard, bonus and reaction)."""
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         target.action_economy.can_act = False
 
 
@@ -202,7 +202,7 @@ class ExtraActions(Trait):
 
     extensions: list[ActionExtension]
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         target.action_economy.action_extensions.extend(self.extensions)
 
 
@@ -211,7 +211,7 @@ class HalfAttacks(Trait):
 
     _priority: int = Priority.LOW
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         economy = target.action_economy
 
         # Collect all extensions that add extra standard actions
@@ -239,7 +239,7 @@ class ReflectMeleeDamage(Trait):
     damage_type: DamageType
     _priority = Priority.LOW  # Execute last
 
-    def on_receive_damage(self, actor: Character, target: Character, context: CombatContext) -> None:
+    def on_receive_damage(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
         if context.damage and actor.distance(target.pos) <= MELEE_RANGE:
             value = context.damage.total * self.ratio
             damage = Damage(components=[DamageComponent(value=value, type=self.damage_type)])
@@ -253,7 +253,7 @@ class LifeSteal(Trait):
     ratio: float = Field(default=0.1, ge=0, le=1)
     _priority = Priority.LOW  # Execute last
 
-    def on_apply_damage(self, actor: Character, _: Character, context: CombatContext) -> None:
+    def on_apply_damage(self, actor: CharacterBase, _: CharacterBase, context: CombatContext) -> None:
         if context.damage is not None:
             heal = math.ceil(context.damage.total * self.ratio)
             actor.heal(heal)
@@ -265,7 +265,7 @@ class DamageBonus(Trait):
     value: int
     damage_type: DamageType
 
-    def on_apply_damage(self, actor: Character, target: Character, context: CombatContext) -> None:  # noqa: ARG002
+    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:  # noqa: ARG002
         if context.damage is not None:
             context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type, operation="add"))
 
@@ -276,7 +276,7 @@ class DamageMultiplier(Trait):
     value: int = Field(ge=0)
     damage_type: DamageType
 
-    def on_apply_damage(self, actor: Character, target: Character, context: CombatContext) -> None:  # noqa: ARG002
+    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:  # noqa: ARG002
         if context.damage is not None:
             context.damage.components.append(DamageComponent(value=self.value, type=self.damage_type, operation="mul"))
 
@@ -286,7 +286,7 @@ class IgnoreResistance(Trait):
 
     damage_type: DamageType
 
-    def on_apply_damage(self, _: Character, target: Character, context: CombatContext) -> None:
+    def on_apply_damage(self, _: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
         res = target.attributes.damage_resistance(self.damage_type)
         if res and res.value > 0 and context.damage is not None:
             # Balance the resistance by adding the opposite vulnerability component
@@ -299,7 +299,7 @@ class Resistance(Trait):
     value: float
     damage_type: DamageType
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = f"resistance.{self.damage_type.value}"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
@@ -309,7 +309,7 @@ class Immunity(Trait):
 
     damage_type: DamageType
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = f"resistance.{self.damage_type.value}"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=1.0, operation="add"))
 
@@ -320,7 +320,7 @@ class Vulnerability(Trait):
     value: float
     damage_type: DamageType
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = f"vulnerability.{self.damage_type.value}"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
 
@@ -328,7 +328,7 @@ class Vulnerability(Trait):
 class SpellResistance(Trait):
     """Give spell save advantage to target."""
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "save_advantage.spell"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -336,7 +336,7 @@ class SpellResistance(Trait):
 class SpellWeakness(Trait):
     """Give spell save disadvantage to target."""
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "save_disadvantage.spell"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -345,7 +345,7 @@ class StealthDisadvantage(Trait):
     """Give stealth check disadvantage to target."""
 
     # TODO: Implement check
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.stealth"
         target.add_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
@@ -355,5 +355,5 @@ class Regeneration(Trait):
 
     value: int
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         target.heal(self.value)

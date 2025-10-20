@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Self, TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
@@ -90,7 +90,7 @@ class AttackAction(Action):
 
         # Try to apply status effects
         for effect in self.status_effects:
-            target.try_apply_status(effect)
+            target.try_apply_effect(effect)
 
         return ctx
 

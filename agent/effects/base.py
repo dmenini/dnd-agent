@@ -10,7 +10,7 @@ from agent.effects.traits import Trait
 from agent.models.context import CombatContext
 
 if TYPE_CHECKING:
-    from agent.character.character import Character
+    from agent.character.resolvers.base import CharacterBase
 
 
 class EffectType(str, Enum):
@@ -38,49 +38,49 @@ class StatusEffect(Trait):
     def traits(self) -> list[Trait]:
         return sorted(self._traits, key=lambda t: t.priority)
 
-    def on_apply(self, target: Character) -> None:
+    def on_apply(self, target: CharacterBase) -> None:
         """Call when the effect is first applied."""
         super().on_apply(target)
         for trait in self.traits:
             trait.on_apply(target)
 
-    def on_expire(self, target: Character) -> None:
+    def on_expire(self, target: CharacterBase) -> None:
         """Call when the effect is first applied."""
         super().on_expire(target)
         for trait in self.traits:
             trait.on_expire(target)
 
-    def on_turn_start(self, target: Character) -> None:
+    def on_turn_start(self, target: CharacterBase) -> None:
         """Call at the start of the target's turn."""
         super().on_turn_start(target)
         for trait in self.traits:
             trait.on_turn_start(target)
 
-    def on_turn_end(self, target: Character) -> None:
+    def on_turn_end(self, target: CharacterBase) -> None:
         """Call at the end of the target's turn."""
         super().on_turn_end(target)
         for trait in self.traits:
             trait.on_turn_end(target)
 
-    def on_receive_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_receive_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Modify damage taken."""
         super().on_receive_damage(actor, target, ctx)
         for trait in self.traits:
             trait.on_receive_damage(actor, target, ctx)
 
-    def on_apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_apply_damage(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Modify outgoing damage."""
         super().on_apply_damage(actor, target, ctx)
         for trait in self.traits:
             trait.on_apply_damage(actor, target, ctx)
 
-    def on_combat_start(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_combat_start(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Call at the start of combat."""
         super().on_combat_start(actor, target, ctx)
         for trait in self.traits:
             trait.on_combat_start(actor, target, ctx)
 
-    def on_combat_end(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+    def on_combat_end(self, actor: CharacterBase, target: CharacterBase, ctx: CombatContext) -> None:
         """Call at the end of combat."""
         super().on_combat_end(actor, target, ctx)
         for trait in self.traits:
