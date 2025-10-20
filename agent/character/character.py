@@ -28,6 +28,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         # Equip to apply traits
         self.equip_all()
         self.apply_job_features()
+        self.save_proficiencies = self.job.save_proficiencies
 
     @computed_field  # type: ignore[prop-decorator]
     @property

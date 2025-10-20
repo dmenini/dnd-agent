@@ -12,7 +12,7 @@ D20 = "1d20"
 
 
 class RollResolver(CharacterBase):
-    proficient_saves: list[StatType] = []
+    save_proficiencies: list[StatType] = []
 
     _dice: DiceRoller = DiceRoller()
 
@@ -63,7 +63,7 @@ class RollResolver(CharacterBase):
 
         # Roll the d20 (with advantage/disadvantage if applicable)
         ability_mod = self.attributes.stat_modifier(save_stat)
-        prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
+        prof_bonus = self.proficiency_bonus if save_stat in self.save_proficiencies else 0
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
