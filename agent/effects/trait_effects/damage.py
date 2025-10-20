@@ -28,8 +28,9 @@ def damage_over_time_effect(target: CharacterBase, value: int, damage_type: Dama
 def reflect_melee_damage_effect(
     actor: CharacterBase, target: CharacterBase, context: CombatContext, ratio: float, damage_type: DamageType
 ) -> None:
-    if context.damage and actor.distance(target.pos) <= MELEE_RANGE:
-        value = context.damage.total * ratio
+    has_damage = context.damage and any(c.type == damage_type for c in context.damage.components)
+    if has_damage and actor.distance(target.pos) <= MELEE_RANGE:
+        value = context.damage.total * ratio  # type: ignore[union-attr]
         damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
         damage = actor.modify_incoming_damage(damage)
         actor.apply_damage(damage.total)

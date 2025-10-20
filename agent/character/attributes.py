@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, Literal
 
-from pydantic import Field, PrivateAttr
+from pydantic import ConfigDict, Field, PrivateAttr
 
 from agent.character.modifier import Modifier, ModifierRegistry
 from agent.character.stats import Stats, StatType
@@ -31,6 +31,8 @@ class Attributes(Stats):
     base_vulnerability: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
 
     _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
+
+    model_config = ConfigDict(extra="allow")  # To mock during tests
 
     def max_hp(self, level: int) -> int:
         """HP grows with level and Constitution modifier."""
