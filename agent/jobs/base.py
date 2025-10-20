@@ -3,6 +3,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from agent.character.stats import StatType
+from agent.jobs.features import FeatureId
 
 
 class FeatureType(str, Enum):
@@ -17,7 +18,7 @@ class JobFeature(BaseModel):
     description: str
     level_required: int
     type: FeatureType
-    reference_id: str
+    reference_id: FeatureId
     uses_per_rest: int | None = None
 
 

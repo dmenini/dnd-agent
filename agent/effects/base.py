@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 from anthropic import BaseModel
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, computed_field
 
 from agent.character.stats import StatType
 
@@ -58,6 +58,7 @@ class StatusEffect(Trait):
 
     _traits: list[Trait] = PrivateAttr(default_factory=list)
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def traits(self) -> list[Trait]:
         return sorted(self._traits, key=lambda t: t.priority)

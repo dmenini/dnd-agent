@@ -1,12 +1,12 @@
+from typing import Any
+
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
+from agent.effects.registry import TraitRegistry
 from agent.effects.traits import (
-    AttackerAdvantageOnAttackRoll,
-    CannotMove,
-    DisadvantageOnSavingThrow,
-    TargetDisadvantageOnAttackRoll,
     Trait,
 )
+from agent.jobs.features import FeatureId
 
 
 class Restrained(StatusEffect):
@@ -19,9 +19,11 @@ class Restrained(StatusEffect):
     """
 
     type: EffectType = EffectType.RESTRAINED
-    _traits: list[Trait] = [
-        CannotMove(),
-        DisadvantageOnSavingThrow(stat=StatType.DEX),
-        AttackerAdvantageOnAttackRoll(),
-        TargetDisadvantageOnAttackRoll(),
-    ]
+
+    def model_post_init(self, _: Any) -> None:
+        self._traits: list[Trait] = [
+            TraitRegistry.create(FeatureId.CANNOT_MOVE),
+            TraitRegistry.create(FeatureId.SAVE_DISADVANTAGE, stat=StatType.DEX),
+            TraitRegistry.create(FeatureId.ATTACKER_ADVANTAGE),
+            TraitRegistry.create(FeatureId.TARGET_DISADVANTAGE),
+        ]

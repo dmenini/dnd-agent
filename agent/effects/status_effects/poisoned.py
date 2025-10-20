@@ -1,7 +1,8 @@
 from typing import Any
 
 from agent.effects.base import EffectType, StatusEffect
-from agent.effects.traits import DamageOverTime, TargetDisadvantageOnAttackRoll
+from agent.effects.registry import TraitRegistry
+from agent.jobs.features import FeatureId
 from agent.models.damage import DamageType
 
 
@@ -16,6 +17,6 @@ class Poisoned(StatusEffect):
 
     def model_post_init(self, _: Any) -> None:
         self._traits = [
-            TargetDisadvantageOnAttackRoll(),
-            DamageOverTime(value=self.damage, damage_type=DamageType.POISON),
+            TraitRegistry.create(FeatureId.TARGET_DISADVANTAGE),
+            TraitRegistry.create(FeatureId.DAMAGE_OVER_TIME, value=self.damage, damage_type=DamageType.POISON),
         ]
