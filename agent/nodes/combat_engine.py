@@ -1,13 +1,13 @@
 from logging import getLogger
 
-from agent.actions.attack import (
+from agent.actions.common.attack import (
     AttackAction,
 )
-from agent.actions.dash import DashAction
-from agent.actions.dodge import DodgeAction
-from agent.actions.move import MovementAction
-from agent.actions.spell import SupportSpellAction
-from agent.actions.wait import WaitAction
+from agent.actions.common.dash import DashAction
+from agent.actions.common.dodge import DodgeAction
+from agent.actions.common.move import MovementAction
+from agent.actions.common.spell import SupportSpellAction
+from agent.actions.common.wait import WaitAction
 from agent.models.state import State
 
 ATTACK_ROLL_EXPR = "1d20"

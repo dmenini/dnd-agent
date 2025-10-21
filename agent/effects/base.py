@@ -5,19 +5,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 from anthropic import BaseModel
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, computed_field
 
 from agent.character.stats import StatType
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
-
-TURN_START = "turn_start"
-TURN_END = "turn_end"
-COMBAT_START = "combat_start"
-COMBAT_END = "combat_end"
-APPLY_DAMAGE = "apply_damage"
-RECEIVE_DAMAGE = "receive_damage"
 
 
 class Priority:
@@ -38,8 +31,9 @@ class EffectType(str, Enum):
 
 
 class Trait(BaseModel):
-    _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
-    _priority: int = PrivateAttr(default_factory=lambda: Priority.MEDIUM)
+    source: str = ""
+    _id: str = PrivateAttr(default=str(uuid.uuid4()))
+    _priority: int = PrivateAttr(default=Priority.MEDIUM)
 
     @property
     def priority(self) -> int:
@@ -64,6 +58,7 @@ class StatusEffect(Trait):
 
     _traits: list[Trait] = PrivateAttr(default_factory=list)
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def traits(self) -> list[Trait]:
         return sorted(self._traits, key=lambda t: t.priority)
@@ -72,6 +67,7 @@ class StatusEffect(Trait):
         """Call when the effect is first applied."""
         super().on_apply(target)
         for trait in self.traits:
+            trait.source = self.__class__.__name__
             trait.on_apply(target)
 
     def on_expire(self, target: CharacterBase) -> None:

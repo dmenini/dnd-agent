@@ -1,12 +1,14 @@
 from typing import Any
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
+from agent.actions.base import LimitedBonusAction
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
+from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.logs.events import EventType, Icon
+from agent.logs.events import Icon, LogLevel
 from agent.models.position import Position
 
 
@@ -16,16 +18,21 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(EffectResolver, EquipmentResolver, RollResolver):
+class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     party: Party
 
     spell_slots: SpellSlots = SpellSlots()
     action_economy: ActionEconomy = ActionEconomy()
     turn_done: bool = True
 
+    model_config = ConfigDict(extra="allow")  # To mock during tests
+
     def model_post_init(self, _: Any, /) -> None:
-        # Equip to apply traits
         self.equip_all()
+        self.apply_job_features()
+
+        # Assign attributes
+        self.attributes.hp = self.max_hp
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -37,18 +44,23 @@ class Character(EffectResolver, EquipmentResolver, RollResolver):
         self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
     def start_turn(self) -> None:
-        self.log_event(f"{self.name} starts turn", event_type=EventType.DEBUG)
+        self.log_event(f"{self.name} starts turn", event_type=LogLevel.DEBUG)
         self.turn_done = False
         self.action_economy.restore_turn()
         self.try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
-        self.log_event(f"{self.name} ends turn", event_type=EventType.DEBUG)
+        self.log_event(f"{self.name} ends turn", event_type=LogLevel.DEBUG)
         self.try_expire_effects(is_start=False)
         self.turn_done = True
 
     def end_round(self) -> None:
         self.action_economy.restore_reaction()
+
+        # TODO: This should be done on rest
+        for ability in self.abilities:
+            if isinstance(ability, LimitedBonusAction):
+                ability.rest()
 
     def has_resources(self) -> bool:
         has_bonus = self.off_hand is not None and (self.action_economy.can_use_bonus())

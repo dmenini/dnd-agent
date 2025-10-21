@@ -12,6 +12,10 @@ from agent.models.state import DecisionResult, State
 from agent.nodes.combat_engine import CombatEngineNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
+from agent.registration import register_actions, register_traits
+
+register_actions()
+register_traits()
 
 
 @pytest.fixture
@@ -27,7 +31,7 @@ def config() -> AgentConfig:
 @pytest.fixture
 def fake_llm(mocker: MockerFixture) -> BaseChatModel:
     """A fake LLM that always returns a fixed decision."""
-    llm = mocker.MagicMock(stub=BaseChatModel)
+    llm = mocker.MagicMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
     return llm
 
@@ -68,7 +72,7 @@ def target() -> Character:
 
 
 def advance_turn(state: State, result: DecisionResult) -> State:
-    llm = MagicMock(stub=BaseChatModel)
+    llm = MagicMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
     llm.invoke.return_value = result
 

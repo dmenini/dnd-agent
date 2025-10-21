@@ -1,9 +1,7 @@
 from pydantic import computed_field
 
-from agent.actions.base import Action
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Accessory, Armor, Shield
-from agent.equipment.spells import Spell
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.log_registry import get_log_registry
 
@@ -19,9 +17,6 @@ class EquipmentResolver(CharacterBase):
     main_hand: MeleeWeapon | None = UNARMED
     off_hand: MeleeWeapon | None = None
     ranged: RangedWeapon | None = None
-
-    spells: list[Spell] = []
-    special_abilities: list[Action] = []
 
     @computed_field  # type: ignore[prop-decorator]
     @property

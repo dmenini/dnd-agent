@@ -4,7 +4,7 @@ from pydantic import computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.character.stats import StatType
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 
@@ -12,8 +12,6 @@ D20 = "1d20"
 
 
 class RollResolver(CharacterBase):
-    proficient_saves: list[StatType] = []
-
     _dice: DiceRoller = DiceRoller()
 
     @computed_field  # type: ignore[prop-decorator]
@@ -29,7 +27,7 @@ class RollResolver(CharacterBase):
     def initiative_roll(self) -> DiceRoll:
         expr = f"{D20}+{self.initiative_modifier}"
         roll = self._dice.roll_with_context(dice_expression=expr)
-        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=EventType.MAIN)
+        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=LogLevel.MAIN)
         return roll
 
     def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
@@ -63,7 +61,7 @@ class RollResolver(CharacterBase):
 
         # Roll the d20 (with advantage/disadvantage if applicable)
         ability_mod = self.attributes.stat_modifier(save_stat)
-        prof_bonus = self.proficiency_bonus if save_stat in self.proficient_saves else 0
+        prof_bonus = self.proficiency_bonus if save_stat in self.attributes.save_proficiencies else 0
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)

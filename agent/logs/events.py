@@ -18,7 +18,7 @@ class Icon:
     EFFECT_EXPIRED = "✨"
 
 
-class EventType(str, Enum):
+class LogLevel(str, Enum):
     HEADER = "header"  # Narrative main events
     MAIN = "main"  # Narrative main events
     DETAIL = "detail"  # Step-by-step debug info
@@ -38,7 +38,7 @@ class Event(BaseModel):
     actor_id: str | None = None
     icon: str | None = "⚙️"
     message: str
-    type: EventType = EventType.MAIN
+    type: LogLevel = LogLevel.MAIN
     timestamp: datetime = datetime.now(tz=UTC)
     show_ai: bool = False
     actor_name: str | None = None
@@ -64,24 +64,24 @@ class Event(BaseModel):
         result = Text(msg)
 
         # Event formatting based on type
-        if self.type == EventType.HEADER:
+        if self.type == LogLevel.HEADER:
             header_line = Text(self.message, style=f"bold {color}")
             separator = Text("─" * 40, style="dim")
             result = Text.assemble("\n", header_line, "\n", separator)
 
-        elif self.type == EventType.MAIN:
+        elif self.type == LogLevel.MAIN:
             icon = self.icon or "⚔️"
             result = Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
 
-        elif (self.type == EventType.DETAIL and verbosity >= Verbosity.DETAIL) or (
-            self.type == EventType.DEBUG and verbosity >= Verbosity.DEBUG
+        elif (self.type == LogLevel.DETAIL and verbosity >= Verbosity.DETAIL) or (
+            self.type == LogLevel.DEBUG and verbosity >= Verbosity.DEBUG
         ):
             result = Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
 
-        elif self.type == EventType.SYSTEM:
+        elif self.type == LogLevel.SYSTEM:
             result = Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
 
-        elif self.type == EventType.MAP:
+        elif self.type == LogLevel.MAP:
             separator = Text("─" * 40, style="dim")
             result = Text.assemble(msg, "\n", separator)
 

@@ -15,6 +15,7 @@ class DamageType(str, Enum):
     LIGHTNING = "lightning"
     NECROTIC = "necrotic"
     RADIANT = "radiant"
+    FORCE = "force"
 
 
 class DamageComponent(BaseModel):

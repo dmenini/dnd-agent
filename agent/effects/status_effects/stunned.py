@@ -1,6 +1,10 @@
+from typing import Any
+
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
-from agent.effects.traits import AttackerAdvantageOnAttackRoll, CannotAct, CannotMove, FailOnSavingThrow, Trait
+from agent.effects.registry import TraitRegistry
+from agent.effects.traits import Trait
+from agent.jobs.feature import FeatureId
 
 
 class Stunned(StatusEffect):
@@ -13,10 +17,12 @@ class Stunned(StatusEffect):
     """
 
     type: EffectType = EffectType.STUNNED
-    _traits: list[Trait] = [
-        CannotAct(),
-        CannotMove(),
-        AttackerAdvantageOnAttackRoll(),
-        FailOnSavingThrow(stat=StatType.STR),
-        FailOnSavingThrow(stat=StatType.DEX),
-    ]
+
+    def model_post_init(self, _: Any) -> None:
+        self._traits: list[Trait] = [
+            TraitRegistry.create(FeatureId.CANNOT_ACT),
+            TraitRegistry.create(FeatureId.CANNOT_MOVE),
+            TraitRegistry.create(FeatureId.ATTACKER_ADVANTAGE),
+            TraitRegistry.create(FeatureId.SAVE_FAIL, stat=StatType.STR),
+            TraitRegistry.create(FeatureId.SAVE_FAIL, stat=StatType.DEX),
+        ]

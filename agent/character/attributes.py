@@ -10,11 +10,12 @@ from agent.models.damage import DamageResistance, DamageType, DamageVulnerabilit
 
 
 class Attributes(Stats):
-    hp: int = 8
+    hp: int = 15
     spellcasting_stat: StatType = StatType.INT
+    save_proficiencies: list[StatType] = []
 
     # Base scalar attributes
-    base_hp: int = 8
+    base_hp: int = 15
     base_ac: int = 0
     base_speed: float = 6.0
     base_crit_roll_bonus: int = 0

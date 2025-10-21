@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import APPLY_DAMAGE, COMBAT_END, COMBAT_START, RECEIVE_DAMAGE, StatusEffect
+from agent.effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
+from agent.models.constants import EventType
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import TargetingType
@@ -17,7 +19,6 @@ if TYPE_CHECKING:
 
 
 class AttackAction(Action):
-    source: str
     targeting: TargetingType
     damage_dice: str
     damage_type: DamageType
@@ -68,13 +69,13 @@ class AttackAction(Action):
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
 
         # Apply actor status effects
-        target.trigger_event(APPLY_DAMAGE, actor, target, ctx)
+        target.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)
 
         # Apply target status effects
-        target.trigger_event(RECEIVE_DAMAGE, actor, target, ctx)
+        target.trigger_event(EventType.RECEIVE_DAMAGE, actor, target, ctx)
 
         # Apply damage
         total_damage = ctx.damage.total
@@ -93,17 +94,25 @@ class AttackAction(Action):
         return ctx
 
     def _attack_modifier(self, actor: Character) -> int:
+        # Parse existing modifier from the dice expression (e.g. "1d8+2" → base="1d8", base_mod=2)
+        match = re.match(r"^(\d+d\d+)([+-]\d+)?$", self.damage_dice.strip())
+        if match:
+            base_expr, base_mod_str = match.groups()
+            base_mod = int(base_mod_str) if base_mod_str else 0
+        else:
+            base_mod = 0
+
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
         mod = actor.attributes.stat_modifier(self.stat)
-        return mod + prof_bonus
+        return base_mod + mod + prof_bonus
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        actor.trigger_event(COMBAT_START, actor, target, ctx)
-        target.trigger_event(COMBAT_START, actor, target, ctx)
+        actor.trigger_event(EventType.COMBAT_START, actor, target, ctx)
+        target.trigger_event(EventType.COMBAT_START, actor, target, ctx)
 
     def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        actor.trigger_event(COMBAT_END, actor, target, ctx)
-        target.trigger_event(COMBAT_END, actor, target, ctx)
+        actor.trigger_event(EventType.COMBAT_END, actor, target, ctx)
+        target.trigger_event(EventType.COMBAT_END, actor, target, ctx)
 
 
 class MainHandAttackAction(AttackAction):
@@ -116,7 +125,6 @@ class MainHandAttackAction(AttackAction):
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
-            source=weapon.name,
             description=f"Base Attack with main hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
@@ -138,7 +146,6 @@ class OffHandAttackAction(AttackAction):
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
         return cls(
-            source=weapon.name,
             description=f"Bonus Attack with off hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
@@ -167,7 +174,6 @@ class RangedAttackAction(AttackAction):
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:
         return cls(
-            source=weapon.name,
             description=f"Ranged Attack with {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,

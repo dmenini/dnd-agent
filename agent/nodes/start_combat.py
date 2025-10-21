@@ -2,7 +2,7 @@ import random
 from logging import getLogger
 
 from agent.character.stats import StatType
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
 
@@ -33,7 +33,7 @@ class StartCombatNode:
         state.turn_index = 0
         state.log.log_event(
             "Initiative order: " + " → ".join(state.characters[cid].name for cid in state.turn_order),
-            event_type=EventType.SYSTEM,
+            event_type=LogLevel.SYSTEM,
         )
 
         return state

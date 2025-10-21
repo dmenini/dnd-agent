@@ -3,17 +3,15 @@ from logging import getLogger
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
-from agent.actions.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
 from agent.actions.base import Action
-from agent.actions.dash import DashAction
-from agent.actions.dodge import DodgeAction
-from agent.actions.move import MovementAction
-from agent.actions.spell import AttackSpellAction, SupportSpellAction
-from agent.actions.wait import WaitAction
+from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
+from agent.actions.common.dash import DashAction
+from agent.actions.common.dodge import DodgeAction
+from agent.actions.common.move import MovementAction
+from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
 from agent.character.stats import Stats
-from agent.equipment.spells import AttackSpell, SupportSpell
-from agent.logs.events import EventType
+from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
 from agent.models.state import DecisionResult, State
 
@@ -77,7 +75,7 @@ class DecisionNode:
 
         if state.verification_result and not state.verification_result.valid and state.verification_result.input:
             # Hide the previous decision that lead to a validation error
-            state.log.hide_last_event(event_type=EventType.MAIN)
+            state.log.hide_last_event(event_type=LogLevel.MAIN)
             validation_event = (
                 f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
                 f"for the following reasons:\n{state.verification_result.reason}"
@@ -108,7 +106,7 @@ class DecisionNode:
 
         state.log.log_newline()
         action_names = [a.name for a in actions.values()]
-        actor.log_event(result.description, event_type=EventType.MAIN)
+        actor.log_event(result.description, event_type=LogLevel.MAIN)
         actor.log_event(f"Available actions: {action_names}")
 
         return state
@@ -120,7 +118,7 @@ class DecisionNode:
         current_is_player = None
 
         limit = 30
-        events = registry.filter(types=[EventType.MAIN])[-limit:]
+        events = registry.filter(types=[LogLevel.MAIN])[-limit:]
         for event in events:
             if not event.show_ai:
                 continue
@@ -163,19 +161,10 @@ class DecisionNode:
                 action = action_cls.from_weapon(weapon=eq)  # type: ignore[attr-defined]
                 all_actions.append(action)
 
-        # Spells (only if action available and slot available)
-        for spell in actor.spells:
-            if actor.spell_slots.has_slot(spell.level):
-                if isinstance(spell, AttackSpell):
-                    action = AttackSpellAction.from_spell(spell)
-                elif isinstance(spell, SupportSpell):
-                    action = SupportSpellAction.from_spell(spell)
-                else:
-                    raise NotImplementedError
-
-                all_actions.append(action)
+        # Spells (only if slot available)
+        all_actions.extend(spell for spell in actor.spells if actor.spell_slots.has_slot(spell.level))
 
         # Special abilities (can have their own categories)
-        all_actions += actor.special_abilities
+        all_actions += actor.abilities
 
         return {action.id: action for action in all_actions if action.is_available(actor.action_economy)}

@@ -1,13 +1,12 @@
-from typing import Literal
+from typing import Any, Literal
 
 from agent.character.stats import StatType
 from agent.effects.base import EffectType, StatusEffect
+from agent.effects.registry import TraitRegistry
 from agent.effects.traits import (
-    DisadvantageOnSavingThrow,
-    HalfAttacks,
-    SpeedMultiplier,
     Trait,
 )
+from agent.jobs.feature import FeatureId
 
 
 class Lethargic(StatusEffect):
@@ -20,4 +19,10 @@ class Lethargic(StatusEffect):
     type: EffectType = EffectType.LETHARGIC
     save_stat: StatType = StatType.WIS
     save_mode: Literal["start"] = "start"
-    _traits: list[Trait] = [SpeedMultiplier(value=0.5), DisadvantageOnSavingThrow(stat=StatType.WIS), HalfAttacks()]
+
+    def model_post_init(self, _: Any) -> None:
+        self._traits: list[Trait] = [
+            TraitRegistry.create(FeatureId.SPEED_MULTIPLIER, value=0.5),
+            TraitRegistry.create(FeatureId.SAVE_DISADVANTAGE, stat=StatType.WIS),
+            TraitRegistry.create(FeatureId.HALF_ATTACKS),
+        ]

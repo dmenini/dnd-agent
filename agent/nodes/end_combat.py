@@ -1,6 +1,6 @@
 from logging import getLogger
 
-from agent.logs.events import EventType, Icon
+from agent.logs.events import Icon, LogLevel
 from agent.models.state import State
 
 log = getLogger(__name__)
@@ -21,7 +21,7 @@ class EndCombatNode:
 
         # End of round
         if state.turn_index >= len(state.characters):
-            state.log.log_event(f"Turn {state.round + 1} over!", event_type=EventType.SYSTEM)
+            state.log.log_event(f"Turn {state.round + 1} over!", event_type=LogLevel.SYSTEM)
 
             # Reset resources
             for char in state.alive_characters.values():
@@ -49,17 +49,17 @@ class EndCombatNode:
             state.done = True
 
             if not alive_parties:
-                state.log.log_event("All parties have fallen. It's a draw.", event_type=EventType.SYSTEM)
+                state.log.log_event("All parties have fallen. It's a draw.", event_type=LogLevel.SYSTEM)
             else:
                 winner = alive_parties[0]
 
                 if winner.is_player_party:
                     state.log.log_event(
                         f"The players are victorious! Party '{winner.name}' stands triumphant!",
-                        event_type=EventType.SYSTEM,
+                        event_type=LogLevel.SYSTEM,
                     )
                 else:
                     state.log.log_event(
                         f"The enemies prevail... Party '{winner.name}' wins the battle.",
-                        event_type=EventType.SYSTEM,
+                        event_type=LogLevel.SYSTEM,
                     )
