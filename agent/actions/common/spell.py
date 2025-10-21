@@ -31,7 +31,7 @@ class AttackSpellAction(AttackAction):
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
         self._fire_start_events(actor, target, ctx)
-        is_hit = self.requires_save or self._resolve_saving_throw(actor, target, ctx)
+        is_hit = not self.requires_save or self._resolve_saving_throw(actor, target, ctx)
 
         # Apply damage if any
         if is_hit:

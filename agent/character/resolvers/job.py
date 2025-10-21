@@ -58,7 +58,11 @@ class JobResolver(CharacterBase):
             self.log_event(f"{self.name} gained passive trait: {feature.name}", event_type=LogLevel.DETAIL)
 
     def _apply_spell(self, spell: Spell) -> None:
-        action = ActionRegistry.create(id_=spell.ref_id, stat=self.attributes.spellcasting_stat, **spell.model_dump())
+        action = ActionRegistry.create(
+            id_=spell.ref_id,
+            stat=self.attributes.spellcasting_stat,  # TODO: stat is not required for spells
+            **spell.model_dump(),
+        )
         if isinstance(action, (AttackSpellAction, SupportSpellAction)):
             self.spells.append(action)
             self.log_event(f"{self.name} gained spell: {action.name}", event_type=LogLevel.DETAIL)
