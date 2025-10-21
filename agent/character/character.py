@@ -32,8 +32,6 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.apply_job_features()
 
         # Assign attributes
-        self.save_proficiencies = self.job.save_proficiencies
-        self.attributes.spellcasting_stat = self.job.primary_stat
         self.attributes.hp = self.max_hp
 
     @computed_field  # type: ignore[prop-decorator]

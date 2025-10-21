@@ -41,7 +41,7 @@ class AttackSpellAction(AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        save_roll = target.save_roll(save_stat=actor.stat, is_spell=True)
+        save_roll = target.save_roll(save_stat=actor.attributes.spellcasting_stat, is_spell=True)
 
         ctx.hit_roll = save_roll
         ctx.is_hit = save_roll.total < dc

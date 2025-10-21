@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
@@ -79,7 +79,7 @@ class LimitedBonusAction(Action):
     uses_per_rest: int = 1
     _current_uses: int = 0
 
-    def is_available(self, action_economy: ActionEconomy):
+    def is_available(self, action_economy: ActionEconomy) -> bool:
         use_available = self._current_uses < self.uses_per_rest
         return use_available and action_economy.can_use_bonus(self.action_type)
 

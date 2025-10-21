@@ -5,9 +5,8 @@ from agent.jobs.mage import Mage
 
 def test_mage(actor: Character) -> None:
     # Setup actor as a Mage and apply features
-    actor.job = Mage
     actor.armor = None
-    actor.apply_job_features()
+    actor.change_job(Mage)
 
     abilities = [a.id for a in actor.abilities]
     assert FeatureId.ARCANE_RECOVERY in abilities

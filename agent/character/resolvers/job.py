@@ -16,13 +16,22 @@ class JobResolver(CharacterBase):
     spells: list[AttackSpellAction | SupportSpellAction] = []
     abilities: list[Action] = []
 
+    def change_job(self, job: CharacterJob) -> None:
+        self.spells = []
+        self.abilities = []
+        self.job = job
+
+        self.apply_job_features()
+
     def apply_job_features(self) -> None:
         """Register class features based on current level."""
-        self.abilities = []
+        # TODO: The primary stat should depend on the type of class (fighter should not use STR)
+        self.attributes.spellcasting_stat = self.job.primary_stat
+        self.attributes.save_proficiencies = self.job.save_proficiencies
+
         for feature in self.job.get_features_for_level(self.level):
             self._apply_job_feature(feature)
 
-        self.spells = []
         for spell in self.job.get_spells_for_level(self.level):
             self._apply_spell(spell)
 
@@ -49,7 +58,7 @@ class JobResolver(CharacterBase):
             self.log_event(f"{self.name} gained passive trait: {feature.name}", event_type=LogLevel.DETAIL)
 
     def _apply_spell(self, spell: Spell) -> None:
-        spell = ActionRegistry.create(id_=spell.ref_id, stat=self.attributes.spellcasting_stat, **spell.model_dump())
-        if isinstance(spell, (AttackSpellAction, SupportSpellAction)):
-            self.spells.append(spell)
-            self.log_event(f"{self.name} gained spell: {spell.name}", event_type=LogLevel.DETAIL)
+        action = ActionRegistry.create(id_=spell.ref_id, stat=self.attributes.spellcasting_stat, **spell.model_dump())
+        if isinstance(action, (AttackSpellAction, SupportSpellAction)):
+            self.spells.append(action)
+            self.log_event(f"{self.name} gained spell: {action.name}", event_type=LogLevel.DETAIL)

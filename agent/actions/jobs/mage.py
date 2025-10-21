@@ -1,7 +1,6 @@
 import math
-from typing import Any
 
-from agent.actions.base import ActionCategory, ActionType, LimitedBonusAction
+from agent.actions.base import ActionType, LimitedBonusAction
 from agent.character.character import Character
 from agent.logs.events import LogLevel
 
