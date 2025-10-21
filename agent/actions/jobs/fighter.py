@@ -15,7 +15,3 @@ class SecondWindAction(LimitedBonusAction):
         heal_amount = actor.damage_roll(expr="1d10").total + actor.level
         actor.heal(heal_amount)
         actor.log_event(f"{actor.name} heals {heal_amount} HP.", event_type=LogLevel.DETAIL)
-
-    def finalize(self, actor: Character) -> None:
-        """Consume resources."""
-        actor.action_economy.use_bonus(self.action_type)
