@@ -13,7 +13,8 @@ from agent.character.character import Character
 from agent.character.stats import Stats
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
-from agent.models.state import DecisionResult, State
+from agent.models.decision import DecisionResult
+from agent.models.state import State
 
 log = getLogger(__name__)
 

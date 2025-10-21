@@ -7,8 +7,9 @@ from pytest_mock import MockerFixture
 from agent.character.character import Character, Party
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
+from agent.models.decision import DecisionResult
 from agent.models.position import Position
-from agent.models.state import DecisionResult, State
+from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode

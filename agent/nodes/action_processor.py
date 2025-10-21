@@ -21,7 +21,7 @@ class ActionProcessorNode:
         if not actor.is_alive:
             return state
 
-        # Handle the main combat actions
+        # Assuming decision is validated
         if decision.target_hits:
             for target_id, hit_count in decision.target_hits.items():
                 target = state.characters[target_id]
@@ -29,12 +29,10 @@ class ActionProcessorNode:
                     continue
 
                 for i in range(hit_count):
-                    actor.log_event(
-                        f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}."
-                    )
+                    actor.log_event(f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}.")
                     action.execute(actor=actor, target=target)
 
-        elif decision.target_position is not None:
+        elif decision.target_position:
             actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}.")
             action.execute(actor=actor, target=decision.target_position)
 

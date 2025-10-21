@@ -1,11 +1,10 @@
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry, get_log_registry
-from agent.models.enums import TargetingType
-from agent.models.position import Position
+from agent.models.decision import DecisionResult
 
 CELL_WIDTH = 2
 
@@ -16,38 +15,6 @@ class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
     input: Action | None = None
-
-
-class DecisionResult(BaseModel):
-    action_id: str = Field(..., description="ID of the action to take")
-
-    # Map of target ID → number of hits assigned
-    target_hits: dict[str, int] = Field(
-        default_factory=dict,
-        description=(
-            "Mapping of target IDs to number of hits each target should receive. "
-            f"Example for {TargetingType.MULTI} targeting attack (3 total hits): {{'enemy1': 2, 'enemy2': 1}}"
-            f"Example for {TargetingType.SINGLE} targeting attack: {{'enemy1': 1}}"
-        ),
-    )
-
-    target_position: Position | None = Field(
-        default=None,
-        description="Target position in case of movement actions. It must be within range.",
-    )
-
-    description: str = Field(description="Action description for narrative purpose.")
-
-    @computed_field()
-    @property
-    def total_hits(self) -> int:
-        """Total number of hits to perform (sum of all target hits)."""
-        return sum(self.target_hits.values())
-
-    @property
-    def target_ids(self) -> list[str]:
-        """All targeted IDs."""
-        return list(self.target_hits.keys())
 
 
 class State(BaseModel):

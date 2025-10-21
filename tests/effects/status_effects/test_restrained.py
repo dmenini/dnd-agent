@@ -8,9 +8,10 @@ from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
+from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
 from agent.models.position import Position
-from agent.models.state import DecisionResult, State
+from agent.models.state import State
 from tests.conftest import advance_turn
 
 
@@ -74,7 +75,7 @@ def test_restrained(
 
     # Turn 1.1: Hero attacks and applies restrained
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     orc = state.characters[orc_id]
     assert orc.attributes.hp == starting_hp - value1
@@ -91,7 +92,7 @@ def test_restrained(
 
     # Turn 1.2: Orc restrained -> after attack no more actions available and passes (no need to wait)
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
 
     orc = state.characters[orc_id]

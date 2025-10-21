@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 
+from agent.models.enums import TargetingType
+
 if TYPE_CHECKING:
     from agent.character.character import Character
     from agent.character.resources import ActionEconomy
@@ -62,6 +64,8 @@ class Action(BaseModel):
     description: str
     action_type: ActionType
     category: ActionCategory
+    targeting: TargetingType
+    hits: int = 1
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.can_use_standard(self.action_type)

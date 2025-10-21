@@ -16,7 +16,6 @@ class WaitAction(Action):
     description: str = "Pass turn."
     action_type: ActionType = ActionType.WAIT
     category: ActionCategory = ActionCategory.STANDARD
-
     targeting: TargetingType = TargetingType.SELF
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
