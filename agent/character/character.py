@@ -27,9 +27,10 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     model_config = ConfigDict(extra="allow")  # To mock during tests
 
     def model_post_init(self, _: Any, /) -> None:
-        # Equip to apply traits
         self.equip_all()
         self.apply_job_features()
+
+        # Assign attributes
         self.save_proficiencies = self.job.save_proficiencies
         self.attributes.spellcasting_stat = self.job.primary_stat
         self.attributes.hp = self.max_hp

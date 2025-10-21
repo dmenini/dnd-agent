@@ -18,3 +18,7 @@ class CharacterJob(BaseModel):
     def get_features_for_level(self, level: int) -> list[JobFeature]:
         """Return unlocked features up to the given level."""
         return [f for f in self.features if f.level_required <= level]
+
+    def get_spells_for_level(self, level: int) -> list[Spell]:
+        """Return unlocked spells up to the given level."""
+        return [f for f in self.spells if f.level_required <= level]

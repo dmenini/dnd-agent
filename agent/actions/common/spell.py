@@ -26,11 +26,12 @@ class AttackSpellAction(AttackAction):
     category: ActionCategory = ActionCategory.STANDARD
     weapon_type: WeaponType = WeaponType.MAGIC
     level: SpellLevel
+    requires_save: bool = True
 
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
         self._fire_start_events(actor, target, ctx)
-        is_hit = self._resolve_saving_throw(actor, target, ctx)
+        is_hit = self.requires_save or self._resolve_saving_throw(actor, target, ctx)
 
         # Apply damage if any
         if is_hit:
@@ -40,7 +41,7 @@ class AttackSpellAction(AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        save_roll = target.save_roll(save_stat=self.stat, is_spell=True)
+        save_roll = target.save_roll(save_stat=actor.stat, is_spell=True)
 
         ctx.hit_roll = save_roll
         ctx.is_hit = save_roll.total < dc

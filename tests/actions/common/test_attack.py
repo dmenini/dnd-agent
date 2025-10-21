@@ -1,4 +1,3 @@
-
 from pytest_mock import MockerFixture
 
 from agent.actions.base import ActionCategory, ActionType

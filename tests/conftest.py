@@ -31,7 +31,7 @@ def config() -> AgentConfig:
 @pytest.fixture
 def fake_llm(mocker: MockerFixture) -> BaseChatModel:
     """A fake LLM that always returns a fixed decision."""
-    llm = mocker.MagicMock(stub=BaseChatModel)
+    llm = mocker.MagicMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
     return llm
 
@@ -72,7 +72,7 @@ def target() -> Character:
 
 
 def advance_turn(state: State, result: DecisionResult) -> State:
-    llm = MagicMock(stub=BaseChatModel)
+    llm = MagicMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
     llm.invoke.return_value = result
 

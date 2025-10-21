@@ -6,8 +6,14 @@ from agent.jobs.mage import Mage
 def test_mage(actor: Character) -> None:
     # Setup actor as a Mage and apply features
     actor.job = Mage
+    actor.armor = None
     actor.apply_job_features()
 
-    # Verify Arcane Recovery action is available
-    action = next(a for a in actor.abilities if a.id == FeatureId.ARCANE_RECOVERY)
-    assert action is not None
+    abilities = [a.id for a in actor.abilities]
+    assert FeatureId.ARCANE_RECOVERY in abilities
+
+    spells = [a.id for a in actor.spells]
+    assert FeatureId.MAGIC_MISSILE in spells
+
+    assert actor.attributes.get_modifiers("save_advantage.spell")[0].value is True
+    assert actor.attributes.get_modifiers("ac")[0].value == 3
