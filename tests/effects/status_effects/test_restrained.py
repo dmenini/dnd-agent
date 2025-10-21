@@ -91,7 +91,7 @@ def test_restrained(
 
     # Turn 1.2: Orc restrained -> after attack no more actions available and passes (no need to wait)
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[hero_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
     )
 
     orc = state.characters[orc_id]
