@@ -9,7 +9,7 @@ from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.position import Position
 from agent.models.state import DecisionResult, State
-from agent.nodes.combat_engine import CombatEngineNode
+from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
 from agent.registration import register_actions, register_traits
@@ -77,5 +77,5 @@ def advance_turn(state: State, result: DecisionResult) -> State:
     llm.invoke.return_value = result
 
     state = DecisionNode(llm=llm, system_prompt="")(state)
-    state = CombatEngineNode()(state)
+    state = ActionProcessorNode()(state)
     return EndCombatNode()(state)
