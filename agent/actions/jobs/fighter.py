@@ -1,17 +1,15 @@
-from agent.actions.base import Action, ActionCategory, ActionType
+from agent.actions.base import ActionType, LimitedBonusAction
 from agent.character.character import Character
 from agent.logs.events import LogLevel
 
 
-class SecondWindAction(Action):
+class SecondWindAction(LimitedBonusAction):
     """Once per short rest, recover 1d10 + level HP."""
 
     id: str
     description: str
     name: str = "Second Wind"
     action_type: ActionType = ActionType.SPECIAL
-    category: ActionCategory = ActionCategory.BONUS
-    uses_per_rest: int = 1  # TODO: implement this new resource
 
     def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
         heal_amount = actor.damage_roll(expr="1d10").total + actor.level

@@ -36,6 +36,6 @@ def test_arcane_recovery(actor: Character) -> None:
     assert recovered == max_recovery, f"Recovered {recovered}, expected {max_recovery}"
 
     # Finalize action consumes the bonus use
-    uses_before = action.uses_per_rest
     action.finalize(actor)
-    assert action.uses_per_rest == uses_before - 1
+    assert action.is_available(actor.action_economy) is False
+    assert action._current_uses == 1

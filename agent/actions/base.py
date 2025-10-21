@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -72,3 +72,25 @@ class Action(BaseModel):
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
         actor.action_economy.use_standard(self.action_type)
+
+
+class LimitedBonusAction(Action):
+    category: ActionCategory = ActionCategory.BONUS
+    uses_per_rest: int = 1
+    _current_uses: int = 0
+
+    def is_available(self, action_economy: ActionEconomy):
+        use_available = self._current_uses < self.uses_per_rest
+        return use_available and action_economy.can_use_bonus(self.action_type)
+
+    def _consume_use(self) -> None:
+        if self._current_uses >= self.uses_per_rest:
+            raise ValueError
+        self._current_uses += 1
+
+    def finalize(self, actor: Character) -> None:
+        self._consume_use()
+        actor.action_economy.use_bonus(self.action_type)
+
+    def rest(self) -> None:
+        self._current_uses = 0
