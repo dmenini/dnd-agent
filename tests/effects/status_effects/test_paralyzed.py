@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock
 
-from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
@@ -43,15 +42,15 @@ def test_paralyzed(
         main_hand=sword,
     )
 
-    starting_hp = 30
     orc = Character(
         id=orc_id,
         name="Orc Grunt",
         icon="👹",
-        attributes=Attributes(hp=starting_hp),
         pos=Position(x=4, y=2),
         party=party_enemies,
     )
+    starting_hp = 30
+    orc.attributes.hp = starting_hp
 
     state = State(
         characters={hero.id: hero, orc.id: orc},

@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from pydantic import BaseModel
-
 from agent.character.stats import StatType
 from agent.jobs.feature import JobFeature
 from agent.jobs.spells import Spell

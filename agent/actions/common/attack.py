@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionCategory, ActionType
@@ -93,9 +94,17 @@ class AttackAction(Action):
         return ctx
 
     def _attack_modifier(self, actor: Character) -> int:
+        # Parse existing modifier from the dice expression (e.g. "1d8+2" → base="1d8", base_mod=2)
+        match = re.match(r"^(\d+d\d+)([+-]\d+)?$", self.damage_dice.strip())
+        if match:
+            base_expr, base_mod_str = match.groups()
+            base_mod = int(base_mod_str) if base_mod_str else 0
+        else:
+            base_mod = 0
+
         prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.proficiencies else 0
         mod = actor.attributes.stat_modifier(self.stat)
-        return mod + prof_bonus
+        return base_mod + mod + prof_bonus
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         actor.trigger_event(EventType.COMBAT_START, actor, target, ctx)

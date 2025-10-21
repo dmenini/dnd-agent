@@ -70,7 +70,9 @@ def test_hasted(
     )
 
     # Turn 1.1: Hero casts Haste on self
-    state = advance_turn(state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_ids=[hero_id], description=""))
+    state = advance_turn(
+        state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_ids=[hero_id], description="")
+    )
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
     assert hero.status_effects[0].duration == 1

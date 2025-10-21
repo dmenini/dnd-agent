@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
@@ -24,12 +24,15 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     action_economy: ActionEconomy = ActionEconomy()
     turn_done: bool = True
 
+    model_config = ConfigDict(extra="allow")  # To mock during tests
+
     def model_post_init(self, _: Any, /) -> None:
         # Equip to apply traits
         self.equip_all()
         self.apply_job_features()
         self.save_proficiencies = self.job.save_proficiencies
         self.attributes.spellcasting_stat = self.job.primary_stat
+        self.attributes.hp = self.max_hp
 
     @computed_field  # type: ignore[prop-decorator]
     @property
