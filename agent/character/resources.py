@@ -189,6 +189,13 @@ class SpellSlots(BaseModel):
         }
     )
 
+    def __str__(self) -> str:
+        slots = []
+        for level in self.slots:
+            slot_str = f"{level.name}: {self.slots[level]}/{self.max_slots[level]}"
+            slots.append(slot_str)
+        return " | ".join(slots)
+
     def has_slot(self, level: SpellLevel) -> bool:
         """Check if there are slots left for the given spell level. Cantrips are always available."""
         if level == SpellLevel.CANTRIP:
