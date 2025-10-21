@@ -27,6 +27,7 @@ class AttackSpellAction(AttackAction):
     weapon_type: WeaponType = WeaponType.MAGIC
     level: SpellLevel
     requires_save: bool = True
+    hits: int = 1
 
     def execute(self, actor: Character, target: Character) -> None:
         ctx = CombatContext()
@@ -49,9 +50,9 @@ class AttackSpellAction(AttackAction):
         actor.log_event(f"{self.stat.name} save: {save_roll.total} vs DC {dc}", icon=Icon.ROLL)
 
         if ctx.is_hit:
-            actor.log_event(f"Save roll passed → Target resists {self.name}!", icon=Icon.DEFENSE)
+            actor.log_event(f"Save roll passed → Target resists {self.name}!", icon=Icon.DEFENSE, show_ai=True)
         else:
-            actor.log_event("Save roll failed → Hits target!", icon=Icon.ATTACK)
+            actor.log_event("Save roll failed → Hits target!", icon=Icon.ATTACK, show_ai=True)
 
         return ctx.is_hit
 

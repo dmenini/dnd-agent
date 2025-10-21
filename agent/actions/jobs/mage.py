@@ -17,7 +17,6 @@ class ArcaneRecoveryAction(LimitedBonusAction):
     action_type: ActionType = ActionType.SPECIAL
 
     def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
-        """Recover spell slots based on half the caster's level."""
         max_recovery = math.ceil(actor.level / 2)
         recovered = 0
 
@@ -35,7 +34,7 @@ class ArcaneRecoveryAction(LimitedBonusAction):
                 recovered += slots_to_recover
 
                 actor.log_event(
-                    f"{actor.name} recovers {slots_to_recover} level {level} spell slot(s).",
+                    f"{actor.name} recovers {slots_to_recover} level {level.value} spell slot(s).",
                     event_type=LogLevel.DETAIL,
                 )
 

@@ -53,9 +53,9 @@ class AttackAction(Action):
             # Check attack roll result
             actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
             if ctx.is_hit:
-                actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK)
+                actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK, show_ai=True)
             else:
-                actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK)
+                actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK, show_ai=True)
 
         return ctx.is_hit
 
@@ -80,7 +80,7 @@ class AttackAction(Action):
         # Apply damage
         total_damage = ctx.damage.total
         target.apply_damage(damage=total_damage)
-        actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE)
+        actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE, show_ai=True)
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
         if not target.is_alive:

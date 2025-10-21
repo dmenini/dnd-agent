@@ -22,18 +22,24 @@ class ActionProcessorNode:
             return state
 
         # Handle the main combat actions
-        if decision.target_ids is not None:
-            targets = [state.characters[tid] for tid in decision.target_ids if tid in state.characters]
-            for target in targets:
-                actor.log_event(f"{actor.name} performs {action.name} on target {target.name}: {action.description}")
-                action.execute(actor=actor, target=target)
+        if decision.target_hits:
+            for target_id, hit_count in decision.target_hits.items():
+                target = state.characters[target_id]
+                if not target:
+                    continue
+
+                for i in range(hit_count):
+                    actor.log_event(
+                        f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}."
+                    )
+                    action.execute(actor=actor, target=target)
 
         elif decision.target_position is not None:
-            actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}")
+            actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}.")
             action.execute(actor=actor, target=decision.target_position)
 
         else:
-            actor.log_event(f"{actor.name} performs {action.name} on self")
+            actor.log_event(f"{actor.name} performs {action.name} on self.")
             action.execute(actor=actor, target=actor)
 
         action.finalize(actor)
