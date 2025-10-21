@@ -18,7 +18,7 @@ class DashAction(Action):
     action_type: ActionType = ActionType.DASH
     category: ActionCategory = ActionCategory.STANDARD
 
-    targeting: TargetingType = TargetingType.SELF
+    targeting: TargetingType = TargetingType.AREA
     range: float
 
     def is_available(self, action_economy: ActionEconomy) -> bool:

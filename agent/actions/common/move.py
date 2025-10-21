@@ -18,7 +18,7 @@ class MovementAction(Action):
     action_type: ActionType = ActionType.MOVE
     category: ActionCategory = ActionCategory.MOVEMENT
 
-    targeting: TargetingType = TargetingType.SELF
+    targeting: TargetingType = TargetingType.AREA
     range: float
 
     def is_available(self, action_economy: ActionEconomy) -> bool:

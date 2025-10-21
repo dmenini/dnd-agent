@@ -11,9 +11,10 @@ from agent.jobs.feature import FeatureId
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
+from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
 from agent.models.position import Position
-from agent.models.state import DecisionResult, State
+from agent.models.state import State
 from tests.conftest import advance_turn
 
 
@@ -71,7 +72,7 @@ def test_hasted(
 
     # Turn 1.1: Hero casts Haste on self
     state = advance_turn(
-        state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_ids=[hero_id], description="")
+        state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_hits={hero_id: 1}, description="")
     )
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
@@ -93,10 +94,10 @@ def test_hasted(
     assert state.current_actor.status_effects[0].type == EffectType.HASTED
     assert state.current_actor.status_effects[0].duration == 1
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
 
     hero._dice = MagicMock()  # fail save

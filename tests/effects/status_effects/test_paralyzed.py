@@ -8,9 +8,10 @@ from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
+from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
 from agent.models.position import Position
-from agent.models.state import DecisionResult, State
+from agent.models.state import State
 from tests.conftest import advance_turn
 
 
@@ -66,7 +67,7 @@ def test_paralyzed(
 
     # Turn 1.1: Hero attacks and applies paralysis
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     orc = state.characters[orc_id]
     assert orc.attributes.hp == starting_hp - value1
@@ -99,7 +100,7 @@ def test_paralyzed(
     hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value2 * 2, raw=value2)
 
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     crit_damage = value2 + value2
     assert orc.attributes.hp == starting_hp - value1 - crit_damage

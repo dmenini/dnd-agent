@@ -13,7 +13,8 @@ from agent.character.character import Character
 from agent.character.stats import Stats
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
-from agent.models.state import DecisionResult, State
+from agent.models.decision import DecisionResult
+from agent.models.state import State
 
 log = getLogger(__name__)
 
@@ -55,6 +56,7 @@ class DecisionNode:
             "stats": Stats.model_validate(actor.attributes.model_dump()).model_dump_json(),
             "status_effects": [str(eff) for eff in actor.status_effects],
             "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
+            "spell_slots": str(actor.spell_slots),
         }
 
         visible_enemies = [

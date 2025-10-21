@@ -1,4 +1,3 @@
-import os
 import re
 from datetime import UTC, datetime
 from enum import Enum
@@ -56,9 +55,7 @@ class Event(BaseModel):
         """Highlight numbers in yellow for readability."""
         return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
 
-    def __rich__(self) -> Text:
-        verbosity = int(os.getenv("VERBOSITY", Verbosity.DETAIL))
-
+    def __rich__(self) -> Text | None:
         color = self._color_for_actor()
         msg = self._highlight_numbers(self.message)
         result = Text(msg)
@@ -73,9 +70,7 @@ class Event(BaseModel):
             icon = self.icon or "⚔️"
             result = Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
 
-        elif (self.type == LogLevel.DETAIL and verbosity >= Verbosity.DETAIL) or (
-            self.type == LogLevel.DEBUG and verbosity >= Verbosity.DEBUG
-        ):
+        elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
             result = Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
 
         elif self.type == LogLevel.SYSTEM:

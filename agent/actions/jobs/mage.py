@@ -3,6 +3,7 @@ import math
 from agent.actions.base import ActionType, LimitedBonusAction
 from agent.character.character import Character
 from agent.logs.events import LogLevel
+from agent.models.enums import TargetingType
 
 
 class ArcaneRecoveryAction(LimitedBonusAction):
@@ -15,9 +16,9 @@ class ArcaneRecoveryAction(LimitedBonusAction):
     name: str = "Arcane Recovery"
     description: str
     action_type: ActionType = ActionType.SPECIAL
+    targeting: TargetingType = TargetingType.SELF
 
     def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
-        """Recover spell slots based on half the caster's level."""
         max_recovery = math.ceil(actor.level / 2)
         recovered = 0
 
@@ -35,7 +36,7 @@ class ArcaneRecoveryAction(LimitedBonusAction):
                 recovered += slots_to_recover
 
                 actor.log_event(
-                    f"{actor.name} recovers {slots_to_recover} level {level} spell slot(s).",
+                    f"{actor.name} recovers {slots_to_recover} level {level.value} spell slot(s).",
                     event_type=LogLevel.DETAIL,
                 )
 

@@ -9,9 +9,10 @@ from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
+from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
 from agent.models.position import Position
-from agent.models.state import DecisionResult, State
+from agent.models.state import State
 from tests.conftest import advance_turn
 
 
@@ -65,7 +66,7 @@ def test_stunned(
 
     # Turn 1.1: Hero attacks and applies stun
     state = advance_turn(
-        state, result=DecisionResult(action_id="main_hand_attack", target_ids=[orc_id], description="")
+        state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     orc = state.characters[orc_id]
     assert orc.status_effects[0].type == EffectType.STUNNED

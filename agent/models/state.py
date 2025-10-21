@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry, get_log_registry
-from agent.models.position import Position
+from agent.models.decision import DecisionResult
 
 CELL_WIDTH = 2
 
@@ -15,22 +15,6 @@ class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
     input: Action | None = None
-
-
-class DecisionResult(BaseModel):
-    action_id: str = Field(description="ID of the action to take")
-    target_ids: list[str] = Field(
-        default=[],
-        description=(
-            "IDs of the targets to attack for attack actions. Targets must be within range. "
-            "Multiple targets can be attacked only with area actions."
-        ),
-    )
-    target_position: Position | None = Field(
-        default=None,
-        description="Target position in case of movement actions. It must be within range.",
-    )
-    description: str = Field(description="Action description for narrative purpose.")
 
 
 class State(BaseModel):
