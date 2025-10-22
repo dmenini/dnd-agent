@@ -1,13 +1,12 @@
 from enum import Enum
 
-from langchain_aws import ChatBedrockConverse
-from langchain_core.language_models import BaseChatModel
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from agent.ai.components import create_llm
 from agent.mechanics.dice_roller import DiceRoller
-from agent.models.config import AgentConfig, LLMConfig
+from agent.models.config import AgentConfig
 from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
@@ -23,14 +22,6 @@ class TurnPhase(str, Enum):
     EXECUTE = "execute"
     START = "start"
     END = "end"
-
-
-def create_llm(config: LLMConfig) -> BaseChatModel:
-    # Converse API: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html
-    return ChatBedrockConverse(
-        model=config.name,
-        temperature=config.temperature,
-    )
 
 
 def should_continue(state: State) -> str:

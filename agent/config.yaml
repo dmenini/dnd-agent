@@ -13,3 +13,10 @@ agent:
       - The chosen action should take the position and range into account (we use Manhattan distance)
       - Only choose one action among the options available.
       - Do not attack members of the same party.
+    map: |-
+      Generate a {width}x{height} grid map for a combat scenario.
+      - Use "." for empty space
+      - Use "#" for obstacles/walls
+      - Use emoticons for the characters
+      
+      Also provide position coordinates for walls and the characters that you place on the map, together with their icons.
