@@ -15,6 +15,7 @@ class Icon:
     MOVE = "🏃"
     EFFECT_APPLIED = "🌀"
     EFFECT_EXPIRED = "✨"
+    AI = "🤖"
 
 
 class LogLevel(str, Enum):
@@ -52,7 +53,7 @@ class Event(BaseModel):
         return "white"
 
     def _highlight_numbers(self, text: str) -> str:
-        """Highlight numbers in yellow for readability."""
+        """Highlight numbers in bold yellow for readability."""
         return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
 
     def __rich__(self) -> Text | None:
@@ -67,11 +68,12 @@ class Event(BaseModel):
             result = Text.assemble("\n", header_line, "\n", separator)
 
         elif self.type == LogLevel.MAIN:
-            icon = self.icon or "⚔️"
-            result = Text.from_markup(f"[{color}]{icon} → {msg}[/{color}]")
+            icon = self.icon or "👤"
+            result = Text.from_markup(f"[bold {color}]{icon} → {msg}[/bold {color}]")
 
         elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
-            result = Text.from_markup(f"    [dim]{self.icon} {msg}[/dim]")
+            ai_icon = f"({Icon.AI})" if self.show_ai else ""
+            result = Text.from_markup(f"    [dim]{self.icon} {msg} {ai_icon}[/dim]")
 
         elif self.type == LogLevel.SYSTEM:
             result = Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
