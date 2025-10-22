@@ -57,6 +57,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def end_round(self) -> None:
         self.action_economy.restore_reaction()
 
+    def end_combat(self) -> None:
         # TODO: This should be done on rest
         for ability in self.abilities:
             if isinstance(ability, LimitedBonusAction):
