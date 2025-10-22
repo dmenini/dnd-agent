@@ -3,7 +3,7 @@ from logging import getLogger
 from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig
 
 from agent.ai.graph import build_graph
 from agent.ai.map_generator import build_map_generator
@@ -35,6 +35,20 @@ register_actions()
 register_traits()
 
 
+def generate_game_map(chain: Runnable, enemies: list[str], players: list[str]) -> GameMap:
+    user_template = f"These are the characters that take part in the combat:\nEnemies: {enemies}\nPlayers: {players}"
+    game_map = chain.invoke(
+        {
+            "width": MAP_SIZE,
+            "height": MAP_SIZE,
+            "input": user_template,
+        }
+    )
+    if not isinstance(game_map, GameMap):
+        raise TypeError
+    return game_map
+
+
 def main() -> None:
     config_path = Path(__file__).parent / "config.yaml"
     with config_path.open() as fp:
@@ -48,7 +62,7 @@ def main() -> None:
 
     state.log.log_event(
         message=f"Setting up combat simulation: {party_players.name} vs {party_enemies.name}",
-        event_type=LogLevel.SYSTEM
+        event_type=LogLevel.SYSTEM,
     )
 
     sword = MeleeWeapon(
@@ -109,29 +123,19 @@ def main() -> None:
 
     # TODO: log character summary
 
-    state.log.log_event(
-        message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}",
-        event_type=LogLevel.SYSTEM
-    )
+    state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", event_type=LogLevel.SYSTEM)
 
     gen = build_map_generator(config.agent)
-    map = gen.invoke({
-        "width": MAP_SIZE,
-        "height": MAP_SIZE,
-        "players": [hero.id],
-        "enemies": [goblin.id, orc.id],
-    })
-    if not isinstance(map, GameMap):
-        raise TypeError
+    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id])
+    state.map = game_map
 
-    state.map = map
     # Players choose their icon
-    map.icons[hero.id] = hero.icon
+    game_map.icons[hero.id] = hero.icon
 
     # Set positions
-    hero.pos = map.characters[hero.id]
-    orc.pos = map.characters[orc.id]
-    goblin.pos = map.characters[goblin.id]
+    hero.pos = game_map.characters[hero.id]
+    orc.pos = game_map.characters[orc.id]
+    goblin.pos = game_map.characters[goblin.id]
 
     state.characters = {hero.id: hero, orc.id: orc, goblin.id: goblin}
     state.parties = {party_players.id: party_players, party_enemies.id: party_enemies}

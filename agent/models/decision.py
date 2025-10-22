@@ -6,6 +6,7 @@ from agent.actions.base import Action
 from agent.actions.common.dash import DashAction
 from agent.character.character import Character
 from agent.models.enums import TargetingType
+from agent.models.map import GameMap
 from agent.models.position import Position
 
 
@@ -16,9 +17,9 @@ class DecisionResult(BaseModel):
     target_hits: dict[str, int] = Field(
         default_factory=dict,
         description=(
-            "Mapping of target IDs to number of hits each target should receive. "
-            f"Example for {TargetingType.MULTI} targeting attack (3 total hits): {{'enemy1': 2, 'enemy2': 1}}"
-            f"Example for {TargetingType.SINGLE} targeting attack: {{'enemy1': 1}}"
+            "Mapping of target IDs to number of hits each target should receive.\n"
+            f"Example for {TargetingType.MULTI} targeting attack (3 total hits): {{'enemy1': 2, 'enemy2': 1}}\n"
+            f"Example for {TargetingType.SINGLE} targeting attack (2 total hits): {{'enemy1': 2}}"
         ),
     )
 
@@ -163,6 +164,7 @@ class DecisionResult(BaseModel):
         characters: Mapping[str, Character],
         available_movement: int,
     ) -> tuple[bool, str]:
+        # For range, we use simple line-of-sight distance, assuming that walls can be ignored by attacks
         for target_id in self.target_ids:
             target = characters[target_id]
             dist = actor.distance(target.pos)
@@ -180,32 +182,30 @@ class DecisionResult(BaseModel):
         self,
         actor: Character,
         action: Action,
-        map_size: tuple[int, int],
-        occupied_positions: set[Position],
+        game_map: GameMap,
     ) -> tuple[bool, str]:
         pos = self.target_position
         if not pos:
             return False, f"No target position specified for movement action {self.action_id}."
 
-        if not (0 <= pos.x < map_size[0] and 0 <= pos.y < map_size[1]):
+        if not (0 <= pos.x < game_map.width and 0 <= pos.y < game_map.height):
             return (
                 False,
-                (
-                    f"Target position ({pos.x}, {pos.y}) is out of map bounds "
-                    f"(0-{map_size[0] - 1}, 0-{map_size[1] - 1})."
-                ),
+                f"Target position ({pos.x}, {pos.y}) is out of map bounds "
+                f"(0-{game_map.width - 1}, 0-{game_map.height - 1}).",
             )
 
+        # For movement, we use distance measured on the map with pathfinding algo
         multiplier = 2 if isinstance(action, DashAction) else 1
-        dist = actor.distance(pos)
+        dist = game_map.distance(start=actor.pos, end=pos)
         max_dist = actor.current_speed * multiplier
-
-        if dist > max_dist:
+        if dist is None or dist > max_dist:
             return (
                 False,
                 f"Position {pos} is too far ({dist:.1f} > {max_dist}). Please, select a reachable position.",
             )
 
+        occupied_positions = list(game_map.characters.values()) + game_map.walls
         if pos in occupied_positions:
             return False, f"Position {pos} is already occupied. Please, choose a nearby position."
 

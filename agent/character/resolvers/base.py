@@ -25,7 +25,7 @@ class CharacterBase(BaseModel):
     is_player: bool = False
     level: int = 1
     experience: int = 0
-    pos: Position
+    pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
 
     # Defined for typing to work

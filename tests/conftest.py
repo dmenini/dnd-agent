@@ -8,6 +8,7 @@ from agent.character.character import Character, Party
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.decision import DecisionResult
+from agent.models.map import GameMap
 from agent.models.position import Position
 from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
@@ -24,7 +25,7 @@ def config() -> AgentConfig:
     """Mocked config with fake LLM setup."""
     return AgentConfig(
         llm=LLMConfig(name="fake", temperature=0),
-        prompts=PromptsConfig(system="You are a decision-making combat AI."),
+        prompts=PromptsConfig(system="You are a decision-making combat AI.", map="Generate the map"),
         retries=1,
     )
 
@@ -70,6 +71,11 @@ def target() -> Character:
         is_player=True,
         party=party_players,
     )
+
+
+@pytest.fixture
+def game_map() -> GameMap:
+    return GameMap(map="", width=10, height=10)
 
 
 def advance_turn(state: State, result: DecisionResult) -> State:

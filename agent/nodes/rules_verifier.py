@@ -100,9 +100,10 @@ class RulesVerifierNode:
     def check_movement(self, state: State) -> tuple[bool, str | None]:
         if not isinstance(state.action, (DashAction, MovementAction)):
             return True, None
+        if not state.map:
+            raise ValueError
         return state.decision.validate_movement(
             actor=state.current_actor,
             action=state.action,
-            map_size=(state.map.width, state.map.height),
-            occupied_positions={ch.pos for ch in state.alive_characters.values()},
+            game_map=state.map,
         )

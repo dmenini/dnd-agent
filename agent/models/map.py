@@ -1,7 +1,9 @@
+from collections import deque
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from agent.character.character import Character
 from agent.models.position import Position
 
 
@@ -17,6 +19,39 @@ class GameMap(BaseModel):
     characters: dict[str, Position] = Field(default={}, description="Mapping character id to position.")
     icons: dict[str, str] = Field(default={}, description="Mapping character id to icon.")
 
+    def update_map(self, characters: dict[str, Character]) -> None:
+        for cid, char in characters.items():
+            if not char.is_alive:
+                del self.characters[cid]
+            else:
+                self.characters[cid] = char.pos
+
+    def distance(self, start: Position, end: Position) -> int | None:
+        """Return shortest distance between two points considering obstacles."""
+        if (start.x, start.y) == (end.x, end.y):
+            return 0
+
+        visited = set()
+        queue = deque([(start.x, start.y, 0)])  # (x, y, distance)
+
+        while queue:
+            x, y, dist = queue.popleft()
+
+            for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:  # up, right, down, left
+                nx, ny = x + dx, y + dy
+
+                if (nx, ny) == (end.x, end.y):
+                    return dist + 1
+
+                if not self.is_walkable(nx, ny):
+                    continue
+
+                if (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    queue.append((nx, ny, dist + 1))
+
+        return None  # unreachable
+
     @field_validator("characters", mode="after")
     @classmethod
     def validate_not_overlapping(cls, val: dict[str, Position]) -> dict[str, Position]:
@@ -26,7 +61,7 @@ class GameMap(BaseModel):
 
         return val
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_inbound(self) -> Any:
         for id_, pos in self.characters.items():
             if not is_inbound(pos, width=self.width, height=self.height):
@@ -37,16 +72,12 @@ class GameMap(BaseModel):
                 raise ValueError(msg)
 
         # Remove outbound walls
-        fixed_walls = []
-        for pos in self.walls:
-            if is_inbound(pos, width=self.width, height=self.height):
-                fixed_walls.append(pos)
-        self.walls = fixed_walls
+        self.walls = [pos for pos in self.walls if is_inbound(pos, width=self.width, height=self.height)]
 
         return self
 
     def is_walkable(self, x: int, y: int) -> bool:
-        return (0 <= x < self.width) and (0 <= y < self.height) and ((x, y) not in self.walls)
+        return (0 <= x < self.width) and (0 <= y < self.height) and (Position(x=x, y=y) not in self.walls)
 
     def __str__(self) -> str:
         grid = [["· " for _ in range(self.width)] for _ in range(self.height)]

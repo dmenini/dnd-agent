@@ -52,7 +52,3 @@ class State(BaseModel):
     def draw_map(self) -> None:
         # The chosen char aligns well with emoticons
         self.log.log_event(message=str(self.map), event_type=LogLevel.MAP)
-
-        # gmap = GameMap(map_width=self.map_width, map_height=self.map_height,
-        #               characters={id_: c.pos for id_, c in self.alive_characters.items()}, )
-        # gmap.draw_map()

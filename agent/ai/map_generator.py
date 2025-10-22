@@ -7,14 +7,7 @@ from agent.models.map import GameMap
 
 
 def build_map_generator(config: AgentConfig) -> Runnable:
-    usr_template = (
-        "These are the characters that take part in the combat:\n"
-        "Enemies: {enemies}\n"
-        "Players: {players}"
-    )
-    prompt_template = ChatPromptTemplate.from_messages(
-        [("system", config.prompts.map), ("user", usr_template)]
-    )
+    prompt_template = ChatPromptTemplate.from_messages([("system", config.prompts.map), ("user", "{input}")])
     llm = create_llm(config.llm)
-    llm = llm.with_structured_output(GameMap)
+    llm = llm.with_structured_output(GameMap)  # type: ignore[assignment]
     return prompt_template | llm

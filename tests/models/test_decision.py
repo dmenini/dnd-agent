@@ -4,6 +4,7 @@ from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.character import Character
 from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
+from agent.models.map import GameMap
 from agent.models.position import Position
 
 
@@ -191,36 +192,42 @@ def test_validate_range_too_far(
     assert "out of range" in msg
 
 
-def test_validate_movement_valid(base_decision: DecisionResult, action: Action, actor: Character) -> None:
+def test_validate_movement_valid(
+    base_decision: DecisionResult, action: Action, actor: Character, game_map: GameMap
+) -> None:
     base_decision.target_position = Position(x=2, y=2)
-    ok, msg = base_decision.validate_movement(actor, action, map_size=(10, 10), occupied_positions={Position(x=0, y=0)})
+    game_map.characters = {actor.id: Position(x=0, y=0)}
+    ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)
     assert ok is True
     assert msg == ""
 
 
 def test_validate_movement_outbound(
-    base_decision: DecisionResult, action: Action, actor: Character, target: Character
+    base_decision: DecisionResult, action: Action, actor: Character, target: Character, game_map: GameMap
 ) -> None:
     base_decision.target_position = Position(x=10, y=8)
-    ok, msg = base_decision.validate_movement(actor, action, map_size=(10, 10), occupied_positions={Position(x=0, y=0)})
+    game_map.characters = {actor.id: Position(x=0, y=0)}
+    ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)
     assert ok is False
     assert "out of map bounds" in msg
 
 
 def test_validate_movement_too_far(
-    base_decision: DecisionResult, action: Action, actor: Character, target: Character
+    base_decision: DecisionResult, action: Action, actor: Character, target: Character, game_map: GameMap
 ) -> None:
     base_decision.target_position = Position(x=9, y=9)
+    game_map.characters = {actor.id: Position(x=0, y=0)}
     actor.action_economy.movement_used = 10
-    ok, msg = base_decision.validate_movement(actor, action, map_size=(10, 10), occupied_positions={Position(x=0, y=0)})
+    ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)
     assert ok is False
     assert "too far" in msg
 
 
 def test_validate_movement_taken(
-    base_decision: DecisionResult, action: Action, actor: Character, target: Character
+    base_decision: DecisionResult, action: Action, actor: Character, target: Character, game_map: GameMap
 ) -> None:
+    game_map.characters = {actor.id: Position(x=0, y=0)}
     base_decision.target_position = Position(x=0, y=0)
-    ok, msg = base_decision.validate_movement(actor, action, map_size=(10, 10), occupied_positions={Position(x=0, y=0)})
+    ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)
     assert ok is False
     assert "already occupied" in msg

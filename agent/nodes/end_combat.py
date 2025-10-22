@@ -12,9 +12,9 @@ class EndCombatNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         actor = state.current_actor
+        state.map.update_map(characters=state.characters)
 
         # Advance to next character if resources exhausted
-        # TODO: Improve this by avoid looping over dead characters, just remove them from initiative order
         if not actor.is_alive or not actor.has_resources():
             actor.end_turn()
             state.turn_index += 1
