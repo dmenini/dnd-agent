@@ -125,12 +125,7 @@ class DecisionResult(BaseModel):
 
     def validate_multi_targeting(self, action: Action) -> tuple[bool, str]:
         msg = ""
-        if len(self.target_ids) == 1:
-            msg = (
-                f"Action {self.action_id} targets multiple enemies, but only one target was provided. "
-                f"Please include at least two different target IDs."
-            )
-        elif self.total_hits > action.hits:
+        if self.total_hits > action.hits:
             msg = (
                 f"Action {self.action_id} allows at most {action.hits} total hit(s) distributed among all targets, "
                 f"but {self.total_hits} hits were assigned. Please adjust hit distribution accordingly."
@@ -159,7 +154,7 @@ class DecisionResult(BaseModel):
         for target_id in self.target_ids:
             target = characters[target_id]
             if actor.party.id == target.party.id:
-                return False, (f"{actor.id} cannot attack ally {target.id}. Please, select enemies instead.")
+                return False, f"{actor.id} cannot attack ally {target.id}. Please, select enemies instead."
         return True, ""
 
     def validate_range(
@@ -167,7 +162,7 @@ class DecisionResult(BaseModel):
         actor: Character,
         characters: Mapping[str, Character],
         available_movement: int,
-    ) -> tuple[bool, str | None]:
+    ) -> tuple[bool, str]:
         for target_id in self.target_ids:
             target = characters[target_id]
             dist = actor.distance(target.pos)
@@ -179,7 +174,7 @@ class DecisionResult(BaseModel):
                         f"Please, choose a closer target."
                     ),
                 )
-        return True, None
+        return True, ""
 
     def validate_movement(
         self,
@@ -187,7 +182,7 @@ class DecisionResult(BaseModel):
         action: Action,
         map_size: tuple[int, int],
         occupied_positions: set[Position],
-    ) -> tuple[bool, str | None]:
+    ) -> tuple[bool, str]:
         pos = self.target_position
         if not pos:
             return False, f"No target position specified for movement action {self.action_id}."
@@ -214,4 +209,4 @@ class DecisionResult(BaseModel):
         if pos in occupied_positions:
             return False, f"Position {pos} is already occupied. Please, choose a nearby position."
 
-        return True, None
+        return True, ""

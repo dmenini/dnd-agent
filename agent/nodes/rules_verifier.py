@@ -2,6 +2,7 @@
 
 from logging import getLogger
 
+from agent.actions.common.attack import AttackAction
 from agent.actions.common.dash import DashAction
 from agent.actions.common.move import MovementAction
 from agent.logs.events import LogLevel
@@ -83,9 +84,13 @@ class RulesVerifierNode:
         return state.decision.validate_targets_alive(state.characters)
 
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
+        if not isinstance(state.action, AttackAction):
+            return True, None
         return state.decision.validate_friendly_fire(actor=state.current_actor, characters=state.characters)
 
     def check_range(self, state: State) -> tuple[bool, str | None]:
+        if not hasattr(state.action, "range"):
+            return True, None
         return state.decision.validate_range(
             actor=state.current_actor,
             characters=state.characters,

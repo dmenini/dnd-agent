@@ -9,7 +9,7 @@ console = Console()
 
 def rich_printer(event: Event) -> None:
     verbosity = int(os.getenv("VERBOSITY", Verbosity.DETAIL))
-    always_log = {LogLevel.MAIN, LogLevel.MAP, LogLevel.HEADER}
+    always_log = {LogLevel.MAIN, LogLevel.MAP, LogLevel.HEADER, LogLevel.SYSTEM}
 
     if (
         (event.type == LogLevel.DEBUG and verbosity >= Verbosity.DEBUG)
