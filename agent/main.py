@@ -5,22 +5,25 @@ from pathlib import Path
 import yaml  # type: ignore[import-untyped]
 from langchain_core.runnables import RunnableConfig
 
+from agent.ai.graph import build_graph
+from agent.ai.map_generator import build_map_generator
 from agent.character.attributes import Attributes
 from agent.character.character import Party
 from agent.effects.status_effects.poisoned import Poisoned
 from agent.effects.status_effects.stunned import Stunned
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponType
-from agent.graph import build_graph
 from agent.jobs.fighter import Fighter
 from agent.jobs.mage import Mage
+from agent.logs.events import LogLevel
 from agent.models.config import Config
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
-from agent.models.position import Position
+from agent.models.map import GameMap
 from agent.models.state import Character, State
 from agent.registration import register_actions, register_traits
 
 MAX_ITER = 150
+MAP_SIZE = 10
 
 log = getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -38,8 +41,15 @@ def main() -> None:
         config = yaml.safe_load(fp)
         config = Config.model_validate(config)
 
+    state = State()
+
     party_players = Party(id="p1", name="Heroes", is_player_party=True)
     party_enemies = Party(id="p2", name="Goblins", is_player_party=False)
+
+    state.log.log_event(
+        message=f"Setting up combat simulation: {party_players.name} vs {party_enemies.name}",
+        event_type=LogLevel.SYSTEM
+    )
 
     sword = MeleeWeapon(
         name="Sword",
@@ -76,7 +86,6 @@ def main() -> None:
         icon="🤡",
         job=Fighter,
         attributes=Attributes(base_hp=20),
-        pos=Position(x=2, y=2),
         is_player=True,
         party=party_players,
         main_hand=sword,
@@ -87,7 +96,6 @@ def main() -> None:
         name="Orc Grunt",
         icon="👹",
         job=Fighter,
-        pos=Position(x=4, y=2),
         party=party_enemies,
     )
     goblin = Character(
@@ -95,18 +103,42 @@ def main() -> None:
         name="Goblin Dramer",
         icon="🧌",
         job=Mage,
-        pos=Position(x=8, y=4),
         party=party_enemies,
         main_hand=dagger,
     )
-    state = State(
-        characters={hero.id: hero, orc.id: orc, goblin.id: goblin},
-        parties={party_players.id: party_players, party_enemies.id: party_enemies},
+
+    # TODO: log character summary
+
+    state.log.log_event(
+        message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}",
+        event_type=LogLevel.SYSTEM
     )
+
+    gen = build_map_generator(config.agent)
+    map = gen.invoke({
+        "width": MAP_SIZE,
+        "height": MAP_SIZE,
+        "players": [hero.id],
+        "enemies": [goblin.id, orc.id],
+    })
+    if not isinstance(map, GameMap):
+        raise TypeError
+
+    state.map = map
+    # Players choose their icon
+    map.icons[hero.id] = hero.icon
+
+    # Set positions
+    hero.pos = map.characters[hero.id]
+    orc.pos = map.characters[orc.id]
+    goblin.pos = map.characters[goblin.id]
+
+    state.characters = {hero.id: hero, orc.id: orc, goblin.id: goblin}
+    state.parties = {party_players.id: party_players, party_enemies.id: party_enemies}
 
     graph = build_graph(config=config.agent)
 
-    graph.invoke(state, RunnableConfig(recursion_limit=100))
+    graph.invoke(state, RunnableConfig(recursion_limit=MAX_ITER))
 
 
 if __name__ == "__main__":

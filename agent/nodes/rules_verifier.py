@@ -103,6 +103,6 @@ class RulesVerifierNode:
         return state.decision.validate_movement(
             actor=state.current_actor,
             action=state.action,
-            map_size=(state.map_width, state.map_height),
+            map_size=(state.map.width, state.map.height),
             occupied_positions={ch.pos for ch in state.alive_characters.values()},
         )

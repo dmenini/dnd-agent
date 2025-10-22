@@ -5,6 +5,7 @@ from agent.character.character import Character, Party
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.decision import DecisionResult
+from agent.models.map import GameMap
 
 CELL_WIDTH = 2
 
@@ -19,8 +20,7 @@ class VerificationResult(BaseModel):
 
 class State(BaseModel):
     round: int = 0
-    map_height: int = 10
-    map_width: int = 10
+    map: GameMap | None = None
     turn_order: list[str] = []
     turn_index: int = 0
     characters: dict[str, Character] = {}
@@ -51,10 +51,8 @@ class State(BaseModel):
 
     def draw_map(self) -> None:
         # The chosen char aligns well with emoticons
-        grid = [["· " for _ in range(self.map_width)] for _ in range(self.map_height)]
+        self.log.log_event(message=str(self.map), event_type=LogLevel.MAP)
 
-        for char in self.alive_characters.values():
-            grid[char.pos.y][char.pos.x] = char.icon
-
-        map_str = "\n".join(" ".join(row) for row in grid)
-        self.log.log_event(message=map_str, event_type=LogLevel.MAP)
+        # gmap = GameMap(map_width=self.map_width, map_height=self.map_height,
+        #               characters={id_: c.pos for id_, c in self.alive_characters.items()}, )
+        # gmap.draw_map()
