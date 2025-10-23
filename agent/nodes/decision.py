@@ -66,7 +66,8 @@ class DecisionNode:
                 "pos": str(c.pos),
                 "party": c.party.model_dump_json(),
                 "hp": f"{c.attributes.hp}/{c.max_hp}",
-                "distance": actor.distance(c.pos),
+                "path_distance": f"{state.map.distance(actor.pos, c.pos)} m",
+                "line_of_sight": f"{actor.los_distance(c.pos)} m",
                 "status_effects": [str(eff) for eff in c.status_effects],
             }
             for c in state.alive_characters.values()
@@ -90,6 +91,7 @@ class DecisionNode:
             f"You are controlling {actor.name}, a character in a D&D-like game with this profile:\n"
             f"{actor_str}\n\n"
             f"Visible entities: {visible_enemies}\n"
+            f"Map:\n{state.map}"
         )
 
         result: DecisionResult = self.llm.invoke(  # type: ignore[assignment]

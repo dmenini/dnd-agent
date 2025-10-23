@@ -19,7 +19,8 @@ class DecisionResult(BaseModel):
         description=(
             "Mapping of target IDs to number of hits each target should receive.\n"
             f"Example for {TargetingType.MULTI} targeting attack (3 total hits): {{'enemy1': 2, 'enemy2': 1}}\n"
-            f"Example for {TargetingType.SINGLE} targeting attack (2 total hits): {{'enemy1': 2}}"
+            f"Example for {TargetingType.SINGLE} targeting attack (2 total hits): {{'enemy1': 2}}\n"
+            f"Example for {TargetingType.SELF} targeting attack: {{}}"
         ),
     )
 
@@ -167,12 +168,12 @@ class DecisionResult(BaseModel):
         # For range, we use simple line-of-sight distance, assuming that walls can be ignored by attacks
         for target_id in self.target_ids:
             target = characters[target_id]
-            dist = actor.distance(target.pos)
+            dist = actor.los_distance(target.pos)
             if dist > available_movement:
                 return (
                     False,
                     (
-                        f"Target '{target.id}' is out of range ({dist:.1f} > {available_movement}). "
+                        f"Target '{target.id}' is out of range ({dist:.1f}m > {available_movement}m). "
                         f"Please, choose a closer target."
                     ),
                 )
@@ -199,10 +200,15 @@ class DecisionResult(BaseModel):
         multiplier = 2 if isinstance(action, DashAction) else 1
         dist = game_map.distance(start=actor.pos, end=pos)
         max_dist = actor.current_speed * multiplier
-        if dist is None or dist > max_dist:
+        if dist is None:
             return (
                 False,
-                f"Position {pos} is too far ({dist:.1f} > {max_dist}). Please, select a reachable position.",
+                f"Position {pos} cannot be reached. Please, try a different one.",
+            )
+        if dist > max_dist:
+            return (
+                False,
+                f"Position {pos} is too far ({dist:.1f}m > {max_dist}m). Please, select a closer position.",
             )
 
         occupied_positions = list(game_map.characters.values()) + game_map.walls
