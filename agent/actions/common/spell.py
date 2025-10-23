@@ -7,7 +7,7 @@ from agent.actions.common.attack import AttackAction
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.equipment.weapons import WeaponType
+from agent.equipment.base import WeaponType
 from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.enums import (
@@ -74,7 +74,7 @@ class SupportSpellAction(Action):
     range: float
     status_effects: list[StatusEffect] = []
 
-    def execute(self, actor: Character, target: Character | None) -> None:
+    def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
         if self.targeting == TargetingType.SELF:
             self._execute_on_target(target=actor)
         else:

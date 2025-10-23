@@ -3,6 +3,7 @@ import math
 from agent.actions.base import ActionType, LimitedBonusAction
 from agent.character.character import Character
 from agent.logs.events import LogLevel
+from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
 
 
@@ -18,7 +19,7 @@ class ArcaneRecoveryAction(LimitedBonusAction):
     action_type: ActionType = ActionType.SPECIAL
     targeting: TargetingType = TargetingType.SELF
 
-    def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         max_recovery = math.ceil(actor.level / 2)
         recovered = 0
 

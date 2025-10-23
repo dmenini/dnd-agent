@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 from collections import deque
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from agent.character.character import Character
 from agent.models.position import Position
+
+if TYPE_CHECKING:
+    from agent.character.resolvers.base import CharacterBase
 
 
 def is_inbound(pos: Position, width: int, height: int) -> bool:
@@ -19,7 +23,7 @@ class GameMap(BaseModel):
     characters: dict[str, Position] = Field(default={}, description="Mapping character id to position.")
     icons: dict[str, str] = Field(default={}, description="Mapping character id to icon.")
 
-    def update_map(self, characters: dict[str, Character]) -> None:
+    def update_map(self, characters: dict[str, CharacterBase]) -> None:
         for cid, char in characters.items():
             if not char.is_alive:
                 del self.characters[cid]

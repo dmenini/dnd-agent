@@ -1,5 +1,6 @@
 from logging import getLogger
 
+from agent.models.context import CombatContext
 from agent.models.state import State
 
 ATTACK_ROLL_EXPR = "1d20"
@@ -29,16 +30,19 @@ class ActionProcessorNode:
                     continue
 
                 for i in range(hit_count):
+                    context = CombatContext(map=state.map.model_copy())
                     actor.log_event(f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}.")
-                    action.execute(actor=actor, target=target)
+                    action.execute(actor=actor, target=target, ctx=context)
 
         elif decision.target_position:
+            context = CombatContext(map=state.map.model_copy())
             actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}.")
-            action.execute(actor=actor, target=decision.target_position)
+            action.execute(actor=actor, target=decision.target_position, ctx=context)
 
         else:
+            context = CombatContext(map=state.map.model_copy())
             actor.log_event(f"{actor.name} performs {action.name} on self.")
-            action.execute(actor=actor, target=actor)
+            action.execute(actor=actor, target=actor, ctx=context)
 
         action.finalize(actor)
 

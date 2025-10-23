@@ -8,6 +8,7 @@ from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
+    from agent.models.context import CombatContext
 
 
 class WaitAction(Action):
@@ -21,7 +22,7 @@ class WaitAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.can_use_standard() or action_economy.can_move(distance=0)
 
-    def execute(self, actor: Character, target: Character) -> None:  # noqa: ARG002
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         return
 
     def finalize(self, actor: Character) -> None:

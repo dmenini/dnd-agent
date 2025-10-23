@@ -8,6 +8,7 @@ from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
+    from agent.models.context import CombatContext
     from agent.models.position import Position
 
 
@@ -24,7 +25,7 @@ class MovementAction(Action):
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.can_move(distance=self.range)
 
-    def execute(self, actor: Character, target: Position) -> None:
+    def execute(self, actor: Character, target: Position, ctx: CombatContext) -> None:  # noqa: ARG002
         actor.move(target)
 
     def finalize(self, actor: Character) -> None:

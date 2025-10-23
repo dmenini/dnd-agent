@@ -74,8 +74,14 @@ def target() -> Character:
 
 
 @pytest.fixture
-def game_map() -> GameMap:
-    return GameMap(map="", width=10, height=10)
+def game_map(actor: Character, target: Character) -> GameMap:
+    return GameMap(
+        map="",
+        width=10,
+        height=10,
+        characters={actor.id: actor.pos, target.id: target.pos},
+        icons={actor.id: actor.icon, target.id: target.icon},
+    )
 
 
 def advance_turn(state: State, result: DecisionResult) -> State:

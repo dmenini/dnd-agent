@@ -5,8 +5,9 @@ from agent.actions.common.attack import AttackAction
 from agent.character.character import Character
 from agent.character.resolvers.roll import D20
 from agent.character.stats import StatType
-from agent.equipment.weapons import WeaponType
+from agent.equipment.base import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
+from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
@@ -41,7 +42,7 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
     actor._dice.roll_once.return_value = DiceRoll(expression="1d8+5", rolls=[5], total=roll2, raw=5)
 
     start_hp = target.attributes.hp
-    action.execute(actor, target)
+    action.execute(actor, target, ctx=CombatContext())
 
     assert target.attributes.hp == start_hp - roll2
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=True)
@@ -57,7 +58,7 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
     actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[roll], total=roll, raw=roll)
 
     start_hp = target.attributes.hp
-    action.execute(actor, target)
+    action.execute(actor, target, ctx=CombatContext())
 
     # Target HP unchanged since attack missed
     assert target.attributes.hp == start_hp
@@ -74,7 +75,7 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
     actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+0", rolls=[roll2], total=roll2, raw=roll2)
 
     start_hp = target.attributes.hp
-    action.execute(actor, target)
+    action.execute(actor, target, ctx=CombatContext())
 
     # Target takes full critical damage
     assert target.attributes.hp == start_hp - roll2

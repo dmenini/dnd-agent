@@ -8,6 +8,7 @@ from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
+    from agent.models.context import CombatContext
 
 
 class DodgeAction(Action):
@@ -19,6 +20,6 @@ class DodgeAction(Action):
 
     targeting: TargetingType = TargetingType.SELF
 
-    def execute(self, actor: Character, target: Any) -> None:  # noqa: ARG002
+    def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
         effect = Dodge(duration=1)
         actor.apply_effect(effect)
