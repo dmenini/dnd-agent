@@ -1,29 +1,24 @@
 from unittest.mock import MagicMock
 
-from agent.character.attributes import Attributes
-from agent.character.character import Character, Party
+from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.status_effects.stunned import Stunned
-from agent.equipment.weapons import MeleeWeapon, WeaponType
+from agent.equipment.base import WeaponType
+from agent.equipment.weapons import MeleeWeapon
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
-from agent.models.position import Position
+from agent.models.map import GameMap
 from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_stunned(
-    config: AgentConfig,
-) -> None:
-    hero_id = "hero"
-    orc_id = "orc"
-
-    party_players = Party(id="p1", name="Heroes", is_player_party=True)
-    party_enemies = Party(id="p2", name="Enemies", is_player_party=False)
+def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+    hero_id = actor.id
+    orc_id = target.id
 
     sword = MeleeWeapon(
         name="Sword",
@@ -34,35 +29,20 @@ def test_stunned(
         targeting=TargetingType.SINGLE,
         effects=[Stunned(duration=2)],
     )
-    hero = Character(
-        id=hero_id,
-        name="Alfred",
-        icon="⚔️",
-        pos=Position(x=2, y=2),
-        is_player=True,
-        party=party_players,
-        main_hand=sword,
-    )
-    orc = Character(
-        id=orc_id,
-        name="Orc Grunt",
-        icon="👹",
-        pos=Position(x=4, y=2),
-        attributes=Attributes(hp=20),
-        party=party_enemies,
-    )
+    actor.main_hand = sword
 
     state = State(
-        characters={hero.id: hero, orc.id: orc},
-        parties={party_players.id: party_players, party_enemies.id: party_enemies},
+        map=game_map,
+        characters={actor.id: actor, target.id: target},
+        parties={actor.party.id: actor.party, target.party.id: target.party},
         turn_order=[hero_id, orc_id],
     )
 
-    hero._dice = MagicMock()
+    actor._dice = MagicMock()
     value1 = 15
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    orc._dice = MagicMock()
-    orc._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
+    actor._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    target._dice = MagicMock()
+    target._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
 
     # Turn 1.1: Hero attacks and applies stun
     state = advance_turn(

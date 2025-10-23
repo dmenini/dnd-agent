@@ -1,28 +1,24 @@
 from unittest.mock import MagicMock
 
-from agent.character.character import Character, Party
+from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.effects.base import EffectType
 from agent.effects.status_effects.paralyzed import Paralyzed
-from agent.equipment.weapons import MeleeWeapon, WeaponType
+from agent.equipment.base import WeaponType
+from agent.equipment.weapons import MeleeWeapon
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
-from agent.models.position import Position
+from agent.models.map import GameMap
 from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_paralyzed(
-    config: AgentConfig,
-) -> None:
-    hero_id = "hero"
-    orc_id = "orc"
-
-    party_players = Party(id="p1", name="Heroes", is_player_party=True)
-    party_enemies = Party(id="p2", name="Enemies", is_player_party=False)
+def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+    hero_id = actor.id
+    orc_id = target.id
 
     sword = MeleeWeapon(
         name="Sword",
@@ -33,37 +29,23 @@ def test_paralyzed(
         targeting=TargetingType.SINGLE,
         effects=[Paralyzed(duration=2)],
     )
-    hero = Character(
-        id=hero_id,
-        name="Alfred",
-        icon="⚔️",
-        pos=Position(x=2, y=2),
-        is_player=True,
-        party=party_players,
-        main_hand=sword,
-    )
+    actor.main_hand = sword
 
-    orc = Character(
-        id=orc_id,
-        name="Orc Grunt",
-        icon="👹",
-        pos=Position(x=4, y=2),
-        party=party_enemies,
-    )
     starting_hp = 30
-    orc.attributes.hp = starting_hp
+    target.attributes.hp = starting_hp
 
     state = State(
-        characters={hero.id: hero, orc.id: orc},
-        parties={party_players.id: party_players, party_enemies.id: party_enemies},
+        map=game_map,
+        characters={actor.id: actor, target.id: target},
+        parties={actor.party.id: actor.party, target.party.id: target.party},
         turn_order=[hero_id, orc_id],
     )
 
-    hero._dice = MagicMock()
+    actor._dice = MagicMock()
     value1 = 15
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
+    actor._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    actor._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    actor._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
 
     # Turn 1.1: Hero attacks and applies paralysis
     state = advance_turn(
@@ -93,11 +75,11 @@ def test_paralyzed(
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Hero attacks -> crit
-    hero._dice = MagicMock()
+    actor._dice = MagicMock()
     value2 = 5
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
-    hero._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
-    hero._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value2 * 2, raw=value2)
+    actor._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
+    actor._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
+    actor._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value2 * 2, raw=value2)
 
     state = advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
