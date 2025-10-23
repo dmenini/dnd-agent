@@ -7,7 +7,7 @@ from agent.actions.common.attack import AttackAction
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.equipment.base import WeaponType
+from agent.equipment.weapons import WeaponType
 from agent.logs.events import Icon
 from agent.models.context import CombatContext
 from agent.models.enums import (

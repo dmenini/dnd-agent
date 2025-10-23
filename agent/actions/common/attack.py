@@ -7,8 +7,7 @@ from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import StatusEffect
-from agent.equipment.base import WeaponType
-from agent.equipment.weapons import RangedWeapon, Weapon
+from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
 from agent.models.constants import EventType
 from agent.models.damage import Damage, DamageComponent, DamageType

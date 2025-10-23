@@ -61,7 +61,8 @@ class CharacterBase(BaseModel):
     def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError
 
-    def distance(self, target: Position) -> float:
+    def los_distance(self, target: Position) -> float:
+        """Line of Sight distance from the target."""
         return self.pos.manhattan_distance(target)
 
     def apply_damage(self, damage: int) -> None:

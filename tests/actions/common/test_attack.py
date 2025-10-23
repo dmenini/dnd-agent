@@ -5,7 +5,7 @@ from agent.actions.common.attack import AttackAction
 from agent.character.character import Character
 from agent.character.resolvers.roll import D20
 from agent.character.stats import StatType
-from agent.equipment.base import WeaponType
+from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
