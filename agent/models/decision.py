@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from pydantic import BaseModel, Field, computed_field
 
 from agent.actions.base import Action
-from agent.actions.common.dash import DashAction
 from agent.character.character import Character
 from agent.models.enums import TargetingType
 from agent.models.map import GameMap
@@ -163,7 +162,7 @@ class DecisionResult(BaseModel):
         self,
         actor: Character,
         characters: Mapping[str, Character],
-        available_movement: int,
+        available_movement: float,
     ) -> tuple[bool, str]:
         # For range, we use simple line-of-sight distance, assuming that walls can be ignored by attacks
         for target_id in self.target_ids:
@@ -197,9 +196,8 @@ class DecisionResult(BaseModel):
             )
 
         # For movement, we use distance measured on the map with pathfinding algo
-        multiplier = 2 if isinstance(action, DashAction) else 1
         dist = game_map.distance(start=actor.pos, end=pos)
-        max_dist = actor.current_speed * multiplier
+        max_dist = action.range  # The range is configured as the max distance available to the character
         if dist is None:
             return (
                 False,

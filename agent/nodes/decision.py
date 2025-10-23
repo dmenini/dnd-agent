@@ -32,6 +32,10 @@ class DecisionNode:
         if not actor.is_alive:
             return state
 
+        if not state.map:
+            msg = "Map not initialized"
+            raise ValueError(msg)
+
         if actor.turn_done:
             state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
             state.draw_map()

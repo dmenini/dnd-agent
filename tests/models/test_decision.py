@@ -226,6 +226,7 @@ def test_validate_movement_too_far(
 def test_validate_movement_taken(
     base_decision: DecisionResult, action: Action, actor: Character, target: Character, game_map: GameMap
 ) -> None:
+    action.range = 10
     game_map.characters = {actor.id: Position(x=0, y=0)}
     base_decision.target_position = Position(x=0, y=0)
     ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)

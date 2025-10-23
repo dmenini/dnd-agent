@@ -48,6 +48,10 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=True)
     actor._dice.roll_once.assert_called_once_with("1d8+5")
 
+    action.finalize(actor)
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False
+
 
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
     """Attack roll is too low, no damage applied."""
@@ -63,6 +67,10 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
     # Target HP unchanged since attack missed
     assert target.attributes.hp == start_hp
     actor._dice.roll_once.assert_not_called()
+
+    action.finalize(actor)
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False
 
 
 def test_attack_critical_hit(actor: Character, target: Character, mocker: MockerFixture) -> None:
@@ -81,3 +89,7 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
     assert target.attributes.hp == start_hp - roll2
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=None)
     actor._dice.roll_twice.assert_called_once_with("1d8+0")
+
+    action.finalize(actor)
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False

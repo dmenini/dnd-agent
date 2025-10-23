@@ -29,8 +29,7 @@ class AttackSpellAction(AttackAction):
     requires_save: bool = True
     hits: int = 1
 
-    def execute(self, actor: Character, target: Character) -> None:
-        ctx = CombatContext()
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         self._fire_start_events(actor, target, ctx)
         is_hit = not self.requires_save or self._resolve_saving_throw(actor, target, ctx)
 

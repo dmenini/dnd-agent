@@ -33,12 +33,7 @@ class RulesVerifierNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         valid = True
-
-        if not state.current_actor.is_alive:
-            state.verification_result = VerificationResult(valid=valid)
-            return state
-
-        if not state.action or not state.decision:
+        if not state.current_actor.is_alive or not state.action or not state.decision:
             state.verification_result = VerificationResult(valid=valid)
             return state
 

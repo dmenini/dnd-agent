@@ -22,6 +22,10 @@ class ActionProcessorNode:
         if not actor.is_alive:
             return state
 
+        if not state.map:
+            msg = "Map not initialized"
+            raise ValueError(msg)
+
         # Assuming decision is validated
         if decision.target_hits:
             for target_id, hit_count in decision.target_hits.items():

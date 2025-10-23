@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from agent.models.position import Position
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from agent.character.resolvers.base import CharacterBase
 
 
@@ -23,14 +25,14 @@ class GameMap(BaseModel):
     characters: dict[str, Position] = Field(default={}, description="Mapping character id to position.")
     icons: dict[str, str] = Field(default={}, description="Mapping character id to icon.")
 
-    def update_map(self, characters: dict[str, CharacterBase]) -> None:
+    def update_map(self, characters: Mapping[str, CharacterBase]) -> None:
         for cid, char in characters.items():
             if not char.is_alive:
                 del self.characters[cid]
             else:
                 self.characters[cid] = char.pos
 
-    def distance(self, start: Position, end: Position) -> int | None:
+    def distance(self, start: Position, end: Position) -> float | None:
         """Return shortest distance between two points considering obstacles."""
         if (start.x, start.y) == (end.x, end.y):
             return 0

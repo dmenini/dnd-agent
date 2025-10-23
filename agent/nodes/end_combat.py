@@ -12,6 +12,11 @@ class EndCombatNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         actor = state.current_actor
+
+        if not state.map:
+            msg = "Map not initialized"
+            raise ValueError(msg)
+
         state.map.update_map(characters=state.characters)
 
         # Advance to next character if resources exhausted

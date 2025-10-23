@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
-    from agent.character.resolvers.base import CharacterBase
+    from agent.character.character import Character
     from agent.character.resources import ActionEconomy
     from agent.models.context import CombatContext
 
@@ -67,14 +67,15 @@ class Action(BaseModel):
     category: ActionCategory
     targeting: TargetingType
     hits: int = 1
+    range: float = 0
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.can_use_standard(self.action_type)
 
-    def execute(self, actor: CharacterBase, target: Any, ctx: CombatContext) -> None:
+    def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:
         raise NotImplementedError
 
-    def finalize(self, actor: CharacterBase) -> None:
+    def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
         actor.action_economy.use_standard(self.action_type)
 
@@ -93,7 +94,7 @@ class LimitedBonusAction(Action):
             raise ValueError
         self._current_uses += 1
 
-    def finalize(self, actor: CharacterBase) -> None:
+    def finalize(self, actor: Character) -> None:
         self._consume_use()
         actor.action_economy.use_bonus(self.action_type)
 
