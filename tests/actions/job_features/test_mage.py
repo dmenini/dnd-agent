@@ -4,6 +4,7 @@ from agent.actions.jobs.mage import ArcaneRecoveryAction
 from agent.character.character import Character
 from agent.character.resources import SpellLevel, SpellSlots
 from agent.jobs.feature import FeatureId
+from agent.models.context import CombatContext
 
 
 def test_arcane_recovery(actor: Character) -> None:
@@ -28,7 +29,7 @@ def test_arcane_recovery(actor: Character) -> None:
     action = ArcaneRecoveryAction(id=FeatureId.ARCANE_RECOVERY.value, description="")
 
     # Execute Arcane Recovery
-    action.execute(actor, actor)
+    action.execute(actor, actor, ctx=CombatContext())
 
     # Count total slots recovered
     recovered = sum(actor.spell_slots.slots[level] - initial_slots[level] for level in actor.spell_slots.slots)

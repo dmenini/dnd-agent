@@ -7,6 +7,7 @@ from agent.character.resolvers.roll import D20
 from agent.character.stats import StatType
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
+from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
@@ -41,11 +42,15 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
     actor._dice.roll_once.return_value = DiceRoll(expression="1d8+5", rolls=[5], total=roll2, raw=5)
 
     start_hp = target.attributes.hp
-    action.execute(actor, target)
+    action.execute(actor, target, ctx=CombatContext())
 
     assert target.attributes.hp == start_hp - roll2
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=True)
     actor._dice.roll_once.assert_called_once_with("1d8+5")
+
+    action.finalize(actor)
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False
 
 
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
@@ -57,11 +62,15 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
     actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[roll], total=roll, raw=roll)
 
     start_hp = target.attributes.hp
-    action.execute(actor, target)
+    action.execute(actor, target, ctx=CombatContext())
 
     # Target HP unchanged since attack missed
     assert target.attributes.hp == start_hp
     actor._dice.roll_once.assert_not_called()
+
+    action.finalize(actor)
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False
 
 
 def test_attack_critical_hit(actor: Character, target: Character, mocker: MockerFixture) -> None:
@@ -74,9 +83,13 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
     actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+0", rolls=[roll2], total=roll2, raw=roll2)
 
     start_hp = target.attributes.hp
-    action.execute(actor, target)
+    action.execute(actor, target, ctx=CombatContext())
 
     # Target takes full critical damage
     assert target.attributes.hp == start_hp - roll2
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=None)
     actor._dice.roll_twice.assert_called_once_with("1d8+0")
+
+    action.finalize(actor)
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False

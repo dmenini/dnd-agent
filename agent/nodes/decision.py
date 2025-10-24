@@ -32,6 +32,10 @@ class DecisionNode:
         if not actor.is_alive:
             return state
 
+        if not state.map:
+            msg = "Map not initialized"
+            raise ValueError(msg)
+
         if actor.turn_done:
             state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
             state.draw_map()
@@ -66,7 +70,8 @@ class DecisionNode:
                 "pos": str(c.pos),
                 "party": c.party.model_dump_json(),
                 "hp": f"{c.attributes.hp}/{c.max_hp}",
-                "distance": actor.distance(c.pos),
+                "path_distance": f"{state.map.distance(actor.pos, c.pos)} m",
+                "line_of_sight": f"{actor.los_distance(c.pos)} m",
                 "status_effects": [str(eff) for eff in c.status_effects],
             }
             for c in state.alive_characters.values()
@@ -90,6 +95,7 @@ class DecisionNode:
             f"You are controlling {actor.name}, a character in a D&D-like game with this profile:\n"
             f"{actor_str}\n\n"
             f"Visible entities: {visible_enemies}\n"
+            f"Map:\n{state.map}"
         )
 
         result: DecisionResult = self.llm.invoke(  # type: ignore[assignment]

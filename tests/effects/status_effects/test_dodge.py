@@ -1,23 +1,18 @@
-from agent.character.character import Character, Party
+from agent.character.character import Character
 from agent.effects.base import EffectType
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
 from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
-from agent.models.position import Position
+from agent.models.map import GameMap
 from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_dodge(
-    config: AgentConfig,
-) -> None:
-    hero_id = "hero"
-    orc_id = "orc"
-
-    party_players = Party(id="p1", name="Heroes", is_player_party=True)
-    party_enemies = Party(id="p2", name="Enemies", is_player_party=False)
+def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+    hero_id = actor.id
+    orc_id = target.id
 
     sword = MeleeWeapon(
         name="Sword",
@@ -27,26 +22,12 @@ def test_dodge(
         targeting=TargetingType.SINGLE,
         damage_type=DamageType.SLASHING,
     )
-    hero = Character(
-        id=hero_id,
-        name="Alfred",
-        icon="⚔️",
-        pos=Position(x=2, y=2),
-        is_player=True,
-        party=party_players,
-        main_hand=sword,
-    )
-    orc = Character(
-        id=orc_id,
-        name="Orc Grunt",
-        icon="👹",
-        pos=Position(x=4, y=2),
-        party=party_enemies,
-    )
+    actor.main_hand = sword
 
     state = State(
-        characters={hero.id: hero, orc.id: orc},
-        parties={party_players.id: party_players, party_enemies.id: party_enemies},
+        map=game_map,
+        characters={actor.id: actor, target.id: target},
+        parties={actor.party.id: actor.party, target.party.id: target.party},
         turn_order=[hero_id, orc_id],
     )
 

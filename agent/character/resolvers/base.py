@@ -25,7 +25,7 @@ class CharacterBase(BaseModel):
     is_player: bool = False
     level: int = 1
     experience: int = 0
-    pos: Position
+    pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
 
     # Defined for typing to work
@@ -61,7 +61,8 @@ class CharacterBase(BaseModel):
     def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError
 
-    def distance(self, target: Position) -> float:
+    def los_distance(self, target: Position) -> float:
+        """Line of Sight distance from the target."""
         return self.pos.manhattan_distance(target)
 
     def apply_damage(self, damage: int) -> None:

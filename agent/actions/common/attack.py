@@ -10,12 +10,12 @@ from agent.effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
 from agent.models.constants import EventType
-from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
+    from agent.models.context import CombatContext
 
 
 class AttackAction(Action):
@@ -27,9 +27,7 @@ class AttackAction(Action):
     range: float
     status_effects: list[StatusEffect] = []
 
-    def execute(self, actor: Character, target: Character) -> None:
-        ctx = CombatContext()
-
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         self._fire_start_events(actor, target, ctx)
         self._resolve_attack(actor, target, ctx)
 

@@ -33,12 +33,7 @@ class RulesVerifierNode:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         valid = True
-
-        if not state.current_actor.is_alive:
-            state.verification_result = VerificationResult(valid=valid)
-            return state
-
-        if not state.action or not state.decision:
+        if not state.current_actor.is_alive or not state.action or not state.decision:
             state.verification_result = VerificationResult(valid=valid)
             return state
 
@@ -100,9 +95,10 @@ class RulesVerifierNode:
     def check_movement(self, state: State) -> tuple[bool, str | None]:
         if not isinstance(state.action, (DashAction, MovementAction)):
             return True, None
+        if not state.map:
+            raise ValueError
         return state.decision.validate_movement(
             actor=state.current_actor,
             action=state.action,
-            map_size=(state.map_width, state.map_height),
-            occupied_positions={ch.pos for ch in state.alive_characters.values()},
+            game_map=state.map,
         )

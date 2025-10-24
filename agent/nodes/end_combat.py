@@ -13,8 +13,13 @@ class EndCombatNode:
 
         actor = state.current_actor
 
+        if not state.map:
+            msg = "Map not initialized"
+            raise ValueError(msg)
+
+        state.map.update_map(characters=state.characters)
+
         # Advance to next character if resources exhausted
-        # TODO: Improve this by avoid looping over dead characters, just remove them from initiative order
         if not actor.is_alive or not actor.has_resources():
             actor.end_turn()
             state.turn_index += 1

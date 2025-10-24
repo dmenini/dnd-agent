@@ -10,9 +10,10 @@ from agent.models.enums import TargetingType
 if TYPE_CHECKING:
     from agent.character.character import Character
     from agent.character.resources import ActionEconomy
+    from agent.models.context import CombatContext
 
 """
-| Type            | Frequency                    | When usable                                                 |
+| Category        | Frequency                    | When usable                                                 |
 | --------------- | ---------------------------- | ----------------------------------------------------------- |
 | Movement        | once per turn (can be split) | During your turn                                            |
 | Standard Action | once per turn                | During your turn                                            |
@@ -66,11 +67,12 @@ class Action(BaseModel):
     category: ActionCategory
     targeting: TargetingType
     hits: int = 1
+    range: float = 0
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
         return action_economy.can_use_standard(self.action_type)
 
-    def execute(self, actor: Character, target: Any) -> None:
+    def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:
         raise NotImplementedError
 
     def finalize(self, actor: Character) -> None:

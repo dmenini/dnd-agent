@@ -2,7 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
-from agent.actions.base import LimitedBonusAction
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
@@ -57,9 +56,10 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def end_round(self) -> None:
         self.action_economy.restore_reaction()
 
+    def end_combat(self) -> None:
         # TODO: This should be done on rest
         for ability in self.abilities:
-            if isinstance(ability, LimitedBonusAction):
+            if hasattr(ability, "rest"):
                 ability.rest()
 
     def has_resources(self) -> bool:

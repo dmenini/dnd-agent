@@ -12,6 +12,7 @@ class LLMConfig(BaseModel):
 
 class PromptsConfig(BaseModel):
     system: str
+    map: str
 
 
 class AgentConfig(BaseModel):

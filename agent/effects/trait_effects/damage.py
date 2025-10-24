@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 def auto_crit_if_melee_effect(actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
-    if actor.distance(target.pos) <= MELEE_RANGE:
+    if actor.los_distance(target.pos) <= MELEE_RANGE:
         context.is_critical = True
         actor.log_event(f"{actor.name} gains automatic crit against {target.name}!", event_type=LogLevel.DEBUG)
 
@@ -29,7 +29,7 @@ def reflect_melee_damage_effect(
     actor: CharacterBase, target: CharacterBase, context: CombatContext, ratio: float, damage_type: DamageType
 ) -> None:
     has_damage = context.damage and any(c.type == damage_type for c in context.damage.components)
-    if has_damage and actor.distance(target.pos) <= MELEE_RANGE:
+    if has_damage and actor.los_distance(target.pos) <= MELEE_RANGE:
         value = context.damage.total * ratio  # type: ignore[union-attr]
         damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
         damage = actor.modify_incoming_damage(damage)

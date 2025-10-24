@@ -23,7 +23,7 @@ test-format:
 
 format:
 	$(UV) run ruff format $(PACKAGE_NAME) tests
-	$(UV) run ruff check --fix $(PACKAGE_NAME) tests
+	$(UV) run ruff check --fix --unsafe-fixes $(PACKAGE_NAME) tests
 
 test-coverage:
 	$(UV) run pytest \
