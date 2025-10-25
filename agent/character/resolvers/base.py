@@ -27,6 +27,8 @@ class CharacterBase(BaseModel):
     experience: int = 0
     pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
+    is_hidden: bool = False
+    stealth_value: int = 0
 
     # Defined for typing to work
     action_economy: ActionEconomy

@@ -21,6 +21,7 @@ class Attributes(Stats):
     base_crit_roll_bonus: int = 0
     base_vision_range: float = 10.0
     base_spell_save_dc: int = 8
+    base_perception: int = 10
 
     # Base nested attributes
     base_advantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
@@ -68,6 +69,13 @@ class Attributes(Stats):
     def crit_roll(self) -> int:
         crit_roll = 20
         return crit_roll - self._recompute_attribute("crit_roll_bonus")
+
+    def passive_perception(self) -> int:
+        wis_mod = self.stat_modifier(StatType.WIS)
+        return self._recompute_attribute("perception") + wis_mod
+
+    def vision_range(self) -> float:
+        return self._recompute_attribute("vision_range")
 
     def advantage(self, kind: str) -> int:
         adv = self._recompute_attribute(f"advantage.{kind}")

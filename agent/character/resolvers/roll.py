@@ -65,3 +65,22 @@ class RollResolver(CharacterBase):
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def stealth_roll(self) -> DiceRoll:
+        sources = [
+            self.attributes.advantage("stealth"),
+        ]
+        advantage = resolve_advantage(sources)
+
+        dex_mod = self.attributes.stat_modifier(StatType.DEX)
+        expr = f"{D20}+{dex_mod}"
+        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def perception_roll(self) -> DiceRoll:
+        sources: list[int] = [self.attributes.advantage("perception")]
+        advantage = resolve_advantage(sources)
+
+        wis_mod = self.attributes.stat_modifier(StatType.WIS)
+        expr = f"D20+{wis_mod}"
+
+        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)

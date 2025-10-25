@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
@@ -68,3 +68,12 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         has_main = main_hand is not None and (self.action_economy.can_use_standard())
         has_movement = self.action_economy.can_move(self.current_speed)
         return has_main or has_bonus or has_movement
+
+    def detect_target(self: Self, target: Self, *, use_passive: bool = False) -> bool:
+        if not target.is_hidden:
+            return True  # Always visible if not hidden
+
+        # Use passive perception or active roll
+        perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
+
+        return perception_value >= (target.stealth_value or 0)
