@@ -7,6 +7,7 @@ from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
+from agent.jobs.feature import FeatureId
 from agent.logs.events import Icon, LogLevel
 from agent.models.position import Position
 
@@ -45,12 +46,12 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def hide(self) -> None:
         roll = self.stealth_roll()
         self.stealth_value = roll.total
-        self.is_hidden = True
         self.log_event(f"{self.name} hides (Stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
 
     def unhide(self) -> None:
-        self.is_hidden = False
         self.stealth_value = 0
+        self.traits[FeatureId.STEALTH].on_expire(self)
+        del self.traits[FeatureId.STEALTH]
         self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 
     def start_turn(self) -> None:

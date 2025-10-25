@@ -52,6 +52,8 @@ class FeatureId(str, Enum):
     IGNORE_RESISTANCE = "ignore_resistance"
 
     # Stealth & Perception
+    STEALTH = "stealth"
+    STEALTH_ADVANTAGE = "stealth_advantage"
     STEALTH_DISADVANTAGE = "stealth_disadvantage"
 
     # Regeneration & Lifesteal

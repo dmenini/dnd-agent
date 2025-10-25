@@ -1,14 +1,11 @@
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.base import EffectType, StatusEffect
 from agent.logs.events import Icon
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.constants import EventType
 
 
 class EffectResolver(CharacterBase):
     status_effects: list[StatusEffect] = []
-
-    _dice: DiceRoller = DiceRoller()
 
     def is_immune_to(self, cond: EffectType) -> bool:  # noqa: ARG002
         # TODO: Implement this

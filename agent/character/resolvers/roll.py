@@ -77,10 +77,10 @@ class RollResolver(CharacterBase):
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
     def perception_roll(self) -> DiceRoll:
-        sources: list[int] = [self.attributes.advantage("perception")]
+        sources = [self.attributes.advantage("perception")]
         advantage = resolve_advantage(sources)
 
         wis_mod = self.attributes.stat_modifier(StatType.WIS)
-        expr = f"D20+{wis_mod}"
+        expr = f"{D20}+{wis_mod}"
 
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)

@@ -201,10 +201,17 @@ class SpellWeakness(Trait):
         target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
 
 
+class StealthAdvantage(Trait):
+    """Give stealth check advantage to target."""
+
+    def on_apply(self, target: CharacterBase) -> None:
+        attr = "advantage.stealth"
+        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+
+
 class StealthDisadvantage(Trait):
     """Give stealth check disadvantage to target."""
 
-    # TODO: Implement check
     def on_apply(self, target: CharacterBase) -> None:
         attr = "disadvantage.stealth"
         target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))

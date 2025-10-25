@@ -93,7 +93,7 @@ class StandardAction(Action, ABC):
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
         actor.action_economy.use_standard(self.action_type)
-        if self.breaks_stealth:
+        if self.breaks_stealth and actor.is_hidden:
             actor.unhide()
 
 
@@ -107,7 +107,7 @@ class BonusAction(Action, ABC):
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
         actor.action_economy.use_bonus(self.action_type)
-        if self.breaks_stealth:
+        if self.breaks_stealth and actor.is_hidden:
             actor.unhide()
 
 

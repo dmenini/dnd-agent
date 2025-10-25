@@ -54,6 +54,7 @@ def register_traits() -> None:
     TraitRegistry.register(FeatureId.IGNORE_RESISTANCE, traits.IgnoreResistance)
 
     # Stealth and perception
+    TraitRegistry.register(FeatureId.STEALTH_ADVANTAGE, traits.StealthAdvantage)
     TraitRegistry.register(FeatureId.STEALTH_DISADVANTAGE, traits.StealthDisadvantage)
 
     # Regeneration and life steal

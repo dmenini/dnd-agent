@@ -27,7 +27,6 @@ class CharacterBase(BaseModel):
     experience: int = 0
     pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
-    is_hidden: bool = False
     stealth_value: int = 0
 
     # Defined for typing to work
@@ -56,9 +55,15 @@ class CharacterBase(BaseModel):
     def speed(self) -> float:
         return self.attributes.speed()
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_alive(self) -> bool:
         return self.attributes.hp > 0
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_hidden(self) -> bool:
+        return self.stealth_value > 0
 
     def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError

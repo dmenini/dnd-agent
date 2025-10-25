@@ -69,6 +69,7 @@ class ActionEconomy(BaseModel):
             ActionType.CAST_SPELL,
             ActionType.DASH,
             ActionType.DODGE,
+            ActionType.HIDE,
             ActionType.USE_OBJECT,
         ]
 

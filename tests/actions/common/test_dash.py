@@ -1,5 +1,7 @@
 from agent.actions.common.dash import DashAction
 from agent.character.character import Character
+from agent.effects.base import Trait
+from agent.jobs.feature import FeatureId
 from agent.models.context import CombatContext
 from agent.models.map import GameMap
 from agent.models.position import Position
@@ -36,7 +38,8 @@ def test_dash(actor: Character, game_map: GameMap) -> None:
 
 
 def test_dash_doesnt_breaks_stealth(actor: Character, game_map: GameMap) -> None:
-    actor.is_hidden = True
+    actor.hide()
+    actor.traits[FeatureId.STEALTH] = Trait()
     action = make_dash_action()
 
     target = Position(x=3, y=3)
@@ -44,3 +47,4 @@ def test_dash_doesnt_breaks_stealth(actor: Character, game_map: GameMap) -> None
     action.finalize(actor)
 
     assert actor.is_hidden is True
+    assert actor.stealth_value > 0

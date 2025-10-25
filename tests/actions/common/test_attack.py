@@ -5,7 +5,9 @@ from agent.actions.common.attack import AttackAction, MainHandAttackAction
 from agent.character.character import Character
 from agent.character.resolvers.roll import D20
 from agent.character.stats import StatType
+from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
+from agent.jobs.feature import FeatureId
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
@@ -93,7 +95,8 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
 
 
 def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
-    actor.is_hidden = True
+    actor.hide()
+    actor.traits[FeatureId.STEALTH] = Trait()
     action = make_attack_action()
     action.execute(actor, target, ctx=CombatContext())
     action.finalize(actor)
@@ -101,3 +104,4 @@ def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
     assert actor.is_hidden is False
+    assert actor.stealth_value == 0
