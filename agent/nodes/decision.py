@@ -57,6 +57,7 @@ class DecisionNode:
             "pos": str(actor.pos),
             "party": actor.party.model_dump_json(),
             "is_player": actor.is_player,
+            "is_hidden": actor.is_hidden,
             "level": actor.level,
             "hp": f"{actor.attributes.hp}/{actor.max_hp}",
             "movement": f"{actor.current_speed}/{actor.speed}",

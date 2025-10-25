@@ -1,20 +1,23 @@
 from typing import Any
 
-from agent.actions.base import Action, ActionCategory, ActionType
+from agent.actions.base import ActionType, StandardAction
 from agent.character.character import Character
 from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
 
 
-class HideAction(Action):
+class HideAction(StandardAction):
     id: str = "hide"
     name: str = "Hide"
-    description: str = "Hide."
+    description: str = (
+        "Attempt to become unseen by enemies, gaining advantage on attacks "
+        "and avoiding being targeted until revealed. Requires being out of enemies' line of sight."
+    )
     action_type: ActionType = ActionType.HIDE
-    category: ActionCategory = ActionCategory.STANDARD
     targeting: TargetingType = TargetingType.SELF
     range: float = 1
+    breaks_stealth: bool = False
 
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
-        roll = actor.stealth_roll()
-        actor.stealth_value = roll.total
+        # TODO: Make this conditional on LoS
+        actor.hide()

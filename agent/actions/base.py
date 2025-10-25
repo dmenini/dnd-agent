@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -57,7 +58,7 @@ class ActionType(str, Enum):
     SPECIAL = "special"  # bonus
 
 
-class Action(BaseModel):
+class Action(BaseModel, ABC):
     """Action resolved from Agent decision"""
 
     id: str
@@ -69,25 +70,56 @@ class Action(BaseModel):
     hits: int = 1
     range: float = 0
 
+    @abstractmethod
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.can_use_standard(self.action_type)
+        raise NotImplementedError
 
+    @abstractmethod
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:
         raise NotImplementedError
+
+    @abstractmethod
+    def finalize(self, actor: Character) -> None:
+        raise NotImplementedError
+
+
+class StandardAction(Action, ABC):
+    category: ActionCategory = ActionCategory.STANDARD
+    breaks_stealth: bool = True
+
+    def is_available(self, action_economy: ActionEconomy) -> bool:
+        return action_economy.can_use_standard(self.action_type)
 
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
         actor.action_economy.use_standard(self.action_type)
+        if self.breaks_stealth:
+            actor.unhide()
 
 
-class LimitedBonusAction(Action):
+class BonusAction(Action, ABC):
+    category: ActionCategory = ActionCategory.BONUS
+    breaks_stealth: bool = True
+
+    def is_available(self, action_economy: ActionEconomy) -> bool:
+        return action_economy.can_use_bonus(self.action_type)
+
+    def finalize(self, actor: Character) -> None:
+        """Consume resources (action point by default)."""
+        actor.action_economy.use_bonus(self.action_type)
+        if self.breaks_stealth:
+            actor.unhide()
+
+
+class LimitedBonusAction(BonusAction, ABC):
     category: ActionCategory = ActionCategory.BONUS
     uses_per_rest: int = 1
+
     _current_uses: int = 0
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
         use_available = self._current_uses < self.uses_per_rest
-        return use_available and action_economy.can_use_bonus(self.action_type)
+        return use_available and super().is_available(action_economy)
 
     def _consume_use(self) -> None:
         if self._current_uses >= self.uses_per_rest:
@@ -95,8 +127,8 @@ class LimitedBonusAction(Action):
         self._current_uses += 1
 
     def finalize(self, actor: Character) -> None:
+        super().finalize(actor)
         self._consume_use()
-        actor.action_economy.use_bonus(self.action_type)
 
     def rest(self) -> None:
         self._current_uses = 0

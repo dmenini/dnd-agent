@@ -42,6 +42,17 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.pos = destination
         self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
+    def hide(self) -> None:
+        roll = self.stealth_roll()
+        self.stealth_value = roll.total
+        self.is_hidden = True
+        self.log_event(f"{self.name} hides (Stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
+
+    def unhide(self) -> None:
+        self.is_hidden = False
+        self.stealth_value = 0
+        self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
+
     def start_turn(self) -> None:
         self.log_event(f"{self.name} starts turn", event_type=LogLevel.DEBUG)
         self.turn_done = False

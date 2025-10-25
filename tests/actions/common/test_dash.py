@@ -33,3 +33,14 @@ def test_dash(actor: Character, game_map: GameMap) -> None:
     assert actor.action_economy.movement_used > 0
 
     assert action.is_available(actor.action_economy) is False
+
+
+def test_dash_doesnt_breaks_stealth(actor: Character, game_map: GameMap) -> None:
+    actor.is_hidden = True
+    action = make_dash_action()
+
+    target = Position(x=3, y=3)
+    action.execute(actor, target, ctx=CombatContext(map=game_map))
+    action.finalize(actor)
+
+    assert actor.is_hidden is True

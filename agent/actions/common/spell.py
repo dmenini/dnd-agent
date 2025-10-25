@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent.actions.base import Action, ActionCategory, ActionType
+from agent.actions.base import ActionType, StandardAction
 from agent.actions.common.attack import AttackAction
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
@@ -18,12 +18,11 @@ if TYPE_CHECKING:
     from agent.character.character import Character
 
 
-class AttackSpellAction(AttackAction):
+class AttackSpellAction(StandardAction, AttackAction):
     id: str
     name: str
     description: str = ""
     action_type: ActionType = ActionType.CAST_SPELL
-    category: ActionCategory = ActionCategory.STANDARD
     weapon_type: WeaponType = WeaponType.MAGIC
     level: SpellLevel
     requires_save: bool = True
@@ -61,12 +60,11 @@ class AttackSpellAction(AttackAction):
         actor.spell_slots.consume(self.level)
 
 
-class SupportSpellAction(Action):
+class SupportSpellAction(StandardAction):
     id: str
     name: str
     description: str = ""
     action_type: ActionType = ActionType.CAST_SPELL
-    category: ActionCategory = ActionCategory.STANDARD
     level: SpellLevel
     targeting: TargetingType
     stat: StatType
