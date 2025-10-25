@@ -61,11 +61,6 @@ class State(BaseModel):
         # The chosen char aligns well with emoticons
         self.log.log_event(message=str(self.map), event_type=LogLevel.MAP)
 
-    def can_see(self, actor_id: str, target_id: str) -> bool:
-        if not self.map:
-            raise ValueError
-        return target_id in self.visible_map.get(actor_id, [])
-
     def update_visibility(self, actor: Character) -> None:
         if not self.map:
             raise ValueError
