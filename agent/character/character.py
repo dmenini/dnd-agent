@@ -7,8 +7,8 @@ from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.jobs.feature import FeatureId
 from agent.logs.events import Icon, LogLevel
+from agent.models.enums import FeatureId
 from agent.models.position import Position
 
 
@@ -50,8 +50,8 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
 
     def unhide(self) -> None:
         self.stealth_value = 0
-        self.traits[FeatureId.STEALTH].on_expire(self)
-        del self.traits[FeatureId.STEALTH]
+        # TODO: Use a constant for source_id
+        self.unregister_passive(feature_id=FeatureId.STEALTH, source_id="hide")
         self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 
     def start_turn(self) -> None:

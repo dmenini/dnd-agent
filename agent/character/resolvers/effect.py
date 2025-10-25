@@ -1,5 +1,5 @@
 from agent.character.resolvers.base import CharacterBase
-from agent.effects.base import EffectType, StatusEffect
+from agent.effects.status_effects.base import EffectType, StatusEffect
 from agent.logs.events import Icon
 from agent.models.constants import EventType
 

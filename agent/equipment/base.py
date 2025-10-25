@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from agent.effects.base import StatusEffect
-from agent.effects.traits import Trait
+from agent.effects.registry import TraitRegistry
+from agent.effects.status_effects.base import StatusEffect
+from agent.models.enums import FeatureId
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
@@ -29,16 +30,26 @@ class EquipmentType(str, Enum):
     TOOL = "tool"
 
 
+class EquipmentFeature(BaseModel):
+    ref_id: FeatureId
+    kwargs: dict = {}
+
+
 class Equipment(BaseModel):
     name: str
     description: str = ""
-    traits: list[Trait] = []  # passive effects
+    features: list[EquipmentFeature] = []  # passive effects
     effects: list[StatusEffect] = []  # triggered effects
 
-    def on_equip(self, character: CharacterBase) -> None:
-        for trait in sorted(self.traits, key=lambda t: t.priority):
-            trait.on_apply(character)
+    def on_equip(self, actor: CharacterBase) -> None:
+        for feature in self.features:
+            trait = TraitRegistry.create(
+                feature_id=feature.ref_id,
+                source_id=self.name,
+                **feature.kwargs,
+            )
+            actor.register_passive(trait=trait)
 
-    def on_unequip(self, character: CharacterBase) -> None:
-        for trait in sorted(self.traits, key=lambda t: t.priority):
-            trait.on_expire(character)
+    def on_unequip(self, actor: CharacterBase) -> None:
+        for feature in self.features:
+            actor.unregister_passive(feature_id=feature.ref_id, source_id=self.name)

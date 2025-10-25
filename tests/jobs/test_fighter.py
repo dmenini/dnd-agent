@@ -1,7 +1,7 @@
 from agent.character.character import Character
 from agent.equipment.armor import Armor, ArmorType
-from agent.jobs.feature import FeatureId
 from agent.jobs.fighter import Fighter
+from agent.models.enums import FeatureId
 
 
 def test_fighter(actor: Character) -> None:
@@ -11,5 +11,5 @@ def test_fighter(actor: Character) -> None:
     # Verify active action is available
     assert any(a.id == FeatureId.SECOND_WIND for a in actor.abilities)
 
-    assert FeatureId.AC_BONUS_WITH_ARMOR in actor.traits
+    assert any(t.feature == FeatureId.AC_BONUS_WITH_ARMOR for t in actor.passives)
     assert actor.attributes.get_modifiers("ac")[0].value == 1

@@ -1,11 +1,9 @@
-from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
-from agent.effects.base import Trait
 from agent.effects.registry import TraitRegistry
 from agent.jobs.base import CharacterJob, JobFeature
-from agent.jobs.feature import FeatureId, FeatureType
+from agent.jobs.feature import FeatureType
 from agent.jobs.fighter import Fighter
 from agent.jobs.spells import Spell
 from agent.logs.events import LogLevel
@@ -13,10 +11,6 @@ from agent.logs.events import LogLevel
 
 class JobResolver(CharacterBase):
     job: CharacterJob = Fighter
-
-    spells: list[AttackSpellAction | SupportSpellAction] = []
-    abilities: list[Action] = []
-    traits: dict[FeatureId, Trait] = {}
 
     def change_job(self, job: CharacterJob) -> None:
         for feature in self.job.get_features_for_level(self.level):
@@ -51,13 +45,13 @@ class JobResolver(CharacterBase):
 
         elif feature.type == FeatureType.PASSIVE:
             trait = TraitRegistry.create(
-                id_=feature.ref_id,
-                source=feature.name,
+                feature_id=feature.ref_id,
+                source_id=feature.name,
+                name=feature.name,
                 description=feature.description,
                 **feature.kwargs,
             )
-            trait.on_apply(self)
-            self.traits[feature.ref_id] = trait
+            self.register_passive(trait)
             self.log_event(f"{self.name} gained passive trait {feature.name}", event_type=LogLevel.DETAIL)
 
     def _remove_job_feature(self, feature: JobFeature) -> None:
@@ -66,9 +60,7 @@ class JobResolver(CharacterBase):
             self.log_event(f"{self.name} lost ability {feature.name}", event_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
-            trait = self.traits[feature.ref_id]
-            trait.on_expire(self)
-            del self.traits[feature.ref_id]
+            self.unregister_passive(feature_id=feature.ref_id, source_id=feature.name)
             self.log_event(f"{self.name} lost passive trait {feature.name}", event_type=LogLevel.DETAIL)
 
     def _apply_spell(self, spell: Spell) -> None:

@@ -4,15 +4,20 @@ from typing import Any
 
 from pydantic import BaseModel, PrivateAttr, computed_field
 
+from agent.actions.base import Action
+from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.character.attributes import Attributes
 from agent.character.modifier import Modifier
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
+from agent.effects.base import Trait
 from agent.equipment.armor import Armor
 from agent.logs.events import Event, Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
+from agent.models.constants import EventType
 from agent.models.damage import Damage
+from agent.models.enums import FeatureId
 from agent.models.position import Position
 
 registry = get_log_registry()
@@ -28,6 +33,10 @@ class CharacterBase(BaseModel):
     pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
     stealth_value: int = 0
+
+    spells: list[AttackSpellAction | SupportSpellAction] = []
+    abilities: list[Action] = []
+    passives: list[Trait] = []
 
     # Defined for typing to work
     action_economy: ActionEconomy
@@ -87,6 +96,16 @@ class CharacterBase(BaseModel):
                 damage.vulnerabilities.append(vul)
         return damage
 
+    def register_passive(self, trait: Trait) -> None:
+        # TODO: handle trait duplication
+        self.passives.append(trait)
+        trait.on_apply(self)
+
+    def unregister_passive(self, feature_id: FeatureId, source_id: str) -> None:
+        trait = next(t for t in self.passives if t.feature == feature_id and t.source_id == source_id)
+        trait.on_expire(self)
+        self.passives.remove(trait)
+
     def register_modifier(self, modifier: Modifier) -> None:
         self.attributes.add_modifier(modifier)
         self.log_event(
@@ -104,10 +123,10 @@ class CharacterBase(BaseModel):
                 event_type=LogLevel.DEBUG,
             )
 
-    def register_listener(self, event: str, callback: Callable, source_id: str) -> None:
+    def register_listener(self, event: EventType, callback: Callable, source_id: str) -> None:
         """Register a listener for a given event name."""
-        self._event_listeners[event].append((source_id, callback))
-        self.log_event(f"Registered listener {callback.__name__} for {event}", event_type=LogLevel.DEBUG)
+        self._event_listeners[event.value].append((source_id, callback))
+        self.log_event(f"Added listener {callback.__name__} for {event.value}", event_type=LogLevel.DEBUG)
 
     def unregister_listeners(self, source_id: str) -> None:
         """Remove all listeners registered by a given source (e.g., a trait)."""

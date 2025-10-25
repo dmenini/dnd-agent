@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 
 from agent.actions.jobs.fighter import SecondWindAction
 from agent.character.character import Character
-from agent.jobs.feature import FeatureId
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
+from agent.models.enums import FeatureId
 
 
 def test_second_wind(actor: Character) -> None:

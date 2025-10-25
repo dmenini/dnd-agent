@@ -3,9 +3,8 @@ from typing import Any
 from agent.actions.base import ActionType, StandardAction
 from agent.character.character import Character
 from agent.effects.traits import TargetAdvantageOnAttackRoll
-from agent.jobs.feature import FeatureId
 from agent.models.context import CombatContext
-from agent.models.enums import TargetingType
+from agent.models.enums import FeatureId, TargetingType
 
 
 class HideAction(StandardAction):
@@ -23,6 +22,5 @@ class HideAction(StandardAction):
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
         # TODO: Make this conditional on LoS
         actor.hide()
-        trait = TargetAdvantageOnAttackRoll()
-        actor.traits[FeatureId.STEALTH] = trait
-        trait.on_apply(actor)
+        trait = TargetAdvantageOnAttackRoll(feature=FeatureId.STEALTH, source_id=self.id)
+        actor.register_passive(trait)

@@ -120,7 +120,7 @@ class ACBonus(Trait):
     def on_apply(self, target: CharacterBase) -> None:
         attr = "ac"
         target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
-        target.log_event(f"{target.name} gains +{self.value} AC from {self.source}.", event_type=TRAIT_LOG_LEVEL)
+        target.log_event(f"{target.name} gains +{self.value} AC from {self.source_id}.", event_type=TRAIT_LOG_LEVEL)
 
 
 class ACBonusWithArmor(ACBonus):

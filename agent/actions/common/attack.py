@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
 from agent.character.stats import StatType
-from agent.effects.base import StatusEffect
+from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
 from agent.models.constants import EventType

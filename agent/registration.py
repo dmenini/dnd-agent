@@ -4,7 +4,7 @@ from agent.actions.jobs.mage import ArcaneRecoveryAction
 from agent.actions.registry import ActionRegistry
 from agent.effects import traits
 from agent.effects.registry import TraitRegistry
-from agent.jobs.feature import FeatureId
+from agent.models.enums import FeatureId
 
 
 def register_actions() -> None:

@@ -1,5 +1,5 @@
 from agent.character.character import Character
-from agent.effects.base import EffectType
+from agent.effects.status_effects.base import EffectType
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType

@@ -3,8 +3,8 @@ from math import ceil
 from agent.actions.jobs.mage import ArcaneRecoveryAction
 from agent.character.character import Character
 from agent.character.resources import SpellLevel, SpellSlots
-from agent.jobs.feature import FeatureId
 from agent.models.context import CombatContext
+from agent.models.enums import FeatureId
 
 
 def test_arcane_recovery(actor: Character) -> None:

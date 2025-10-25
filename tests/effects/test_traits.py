@@ -1,16 +1,17 @@
 from agent.character.character import Character
-from agent.effects.base import EffectType, StatusEffect
-from agent.effects.traits import Resistance, Trait, Vulnerability
+from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
 from agent.equipment.armor import Accessory
+from agent.equipment.base import EquipmentFeature
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
+from agent.models.enums import FeatureId
 
 
 class CustomEffect(StatusEffect):
     type: EffectType = EffectType.CUSTOM
     duration: int = 2
-    _traits: list[Trait] = [
-        Resistance(value=0.25, damage_type=DamageType.FIRE),
-        Resistance(value=0.25, damage_type=DamageType.COLD),
+    features: list[StatusEffectFeature] = [
+        StatusEffectFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": 0.25, "damage_type": DamageType.FIRE}),
+        StatusEffectFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": 0.25, "damage_type": DamageType.COLD}),
     ]
 
 
@@ -47,8 +48,20 @@ def test_same_effects(actor: Character) -> None:
 
 def test_different_traits(actor: Character) -> None:
     value = 0.5
-    acc1 = Accessory(name="ring", slot="ring", traits=[Resistance(value=value, damage_type=DamageType.FIRE)])
-    acc2 = Accessory(name="ring", slot="ring", traits=[Vulnerability(value=value, damage_type=DamageType.FIRE)])
+    acc1 = Accessory(
+        name="ring",
+        slot="ring",
+        features=[
+            EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": DamageType.FIRE}),
+        ],
+    )
+    acc2 = Accessory(
+        name="ring",
+        slot="ring",
+        features=[
+            EquipmentFeature(ref_id=FeatureId.VULNERABILITY, kwargs={"value": value, "damage_type": DamageType.FIRE}),
+        ],
+    )
     actor.accessories = [acc1, acc2]
     actor.equip_all()
 
@@ -69,8 +82,20 @@ def test_different_traits(actor: Character) -> None:
 
 def test_same_traits(actor: Character) -> None:
     value = 0.5
-    acc1 = Accessory(name="ring", slot="ring", traits=[Resistance(value=value, damage_type=DamageType.FIRE)])
-    acc2 = Accessory(name="ring", slot="ring", traits=[Resistance(value=value, damage_type=DamageType.FIRE)])
+    acc1 = Accessory(
+        name="ring",
+        slot="ring",
+        features=[
+            EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": DamageType.FIRE}),
+        ],
+    )
+    acc2 = Accessory(
+        name="ring",
+        slot="ring",
+        features=[
+            EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": DamageType.FIRE}),
+        ],
+    )
     actor.accessories = [acc1, acc2]
     actor.equip_all()
 
