@@ -7,6 +7,7 @@ from agent.actions.base import Action
 from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
 from agent.actions.common.dash import DashAction
 from agent.actions.common.dodge import DodgeAction
+from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
@@ -156,6 +157,7 @@ class DecisionNode:
             DashAction(range=actor.current_speed),
             DodgeAction(),
             WaitAction(),
+            HideAction(),
         ]
 
         # Equipment-based actions
