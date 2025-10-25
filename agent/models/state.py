@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from collections import defaultdict
+
+from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
@@ -24,6 +26,7 @@ class State(BaseModel):
     turn_order: list[str] = []
     turn_index: int = 0
     characters: dict[str, Character] = {}
+    visibility: defaultdict[str, list[str]] = Field(default_factory=defaultdict)
     parties: dict[str, Party] = {}
     decision: DecisionResult | None = None
     action: Action | None = None
@@ -33,6 +36,11 @@ class State(BaseModel):
     @property
     def alive_characters(self) -> dict[str, Character]:
         return {cid: c for cid, c in self.characters.items() if c.is_alive}
+
+    @property
+    def visible_characters(self) -> list[Character]:
+        actor = self.current_actor
+        return [self.characters[t] for t in self.visibility[actor.id]]
 
     @property
     def current_actor(self) -> Character:
@@ -52,3 +60,27 @@ class State(BaseModel):
     def draw_map(self) -> None:
         # The chosen char aligns well with emoticons
         self.log.log_event(message=str(self.map), event_type=LogLevel.MAP)
+
+    def can_see(self, actor_id: str, target_id: str) -> bool:
+        if not self.map:
+            raise ValueError
+        return target_id in self.visible_map.get(actor_id, [])
+
+    def update_visibility(self, actor: Character) -> None:
+        if not self.map:
+            raise ValueError
+
+        visible_targets = []
+        for target_id, target in self.alive_characters.items():
+            if actor.id == target_id:
+                continue
+
+            # Check range + line of sight before doing perception
+            if not self.map.within_visibility_range(actor, target):
+                continue
+
+            # Handle stealth / perception contest
+            if not target.is_hidden or actor.detect_target(target, use_passive=True):
+                visible_targets.append(target_id)
+
+        self.visibility[actor.id] = visible_targets

@@ -41,6 +41,8 @@ class DecisionNode:
             state.draw_map()
             actor.start_turn()
 
+        state.update_visibility(actor)
+
         actions = self.available_actions(actor)
         if not actions:
             state.action = None
@@ -74,8 +76,7 @@ class DecisionNode:
                 "line_of_sight": f"{actor.los_distance(c.pos)} m",
                 "status_effects": [str(eff) for eff in c.status_effects],
             }
-            for c in state.alive_characters.values()
-            if c.id != actor.id
+            for c in state.visible_characters
         ]
 
         history = self.group_messages(state.log)

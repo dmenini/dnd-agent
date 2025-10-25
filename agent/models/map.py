@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from agent.character.character import Character
 from agent.models.position import Position
 
 if TYPE_CHECKING:
@@ -84,6 +85,63 @@ class GameMap(BaseModel):
 
     def is_walkable(self, x: int, y: int) -> bool:
         return (0 <= x < self.width) and (0 <= y < self.height) and (Position(x=x, y=y) not in self.walls)
+
+    def within_visibility_range(self, actor: Character, target: Character) -> bool:
+        """Check whether the target is visible to the actor, considering range and walls."""
+        actor_pos = self.characters[actor.id]
+        target_pos = self.characters[target.id]
+
+        # 1. Distance check
+        distance = actor_pos.euclidean_distance(target_pos)
+        if distance > actor.attributes.vision_range():
+            return False
+
+        # 2. Line of sight check (Bresenham's line)
+        for x, y in self._bresenham_line(actor_pos, target_pos):
+            # If any wall blocks the view, line of sight is broken
+            if any(wall.x == x and wall.y == y for wall in self.walls):
+                return False
+
+        return True
+
+    def _bresenham_line(self, start: Position, end: Position) -> list[tuple[int, int]]:
+        """
+        Compute the grid cells traversed by a straight line between two positions using Bresenham's algorithm.
+        Excludes the starting point, but includes all intermediate cells up to (but not including) the end point.
+        """
+        points = []
+
+        # Initialize coordinates
+        x0, y0 = start.x, start.y
+        x1, y1 = end.x, end.y
+
+        # Compute deltas (absolute distances along x and y)
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+
+        # Determine the step direction for x and y
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+
+        # Error term (difference between ideal line and rasterized line)
+        err = dx - dy
+
+        # Start at the initial position and iterate until we reach the end position
+        x, y = x0, y0
+        while (x, y) != (x1, y1):
+            e2 = err * 2
+            if e2 > -dy:
+                err -= dy
+                x += sx  # Move horizontally
+            if e2 < dx:
+                err += dx
+                y += sy  # Move vertically
+
+            # Add intermediate points (exclude the final cell)
+            if (x, y) != (x1, y1):
+                points.append((x, y))
+
+        return points
 
     def __str__(self) -> str:
         grid = [["· " for _ in range(self.width)] for _ in range(self.height)]
