@@ -136,13 +136,13 @@ class DecisionResult(BaseModel):
     def validate_targets_exist(self, characters: Mapping[str, Character]) -> tuple[bool, str]:
         for target_id in self.target_ids:
             if target_id not in characters:
-                return False, f"Target '{target_id}' not found. Please, retry with a valid target."
+                return False, f"Target '{target_id}' not found. Please, retry with a valid target: {characters.keys()}."
         return True, ""
 
     def validate_targets_alive(self, characters: Mapping[str, Character]) -> tuple[bool, str]:
         for target_id in self.target_ids:
-            target = characters[target_id]
-            if not target.is_alive:
+            target = characters.get(target_id)
+            if target and not target.is_alive:
                 return False, f"Target '{target.id}' is already down. Please, choose another target."
         return True, ""
 
@@ -152,8 +152,8 @@ class DecisionResult(BaseModel):
         characters: Mapping[str, Character],
     ) -> tuple[bool, str]:
         for target_id in self.target_ids:
-            target = characters[target_id]
-            if actor.party.id == target.party.id:
+            target = characters.get(target_id)
+            if target and actor.party.id == target.party.id:
                 return False, f"{actor.id} cannot attack ally {target.id}. Please, select enemies instead."
         return True, ""
 
@@ -165,14 +165,13 @@ class DecisionResult(BaseModel):
     ) -> tuple[bool, str]:
         # For range, we use simple line-of-sight distance, assuming that walls can be ignored by attacks
         for target_id in self.target_ids:
-            target = characters[target_id]
-            dist = actor.los_distance(target.pos)
-            if dist > available_movement:
+            target = characters.get(target_id)
+            if target and (dist := actor.los_distance(target.pos)) > available_movement:
                 return (
                     False,
                     (
                         f"Target '{target.id}' is out of range ({dist:.1f}m > {available_movement}m). "
-                        f"Please, choose a closer target."
+                        "Please select an alternative target within range or choose an alternative action."
                     ),
                 )
         return True, ""
@@ -200,16 +199,20 @@ class DecisionResult(BaseModel):
         if dist is None:
             return (
                 False,
-                f"Position {pos} cannot be reached. Please, try a different one.",
+                f"Position {pos} cannot be reached. Please, try a different one within {max_dist}m.",
             )
         if dist > max_dist:
             return (
                 False,
-                f"Position {pos} is too far ({dist:.1f}m > {max_dist}m). Please, select a closer position.",
+                f"Position {pos} is too far ({dist:.1f}m > {max_dist}m). "
+                f"Please, select a closer position within {max_dist}m.",
             )
 
         occupied_positions = list(game_map.characters.values()) + game_map.walls
         if pos in occupied_positions:
-            return False, f"Position {pos} is already occupied. Please, choose a nearby position."
+            return (
+                False,
+                f"Position {pos} is already occupied. Please, choose a free position close to the proposed one.",
+            )
 
         return True, ""

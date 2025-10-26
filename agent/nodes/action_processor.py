@@ -40,6 +40,9 @@ class ActionProcessorNode:
                     actor.log_event(f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}.")
                     action.execute(actor=actor, target=target, ctx=context)
 
+                    if not target.is_alive:
+                        break
+
         elif decision.target_position:
             context = CombatContext(map=state.map.model_copy(), enemies=enemies)
             actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}.")

@@ -22,7 +22,7 @@ from agent.models.map import GameMap
 from agent.models.state import Character, State
 from agent.registration import register_actions, register_traits
 
-MAX_ITER = 150
+MAX_ITER = 300
 MAP_SIZE = 10
 
 log = getLogger(__name__)
@@ -105,6 +105,17 @@ def main() -> None:
         main_hand=sword,
         ranged=bow,
     )
+    ally = Character(
+        id="pc_alice",
+        name="Alice",
+        icon="👧",
+        job=Mage,
+        attributes=Attributes(base_hp=20),
+        is_player=True,
+        party=party_players,
+        main_hand=sword,
+        ranged=bow,
+    )
     orc = Character(
         id="orc_1",
         name="Orc Grunt",
@@ -121,23 +132,25 @@ def main() -> None:
         main_hand=dagger,
     )
 
-    # TODO: log character summary
-
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", event_type=LogLevel.SYSTEM)
 
     gen = build_map_generator(config.agent)
-    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id])
+    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id])
     state.map = game_map
 
-    # Players choose their icon
+    # Set icons
     game_map.icons[hero.id] = hero.icon
+    game_map.icons[ally.id] = ally.icon
+    game_map.icons[goblin.id] = goblin.icon
+    game_map.icons[orc.id] = orc.icon
 
     # Set positions
     hero.pos = game_map.characters[hero.id]
+    ally.pos = game_map.characters[ally.id]
     orc.pos = game_map.characters[orc.id]
     goblin.pos = game_map.characters[goblin.id]
 
-    state.characters = {hero.id: hero, orc.id: orc, goblin.id: goblin}
+    state.characters = {hero.id: hero, ally.id: ally, orc.id: orc, goblin.id: goblin}
     state.parties = {party_players.id: party_players, party_enemies.id: party_enemies}
 
     graph = build_graph(config=config.agent)

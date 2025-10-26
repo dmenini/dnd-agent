@@ -42,12 +42,12 @@ class LogRegistry:
     def subscribe(self, callback: Callable[[Event], None]) -> None:
         self.subscribers.append(callback)
 
-    def filter(self, *, types: list[str] | None = None, actor_ids: list[int] | None = None) -> list[Event]:
+    def filter_for_ai(self, *, types: list[str] | None = None, actor_ids: list[int] | None = None) -> list[Event]:
         results = self.events
         if types is not None:
-            results = [e for e in results if e.type in types]
+            results = [e for e in results if e.type in types and e.show_ai]
         if actor_ids is not None:
-            results = [e for e in results if e.actor_id in actor_ids]
+            results = [e for e in results if e.actor_id in actor_ids and e.show_ai]
         return results
 
     def hide_last_event(self, event_type: LogLevel = LogLevel.MAIN) -> None:

@@ -48,7 +48,7 @@ class AttackAction(Action, ABC):
             actor.log_event("Rolls a NATURAL 20! Critical hit!", icon=Icon.ROLL)
         else:
             # Check attack roll result
-            actor.log_event(f"Attack roll: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
+            actor.log_event(f"Attack roll {roll.expression}: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
             if ctx.is_hit:
                 actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK, show_ai=True)
             else:

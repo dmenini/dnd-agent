@@ -22,10 +22,11 @@ log = getLogger(__name__)
 
 
 class DecisionNode:
-    def __init__(self, llm: BaseChatModel, system_prompt: str, max_retries: int = 3) -> None:
+    def __init__(self, llm: BaseChatModel, system_prompt: str, max_retries: int = 3, history_size: int = 15) -> None:
         self.llm = llm.with_structured_output(DecisionResult)
         self.system_prompt = system_prompt
         self.max_retries = max_retries
+        self.history_size = history_size
 
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
@@ -54,12 +55,16 @@ class DecisionNode:
             state.retries = 0
             return state
 
+        wait = DecisionResult(
+            action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
+        )
         if state.retries > self.max_retries:
-            result = DecisionResult(
-                action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
-            )
+            result = wait
         else:
             result = self.predict_next_action(state, actor, list(actions.values()))
+
+        if result.action_id not in actions:
+            result = wait  # fallback to wait if illegal
 
         state.action = actions[result.action_id]
         state.decision = result
@@ -82,8 +87,12 @@ class DecisionNode:
             # Hide the previous decision that lead to a validation error for a clean log history
             state.log.hide_last_event(event_type=LogLevel.MAIN)
             validation_event = (
-                f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
-                f"for the following reasons:\n{state.verification_result.reason}\n\n"
+                f"{actor.id}: The previously chosen action '{state.verification_result.input.id}' is invalid:\n"
+                f"{state.verification_result.reason}\n\n"
+                "Instructions: Review the available actions and your movement. "
+                "Choose a legal action that respects range, resources, and targeting constraints. "
+                "If no target is in range, consider repositioning, using a different ability, "
+                "or skipping the turn strategically."
             )
         else:
             validation_event = ""
@@ -131,11 +140,8 @@ class DecisionNode:
         current_group: list[str] = []
         current_is_player = None
 
-        limit = 30
-        events = registry.filter(types=[LogLevel.MAIN])[-limit:]
+        events = registry.filter_for_ai(types=[LogLevel.MAIN, LogLevel.DETAIL])[-self.history_size :]
         for event in events:
-            if not event.show_ai:
-                continue
             is_player = event.is_player
             # Start a new group if this is the first event or if team changes
             if current_is_player is None or is_player != current_is_player:

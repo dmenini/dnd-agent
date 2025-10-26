@@ -51,11 +51,8 @@ class GameMap(BaseModel):
         return self
 
     def update_map(self, characters: Mapping[str, CharacterBase]) -> None:
-        for cid, char in characters.items():
-            if not char.is_alive:
-                del self.characters[cid]
-            else:
-                self.characters[cid] = char.pos
+        updated = {cid: characters[cid].pos for cid in self.characters if characters[cid].is_alive}
+        self.characters = updated
 
     def distance(self, start: Position, end: Position) -> float | None:
         """Return shortest distance between two points considering obstacles using BFS-based search."""

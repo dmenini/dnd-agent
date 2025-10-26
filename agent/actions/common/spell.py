@@ -40,12 +40,12 @@ class AttackSpellAction(StandardAction, AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        save_roll = target.save_roll(save_stat=actor.attributes.spellcasting_stat, is_spell=True)
+        roll = target.save_roll(save_stat=actor.attributes.spellcasting_stat, is_spell=True)
 
-        ctx.hit_roll = save_roll
-        ctx.is_hit = save_roll.total < dc
+        ctx.hit_roll = roll
+        ctx.is_hit = roll.total < dc
 
-        actor.log_event(f"{self.stat.name} save: {save_roll.total} vs DC {dc}", icon=Icon.ROLL)
+        actor.log_event(f"{self.stat.name} save throw {roll.expression}: {roll.total} vs DC {dc}", icon=Icon.ROLL)
 
         if ctx.is_hit:
             actor.log_event(f"Save roll passed → Target resists {self.name}!", icon=Icon.DEFENSE, show_ai=True)

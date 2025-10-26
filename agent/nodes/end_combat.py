@@ -21,7 +21,8 @@ class EndCombatNode:
 
         # Advance to next character if resources exhausted
         if not actor.is_alive or not actor.has_resources():
-            actor.end_turn()
+            if actor.is_alive:
+                actor.end_turn()
             state.turn_index += 1
 
         # End of round
