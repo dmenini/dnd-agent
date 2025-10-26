@@ -95,7 +95,7 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
 
 def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
     actor.hide()
-    actor.passives.append(Trait(feature=FeatureId.STEALTH, source_id="hide"))
+    actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide"))
     action = make_attack_action()
     action.execute(actor, target, ctx=CombatContext())
     action.finalize(actor)

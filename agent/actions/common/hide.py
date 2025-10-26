@@ -22,5 +22,5 @@ class HideAction(StandardAction):
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
         # TODO: Make this conditional on LoS
         actor.hide()
-        trait = TargetAdvantageOnAttackRoll(feature=FeatureId.STEALTH, source_id=self.id)
+        trait = TargetAdvantageOnAttackRoll(feature_id=FeatureId.STEALTH, source_id=self.id)
         actor.register_passive(trait)

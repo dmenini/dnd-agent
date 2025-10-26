@@ -11,5 +11,5 @@ def test_fighter(actor: Character) -> None:
     # Verify active action is available
     assert any(a.id == FeatureId.SECOND_WIND for a in actor.abilities)
 
-    assert any(t.feature == FeatureId.AC_BONUS_WITH_ARMOR for t in actor.passives)
+    assert any(t.feature_id == FeatureId.AC_BONUS_WITH_ARMOR for t in actor.passives)
     assert actor.attributes.get_modifiers("ac")[0].value == 1

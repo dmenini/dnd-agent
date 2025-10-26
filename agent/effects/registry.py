@@ -13,4 +13,4 @@ class TraitRegistry:
 
     @classmethod
     def create(cls, feature_id: FeatureId, source_id: str, **kwargs: Any) -> Trait:
-        return cls._registry[feature_id](feature=feature_id, source_id=source_id, **kwargs)
+        return cls._registry[feature_id](feature_id=feature_id, source_id=source_id, **kwargs)

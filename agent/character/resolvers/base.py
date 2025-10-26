@@ -10,12 +10,11 @@ from agent.character.attributes import Attributes
 from agent.character.modifier import Modifier
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import Trait
+from agent.effects.base import EventEffect, Trait
 from agent.equipment.armor import Armor
 from agent.logs.events import Event, Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
-from agent.models.constants import EventType
 from agent.models.damage import Damage
 from agent.models.enums import FeatureId
 from agent.models.position import Position
@@ -97,13 +96,21 @@ class CharacterBase(BaseModel):
         return damage
 
     def register_passive(self, trait: Trait) -> None:
-        # TODO: handle trait duplication
         self.passives.append(trait)
-        trait.on_apply(self)
+        effect = trait.get_effect()
+        if effect.condition(self):
+            self._apply_effect(effect.effect)
+
+    def _apply_effect(self, effect: Any) -> None:
+        if isinstance(effect, Modifier):
+            self.register_modifier(effect)
+        elif isinstance(effect, EventEffect):
+            self.register_listener(effect)
 
     def unregister_passive(self, feature_id: FeatureId, source_id: str) -> None:
-        trait = next(t for t in self.passives if t.feature == feature_id and t.source_id == source_id)
-        trait.on_expire(self)
+        trait = next(t for t in self.passives if t.feature_id == feature_id and t.source_id == source_id)
+        self.unregister_modifier(trait.id)
+        self.unregister_listeners(trait.id)
         self.passives.remove(trait)
 
     def register_modifier(self, modifier: Modifier) -> None:
@@ -123,10 +130,12 @@ class CharacterBase(BaseModel):
                 event_type=LogLevel.DEBUG,
             )
 
-    def register_listener(self, event: EventType, callback: Callable, source_id: str) -> None:
-        """Register a listener for a given event name."""
-        self._event_listeners[event.value].append((source_id, callback))
-        self.log_event(f"Added listener {callback.__name__} for {event.value}", event_type=LogLevel.DEBUG)
+    def register_listener(self, event: EventEffect) -> None:
+        """Register a listener for a given event."""
+        self._event_listeners[event.event_type.value].append((event.source_id, event.callback))
+        self.log_event(
+            f"Added listener {event.callback.__name__} for {event.event_type.value}", event_type=LogLevel.DEBUG
+        )
 
     def unregister_listeners(self, source_id: str) -> None:
         """Remove all listeners registered by a given source (e.g., a trait)."""

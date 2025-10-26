@@ -1,16 +1,13 @@
-from __future__ import annotations
-
 import uuid
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import Any, Literal
 
 from anthropic import BaseModel
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, computed_field
 
+from agent.character.modifier import Modifier
+from agent.models.constants import EventType
 from agent.models.enums import FeatureId
-
-if TYPE_CHECKING:
-
-    from agent.character.resolvers.base import CharacterBase
 
 
 class Priority:
@@ -19,26 +16,54 @@ class Priority:
     LOW: int = 100  # Execute last
 
 
+class EventEffect(BaseModel):
+    """Describes an event listener to register dynamically."""
+
+    event_type: EventType
+    callback: Callable
+    source_id: str
+
+
+class TraitEffect(BaseModel):
+    """An effect that only applies when its condition is true."""
+
+    effect: Modifier | EventEffect
+    condition: Callable[[Any], bool] = lambda t: True  # noqa: ARG005
+
+    def should_apply(self, arg: Any) -> bool:
+        return self.condition(arg)
+
+
 class Trait(BaseModel):
+    feature_id: FeatureId
+    source_id: str
     name: str = ""
     description: str = ""
-    feature: FeatureId
-    source_id: str = ""
     _id: str = PrivateAttr(default=str(uuid.uuid4()))
     _priority: int = PrivateAttr(default=Priority.MEDIUM)
 
+    def model_post_init(self, _: Any) -> None:
+        if not self.name:
+            self.name = self.__class__.__name__
+        if not self.description:
+            self.description = self.__class__.__doc__ or ""
+
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def priority(self) -> int:
         return self._priority
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
         return self._id
 
-    def on_apply(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
+    def get_effect(self) -> TraitEffect:
+        """Return a Modifier or Event effect to apply."""
+        raise NotImplementedError
 
-    def on_expire(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-        target.unregister_modifier(self._id)
-        target.unregister_listeners(self._id)
+    def _make_event_effect(self, event_type: EventType, callback: Callable[..., None]) -> TraitEffect:
+        return TraitEffect(effect=EventEffect(source_id=self._id, event_type=event_type, callback=callback))
+
+    def _make_modifier(self, attr: str, value: Any, op: Literal["set", "add", "mul"]) -> TraitEffect:
+        return TraitEffect(effect=Modifier(source_id=self._id, attribute=attr, value=value, operation=op))

@@ -39,7 +39,7 @@ def test_dash(actor: Character, game_map: GameMap) -> None:
 
 def test_dash_doesnt_breaks_stealth(actor: Character, game_map: GameMap) -> None:
     actor.hide()
-    actor.passives.append(Trait(feature=FeatureId.STEALTH, source_id="hide"))
+    actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide"))
     action = make_dash_action()
 
     target = Position(x=3, y=3)

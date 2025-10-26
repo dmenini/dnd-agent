@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent.logs.events import LogLevel
+from agent.models.constants import TRAIT_LOG_LEVEL
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
 
@@ -15,14 +16,14 @@ if TYPE_CHECKING:
 def auto_crit_if_melee_effect(actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
     if actor.los_distance(target.pos) <= MELEE_RANGE:
         context.is_critical = True
-        actor.log_event(f"{actor.name} gains automatic crit against {target.name}!", event_type=LogLevel.DEBUG)
+        actor.log_event(f"{actor.name} gains automatic crit against {target.name}!", event_type=TRAIT_LOG_LEVEL)
 
 
 def damage_over_time_effect(target: CharacterBase, value: int, damage_type: DamageType) -> None:
     damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
     damage = target.modify_incoming_damage(damage)
     target.apply_damage(damage.total)
-    target.log_event(f"{target.name} suffers {damage.total} {damage_type.value} damage.", event_type=LogLevel.DEBUG)
+    target.log_event(f"{target.name} suffers {damage.total} {damage_type.value} damage.", event_type=TRAIT_LOG_LEVEL)
 
 
 def reflect_melee_damage_effect(
@@ -43,7 +44,9 @@ def reflect_melee_damage_effect(
 def damage_bonus_effect(target: CharacterBase, context: CombatContext, value: int, damage_type: DamageType) -> None:
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="add"))
-        target.log_event(f"{target.name}'s attack gains {value} {damage_type.value} damage.", event_type=LogLevel.DEBUG)
+        target.log_event(
+            f"{target.name}'s attack gains {value} {damage_type.value} damage.", event_type=TRAIT_LOG_LEVEL
+        )
 
 
 def damage_multiplier_effect(
@@ -52,7 +55,7 @@ def damage_multiplier_effect(
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="mul"))
         target.log_event(
-            f"{target.name}'s {damage_type.value} damage multiplied by {value}.", event_type=LogLevel.DEBUG
+            f"{target.name}'s {damage_type.value} damage multiplied by {value}.", event_type=TRAIT_LOG_LEVEL
         )
 
 
@@ -64,5 +67,5 @@ def ignore_resistance_effect(
         if res and res.value > 0:
             context.damage.vulnerabilities.append(DamageVulnerability(value=res.value, type=damage_type))
             actor.log_event(
-                f"{actor.name} ignores {target.name}'s {damage_type.value} resistance.", event_type=LogLevel.DEBUG
+                f"{actor.name} ignores {target.name}'s {damage_type.value} resistance.", event_type=TRAIT_LOG_LEVEL
             )
