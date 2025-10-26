@@ -37,3 +37,9 @@ class Stats(BaseModel):
         if val and val <= DISADVANTAGE_THRESHOLD:
             return Advantage.DISADVANTAGE
         return Advantage.NEUTRAL
+
+    def __str__(self) -> str:
+        return (
+            f"STR {self.strength}, DEX {self.dexterity}, CON {self.constitution}, "
+            f"INT {self.intelligence}, WIS {self.wisdom}, CHA {self.charisma}"
+        )

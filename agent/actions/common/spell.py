@@ -59,6 +59,16 @@ class AttackSpellAction(StandardAction, AttackAction):
         super().finalize(actor)
         actor.spell_slots.consume(self.level)
 
+    def __str__(self) -> str:
+        effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"
+        level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
+        return (
+            f"{self.id}: {self.name}{level} — {self.description} "
+            f"(Type: {self.action_type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"Damage: {self.damage_dice} {self.damage_type.value}, "
+            f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
+        )
+
 
 class SupportSpellAction(StandardAction):
     id: str
@@ -87,3 +97,12 @@ class SupportSpellAction(StandardAction):
         """Consume action point and spell slot."""
         super().finalize(actor)
         actor.spell_slots.consume(self.level)
+
+    def __str__(self) -> str:
+        effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"
+        level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
+        return (
+            f"{self.id}: {self.name}{level} — {self.description} "
+            f"(Type: {self.action_type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
+        )

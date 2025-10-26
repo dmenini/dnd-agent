@@ -22,9 +22,10 @@ log = getLogger(__name__)
 
 
 class DecisionNode:
-    def __init__(self, llm: BaseChatModel, system_prompt: str) -> None:
+    def __init__(self, llm: BaseChatModel, system_prompt: str, max_retries: int = 3) -> None:
         self.llm = llm.with_structured_output(DecisionResult)
         self.system_prompt = system_prompt
+        self.max_retries = max_retries
 
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
@@ -56,6 +57,11 @@ class DecisionNode:
             state.retries = 0
             return state
 
+        if state.retries > self.max_retries:
+            state.decision = DecisionResult(action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn.")
+            state.action = actions["wait"]
+            return state
+
         history = self.group_messages(state.log)
 
         if state.verification_result and not state.verification_result.valid and state.verification_result.input:
@@ -79,10 +85,10 @@ class DecisionNode:
             f"Hidden: {actor.is_hidden} | Party: {actor.party.name}\n"
             f"Status Effects: {', '.join(str(eff) for eff in actor.status_effects) or 'None'}\n"
             f"Spell Slots: {actor.spell_slots}\n"
-            f"Stats: {Stats.model_validate(actor.attributes.model_dump()).model_dump()}\n"
+            f"Stats: {Stats.model_validate(actor.attributes.model_dump())}\n"
             f"---\n"
             f"### Available Actions\n"
-            f"{self.format_actions(actions)}\n"
+            f"{'\n'.join([str(act) for act in actions.values()])}\n"
             f"---\n"
             f"### Visible Allies\n"
             f"{self.format_characters(visible_allies, state.map, actor)}\n"
@@ -169,21 +175,6 @@ class DecisionNode:
         all_actions += actor.abilities
 
         return {action.id: action for action in all_actions if action.is_available(actor.action_economy)}
-
-    def format_actions(self, actions: dict[str, Action]) -> str:
-        lines = []
-        for id_, act in actions.items():
-            typ = act.action_type.value
-            category = act.category.value
-            rng = f", range={act.range}m"
-            shots = f", shots={act.hits}"
-            dmg = getattr(act, "damage_dice", None)
-            if dmg:
-                dtype = getattr(act, "damage_type", None)
-                dmg = f", dmg={dmg} of type {dtype}"
-            line = f"- {id_}: {act.name} - {act.description}\n  ({category} {typ}{rng}{shots}{dmg})"
-            lines.append(line)
-        return "\n".join(lines)
 
     def format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
         lines = []

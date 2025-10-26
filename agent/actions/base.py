@@ -82,6 +82,14 @@ class Action(BaseModel, ABC):
     def finalize(self, actor: Character) -> None:
         raise NotImplementedError
 
+    def __str__(self) -> str:
+        """Return a concise string describing the action for NPC AI prompts."""
+        return (
+            f"{self.id}: {self.name} — {self.description} "
+            f"(Type: {self.action_type.value}, Category: {self.category.value}, "
+            f"Targeting: {self.targeting.value}, Hits: {self.hits}, Range: {self.range} m)"
+        )
+
 
 class StandardAction(Action, ABC):
     category: ActionCategory = ActionCategory.STANDARD

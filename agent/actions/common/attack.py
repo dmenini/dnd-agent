@@ -111,6 +111,15 @@ class AttackAction(Action, ABC):
         actor.trigger_event(EventType.COMBAT_END, actor, target, ctx)
         target.trigger_event(EventType.COMBAT_END, actor, target, ctx)
 
+    def __str__(self) -> str:
+        effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"
+        return (
+            f"{self.id}: {self.name} — {self.description} "
+            f"(Type: {self.action_type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"Stat: {self.stat.value}, Damage: {self.damage_dice} {self.damage_type.value}, "
+            f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
+        )
+
 
 class MainHandAttackAction(StandardAction, AttackAction):
     id: str = "main_hand_attack"
