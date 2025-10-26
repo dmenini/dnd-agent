@@ -41,8 +41,9 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         return self.attributes.speed() - self.action_economy.movement_used
 
     def move(self, destination: Position) -> None:
+        starting_pos = self.pos.model_copy()
         self.pos = destination
-        self.log_event(f"New position: {destination}", icon=Icon.MOVE)
+        self.log_event(f"{self.name} moves from {starting_pos} to {destination}", icon=Icon.MOVE)
 
     def hide(self) -> None:
         roll = self.stealth_roll()

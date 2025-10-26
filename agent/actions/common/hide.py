@@ -11,8 +11,9 @@ class HideAction(StandardAction):
     id: str = "hide"
     name: str = "Hide"
     description: str = (
-        "Attempt to become unseen by enemies, gaining advantage on attacks "
-        "and avoiding being targeted until revealed. Requires being out of enemies' line of sight."
+        "Try to hide when behind obstacles or out of sight, repositioning safely. "
+        "While hidden, enemies cannot target you, and your next attack gains advantage. "
+        "Use strategically to flank, escape, or ambush."
     )
     action_type: ActionType = ActionType.HIDE
     targeting: TargetingType = TargetingType.SELF

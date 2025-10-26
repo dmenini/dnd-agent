@@ -45,9 +45,6 @@ class DecisionNode:
             actor.start_turn()
 
         state.update_visibility(actor)
-        visible_characters = state.visible_characters
-        visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
-        visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
 
         actions = self.available_actions(actor)
         if not actions:
@@ -58,54 +55,11 @@ class DecisionNode:
             return state
 
         if state.retries > self.max_retries:
-            state.decision = DecisionResult(action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn.")
-            state.action = actions["wait"]
-            return state
-
-        history = self.group_messages(state.log)
-
-        if state.verification_result and not state.verification_result.valid and state.verification_result.input:
-            # Hide the previous decision that lead to a validation error
-            state.log.hide_last_event(event_type=LogLevel.MAIN)
-            validation_event = (
-                f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
-                f"for the following reasons:\n{state.verification_result.reason}\n\n"
+            result = DecisionResult(
+                action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
             )
         else:
-            validation_event = ""
-
-        user_prompt = (
-            f"{validation_event}"
-            f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat.\n"
-            f"---\n"
-            f"### Character (ID: {actor.id})\n"
-            f"HP: {actor.attributes.hp}/{actor.max_hp} | Level: {actor.level}\n"
-            f"Position: ({actor.pos.x}, {actor.pos.y}) | Facing: {actor.pos.direction}\n"
-            f"Movement Remaining: {actor.current_speed}/{actor.speed} m\n"
-            f"Hidden: {actor.is_hidden} | Party: {actor.party.name}\n"
-            f"Status Effects: {', '.join(str(eff) for eff in actor.status_effects) or 'None'}\n"
-            f"Spell Slots: {actor.spell_slots}\n"
-            f"Stats: {Stats.model_validate(actor.attributes.model_dump())}\n"
-            f"---\n"
-            f"### Available Actions\n"
-            f"{'\n'.join([str(act) for act in actions.values()])}\n"
-            f"---\n"
-            f"### Visible Allies\n"
-            f"{self.format_characters(visible_allies, state.map, actor)}\n"
-            f"---\n"
-            f"### Visible Enemies\n"
-            f"{self.format_characters(visible_enemies, state.map, actor)}\n"
-            f"---\n"
-            f"### Map Overview\n"
-            f"{state.map}\n"
-        )
-        result: DecisionResult = self.llm.invoke(  # type: ignore[assignment]
-            [
-                SystemMessage(content=self.system_prompt),
-                *history,
-                HumanMessage(content=user_prompt),
-            ]
-        )
+            result = self.predict_next_action(state, actor, list(actions.values()))
 
         state.action = actions[result.action_id]
         state.decision = result
@@ -116,6 +70,60 @@ class DecisionNode:
         actor.log_event(f"Available actions: {action_names}")
 
         return state
+
+    def predict_next_action(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
+        if state.map is None:
+            raise ValueError
+
+        # Prepare message history from previous main events
+        history = self.group_messages(state.log)
+
+        if state.verification_result and not state.verification_result.valid and state.verification_result.input:
+            # Hide the previous decision that lead to a validation error for a clean log history
+            state.log.hide_last_event(event_type=LogLevel.MAIN)
+            validation_event = (
+                f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
+                f"for the following reasons:\n{state.verification_result.reason}\n\n"
+            )
+        else:
+            validation_event = ""
+
+        visible_characters = state.visible_characters
+        visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
+        visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
+
+        user_prompt = (
+            f"{validation_event}"
+            f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat.\n"
+            f"---\n"
+            f"### Character {actor.icon} (ID: {actor.id})\n"
+            f"HP: {actor.attributes.hp}/{actor.max_hp} | Level: {actor.level}\n"
+            f"Position: ({actor.pos.x}, {actor.pos.y}) | Facing: {actor.pos.direction}\n"
+            f"Movement Remaining: {actor.current_speed}/{actor.speed} m\n"
+            f"Hidden: {actor.is_hidden} | Party: {actor.party.name}\n"
+            f"Status Effects: {', '.join(str(eff) for eff in actor.status_effects) or 'None'}\n"
+            f"Spell Slots: {actor.spell_slots}\n"
+            f"Stats: {Stats.model_validate(actor.attributes.model_dump())}\n"
+            f"---\n"
+            f"### Available Actions\n"
+            f"{'\n'.join([str(act) for act in actions])}\n"
+            f"---\n"
+            f"### Visible Allies\n"
+            f"{self.format_characters(visible_allies, state.map, actor)}\n"
+            f"---\n"
+            f"### Visible Enemies\n"
+            f"{self.format_characters(visible_enemies, state.map, actor)}\n"
+            f"---\n"
+            f"### Map Overview\n"
+            f"{state.map}\n"
+        )
+        return self.llm.invoke(  # type: ignore[return-value]
+            [
+                SystemMessage(content=self.system_prompt),
+                *history,
+                HumanMessage(content=user_prompt),
+            ]
+        )
 
     def group_messages(self, registry: LogRegistry) -> list[BaseMessage]:
         """Group sequential events into HumanMessage or AIMessage based on which team the actor belongs to."""
@@ -183,7 +191,7 @@ class DecisionNode:
             los = actor.los_distance(c.pos)
             effects = ", ".join(str(e) for e in c.status_effects) or "None"
             lines.append(
-                f"- Target: ID={c.id}, name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
+                f"- {c.icon} ID={c.id}, name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
                 f"at ({c.pos.x, c.pos.y}) facing {c.pos.direction}, distance={dist}m, LoS={los}m, effects={effects}"
             )
         return "\n".join(lines) or "No one in sight, try to explore the map."

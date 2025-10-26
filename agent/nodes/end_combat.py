@@ -44,7 +44,9 @@ class EndCombatNode:
         defeated_parties = [p for p in state.parties.values() if not state.get_party_members(p.id, alive_only=True)]
         defeated_parties_ids = [p.id for p in defeated_parties]
         for defeated in defeated_parties:
-            state.log.log_event(f"Party '{defeated.name}' has been defeated!", icon=Icon.DEATH, event_type=LogLevel.MAIN)
+            state.log.log_event(
+                f"Party '{defeated.name}' has been defeated!", icon=Icon.DEATH, event_type=LogLevel.MAIN
+            )
 
         # Determine if only one party remains
         alive_parties = [p for p in state.parties.values() if p.id not in defeated_parties_ids]
