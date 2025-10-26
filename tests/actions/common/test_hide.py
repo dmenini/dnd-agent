@@ -26,8 +26,8 @@ def test_hide_success(actor: Character, target: Character, game_map: GameMap) ->
 def test_hide_failure(actor: Character, target: Character, game_map: GameMap) -> None:
     action = HideAction()
 
-    target.pos = Position(x=5, y=5)
     actor.pos = Position(x=1, y=1)
+    target.pos = Position(x=5, y=5, direction="SW")
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     action.execute(actor, None, ctx=CombatContext(map=game_map, enemies=[target]))
