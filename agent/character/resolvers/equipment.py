@@ -5,15 +5,13 @@ from pydantic import PrivateAttr, computed_field
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, Shield
 from agent.equipment.base import Equipment, EquipmentType
-from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
+from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon
 from agent.logs.log_registry import get_log_registry
 
 registry = get_log_registry()
 
 
 class EquipmentResolver(CharacterBase):
-    proficiencies: list[WeaponType] = []
-
     armor: Armor | None = None
     shield: Shield | None = None
     amulet: Amulet | None = None

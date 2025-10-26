@@ -8,6 +8,7 @@ Fighter = CharacterJob(
     hit_die=10,
     primary_stat=StatType.STR,
     save_proficiencies=[StatType.STR, StatType.CON],
+    weapon_proficiencies=[],
     features=[
         JobFeature(
             ref_id=FeatureId.AC_BONUS_WITH_ARMOR,
