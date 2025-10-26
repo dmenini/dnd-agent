@@ -60,7 +60,7 @@ class State(BaseModel):
 
     def draw_map(self) -> None:
         # The chosen char aligns well with emoticons
-        self.log.log_event(message=str(self.map), event_type=LogLevel.MAP)
+        self.log.log_event(message=str(self.map), log_type=LogLevel.MAP)
 
     def update_visibility(self, actor: Character) -> None:
         if not self.map:

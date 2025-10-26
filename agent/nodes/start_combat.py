@@ -33,7 +33,7 @@ class StartCombatNode:
         state.turn_index = 0
         state.log.log_event(
             "Initiative order: " + " → ".join(state.characters[cid].name for cid in state.turn_order),
-            event_type=LogLevel.SYSTEM,
+            log_type=LogLevel.SYSTEM,
         )
 
         return state

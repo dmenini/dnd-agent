@@ -29,9 +29,9 @@ class LogRegistry:
         event = Event(message=message, type=LogLevel.HEADER)
         self.append(event)
 
-    def log_event(self, message: str, event_type: LogLevel = LogLevel.DETAIL, icon: str = "") -> None:
+    def log_event(self, message: str, log_type: LogLevel = LogLevel.DETAIL, icon: str = "") -> None:
         """Log an event."""
-        event = Event(message=message, type=event_type, icon=icon, show_ai=False)
+        event = Event(message=message, type=log_type, icon=icon, show_ai=False)
         self.append(event)
 
     def log_newline(self) -> None:

@@ -27,7 +27,7 @@ class EndCombatNode:
 
         # End of round
         if state.turn_index >= len(state.characters):
-            state.log.log_event(f"Turn {state.round + 1} over!", event_type=LogLevel.SYSTEM)
+            state.log.log_event(f"Turn {state.round + 1} over!", log_type=LogLevel.SYSTEM)
 
             # Reset resources
             for char in state.alive_characters.values():
@@ -46,7 +46,7 @@ class EndCombatNode:
         defeated_parties_ids = [p.id for p in defeated_parties]
         for defeated in defeated_parties:
             state.log.log_event(
-                f"Party '{defeated.name}' has been defeated!", icon=Icon.DEATH, event_type=LogLevel.MAIN
+                f"Party '{defeated.name}' has been defeated!", icon=Icon.DEATH, log_type=LogLevel.MAIN
             )
 
         # Determine if only one party remains
@@ -57,17 +57,17 @@ class EndCombatNode:
             state.done = True
 
             if not alive_parties:
-                state.log.log_event("All parties have fallen. It's a draw.", event_type=LogLevel.SYSTEM)
+                state.log.log_event("All parties have fallen. It's a draw.", log_type=LogLevel.SYSTEM)
             else:
                 winner = alive_parties[0]
 
                 if winner.is_player_party:
                     state.log.log_event(
                         f"The players are victorious! Party '{winner.name}' stands triumphant!",
-                        event_type=LogLevel.SYSTEM,
+                        log_type=LogLevel.SYSTEM,
                     )
                 else:
                     state.log.log_event(
                         f"The enemies prevail... Party '{winner.name}' wins the battle.",
-                        event_type=LogLevel.SYSTEM,
+                        log_type=LogLevel.SYSTEM,
                     )

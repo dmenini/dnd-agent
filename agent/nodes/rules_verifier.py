@@ -38,7 +38,7 @@ class RulesVerifierNode:
             return state
 
         if state.retries > 1:
-            state.log.log_event("Trying to autocorrect decision", event_type=LogLevel.DEBUG, icon=Icon.WARNING)
+            state.log.log_event("Trying to autocorrect decision", log_type=LogLevel.DEBUG, icon=Icon.WARNING)
             state.decision.autocorrect(state.action)
 
         reasons = []
@@ -56,7 +56,7 @@ class RulesVerifierNode:
             state.retries = 0
         else:
             state.retries += 1
-            state.log.log_event(f"Validation error: {state.verification_result.reason}", event_type=LogLevel.SYSTEM)
+            state.log.log_event(f"Validation error: {state.verification_result.reason}", log_type=LogLevel.SYSTEM)
 
         return state
 
