@@ -3,11 +3,23 @@ from __future__ import annotations
 import math
 from typing import TYPE_CHECKING
 
+from agent.character.modifier import Modifier
+from agent.logs.events import Icon
 from agent.models.constants import TRAIT_LOG_LEVEL
 from agent.models.context import CombatContext
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
+
+
+def apply_modifier(target: CharacterBase, mod: Modifier, *, condition: bool = True) -> None:
+    if condition:
+        target.attributes.add_modifier(modifier=mod)
+        target.log_event(
+            f"Added modifier {mod.attribute}={mod.value} to {target.name}",
+            icon=Icon.EFFECT_APPLIED,
+            log_type=TRAIT_LOG_LEVEL,
+        )
 
 
 def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float) -> None:

@@ -6,10 +6,9 @@ from pydantic import BaseModel, PrivateAttr, computed_field
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.character.attributes import Attributes
-from agent.character.modifier import Modifier
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import EventEffect, Trait
+from agent.effects.base import Trait, TraitEffect, normalize_id
 from agent.equipment.armor import Armor
 from agent.logs.events import Event, Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
@@ -41,7 +40,7 @@ class CharacterBase(BaseModel):
     action_economy: ActionEconomy
     armor: Armor | None = None
 
-    _event_listeners: dict[str, list[EventEffect]] = PrivateAttr(default_factory=lambda: defaultdict(list))
+    _event_listeners: dict[str, list[TraitEffect]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -98,30 +97,21 @@ class CharacterBase(BaseModel):
     def register_passive(self, trait: Trait) -> None:
         self.passives.append(trait)
         effect = trait.get_effect()
-        if effect.condition(self):
-            self._apply_effect(effect.effect)
+        self.register_listener(effect)
 
-    def _apply_effect(self, effect: Any) -> None:
-        if isinstance(effect, Modifier):
-            self.register_modifier(effect)
-        elif isinstance(effect, EventEffect):
-            self.register_listener(effect)
+        if effect.event_type == EventType.MODIFIER:
+            effect.callback(self)
 
     def unregister_passive(self, feature_id: FeatureId, source_id: str) -> None:
-        trait = next(t for t in self.passives if t.feature_id == feature_id and t.source_id == source_id)
-        self.unregister_modifier(trait.id)
-        self.unregister_listeners(trait.id)
-        self.passives.remove(trait)
-
-    def register_modifier(self, modifier: Modifier) -> None:
-        self.attributes.add_modifier(modifier)
-        self.log_event(
-            f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
-            icon=Icon.EFFECT_APPLIED,
-            log_type=LogLevel.DEBUG,
-        )
+        source_id = normalize_id(source_id)
+        matching_traits = [t for t in self.passives if t.feature_id == feature_id and t.source_id == source_id]
+        for trait in matching_traits:
+            self.unregister_modifier(trait.id)
+            self.unregister_listeners(trait.id)
+            self.passives.remove(trait)
 
     def unregister_modifier(self, source_id: str) -> None:
+        source_id = normalize_id(source_id)
         modifier = self.attributes.remove_modifier(source_id)
         if modifier:
             self.log_event(
@@ -130,7 +120,7 @@ class CharacterBase(BaseModel):
                 log_type=LogLevel.DEBUG,
             )
 
-    def register_listener(self, event: EventEffect) -> None:
+    def register_listener(self, event: TraitEffect) -> None:
         """Register a listener for a given event."""
         self._event_listeners[event.event_type.value].append(event)
         self.log_event(
@@ -153,11 +143,18 @@ class CharacterBase(BaseModel):
                 )
 
     def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
-        """Trigger all listeners for the given event."""
+        """Trigger all listeners for the given event type in priority order."""
         events = self._event_listeners.get(event.value, [])
         events.sort(key=lambda e: e.priority)
         for e in list(events):
             e.callback(*args, **kwargs)
+
+    def notify_state_change(self, field_name: str) -> None:
+        """Called whenever an internal property changes."""
+        for trait in self.passives:
+            effect = trait.get_effect()
+            if effect.condition_depends_on(field_name):
+                self.trigger_event(EventType.MODIFIER, target=self)
 
     def log_event(
         self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False

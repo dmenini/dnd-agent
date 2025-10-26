@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from pydantic import Field
 
 from agent.character.modifier import Modifier
@@ -14,7 +12,7 @@ from agent.effects.trait_effects.damage import (
     ignore_resistance_effect,
     reflect_melee_damage_effect,
 )
-from agent.effects.trait_effects.support import life_steal_effect, regeneration_effect
+from agent.effects.trait_effects.support import apply_modifier, life_steal_effect, regeneration_effect
 from agent.effects.trait_effects.turn import (
     cannot_act_effect,
     cannot_move_effect,
@@ -107,37 +105,33 @@ class ACBonus(Trait):
         return self._make_modifier(attr="ac", value=self.value, op="add")
 
 
-class ACBonusWithArmor(ACBonus):
+class ACBonusWithArmor(Trait):
     """Grant a bonus to Armor Class (AC) while wearing armor."""
 
     value: int = 1
 
     def get_effect(self) -> TraitEffect:
+        mod = Modifier(source_id=self.id, attribute="ac", value=self.value, operation="add")
         return TraitEffect(
-            condition=lambda target: bool(target.armor),
-            effect=Modifier(
-                source_id=self._id,
-                attribute="ac",
-                value=self.value,
-                operation="add",
-            ),
+            source_id=self.source_id,
+            dependencies=["armor"],
+            event_type=EventType.MODIFIER,
+            callback=lambda target: apply_modifier(target, mod, condition=bool(target.armor)),
         )
 
 
-class ACBonusWithoutArmor(ACBonus):
+class ACBonusWithoutArmor(Trait):
     """Grant a bonus to Armor Class (AC) while not wearing armor."""
 
     value: int = 3
 
     def get_effect(self) -> TraitEffect:
+        mod = Modifier(source_id=self.id, attribute="ac", value=self.value, operation="add")
         return TraitEffect(
-            condition=lambda target: not bool(target.armor),
-            effect=Modifier(
-                source_id=self._id,
-                attribute="ac",
-                value=self.value,
-                operation="add",
-            ),
+            source_id=self.source_id,
+            dependencies=["armor"],
+            event_type=EventType.MODIFIER,
+            callback=lambda target: apply_modifier(target, mod, condition=not bool(target.armor)),
         )
 
 

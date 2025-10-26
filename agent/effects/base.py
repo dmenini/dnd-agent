@@ -6,6 +6,7 @@ from anthropic import BaseModel
 from pydantic import PrivateAttr, computed_field
 
 from agent.character.modifier import Modifier
+from agent.effects.trait_effects.support import apply_modifier
 from agent.models.constants import EventType
 from agent.models.enums import FeatureId
 
@@ -16,23 +17,17 @@ class Priority:
     LOW: int = 100  # Execute last
 
 
-class EventEffect(BaseModel):
+class TraitEffect(BaseModel):
     """Describes an event listener to register dynamically."""
 
     event_type: EventType
     callback: Callable
     source_id: str
     priority: int = Priority.MEDIUM
+    dependencies: list[str] = []
 
-
-class TraitEffect(BaseModel):
-    """An effect that only applies when its condition is true."""
-
-    effect: Modifier | EventEffect
-    condition: Callable[[Any], bool] = lambda t: True  # noqa: ARG005
-
-    def should_apply(self, arg: Any) -> bool:
-        return self.condition(arg)
+    def condition_depends_on(self, field_name: str) -> bool:
+        return field_name in self.dependencies
 
 
 class Trait(BaseModel):
@@ -40,7 +35,7 @@ class Trait(BaseModel):
     source_id: str
     name: str = ""
     description: str = ""
-    _id: str = PrivateAttr(default=str(uuid.uuid4()))
+    _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
     _priority: int = PrivateAttr(default=Priority.MEDIUM)
 
     def model_post_init(self, _: Any) -> None:
@@ -49,19 +44,24 @@ class Trait(BaseModel):
         if not self.description:
             self.description = self.__class__.__doc__ or ""
 
+        self.source_id = normalize_id(self.source_id)
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
-        return self._id
+        return f"{self.source_id}-{normalize_id(self.name)}"
 
     def get_effect(self) -> TraitEffect:
         """Return a Modifier or Event effect to apply."""
         raise NotImplementedError
 
     def _make_event_effect(self, event_type: EventType, callback: Callable[..., None]) -> TraitEffect:
-        return TraitEffect(
-            effect=EventEffect(source_id=self._id, event_type=event_type, callback=callback, priority=self._priority)
-        )
+        return TraitEffect(source_id=self.id, event_type=event_type, callback=callback, priority=self._priority)
 
     def _make_modifier(self, attr: str, value: Any, op: Literal["set", "add", "mul"]) -> TraitEffect:
-        return TraitEffect(effect=Modifier(source_id=self._id, attribute=attr, value=value, operation=op))
+        mod = Modifier(source_id=self.id, attribute=attr, value=value, operation=op)
+        return self._make_event_effect(event_type=EventType.MODIFIER, callback=lambda t: apply_modifier(t, mod))
+
+
+def normalize_id(name: str) -> str:
+    return name.replace(" ", "-").lower()
