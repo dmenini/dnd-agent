@@ -1,15 +1,12 @@
-from typing import TYPE_CHECKING
+from collections.abc import Mapping
 
-from pydantic import computed_field
+from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
-from agent.equipment.armor import Accessory, Armor, Shield
-from agent.equipment.base import Equipment
+from agent.equipment.armor import Amulet, Armor, Shield
+from agent.equipment.base import Equipment, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.log_registry import get_log_registry
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 registry = get_log_registry()
 
@@ -19,70 +16,108 @@ class EquipmentResolver(CharacterBase):
 
     armor: Armor | None = None
     shield: Shield | None = None
-    accessories: list[Accessory] = []
+    amulet: Amulet | None = None
+    ring_left: Amulet | None = None
+    ring_right: Amulet | None = None
     main_hand: MeleeWeapon | None = UNARMED
     off_hand: MeleeWeapon | None = None
     ranged: RangedWeapon | None = None
+
+    _ring_rotation_toggle = PrivateAttr(default=False)  # track which ring to replace next
+
+    @property
+    def equipment_slots(self) -> Mapping[str, Equipment | None]:
+        """Mapping of slot names to currently equipped items."""
+        return {
+            "armor": self.armor,
+            "shield": self.shield,
+            "amulet": self.amulet,
+            "ring_left": self.ring_left,
+            "ring_right": self.ring_right,
+            "main_hand": self.main_hand,
+            "off_hand": self.off_hand,
+            "ranged": self.ranged,
+        }
+
+    def _resolve_slot_for(self, item: Equipment) -> str | None:
+        """Automatically determine which slot an equipment item should occupy."""
+        slot: str | None = None
+        match item.type:
+            case EquipmentType.ARMOR:
+                slot = "armor"
+            case EquipmentType.SHIELD:
+                slot = "shield"
+            case EquipmentType.AMULET:
+                slot = "amulet"
+            case EquipmentType.RING:
+                # Prioritize empty ring slots
+                if self.ring_left is None:
+                    slot = "ring_left"
+                elif self.ring_right is None:
+                    slot = "ring_right"
+                else:
+                    # Both full → rotate replacement
+                    self._ring_rotation_toggle = not self._ring_rotation_toggle
+                    slot = "ring_left" if self._ring_rotation_toggle else "ring_right"
+            case EquipmentType.WEAPON:
+                if self.main_hand is None or self.main_hand == UNARMED:
+                    slot = "main_hand"
+                elif self.off_hand is None:
+                    slot = "off_hand"
+                else:
+                    slot = "ranged" if isinstance(item, RangedWeapon) else None
+        return slot
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def armor_class(self) -> int:
         """Armor Class is derived from DEX and equipment."""
+        ac = self.attributes.ac_bonus(
+            armor_type=self.armor.armor_type if self.armor else None,
+            max_dex_bonus=self.armor.max_dex_bonus if self.armor else None,
+        )
+
         if self.armor:
-            ac = self.attributes.ac_bonus(
-                armor_type=self.armor.armor_type,
-                max_dex_bonus=self.armor.max_dex_bonus,
-            )
             ac += self.armor.base_ac
-
-        else:
-            ac = self.attributes.ac_bonus(armor_type=None)
-
         if self.shield:
             ac += self.shield.ac_bonus
-
         return ac
 
-    def equip_all(self) -> None:
-        # Equip to apply traits
-        equipment_slots = {
-            "armor": self.armor,
-            "shield": self.shield,
-            "accessories": self.accessories,
-            "main_hand": self.main_hand,
-            "off_hand": self.off_hand,
-            "ranged": self.ranged,
-        }
+    def equip(self, item: Equipment, slot_name: str | None = None) -> None:
+        """Equip an item to a specific slot."""
+        if slot_name is None:
+            slot_name = self._resolve_slot_for(item)
 
-        for slot_name, item in equipment_slots.items():
-            if not item:
-                continue
+        if not slot_name or slot_name not in self.equipment_slots:
+            msg = f"Invalid equipment slot: {slot_name}"
+            raise ValueError(msg)
 
-            # Handle lists (like accessories) and single items uniformly
-            items: Sequence[Equipment] = item if isinstance(item, list) else [item]  # type: ignore[list-item]
-            for it in items:
-                it.on_equip(self)
+        current: Equipment = getattr(self, slot_name)
+        if current:
+            current.on_unequip(self)
 
-            self.notify_state_change(slot_name)
+        setattr(self, slot_name, item)
+        item.on_equip(self)
+        self.notify_state_change(slot_name)
 
     def unequip(self, slot_name: str) -> None:
-        equipment_slots = {
-            "armor": self.armor,
-            "shield": self.shield,
-            "accessories": self.accessories,
-            "main_hand": self.main_hand,
-            "off_hand": self.off_hand,
-            "ranged": self.ranged,
-        }
+        """Unequip an item from a specific slot."""
+        if slot_name not in self.equipment_slots:
+            msg = f"Invalid equipment slot: {slot_name}"
+            raise ValueError(msg)
 
-        item = equipment_slots.get(slot_name)
+        item = getattr(self, slot_name)
         if not item:
-            # Nothing equipped
             return
 
-        items: Sequence[Equipment] = item if isinstance(item, list) else [item]  # type: ignore[list-item]
-        for it in items:
-            it.on_unequip(self)
-
-        self.__setattr__(slot_name, None)
+        item.on_unequip(self)
+        setattr(self, slot_name, None)
         self.notify_state_change(slot_name)
+
+    def equip_all(self) -> None:
+        """Equip all items currently assigned to slots (e.g. after load)."""
+        for slot_name, item in self.equipment_slots.items():
+            if not item:
+                continue
+            item.on_equip(self)
+            self.notify_state_change(slot_name)

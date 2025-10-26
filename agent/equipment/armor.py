@@ -26,6 +26,9 @@ class Shield(Equipment):
     ac_bonus: int = 2
 
 
-class Accessory(Equipment):
-    type: EquipmentType = Field(default=EquipmentType.ACCESSORY, frozen=True)
-    slot: str  # e.g. "ring", "amulet"
+class Amulet(Equipment):
+    type: EquipmentType = Field(default=EquipmentType.AMULET, frozen=True)
+
+
+class Ring(Equipment):
+    type: EquipmentType = Field(default=EquipmentType.RING, frozen=True)

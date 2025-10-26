@@ -25,7 +25,8 @@ class EquipmentType(str, Enum):
     WEAPON = "weapon"
     ARMOR = "armor"
     SHIELD = "shield"
-    ACCESSORY = "accessory"
+    AMULET = "amulet"
+    RING = "ring"
     CONSUMABLE = "consumable"
     TOOL = "tool"
 
@@ -36,6 +37,7 @@ class EquipmentFeature(BaseModel):
 
 
 class Equipment(BaseModel):
+    type: EquipmentType
     name: str
     description: str = ""
     features: list[EquipmentFeature] = []  # passive effects
