@@ -124,7 +124,7 @@ class CharacterBase(BaseModel):
         """Register a listener for a given event."""
         self._event_listeners[event.event_type.value].append(event)
         self.log_event(
-            f"Added listener {event.callback.__name__} for {event.event_type.value}",
+            f"Added listener {event.source_id} for {event.event_type.value}",
             icon=Icon.EFFECT_APPLIED,
             log_type=LogLevel.DEBUG,
         )

@@ -166,12 +166,14 @@ class GameMap(BaseModel):
         return points
 
     def __str__(self) -> str:
-        grid = [["· " for _ in range(self.width)] for _ in range(self.height)]
+        grid = [["·  " for _ in range(self.width)] for _ in range(self.height)]
 
         for wall in self.walls:
-            grid[wall.y][wall.x] = "# "
+            grid[wall.y][wall.x] = "#  "
+
+        direction_icons = {"N": "↑", "S": "↓", "E": "→", "W": "←", "NE": "↗", "NW": "↖", "SE": "↘", "SW": "↙"}
 
         for key, char in self.characters.items():
-            grid[char.y][char.x] = self.icons[key]
+            grid[char.y][char.x] = f"{self.icons[key]}{direction_icons[char.direction]}"
 
         return "\n".join(" ".join(row) for row in grid)

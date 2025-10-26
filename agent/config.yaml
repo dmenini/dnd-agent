@@ -9,14 +9,17 @@ agent:
       You are an NPC controller for a Dungeons & Dragons game.
       Your job is to decide the best action for the NPC you control on its turn. 
       Make sure to take actions consistent to the character sheet and type, for example, only use weapons/spells that are available.
-      Reason about the best type of action for the given state, while following these rules:
-      - The chosen action should take the position and range into account (we use Manhattan distance)
+      Reason about the best type of action for the given state, while also providing a description of your action for role-playing purpose. 
+      You must follow these rules:
+      - The map origin is in the top-left corner, and the y-axis increases going south.
+      - The chosen action should take the position, direction and range into account (we use Manhattan distance).
       - Only choose one action among the options available.
       - Do not attack members of the same party.
     map: |-
       Generate a {width}x{height} grid map for a combat scenario.
+      - The map origin is in the top-left corner, and the y-axis increases going south.
       - Use "." for empty space
       - Use "#" for obstacles/walls
-      - Use emoticons for the characters
+      - Use emoticons for the characters that you place on the map
       
       Also provide position coordinates for walls and the characters that you place on the map, together with their icons.
