@@ -22,6 +22,7 @@ class EventEffect(BaseModel):
     event_type: EventType
     callback: Callable
     source_id: str
+    priority: int = Priority.MEDIUM
 
 
 class TraitEffect(BaseModel):
@@ -50,11 +51,6 @@ class Trait(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def priority(self) -> int:
-        return self._priority
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
     def id(self) -> str:
         return self._id
 
@@ -63,7 +59,9 @@ class Trait(BaseModel):
         raise NotImplementedError
 
     def _make_event_effect(self, event_type: EventType, callback: Callable[..., None]) -> TraitEffect:
-        return TraitEffect(effect=EventEffect(source_id=self._id, event_type=event_type, callback=callback))
+        return TraitEffect(
+            effect=EventEffect(source_id=self._id, event_type=event_type, callback=callback, priority=self._priority)
+        )
 
     def _make_modifier(self, attr: str, value: Any, op: Literal["set", "add", "mul"]) -> TraitEffect:
         return TraitEffect(effect=Modifier(source_id=self._id, attribute=attr, value=value, operation=op))

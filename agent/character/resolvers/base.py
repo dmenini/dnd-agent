@@ -15,6 +15,7 @@ from agent.equipment.armor import Armor
 from agent.logs.events import Event, Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
+from agent.models.constants import EventType
 from agent.models.damage import Damage
 from agent.models.enums import FeatureId
 from agent.models.position import Position
@@ -41,7 +42,7 @@ class CharacterBase(BaseModel):
     action_economy: ActionEconomy
     armor: Armor | None = None
 
-    _event_listeners: dict[str, list[tuple[str, Callable]]] = PrivateAttr(default_factory=lambda: defaultdict(list))
+    _event_listeners: dict[str, list[EventEffect]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -126,30 +127,38 @@ class CharacterBase(BaseModel):
         if modifier:
             self.log_event(
                 f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
-                icon=Icon.EFFECT_APPLIED,
+                icon=Icon.EFFECT_EXPIRED,
                 event_type=LogLevel.DEBUG,
             )
 
     def register_listener(self, event: EventEffect) -> None:
         """Register a listener for a given event."""
-        self._event_listeners[event.event_type.value].append((event.source_id, event.callback))
+        self._event_listeners[event.event_type.value].append(event)
         self.log_event(
-            f"Added listener {event.callback.__name__} for {event.event_type.value}", event_type=LogLevel.DEBUG
+            f"Added listener {event.callback.__name__} for {event.event_type.value}",
+            icon=Icon.EFFECT_APPLIED,
+            event_type=LogLevel.DEBUG,
         )
 
     def unregister_listeners(self, source_id: str) -> None:
         """Remove all listeners registered by a given source (e.g., a trait)."""
         for event, listeners in self._event_listeners.items():
             before = len(listeners)
-            self._event_listeners[event] = [(sid, cb) for sid, cb in listeners if sid != source_id]
+            self._event_listeners[event] = [event for event in listeners if event.source_id != source_id]
             after = len(self._event_listeners[event])
             if before != after:
-                self.log_event(f"Removed {before - after} listeners from event '{event}'", event_type=LogLevel.DEBUG)
+                self.log_event(
+                    f"Removed {before - after} listeners from event '{event}'",
+                    icon=Icon.EFFECT_EXPIRED,
+                    event_type=LogLevel.DEBUG,
+                )
 
-    def trigger_event(self, event: str, *args: Any, **kwargs: Any) -> None:
-        """Trigger all listeners for the given event name."""
-        for _, callback in list(self._event_listeners.get(event, [])):
-            callback(*args, **kwargs)
+    def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
+        """Trigger all listeners for the given event."""
+        events = self._event_listeners.get(event.value, [])
+        events.sort(key=lambda e: e.priority)
+        for event in list(events):
+            event.callback(*args, **kwargs)
 
     def log_event(
         self, message: str, *, event_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
