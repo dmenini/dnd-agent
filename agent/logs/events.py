@@ -7,15 +7,16 @@ from rich.text import Text
 
 
 class Icon:
-    ATTACK = "⚔️"
-    DAMAGE = "💥"
-    DEATH = "☠️"
-    DEFENSE = "🛡️ "
-    ROLL = "🎲"
-    MOVE = "🏃"
-    STEALTH = "🥷"
-    EFFECT_APPLIED = "🌀"
-    EFFECT_EXPIRED = "✨"
+    ATTACK = "⚔️ "
+    DAMAGE = "💥 "
+    DEATH = "☠️ "
+    DEFENSE = "🛡️"
+    ROLL = "🎲 "
+    MOVE = "🏃 "
+    STEALTH = "🥷 "
+    EFFECT_APPLIED = "🌀 "
+    EFFECT_EXPIRED = "✨ "
+    WARNING = "⚠️ "
     AI = "🤖"
 
 

@@ -5,7 +5,7 @@ from logging import getLogger
 from agent.actions.common.attack import AttackAction
 from agent.actions.common.dash import DashAction
 from agent.actions.common.move import MovementAction
-from agent.logs.events import LogLevel
+from agent.logs.events import Icon, LogLevel
 from agent.models.enums import TargetingType
 from agent.models.state import State, VerificationResult
 
@@ -37,6 +37,10 @@ class RulesVerifierNode:
             state.verification_result = VerificationResult(valid=valid)
             return state
 
+        if state.retries > 1:
+            state.log.log_event("Trying to autocorrect decision", event_type=LogLevel.DEBUG, icon=Icon.WARNING)
+            state.decision.autocorrect(state.action)
+
         reasons = []
         for check in self.checks:
             ok, reason = check(state)
@@ -47,8 +51,11 @@ class RulesVerifierNode:
                 if self.fail_fast:
                     break
 
-        state.verification_result = VerificationResult(valid=valid, reason="; ".join(reasons), input=state.action)
-        if not valid:
+        state.verification_result = VerificationResult(valid=valid, reason=" ".join(reasons), input=state.action)
+        if valid:
+            state.retries = 0
+        else:
+            state.retries += 1
             state.log.log_event(f"Validation error: {state.verification_result.reason}", event_type=LogLevel.SYSTEM)
 
         return state

@@ -31,6 +31,7 @@ class State(BaseModel):
     decision: DecisionResult | None = None
     action: Action | None = None
     verification_result: VerificationResult | None = None
+    retries: int = 0
     done: bool = False
 
     @property
