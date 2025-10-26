@@ -121,7 +121,7 @@ class DecisionNode:
 
         state.log.log_newline()
         action_names = [a.name for a in actions.values()]
-        actor.log_event(result.description, event_type=LogLevel.MAIN)
+        actor.log_event(result.description, log_type=LogLevel.MAIN)
         actor.log_event(f"Available actions: {action_names}")
 
         return state

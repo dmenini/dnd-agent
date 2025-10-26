@@ -13,17 +13,17 @@ if TYPE_CHECKING:
 
 def cannot_move_effect(target: CharacterBase) -> None:
     target.action_economy.movement_available = False
-    target.log_event(f"{target.name} cannot move this turn.", event_type=TRAIT_LOG_LEVEL)
+    target.log_event(f"{target.name} cannot move this turn.", log_type=TRAIT_LOG_LEVEL)
 
 
 def cannot_act_effect(target: CharacterBase) -> None:
     target.action_economy.can_act = False
-    target.log_event(f"{target.name} cannot act this turn.", event_type=TRAIT_LOG_LEVEL)
+    target.log_event(f"{target.name} cannot act this turn.", log_type=TRAIT_LOG_LEVEL)
 
 
 def extra_actions_effect(target: CharacterBase, extensions: list[ActionExtension]) -> None:
     target.action_economy.action_extensions.extend(extensions)
-    target.log_event(f"{target.name} gains {len(extensions)} extra actions.", event_type=TRAIT_LOG_LEVEL)
+    target.log_event(f"{target.name} gains {len(extensions)} extra actions.", log_type=TRAIT_LOG_LEVEL)
 
 
 def half_attacks_effect(target: CharacterBase) -> None:
@@ -37,4 +37,4 @@ def half_attacks_effect(target: CharacterBase) -> None:
     for ext in attack_extensions[keep_count:]:
         economy.action_extensions.remove(ext)
     if attack_extensions[keep_count:]:
-        target.log_event(f"{target.name}'s available attacks reduced to {keep_count}.", event_type=TRAIT_LOG_LEVEL)
+        target.log_event(f"{target.name}'s available attacks reduced to {keep_count}.", log_type=TRAIT_LOG_LEVEL)

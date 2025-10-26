@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel, PrivateAttr, computed_field
@@ -119,7 +118,7 @@ class CharacterBase(BaseModel):
         self.log_event(
             f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
             icon=Icon.EFFECT_APPLIED,
-            event_type=LogLevel.DEBUG,
+            log_type=LogLevel.DEBUG,
         )
 
     def unregister_modifier(self, source_id: str) -> None:
@@ -128,7 +127,7 @@ class CharacterBase(BaseModel):
             self.log_event(
                 f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
                 icon=Icon.EFFECT_EXPIRED,
-                event_type=LogLevel.DEBUG,
+                log_type=LogLevel.DEBUG,
             )
 
     def register_listener(self, event: EventEffect) -> None:
@@ -137,7 +136,7 @@ class CharacterBase(BaseModel):
         self.log_event(
             f"Added listener {event.callback.__name__} for {event.event_type.value}",
             icon=Icon.EFFECT_APPLIED,
-            event_type=LogLevel.DEBUG,
+            log_type=LogLevel.DEBUG,
         )
 
     def unregister_listeners(self, source_id: str) -> None:
@@ -150,27 +149,27 @@ class CharacterBase(BaseModel):
                 self.log_event(
                     f"Removed {before - after} listeners from event '{event}'",
                     icon=Icon.EFFECT_EXPIRED,
-                    event_type=LogLevel.DEBUG,
+                    log_type=LogLevel.DEBUG,
                 )
 
     def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
         """Trigger all listeners for the given event."""
         events = self._event_listeners.get(event.value, [])
         events.sort(key=lambda e: e.priority)
-        for event in list(events):
-            event.callback(*args, **kwargs)
+        for e in list(events):
+            e.callback(*args, **kwargs)
 
     def log_event(
-        self, message: str, *, event_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
+        self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
     ) -> None:
-        icon = self.icon if event_type == LogLevel.MAIN else icon
-        show_ai = True if event_type == LogLevel.MAIN else show_ai
+        icon = self.icon if log_type == LogLevel.MAIN else icon
+        show_ai = True if log_type == LogLevel.MAIN else show_ai
         event = Event(
             actor_id=self.id,
             icon=icon or self.icon,
             is_player=self.is_player,
             message=message,
-            type=event_type,
+            type=log_type,
             show_ai=show_ai,
         )
         registry.append(event)

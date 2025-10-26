@@ -38,7 +38,7 @@ class ArcaneRecoveryAction(LimitedBonusAction):
 
                 actor.log_event(
                     f"{actor.name} recovers {slots_to_recover} level {level.value} spell slot(s).",
-                    event_type=LogLevel.DETAIL,
+                    log_type=LogLevel.DETAIL,
                 )
 
                 if recovered >= max_recovery:
@@ -47,5 +47,5 @@ class ArcaneRecoveryAction(LimitedBonusAction):
         if recovered == 0:
             actor.log_event(
                 f"{actor.name} has no spell slots to recover.",
-                event_type=LogLevel.DETAIL,
+                log_type=LogLevel.DETAIL,
             )

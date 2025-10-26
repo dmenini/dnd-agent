@@ -14,9 +14,9 @@ def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float
     if context.damage:
         heal = math.ceil(context.damage.total * ratio)
         actor.heal(heal)
-        actor.log_event(f"{actor.name} heals {heal} HP through life steal.", event_type=TRAIT_LOG_LEVEL)
+        actor.log_event(f"{actor.name} heals {heal} HP through life steal.", log_type=TRAIT_LOG_LEVEL)
 
 
 def regeneration_effect(actor: CharacterBase, value: int) -> None:
     actor.heal(value)
-    actor.log_event(f"{actor.name} heals {value} HP.", event_type=TRAIT_LOG_LEVEL)
+    actor.log_event(f"{actor.name} heals {value} HP.", log_type=TRAIT_LOG_LEVEL)
