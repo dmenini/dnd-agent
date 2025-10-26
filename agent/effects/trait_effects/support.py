@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 from agent.character.modifier import Modifier
 from agent.logs.events import Icon
 from agent.models.constants import TRAIT_LOG_LEVEL
-from agent.models.context import CombatContext
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
+    from agent.models.context import CombatContext
 
 
 def apply_modifier(target: CharacterBase, mod: Modifier, *, condition: bool = True) -> None:
