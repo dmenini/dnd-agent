@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
@@ -85,22 +86,44 @@ class GameMap(BaseModel):
     def is_walkable(self, x: int, y: int) -> bool:
         return (0 <= x < self.width) and (0 <= y < self.height) and (Position(x=x, y=y) not in self.walls)
 
-    def within_visibility_range(self, actor: CharacterBase, target: CharacterBase) -> bool:
+    def within_visibility_range(self, observer: CharacterBase, target: CharacterBase) -> bool:
         """Check whether the target is visible to the actor, considering range and walls."""
-        actor_pos = self.characters[actor.id]
-        target_pos = self.characters[target.id]
+        observer_pos = observer.pos
+        target_pos = target.pos
+
+        if observer_pos == target_pos:
+            return True
 
         # 1. Distance check
-        distance = actor_pos.euclidean_distance(target_pos)
-        if distance > actor.attributes.vision_range():
+        distance = observer_pos.euclidean_distance(target_pos)
+        if distance > observer.attributes.vision_range():
             return False
 
-        # 2. Line of sight check (Bresenham's line)
-        for x, y in self._bresenham_line(actor_pos, target_pos):
+        # 2. Vision cone check
+        if not self.in_vision_cone(observer, target):
+            return False
+
+        # 3. Line of sight check (Bresenham's line)
+        return self.has_line_of_sight(observer, target)
+
+    def in_vision_cone(self, observer: CharacterBase, target: CharacterBase) -> bool:
+        """Return True if target is within observer's vision cone."""
+        facing_x, facing_y = observer.pos.facing_vector
+        tx, ty = observer.pos.direction_to(target.pos)
+
+        dot = facing_x * tx + facing_y * ty
+        dot = max(-1.0, min(1.0, dot))  # numerical stability
+
+        angle = math.degrees(math.acos(dot))
+        return angle <= observer.attributes.base_vision_fov / 2
+
+    def has_line_of_sight(self, observer: CharacterBase, target: CharacterBase) -> bool:
+        observer_pos = observer.pos
+        target_pos = target.pos
+        for x, y in self._bresenham_line(observer_pos, target_pos):
             # If any wall blocks the view, line of sight is broken
             if any(wall.x == x and wall.y == y for wall in self.walls):
                 return False
-
         return True
 
     def _bresenham_line(self, start: Position, end: Position) -> list[tuple[int, int]]:
@@ -143,12 +166,14 @@ class GameMap(BaseModel):
         return points
 
     def __str__(self) -> str:
-        grid = [["· " for _ in range(self.width)] for _ in range(self.height)]
+        grid = [["·  " for _ in range(self.width)] for _ in range(self.height)]
 
         for wall in self.walls:
-            grid[wall.y][wall.x] = "# "
+            grid[wall.y][wall.x] = "#  "
+
+        direction_icons = {"N": "↑", "S": "↓", "E": "→", "W": "←", "NE": "↗", "NW": "↖", "SE": "↘", "SW": "↙"}
 
         for key, char in self.characters.items():
-            grid[char.y][char.x] = self.icons[key]
+            grid[char.y][char.x] = f"{self.icons[key]}{direction_icons[char.direction]}"
 
         return "\n".join(" ".join(row) for row in grid)

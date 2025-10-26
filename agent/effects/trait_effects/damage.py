@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 from agent.logs.events import LogLevel
 from agent.models.constants import TRAIT_LOG_LEVEL
-from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
 
 MELEE_RANGE = 5
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
+    from agent.models.context import CombatContext
 
 
 def auto_crit_if_melee_effect(actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:

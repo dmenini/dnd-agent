@@ -7,6 +7,7 @@ from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
+from agent.effects.traits import TargetAdvantageOnAttackRoll
 from agent.logs.events import Icon, LogLevel
 from agent.models.enums import FeatureId
 from agent.models.position import Position
@@ -46,11 +47,12 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def hide(self) -> None:
         roll = self.stealth_roll()
         self.stealth_value = roll.total
-        self.log_event(f"{self.name} hides (Stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
+        trait = TargetAdvantageOnAttackRoll(feature_id=FeatureId.STEALTH, source_id="hide")
+        self.register_passive(trait)
+        self.log_event(f"{self.name} hides (stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
 
     def unhide(self) -> None:
         self.stealth_value = 0
-        # TODO: Use a constant for source_id
         self.unregister_passive(feature_id=FeatureId.STEALTH, source_id="hide")
         self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 

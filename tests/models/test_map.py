@@ -70,7 +70,7 @@ def test_validate_inbound_edge_case_character_at_bounds() -> None:
 
 
 def test_visible_in_range_no_obstacles(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=1, y=1)
+    actor.pos = Position(x=1, y=1, direction="E")
     target.pos = Position(x=3, y=1)
     game_map.characters = {actor.id: Position(x=1, y=1), target.id: Position(x=3, y=1)}
 
@@ -86,6 +86,14 @@ def test_not_visible_out_of_range(game_map: GameMap, actor: Character, target: C
     assert game_map.within_visibility_range(actor, target) is False
 
 
+def test_out_of_vision_cone(game_map: GameMap, actor: Character, target: Character) -> None:
+    actor.pos = Position(x=1, y=1, direction="W")
+    target.pos = Position(x=3, y=1)
+    game_map.characters = {actor.id: Position(x=1, y=1), target.id: Position(x=3, y=1)}
+
+    assert game_map.within_visibility_range(actor, target) is False
+
+
 def test_blocked_by_wall(game_map: GameMap, actor: Character, target: Character) -> None:
     actor.pos = Position(x=0, y=0)
     target.pos = Position(x=4, y=0)
@@ -96,7 +104,7 @@ def test_blocked_by_wall(game_map: GameMap, actor: Character, target: Character)
 
 
 def test_wall_not_on_path(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=0, y=0)
+    actor.pos = Position(x=0, y=0, direction="E")
     target.pos = Position(x=4, y=0)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     game_map.walls = [Position(x=2, y=1)]  # wall near line, not blocking

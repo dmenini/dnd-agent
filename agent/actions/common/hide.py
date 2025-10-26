@@ -2,9 +2,9 @@ from typing import Any
 
 from agent.actions.base import ActionType, StandardAction
 from agent.character.character import Character
-from agent.effects.traits import TargetAdvantageOnAttackRoll
+from agent.logs.events import Icon
 from agent.models.context import CombatContext
-from agent.models.enums import FeatureId, TargetingType
+from agent.models.enums import TargetingType
 
 
 class HideAction(StandardAction):
@@ -20,7 +20,13 @@ class HideAction(StandardAction):
     breaks_stealth: bool = False
 
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
-        # TODO: Make this conditional on LoS
-        actor.hide()
-        trait = TargetAdvantageOnAttackRoll(feature_id=FeatureId.STEALTH, source_id=self.id)
-        actor.register_passive(trait)
+        if ctx.map is None:
+            raise ValueError
+
+        # Only allow hiding if no enemy has line of sight
+        can_hide = all(not ctx.map.within_visibility_range(enemy, actor) for enemy in ctx.enemies)
+
+        if can_hide:
+            actor.hide()
+        else:
+            actor.log_event(f"{actor.name} cannot hide: spotted by an enemy!", icon=Icon.STEALTH)

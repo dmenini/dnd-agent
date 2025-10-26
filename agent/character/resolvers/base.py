@@ -124,7 +124,7 @@ class CharacterBase(BaseModel):
         """Register a listener for a given event."""
         self._event_listeners[event.event_type.value].append(event)
         self.log_event(
-            f"Added listener {event.callback.__name__} for {event.event_type.value}",
+            f"Added listener {event.source_id} for {event.event_type.value}",
             icon=Icon.EFFECT_APPLIED,
             log_type=LogLevel.DEBUG,
         )
@@ -159,11 +159,12 @@ class CharacterBase(BaseModel):
     def log_event(
         self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
     ) -> None:
+        char_icon_pad = f"{self.icon} "
         icon = self.icon if log_type == LogLevel.MAIN else icon
         show_ai = True if log_type == LogLevel.MAIN else show_ai
         event = Event(
             actor_id=self.id,
-            icon=icon or self.icon,
+            icon=icon or char_icon_pad,
             is_player=self.is_player,
             message=message,
             type=log_type,

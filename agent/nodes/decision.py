@@ -1,4 +1,3 @@
-import json
 from logging import getLogger
 
 from langchain_core.language_models import BaseChatModel
@@ -16,6 +15,7 @@ from agent.character.stats import Stats
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
 from agent.models.decision import DecisionResult
+from agent.models.map import GameMap
 from agent.models.state import State
 
 log = getLogger(__name__)
@@ -45,43 +45,16 @@ class DecisionNode:
 
         state.update_visibility(actor)
         visible_characters = state.visible_characters
+        visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
+        visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
 
         actions = self.available_actions(actor)
         if not actions:
             state.action = None
             state.decision = None
             state.verification_result = None
+            state.retries = 0
             return state
-
-        actor_str = {
-            "id": actor.id,
-            "name": actor.name,
-            "hp": f"{actor.attributes.hp}/{actor.max_hp}",
-            "position": str(actor.pos),
-            "party": actor.party.model_dump_json(),
-            "is_player": actor.is_player,
-            "is_hidden": actor.is_hidden,
-            "level": actor.level,
-            "movement_available": f"{actor.current_speed}/{actor.speed} m",
-            "stats": Stats.model_validate(actor.attributes.model_dump()).model_dump_json(),
-            "status_effects": [str(eff) for eff in actor.status_effects],
-            "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
-            "spell_slots": str(actor.spell_slots),
-        }
-
-        visible_enemies = [
-            {
-                "id": c.id,
-                "name": c.name,
-                "party": c.party.model_dump_json(),
-                "hp": f"{c.attributes.hp}/{c.max_hp}",
-                "position": str(c.pos),
-                "path_length": f"{state.map.distance(actor.pos, c.pos)} m",
-                "line_of_sight": f"{actor.los_distance(c.pos)} m",
-                "status_effects": [str(eff) for eff in c.status_effects],
-            }
-            for c in visible_characters
-        ]
 
         history = self.group_messages(state.log)
 
@@ -90,21 +63,36 @@ class DecisionNode:
             state.log.hide_last_event(event_type=LogLevel.MAIN)
             validation_event = (
                 f"{actor.id}: The chosen action ({state.verification_result.input.id}) is invalid "
-                f"for the following reasons:\n{state.verification_result.reason}"
+                f"for the following reasons:\n{state.verification_result.reason}\n\n"
             )
         else:
             validation_event = ""
 
-        enemies_str = json.dumps(visible_enemies) if visible_enemies else "No characters in sight, move closer."
-
         user_prompt = (
-            f"{validation_event}\n\n"
-            f"You are controlling {actor.name}, a character in a D&D-like game with this profile:\n"
-            f"{actor_str}\n\n"
-            f"Visible entities: {enemies_str}\n"
-            f"Map:\n{state.map}"
+            f"{validation_event}"
+            f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat.\n"
+            f"---\n"
+            f"### Character (ID: {actor.id})\n"
+            f"HP: {actor.attributes.hp}/{actor.max_hp} | Level: {actor.level}\n"
+            f"Position: ({actor.pos.x}, {actor.pos.y}) | Facing: {actor.pos.direction}\n"
+            f"Movement Remaining: {actor.current_speed}/{actor.speed} m\n"
+            f"Hidden: {actor.is_hidden} | Party: {actor.party.name}\n"
+            f"Status Effects: {', '.join(str(eff) for eff in actor.status_effects) or 'None'}\n"
+            f"Spell Slots: {actor.spell_slots}\n"
+            f"Stats: {Stats.model_validate(actor.attributes.model_dump()).model_dump()}\n"
+            f"---\n"
+            f"### Available Actions\n"
+            f"{self.format_actions(actions)}\n"
+            f"---\n"
+            f"### Visible Allies\n"
+            f"{self.format_characters(visible_allies, state.map, actor)}\n"
+            f"---\n"
+            f"### Visible Enemies\n"
+            f"{self.format_characters(visible_enemies, state.map, actor)}\n"
+            f"---\n"
+            f"### Map Overview\n"
+            f"{state.map}\n"
         )
-
         result: DecisionResult = self.llm.invoke(  # type: ignore[assignment]
             [
                 SystemMessage(content=self.system_prompt),
@@ -115,9 +103,6 @@ class DecisionNode:
 
         state.action = actions[result.action_id]
         state.decision = result
-
-        # Reset verification
-        state.verification_result = None
 
         state.log.log_newline()
         action_names = [a.name for a in actions.values()]
@@ -184,3 +169,30 @@ class DecisionNode:
         all_actions += actor.abilities
 
         return {action.id: action for action in all_actions if action.is_available(actor.action_economy)}
+
+    def format_actions(self, actions: dict[str, Action]) -> str:
+        lines = []
+        for id_, act in actions.items():
+            typ = act.action_type.value
+            category = act.category.value
+            rng = f", range={act.range}m"
+            shots = f", shots={act.hits}"
+            dmg = getattr(act, "damage_dice", None)
+            if dmg:
+                dtype = getattr(act, "damage_type", None)
+                dmg = f", dmg={dmg} of type {dtype}"
+            line = f"- {id_}: {act.name} - {act.description}\n  ({category} {typ}{rng}{shots}{dmg})"
+            lines.append(line)
+        return "\n".join(lines)
+
+    def format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
+        lines = []
+        for c in visible_characters:
+            dist = game_map.distance(actor.pos, c.pos)
+            los = actor.los_distance(c.pos)
+            effects = ", ".join(str(e) for e in c.status_effects) or "None"
+            lines.append(
+                f"- Target: ID={c.id}, name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
+                f"at ({c.pos.x, c.pos.y}) facing {c.pos.direction}, distance={dist}m, LoS={los}m, effects={effects}"
+            )
+        return "\n".join(lines) or "No one in sight, try to explore the map."
