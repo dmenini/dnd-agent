@@ -1,9 +1,6 @@
-from typing import Any
-
-from agent.effects.base import EffectType, StatusEffect
-from agent.effects.registry import TraitRegistry
-from agent.jobs.feature import FeatureId
+from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
 from agent.models.damage import DamageType
+from agent.models.enums import FeatureId
 
 
 class Poisoned(StatusEffect):
@@ -13,10 +10,7 @@ class Poisoned(StatusEffect):
     """
 
     type: EffectType = EffectType.POISONED
-    damage: int = 1
-
-    def model_post_init(self, _: Any) -> None:
-        self._traits = [
-            TraitRegistry.create(FeatureId.TARGET_DISADVANTAGE),
-            TraitRegistry.create(FeatureId.DAMAGE_OVER_TIME, value=self.damage, damage_type=DamageType.POISON),
-        ]
+    features: list[StatusEffectFeature] = [
+        StatusEffectFeature(ref_id=FeatureId.TARGET_DISADVANTAGE),
+        StatusEffectFeature(ref_id=FeatureId.DAMAGE_OVER_TIME, kwargs={"value": 1, "damage_type": DamageType.POISON}),
+    ]

@@ -1,18 +1,21 @@
 from collections import defaultdict
-from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel, PrivateAttr, computed_field
 
+from agent.actions.base import Action
+from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.character.attributes import Attributes
-from agent.character.modifier import Modifier
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
+from agent.effects.base import Trait, TraitEffect, normalize_id
 from agent.equipment.armor import Armor
 from agent.logs.events import Event, Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
+from agent.models.constants import EventType
 from agent.models.damage import Damage
+from agent.models.enums import FeatureId
 from agent.models.position import Position
 
 registry = get_log_registry()
@@ -27,12 +30,17 @@ class CharacterBase(BaseModel):
     experience: int = 0
     pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
+    stealth_value: int = 0
+
+    spells: list[AttackSpellAction | SupportSpellAction] = []
+    abilities: list[Action] = []
+    passives: list[Trait] = []
 
     # Defined for typing to work
     action_economy: ActionEconomy
     armor: Armor | None = None
 
-    _event_listeners: dict[str, list[tuple[str, Callable]]] = PrivateAttr(default_factory=lambda: defaultdict(list))
+    _event_listeners: dict[str, list[TraitEffect]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -54,9 +62,15 @@ class CharacterBase(BaseModel):
     def speed(self) -> float:
         return self.attributes.speed()
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_alive(self) -> bool:
         return self.attributes.hp > 0
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_hidden(self) -> bool:
+        return self.stealth_value > 0
 
     def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError
@@ -80,53 +94,79 @@ class CharacterBase(BaseModel):
                 damage.vulnerabilities.append(vul)
         return damage
 
-    def register_modifier(self, modifier: Modifier) -> None:
-        self.attributes.add_modifier(modifier)
-        self.log_event(
-            f"Added modifier {modifier.attribute}={modifier.value} to {self.name}",
-            icon=Icon.EFFECT_APPLIED,
-            event_type=LogLevel.DEBUG,
-        )
+    def register_passive(self, trait: Trait) -> None:
+        self.passives.append(trait)
+        effect = trait.get_effect()
+        self.register_listener(effect)
+
+        if effect.event_type == EventType.MODIFIER:
+            effect.callback(self)
+
+    def unregister_passive(self, feature_id: FeatureId, source_id: str) -> None:
+        source_id = normalize_id(source_id)
+        matching_traits = [t for t in self.passives if t.feature_id == feature_id and t.source_id == source_id]
+        for trait in matching_traits:
+            self.unregister_modifier(trait.id)
+            self.unregister_listeners(trait.id)
+            self.passives.remove(trait)
 
     def unregister_modifier(self, source_id: str) -> None:
+        source_id = normalize_id(source_id)
         modifier = self.attributes.remove_modifier(source_id)
         if modifier:
             self.log_event(
                 f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
-                icon=Icon.EFFECT_APPLIED,
-                event_type=LogLevel.DEBUG,
+                icon=Icon.EFFECT_EXPIRED,
+                log_type=LogLevel.DEBUG,
             )
 
-    def register_listener(self, event: str, callback: Callable, source_id: str) -> None:
-        """Register a listener for a given event name."""
-        self._event_listeners[event].append((source_id, callback))
-        self.log_event(f"Registered listener {callback.__name__} for {event}", event_type=LogLevel.DEBUG)
+    def register_listener(self, event: TraitEffect) -> None:
+        """Register a listener for a given event."""
+        self._event_listeners[event.event_type.value].append(event)
+        self.log_event(
+            f"Added listener {event.callback.__name__} for {event.event_type.value}",
+            icon=Icon.EFFECT_APPLIED,
+            log_type=LogLevel.DEBUG,
+        )
 
     def unregister_listeners(self, source_id: str) -> None:
         """Remove all listeners registered by a given source (e.g., a trait)."""
         for event, listeners in self._event_listeners.items():
             before = len(listeners)
-            self._event_listeners[event] = [(sid, cb) for sid, cb in listeners if sid != source_id]
+            self._event_listeners[event] = [event for event in listeners if event.source_id != source_id]
             after = len(self._event_listeners[event])
             if before != after:
-                self.log_event(f"Removed {before - after} listeners from event '{event}'", event_type=LogLevel.DEBUG)
+                self.log_event(
+                    f"Removed {before - after} listeners from event '{event}'",
+                    icon=Icon.EFFECT_EXPIRED,
+                    log_type=LogLevel.DEBUG,
+                )
 
-    def trigger_event(self, event: str, *args: Any, **kwargs: Any) -> None:
-        """Trigger all listeners for the given event name."""
-        for _, callback in list(self._event_listeners.get(event, [])):
-            callback(*args, **kwargs)
+    def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
+        """Trigger all listeners for the given event type in priority order."""
+        events = self._event_listeners.get(event.value, [])
+        events.sort(key=lambda e: e.priority)
+        for e in list(events):
+            e.callback(*args, **kwargs)
+
+    def notify_state_change(self, field_name: str) -> None:
+        """Called whenever an internal property changes."""
+        for trait in self.passives:
+            effect = trait.get_effect()
+            if effect.condition_depends_on(field_name):
+                self.trigger_event(EventType.MODIFIER, target=self)
 
     def log_event(
-        self, message: str, *, event_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
+        self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
     ) -> None:
-        icon = self.icon if event_type == LogLevel.MAIN else icon
-        show_ai = True if event_type == LogLevel.MAIN else show_ai
+        icon = self.icon if log_type == LogLevel.MAIN else icon
+        show_ai = True if log_type == LogLevel.MAIN else show_ai
         event = Event(
             actor_id=self.id,
             icon=icon or self.icon,
             is_player=self.is_player,
             message=message,
-            type=event_type,
+            type=log_type,
             show_ai=show_ai,
         )
         registry.append(event)

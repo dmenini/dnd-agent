@@ -1,4 +1,5 @@
 from functools import total_ordering
+from math import sqrt
 from typing import Self
 
 from pydantic import BaseModel
@@ -27,3 +28,8 @@ class Position(BaseModel):
 
     def manhattan_distance(self, other: Self) -> int:
         return abs(self.x - other.x) + abs(self.y - other.y)
+
+    def euclidean_distance(self, other: Self) -> float:
+        dx = other.x - self.x
+        dy = other.y - self.y
+        return sqrt(dx * dx + dy * dy)

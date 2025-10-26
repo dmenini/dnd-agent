@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from agent.character.character import Character
 from agent.character.stats import StatType
-from agent.effects.base import EffectType
+from agent.effects.status_effects.base import EffectType
 from agent.effects.status_effects.paralyzed import Paralyzed
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll

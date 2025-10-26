@@ -1,16 +1,16 @@
 from typing import Any
 
 from agent.effects.base import Trait
-from agent.jobs.feature import FeatureId
+from agent.models.enums import FeatureId
 
 
 class TraitRegistry:
     _registry: dict[FeatureId, type[Trait]] = {}
 
     @classmethod
-    def register(cls, id_: FeatureId, action_cls: type[Trait]) -> None:
-        cls._registry[id_] = action_cls
+    def register(cls, feature_id: FeatureId, action_cls: type[Trait]) -> None:
+        cls._registry[feature_id] = action_cls
 
     @classmethod
-    def create(cls, id_: FeatureId, **kwargs: Any) -> Trait:
-        return cls._registry[id_](**kwargs)
+    def create(cls, feature_id: FeatureId, source_id: str, **kwargs: Any) -> Trait:
+        return cls._registry[feature_id](feature_id=feature_id, source_id=source_id, **kwargs)

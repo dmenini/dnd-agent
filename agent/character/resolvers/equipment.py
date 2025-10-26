@@ -1,9 +1,15 @@
+from typing import TYPE_CHECKING
+
 from pydantic import computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Accessory, Armor, Shield
+from agent.equipment.base import Equipment
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponType
 from agent.logs.log_registry import get_log_registry
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 registry = get_log_registry()
 
@@ -39,16 +45,44 @@ class EquipmentResolver(CharacterBase):
 
     def equip_all(self) -> None:
         # Equip to apply traits
-        if self.armor:
-            self.armor.on_equip(self)
-        if self.shield:
-            self.shield.on_equip(self)
-        if self.accessories:
-            for acc in self.accessories:
-                acc.on_equip(self)
-        if self.main_hand:
-            self.main_hand.on_equip(self)
-        if self.off_hand:
-            self.off_hand.on_equip(self)
-        if self.ranged:
-            self.ranged.on_equip(self)
+        equipment_slots = {
+            "armor": self.armor,
+            "shield": self.shield,
+            "accessories": self.accessories,
+            "main_hand": self.main_hand,
+            "off_hand": self.off_hand,
+            "ranged": self.ranged,
+        }
+
+        for slot_name, item in equipment_slots.items():
+            if not item:
+                continue
+
+            # Handle lists (like accessories) and single items uniformly
+            items: Sequence[Equipment] = item if isinstance(item, list) else [item]  # type: ignore[list-item]
+            for it in items:
+                it.on_equip(self)
+
+            self.notify_state_change(slot_name)
+
+    def unequip(self, slot_name: str) -> None:
+        equipment_slots = {
+            "armor": self.armor,
+            "shield": self.shield,
+            "accessories": self.accessories,
+            "main_hand": self.main_hand,
+            "off_hand": self.off_hand,
+            "ranged": self.ranged,
+        }
+
+        item = equipment_slots.get(slot_name)
+        if not item:
+            # Nothing equipped
+            return
+
+        items: Sequence[Equipment] = item if isinstance(item, list) else [item]  # type: ignore[list-item]
+        for it in items:
+            it.on_unequip(self)
+
+        self.__setattr__(slot_name, None)
+        self.notify_state_change(slot_name)

@@ -27,7 +27,7 @@ class RollResolver(CharacterBase):
     def initiative_roll(self) -> DiceRoll:
         expr = f"{D20}+{self.initiative_modifier}"
         roll = self._dice.roll_with_context(dice_expression=expr)
-        self.log_event(f"{self.name} rolls initiative {roll.total}", event_type=LogLevel.MAIN)
+        self.log_event(f"{self.name} rolls initiative {roll.total}", log_type=LogLevel.MAIN)
         return roll
 
     def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
@@ -64,4 +64,23 @@ class RollResolver(CharacterBase):
         prof_bonus = self.proficiency_bonus if save_stat in self.attributes.save_proficiencies else 0
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
+        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def stealth_roll(self) -> DiceRoll:
+        sources = [
+            self.attributes.advantage("stealth"),
+        ]
+        advantage = resolve_advantage(sources)
+
+        dex_mod = self.attributes.stat_modifier(StatType.DEX)
+        expr = f"{D20}+{dex_mod}"
+        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def perception_roll(self) -> DiceRoll:
+        sources = [self.attributes.advantage("perception")]
+        advantage = resolve_advantage(sources)
+
+        wis_mod = self.attributes.stat_modifier(StatType.WIS)
+        expr = f"{D20}+{wis_mod}"
+
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
@@ -8,6 +8,7 @@ from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.logs.events import Icon, LogLevel
+from agent.models.enums import FeatureId
 from agent.models.position import Position
 
 
@@ -42,14 +43,25 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.pos = destination
         self.log_event(f"New position: {destination}", icon=Icon.MOVE)
 
+    def hide(self) -> None:
+        roll = self.stealth_roll()
+        self.stealth_value = roll.total
+        self.log_event(f"{self.name} hides (Stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
+
+    def unhide(self) -> None:
+        self.stealth_value = 0
+        # TODO: Use a constant for source_id
+        self.unregister_passive(feature_id=FeatureId.STEALTH, source_id="hide")
+        self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
+
     def start_turn(self) -> None:
-        self.log_event(f"{self.name} starts turn", event_type=LogLevel.DEBUG)
+        self.log_event(f"{self.name} starts turn", log_type=LogLevel.DEBUG)
         self.turn_done = False
         self.action_economy.restore_turn()
         self.try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
-        self.log_event(f"{self.name} ends turn", event_type=LogLevel.DEBUG)
+        self.log_event(f"{self.name} ends turn", log_type=LogLevel.DEBUG)
         self.try_expire_effects(is_start=False)
         self.turn_done = True
 
@@ -68,3 +80,12 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         has_main = main_hand is not None and (self.action_economy.can_use_standard())
         has_movement = self.action_economy.can_move(self.current_speed)
         return has_main or has_bonus or has_movement
+
+    def detect_target(self: Self, target: Self, *, use_passive: bool = False) -> bool:
+        if not target.is_hidden:
+            return True  # Always visible if not hidden
+
+        # Use passive perception or active roll
+        perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
+
+        return perception_value >= (target.stealth_value or 0)

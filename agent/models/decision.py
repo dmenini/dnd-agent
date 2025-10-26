@@ -111,17 +111,16 @@ class DecisionResult(BaseModel):
                 f"Action {self.action_id} requires at least one valid target ID, but none were provided. "
                 f"Please specify which entity or entities to attack."
             )
-        elif action.targeting == TargetingType.SINGLE:
-            if len(self.target_ids) > 1:
-                msg = (
-                    f"Action {self.action_id} targets only one enemy, but received {len(self.target_ids)} targets. "
-                    f"Please provide exactly one target ID."
-                )
-            elif self.total_hits > action.hits:
-                msg = (
-                    f"Action {self.action_id} allows up to {action.hits} hit(s) on a single target, "
-                    f"but {self.total_hits} hits were assigned. Please reduce the hit count."
-                )
+        elif len(self.target_ids) > 1:
+            msg = (
+                f"Action {self.action_id} targets only one enemy, but received {len(self.target_ids)} targets. "
+                f"Please provide exactly one target ID."
+            )
+        elif self.total_hits > action.hits:
+            msg = (
+                f"Action {self.action_id} allows up to {action.hits} hit(s) on a single target, "
+                f"but {self.total_hits} hits were assigned. Please reduce the hit count."
+            )
         return msg == "", msg
 
     def validate_multi_targeting(self, action: Action) -> tuple[bool, str]:

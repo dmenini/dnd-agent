@@ -1,25 +1,24 @@
 from __future__ import annotations
 
 import re
+from abc import ABC
 from typing import TYPE_CHECKING, Self
 
-from agent.actions.base import Action, ActionCategory, ActionType
-from agent.character.resources import ActionEconomy
+from agent.actions.base import Action, ActionType, BonusAction, StandardAction
 from agent.character.stats import StatType
-from agent.effects.base import StatusEffect
+from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
 from agent.logs.events import Icon
 from agent.models.constants import EventType
 from agent.models.damage import Damage, DamageComponent, DamageType
-from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
     from agent.models.context import CombatContext
 
 
-class AttackAction(Action):
-    targeting: TargetingType
+class AttackAction(Action, ABC):
+    action_type: ActionType = ActionType.ATTACK
     damage_dice: str
     damage_type: DamageType
     weapon_type: WeaponType
@@ -53,7 +52,7 @@ class AttackAction(Action):
             if ctx.is_hit:
                 actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK, show_ai=True)
             else:
-                actor.log_event("Attack roll failed → Target missed...", icon=Icon.ATTACK, show_ai=True)
+                actor.log_event("Attack roll failed → Target missed...", icon=Icon.DEFENSE, show_ai=True)
 
         return ctx.is_hit
 
@@ -82,7 +81,7 @@ class AttackAction(Action):
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
         if not target.is_alive:
-            target.log_event(f"{target.name} is defeated", icon=Icon.DEATH)
+            target.log_event(f"{target.name} is defeated", icon=Icon.DEATH, show_ai=True)
             return ctx
 
         # Try to apply status effects
@@ -113,12 +112,11 @@ class AttackAction(Action):
         target.trigger_event(EventType.COMBAT_END, actor, target, ctx)
 
 
-class MainHandAttackAction(AttackAction):
+class MainHandAttackAction(StandardAction, AttackAction):
     id: str = "main_hand_attack"
     name: str = "Main Hand Attack"
     description: str = "Base attack with main hand weapon."
     action_type: ActionType = ActionType.ATTACK
-    category: ActionCategory = ActionCategory.STANDARD
 
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
@@ -134,12 +132,11 @@ class MainHandAttackAction(AttackAction):
         )
 
 
-class OffHandAttackAction(AttackAction):
+class OffHandAttackAction(BonusAction, AttackAction):
     id: str = "off_hand_attack"
     name: str = "Off Hand Attack"
     description: str = ""
     action_type: ActionType = ActionType.OFF_HAND_ATTACK
-    category: ActionCategory = ActionCategory.BONUS
 
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
@@ -154,20 +151,12 @@ class OffHandAttackAction(AttackAction):
             status_effects=weapon.effects,
         )
 
-    def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.bonus_actions > 0
 
-    def finalize(self, actor: Character) -> None:
-        """Consume bonus point."""
-        actor.action_economy.can_use_bonus(self.action_type)
-
-
-class RangedAttackAction(AttackAction):
+class RangedAttackAction(StandardAction, AttackAction):
     id: str = "ranged_attack"
     name: str = "Ranged Attack"
     description: str = ""
     action_type: ActionType = ActionType.ATTACK
-    category: ActionCategory = ActionCategory.STANDARD
 
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:

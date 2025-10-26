@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import PrivateAttr
 
-from agent.actions.base import Action, ActionCategory, ActionType
+from agent.actions.base import ActionType, StandardAction
 from agent.character.resources import ActionEconomy
 from agent.models.enums import TargetingType
 
@@ -14,14 +14,14 @@ if TYPE_CHECKING:
     from agent.models.position import Position
 
 
-class DashAction(Action):
+class DashAction(StandardAction):
     id: str = "dash"
     name: str = "Dash"
     description: str = "Dash on the map to a new position within double the range."
     action_type: ActionType = ActionType.DASH
-    category: ActionCategory = ActionCategory.STANDARD
     targeting: TargetingType = TargetingType.AREA
     range: float
+    breaks_stealth: bool = False
 
     _distance: float = PrivateAttr(default=0)
 

@@ -1,16 +1,14 @@
-from __future__ import annotations
-
 import uuid
-from enum import Enum
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Callable
+from typing import Any, Literal
 
 from anthropic import BaseModel
 from pydantic import PrivateAttr, computed_field
 
-from agent.character.stats import StatType
-
-if TYPE_CHECKING:
-    from agent.character.resolvers.base import CharacterBase
+from agent.character.modifier import Modifier
+from agent.effects.trait_effects.support import apply_modifier
+from agent.models.constants import EventType
+from agent.models.enums import FeatureId
 
 
 class Priority:
@@ -19,65 +17,51 @@ class Priority:
     LOW: int = 100  # Execute last
 
 
-class EffectType(str, Enum):
-    STUNNED = "stunned"
-    PARALYZED = "paralyzed"
-    POISONED = "poisoned"
-    DODGING = "dodging"
-    HASTED = "hasted"
-    RESTRAINED = "restrained"
-    LETHARGIC = "lethargic"
-    CUSTOM = "custom"
+class TraitEffect(BaseModel):
+    """Describes an event listener to register dynamically."""
+
+    event_type: EventType
+    callback: Callable
+    source_id: str
+    priority: int = Priority.MEDIUM
+    dependencies: list[str] = []
+
+    def condition_depends_on(self, field_name: str) -> bool:
+        return field_name in self.dependencies
 
 
 class Trait(BaseModel):
-    source: str = ""
-    _id: str = PrivateAttr(default=str(uuid.uuid4()))
+    feature_id: FeatureId
+    source_id: str
+    name: str = ""
+    description: str = ""
+    _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
     _priority: int = PrivateAttr(default=Priority.MEDIUM)
 
-    @property
-    def priority(self) -> int:
-        return self._priority
+    def model_post_init(self, _: Any) -> None:
+        if not self.name:
+            self.name = self.__class__.__name__
+        if not self.description:
+            self.description = self.__class__.__doc__ or ""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-
-    def on_expire(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-        target.unregister_modifier(self._id)
-        target.unregister_listeners(self._id)
-
-
-class StatusEffect(Trait):
-    type: EffectType
-    duration: int
-    save_stat: StatType = StatType.CON
-    save_dc: int = 12  # Difficulty class
-    save_mode: Literal["none", "start", "end"] = "none"
-    followup: StatusEffect | None = None
-
-    _traits: list[Trait] = PrivateAttr(default_factory=list)
+        self.source_id = normalize_id(self.source_id)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def traits(self) -> list[Trait]:
-        return sorted(self._traits, key=lambda t: t.priority)
+    def id(self) -> str:
+        return f"{self.source_id}-{normalize_id(self.name)}"
 
-    def on_apply(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-        super().on_apply(target)
-        for trait in self.traits:
-            trait.source = self.__class__.__name__
-            trait.on_apply(target)
+    def get_effect(self) -> TraitEffect:
+        """Return a Modifier or Event effect to apply."""
+        raise NotImplementedError
 
-    def on_expire(self, target: CharacterBase) -> None:
-        """Call when the effect is first applied."""
-        super().on_expire(target)
-        for trait in self.traits:
-            trait.on_expire(target)
+    def _make_event_effect(self, event_type: EventType, callback: Callable[..., None]) -> TraitEffect:
+        return TraitEffect(source_id=self.id, event_type=event_type, callback=callback, priority=self._priority)
 
-    def is_expired(self) -> bool:
-        return self.duration <= 0
+    def _make_modifier(self, attr: str, value: Any, op: Literal["set", "add", "mul"]) -> TraitEffect:
+        mod = Modifier(source_id=self.id, attribute=attr, value=value, operation=op)
+        return self._make_event_effect(event_type=EventType.MODIFIER, callback=lambda t: apply_modifier(t, mod))
 
-    def __str__(self) -> str:
-        return f"{self.type.value} ({self.duration} turns left)"
+
+def normalize_id(name: str) -> str:
+    return name.replace(" ", "-").lower()

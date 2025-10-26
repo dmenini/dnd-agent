@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 
 from langchain_core.language_models import BaseChatModel
@@ -7,6 +8,7 @@ from agent.actions.base import Action
 from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
 from agent.actions.common.dash import DashAction
 from agent.actions.common.dodge import DodgeAction
+from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
@@ -41,6 +43,9 @@ class DecisionNode:
             state.draw_map()
             actor.start_turn()
 
+        state.update_visibility(actor)
+        visible_characters = state.visible_characters
+
         actions = self.available_actions(actor)
         if not actions:
             state.action = None
@@ -51,12 +56,13 @@ class DecisionNode:
         actor_str = {
             "id": actor.id,
             "name": actor.name,
-            "pos": str(actor.pos),
+            "hp": f"{actor.attributes.hp}/{actor.max_hp}",
+            "position": str(actor.pos),
             "party": actor.party.model_dump_json(),
             "is_player": actor.is_player,
+            "is_hidden": actor.is_hidden,
             "level": actor.level,
-            "hp": f"{actor.attributes.hp}/{actor.max_hp}",
-            "movement": f"{actor.current_speed}/{actor.speed}",
+            "movement_available": f"{actor.current_speed}/{actor.speed} m",
             "stats": Stats.model_validate(actor.attributes.model_dump()).model_dump_json(),
             "status_effects": [str(eff) for eff in actor.status_effects],
             "available_actions": {id_: val.model_dump_json(exclude_none=True) for id_, val in actions.items()},
@@ -67,15 +73,14 @@ class DecisionNode:
             {
                 "id": c.id,
                 "name": c.name,
-                "pos": str(c.pos),
                 "party": c.party.model_dump_json(),
                 "hp": f"{c.attributes.hp}/{c.max_hp}",
-                "path_distance": f"{state.map.distance(actor.pos, c.pos)} m",
+                "position": str(c.pos),
+                "path_length": f"{state.map.distance(actor.pos, c.pos)} m",
                 "line_of_sight": f"{actor.los_distance(c.pos)} m",
                 "status_effects": [str(eff) for eff in c.status_effects],
             }
-            for c in state.alive_characters.values()
-            if c.id != actor.id
+            for c in visible_characters
         ]
 
         history = self.group_messages(state.log)
@@ -90,11 +95,13 @@ class DecisionNode:
         else:
             validation_event = ""
 
+        enemies_str = json.dumps(visible_enemies) if visible_enemies else "No characters in sight, move closer."
+
         user_prompt = (
             f"{validation_event}\n\n"
             f"You are controlling {actor.name}, a character in a D&D-like game with this profile:\n"
             f"{actor_str}\n\n"
-            f"Visible entities: {visible_enemies}\n"
+            f"Visible entities: {enemies_str}\n"
             f"Map:\n{state.map}"
         )
 
@@ -114,7 +121,7 @@ class DecisionNode:
 
         state.log.log_newline()
         action_names = [a.name for a in actions.values()]
-        actor.log_event(result.description, event_type=LogLevel.MAIN)
+        actor.log_event(result.description, log_type=LogLevel.MAIN)
         actor.log_event(f"Available actions: {action_names}")
 
         return state
@@ -155,6 +162,7 @@ class DecisionNode:
             DashAction(range=actor.current_speed),
             DodgeAction(),
             WaitAction(),
+            HideAction(),
         ]
 
         # Equipment-based actions

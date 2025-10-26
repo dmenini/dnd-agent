@@ -1,6 +1,7 @@
 import pytest
 
-from agent.actions.base import Action, ActionCategory, ActionType
+from agent.actions.base import Action
+from agent.actions.common.dash import DashAction
 from agent.character.character import Character
 from agent.models.decision import DecisionResult
 from agent.models.enums import TargetingType
@@ -20,15 +21,7 @@ def base_decision() -> DecisionResult:
 
 @pytest.fixture
 def action() -> Action:
-    return Action(
-        id="attack_1",
-        name="",
-        description="",
-        hits=1,
-        targeting=TargetingType.SINGLE,
-        action_type=ActionType.ATTACK,
-        category=ActionCategory.STANDARD,
-    )
+    return DashAction(id="dash", name="", description="", range=2)
 
 
 def test_validate_self_targeting_valid_self_target(base_decision: DecisionResult) -> None:

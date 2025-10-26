@@ -1,20 +1,21 @@
 from pytest_mock import MockerFixture
 
 from agent.actions.base import ActionCategory, ActionType
-from agent.actions.common.attack import AttackAction
+from agent.actions.common.attack import AttackAction, MainHandAttackAction
 from agent.character.character import Character
 from agent.character.resolvers.roll import D20
 from agent.character.stats import StatType
+from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
-from agent.models.enums import TargetingType
+from agent.models.enums import FeatureId, TargetingType
 
 
 def make_attack_action() -> AttackAction:
     """Helper for creating a deterministic melee attack."""
-    return AttackAction(
+    return MainHandAttackAction(
         id="basic_attack",
         name="Basic Attack",
         description="A test melee strike.",
@@ -30,10 +31,9 @@ def make_attack_action() -> AttackAction:
 
 
 def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    """Attacker rolls high enough to hit target and deals damage."""
     actor.attributes.strength = 16  # +3 modifier
     actor.proficiencies = [WeaponType.SIMPLE_MELEE]
-    roll1 = target.armor_class + 1
+    roll1 = target.armor_class + 1  # Attacker rolls high enough to hit target
     roll2 = 10
     action = make_attack_action()
 
@@ -54,8 +54,7 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
 
 
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    """Attack roll is too low, no damage applied."""
-    roll = target.armor_class - 1
+    roll = target.armor_class - 1  # Attack roll is too low -> miss
     action = make_attack_action()
 
     actor._dice = mocker.MagicMock()
@@ -74,7 +73,6 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
 
 
 def test_attack_critical_hit(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    """Critical hit (natural 20) deals double dice damage."""
     action = make_attack_action()
     roll2 = 5
 
@@ -88,8 +86,21 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
     # Target takes full critical damage
     assert target.attributes.hp == start_hp - roll2
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=None)
-    actor._dice.roll_twice.assert_called_once_with("1d8+0")
+    actor._dice.roll_twice.assert_called_once_with("1d8+0")  # double dice damage
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
+
+
+def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
+    actor.hide()
+    actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide"))
+    action = make_attack_action()
+    action.execute(actor, target, ctx=CombatContext())
+    action.finalize(actor)
+
+    assert actor.action_economy.standard_actions == 0
+    assert action.is_available(actor.action_economy) is False
+    assert actor.is_hidden is False
+    assert actor.stealth_value == 0

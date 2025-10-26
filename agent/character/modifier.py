@@ -18,9 +18,15 @@ class ModifierRegistry(BaseModel):
     def add(self, modifier: Modifier, stacking_rule: Literal["sum", "min", "max"] = "sum") -> None:
         attr = modifier.attribute
         if attr not in self._modifiers:
+            # Add new attribute mod
             self._modifiers[attr] = []
             self._stacking_rules[attr] = stacking_rule
-        self._modifiers[attr].append(modifier)
+            self._modifiers[attr].append(modifier)
+        else:
+            # Add new attribute mod only if it comes from a different source to avoid duplication
+            mods = self._modifiers[attr]
+            if all(mod.source_id != modifier.source_id for mod in mods):
+                self._modifiers[attr].append(modifier)
 
     def remove(self, source_id: str) -> Modifier | None:
         for attr, mods in list(self._modifiers.items()):

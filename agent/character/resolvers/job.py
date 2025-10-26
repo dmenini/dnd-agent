@@ -1,4 +1,3 @@
-from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
@@ -13,14 +12,11 @@ from agent.logs.events import LogLevel
 class JobResolver(CharacterBase):
     job: CharacterJob = Fighter
 
-    spells: list[AttackSpellAction | SupportSpellAction] = []
-    abilities: list[Action] = []
-
     def change_job(self, job: CharacterJob) -> None:
-        self.spells = []
-        self.abilities = []
-        self.job = job
+        for feature in self.job.get_features_for_level(self.level):
+            self._remove_job_feature(feature)
 
+        self.job = job
         self.apply_job_features()
 
     def apply_job_features(self) -> None:
@@ -45,17 +41,27 @@ class JobResolver(CharacterBase):
                 **feature.kwargs,
             )
             self.abilities.append(action)
-            self.log_event(f"{self.name} gained ability: {feature.name}", event_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
             trait = TraitRegistry.create(
-                id_=feature.ref_id,
-                source=feature.name,
+                feature_id=feature.ref_id,
+                source_id=feature.name,
+                name=feature.name,
                 description=feature.description,
                 **feature.kwargs,
             )
-            trait.on_apply(self)
-            self.log_event(f"{self.name} gained passive trait: {feature.name}", event_type=LogLevel.DETAIL)
+            self.register_passive(trait)
+            self.log_event(f"{self.name} gained passive trait {feature.name}", log_type=LogLevel.DETAIL)
+
+    def _remove_job_feature(self, feature: JobFeature) -> None:
+        if feature.type == FeatureType.ACTIVE:
+            self.abilities = [ability for ability in self.abilities if ability.id != feature.ref_id]
+            self.log_event(f"{self.name} lost ability {feature.name}", log_type=LogLevel.DETAIL)
+
+        elif feature.type == FeatureType.PASSIVE:
+            self.unregister_passive(feature_id=feature.ref_id, source_id=feature.name)
+            self.log_event(f"{self.name} lost passive trait {feature.name}", log_type=LogLevel.DETAIL)
 
     def _apply_spell(self, spell: Spell) -> None:
         action = ActionRegistry.create(
@@ -65,4 +71,4 @@ class JobResolver(CharacterBase):
         )
         if isinstance(action, (AttackSpellAction, SupportSpellAction)):
             self.spells.append(action)
-            self.log_event(f"{self.name} gained spell: {action.name}", event_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)

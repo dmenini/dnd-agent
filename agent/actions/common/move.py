@@ -22,6 +22,7 @@ class MovementAction(Action):
     category: ActionCategory = ActionCategory.MOVEMENT
     targeting: TargetingType = TargetingType.AREA
     range: float
+    breaks_stealth: bool = False
 
     _distance: float = PrivateAttr(default=0)
 

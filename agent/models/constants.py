@@ -1,7 +1,10 @@
+from enum import Enum
+
 from agent.logs.events import LogLevel
 
 
-class EventType:
+class EventType(str, Enum):
+    MODIFIER = "modifier"  # Execute immediately
     TURN_START = "turn_start"
     TURN_END = "turn_end"
     COMBAT_START = "combat_start"

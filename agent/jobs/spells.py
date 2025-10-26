@@ -5,7 +5,7 @@ from pydantic import Field
 
 from agent.actions.base import ActionCategory
 from agent.character.resources import SpellLevel
-from agent.effects.base import StatusEffect
+from agent.effects.status_effects.base import StatusEffect
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType

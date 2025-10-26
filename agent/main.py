@@ -91,7 +91,7 @@ def main() -> None:
         weapon_type=WeaponType.SIMPLE_MELEE,
         range=1,
         targeting=TargetingType.SINGLE,
-        effects=[Poisoned(duration=3, damage=1)],
+        effects=[Poisoned(duration=3)],
     )
 
     hero = Character(

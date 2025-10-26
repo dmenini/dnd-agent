@@ -1,13 +1,9 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from pydantic import Field
 
 from agent.character.modifier import Modifier
 from agent.character.resources import ActionExtension
 from agent.character.stats import StatType
-from agent.effects.base import Priority, Trait
+from agent.effects.base import Priority, Trait, TraitEffect
 from agent.effects.trait_effects.damage import (
     auto_crit_if_melee_effect,
     damage_bonus_effect,
@@ -16,50 +12,43 @@ from agent.effects.trait_effects.damage import (
     ignore_resistance_effect,
     reflect_melee_damage_effect,
 )
-from agent.effects.trait_effects.support import life_steal_effect, regeneration_effect
+from agent.effects.trait_effects.support import apply_modifier, life_steal_effect, regeneration_effect
 from agent.effects.trait_effects.turn import (
     cannot_act_effect,
     cannot_move_effect,
     extra_actions_effect,
     half_attacks_effect,
 )
-from agent.models.constants import TRAIT_LOG_LEVEL, EventType
+from agent.models.constants import EventType
 from agent.models.damage import DamageType
-
-if TYPE_CHECKING:
-    from agent.character.resolvers.base import CharacterBase
 
 
 class AttackerDisadvantageOnAttackRoll(Trait):
     """Give disadvantage on attack roll to attacker."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "disadvantage.defense"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="disadvantage.defense", value=True, op="set")
 
 
 class AttackerAdvantageOnAttackRoll(Trait):
     """Give advantage on attack roll to attacker."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "advantage.defense"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="advantage.defense", value=True, op="set")
 
 
 class TargetDisadvantageOnAttackRoll(Trait):
     """Give disadvantage on attack roll to target."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "disadvantage.attack"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="disadvantage.attack", value=True, op="set")
 
 
 class TargetAdvantageOnAttackRoll(Trait):
     """Give advantage on attack roll to target."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "advantage.attack"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="advantage.attack", value=True, op="set")
 
 
 class DisadvantageOnSavingThrow(Trait):
@@ -67,9 +56,8 @@ class DisadvantageOnSavingThrow(Trait):
 
     stat: StatType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = f"save_disadvantage.{self.stat.name.lower()}"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr=f"save_disadvantage.{self.stat.name.lower()}", value=True, op="set")
 
 
 class AdvantageOnSavingThrow(Trait):
@@ -77,9 +65,8 @@ class AdvantageOnSavingThrow(Trait):
 
     stat: StatType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = f"save_advantage.{self.stat.name.lower()}"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr=f"save_advantage.{self.stat.name.lower()}", value=True, op="set")
 
 
 class FailOnSavingThrow(Trait):
@@ -87,9 +74,8 @@ class FailOnSavingThrow(Trait):
 
     stat: StatType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = f"save_autofail.{self.stat.name.lower()}"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr=f"save_autofail.{self.stat.name.lower()}", value=True, op="set")
 
 
 class SpeedMultiplier(Trait):
@@ -97,9 +83,8 @@ class SpeedMultiplier(Trait):
 
     value: float = Field(ge=0)
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "speed"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="mul"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="speed", value=self.value, op="mul")
 
 
 class SpeedBonus(Trait):
@@ -107,9 +92,8 @@ class SpeedBonus(Trait):
 
     value: float
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "speed"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="speed", value=self.value, op="add")
 
 
 class ACBonus(Trait):
@@ -117,104 +101,111 @@ class ACBonus(Trait):
 
     value: int
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "ac"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
-        target.log_event(f"{target.name} gains +{self.value} AC from {self.source}.", event_type=TRAIT_LOG_LEVEL)
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="ac", value=self.value, op="add")
 
 
-class ACBonusWithArmor(ACBonus):
-    """Grant a bonus to the target Armor Class (AC) while wearing armor."""
+class ACBonusWithArmor(Trait):
+    """Grant a bonus to Armor Class (AC) while wearing armor."""
 
-    value: int = Field(default=1)
+    value: int = 1
 
-    def on_apply(self, target: CharacterBase) -> None:
-        if target.armor:
-            super().on_apply(target)
+    def get_effect(self) -> TraitEffect:
+        mod = Modifier(source_id=self.id, attribute="ac", value=self.value, operation="add")
+        return TraitEffect(
+            source_id=self.source_id,
+            dependencies=["armor"],
+            event_type=EventType.MODIFIER,
+            callback=lambda target: apply_modifier(target, mod, condition=bool(target.armor)),
+        )
 
 
-class ACBonusWithoutArmor(ACBonus):
-    """Grant a bonus to the target Armor Class (AC) while wearing armor."""
+class ACBonusWithoutArmor(Trait):
+    """Grant a bonus to Armor Class (AC) while not wearing armor."""
 
-    value: int = Field(default=3)
+    value: int = 3
 
-    def on_apply(self, target: CharacterBase) -> None:
-        if not target.armor:
-            super().on_apply(target)
+    def get_effect(self) -> TraitEffect:
+        mod = Modifier(source_id=self.id, attribute="ac", value=self.value, operation="add")
+        return TraitEffect(
+            source_id=self.source_id,
+            dependencies=["armor"],
+            event_type=EventType.MODIFIER,
+            callback=lambda target: apply_modifier(target, mod, condition=not bool(target.armor)),
+        )
 
 
 class CriticalRollBonus(Trait):
-    """Add a bonus to the target critical roll (e.g. value=1 -> target can roll 19 for a critical instead of 20."""
+    """Add a bonus to the target critical roll (e.g. 1 -> crit on 19 instead of 20)."""
 
     value: int
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "crit_roll_bonus"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=-self.value, operation="add"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="crit_roll_bonus", value=self.value, op="add")
 
 
 class Resistance(Trait):
-    """Give resistance to a given damage type to target."""
+    """Give resistance to a given damage type."""
 
-    value: float
+    value: float = Field(ge=0, le=1)
     damage_type: DamageType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = f"resistance.{self.damage_type.value}"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr=f"resistance.{self.damage_type.value}", value=self.value, op="add")
 
 
 class Immunity(Trait):
-    """Give immunity to a given damage type to target."""
+    """Give immunity (100% resistance) to a given damage type."""
 
     damage_type: DamageType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = f"resistance.{self.damage_type.value}"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=1.0, operation="add"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr=f"resistance.{self.damage_type.value}", value=1.0, op="add")
 
 
 class Vulnerability(Trait):
-    """Give vulnerability to a given damage type to target."""
+    """Give vulnerability to a given damage type."""
 
-    value: float
+    value: float = Field(ge=0, le=1)
     damage_type: DamageType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = f"vulnerability.{self.damage_type.value}"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=self.value, operation="add"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr=f"vulnerability.{self.damage_type.value}", value=self.value, op="add")
 
 
 class SpellResistance(Trait):
-    """Give spell save advantage to target."""
+    """Give spell save advantage."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "save_advantage.spell"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="save_advantage.spell", value=True, op="set")
 
 
 class SpellWeakness(Trait):
-    """Give spell save disadvantage to target."""
+    """Give spell save disadvantage."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "save_disadvantage.spell"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="save_disadvantage.spell", value=True, op="set")
+
+
+class StealthAdvantage(Trait):
+    """Give stealth check advantage."""
+
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="advantage.stealth", value=True, op="set")
 
 
 class StealthDisadvantage(Trait):
-    """Give stealth check disadvantage to target."""
+    """Give stealth check disadvantage."""
 
-    # TODO: Implement check
-    def on_apply(self, target: CharacterBase) -> None:
-        attr = "disadvantage.stealth"
-        target.register_modifier(Modifier(source_id=self._id, attribute=attr, value=True, operation="set"))
+    def get_effect(self) -> TraitEffect:
+        return self._make_modifier(attr="disadvantage.stealth", value=True, op="set")
 
 
 class AutoCritIfMelee(Trait):
     """Give automatic critical hits when in melee range."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(EventType.COMBAT_START, callback=auto_crit_if_melee_effect, source_id=self._id)
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(event_type=EventType.COMBAT_START, callback=auto_crit_if_melee_effect)
 
 
 class DamageOverTime(Trait):
@@ -224,26 +215,25 @@ class DamageOverTime(Trait):
     damage_type: DamageType
     _priority = Priority.HIGH
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.TURN_END,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.TURN_END,
             callback=lambda t: damage_over_time_effect(t, self.value, self.damage_type),
-            source_id=self._id,
         )
 
 
 class CannotMove(Trait):
     """The target cannot move during its turn."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(EventType.TURN_START, callback=cannot_move_effect, source_id=self._id)
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(event_type=EventType.TURN_START, callback=cannot_move_effect)
 
 
 class CannotAct(Trait):
     """The target cannot take any actions during its turn."""
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(EventType.TURN_START, callback=cannot_act_effect, source_id=self._id)
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(event_type=EventType.TURN_START, callback=cannot_act_effect)
 
 
 class ExtraActions(Trait):
@@ -251,21 +241,20 @@ class ExtraActions(Trait):
 
     extensions: list[ActionExtension]
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.TURN_START,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.TURN_START,
             callback=lambda t: extra_actions_effect(t, self.extensions),
-            source_id=self._id,
         )
 
 
 class HalfAttacks(Trait):
-    """Reduce the number of attack-type extra actions by half, rounded up."""
+    """Reduce number of attack-type extra actions by half."""
 
-    _priority: int = Priority.LOW
+    _priority = Priority.LOW
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(EventType.TURN_START, callback=half_attacks_effect, source_id=self._id)
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(event_type=EventType.TURN_START, callback=half_attacks_effect)
 
 
 class ReflectMeleeDamage(Trait):
@@ -275,11 +264,10 @@ class ReflectMeleeDamage(Trait):
     damage_type: DamageType
     _priority = Priority.LOW
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.RECEIVE_DAMAGE,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.RECEIVE_DAMAGE,
             callback=lambda a, t, ctx: reflect_melee_damage_effect(a, t, ctx, self.ratio, self.damage_type),
-            source_id=self._id,
         )
 
 
@@ -289,39 +277,36 @@ class LifeSteal(Trait):
     ratio: float = Field(default=0.1, ge=0, le=1)
     _priority = Priority.LOW
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.APPLY_DAMAGE,
-            lambda actor, ctx: life_steal_effect(actor, ctx, self.ratio),
-            source_id=self._id,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.APPLY_DAMAGE,
+            callback=lambda actor, ctx: life_steal_effect(actor, ctx, self.ratio),
         )
 
 
 class DamageBonus(Trait):
-    """Add a bonus damage component of a given type to all damage dealt."""
+    """Add bonus damage of a given type to all damage dealt."""
 
     value: int
     damage_type: DamageType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.APPLY_DAMAGE,
-            lambda t, ctx: damage_bonus_effect(t, ctx, self.value, self.damage_type),
-            source_id=self._id,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.APPLY_DAMAGE,
+            callback=lambda t, ctx: damage_bonus_effect(t, ctx, self.value, self.damage_type),
         )
 
 
 class DamageMultiplier(Trait):
-    """Multiply damage of a specific type by the given factor."""
+    """Multiply damage of a specific type by a given factor."""
 
     value: float = Field(ge=0)
     damage_type: DamageType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.APPLY_DAMAGE,
-            lambda t, ctx: damage_multiplier_effect(t, ctx, self.value, self.damage_type),
-            source_id=self._id,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.APPLY_DAMAGE,
+            callback=lambda t, ctx: damage_multiplier_effect(t, ctx, self.value, self.damage_type),
         )
 
 
@@ -330,11 +315,10 @@ class IgnoreResistance(Trait):
 
     damage_type: DamageType
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.APPLY_DAMAGE,
-            lambda a, t, ctx: ignore_resistance_effect(a, t, ctx, self.damage_type),
-            source_id=self._id,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.APPLY_DAMAGE,
+            callback=lambda a, t, ctx: ignore_resistance_effect(a, t, ctx, self.damage_type),
         )
 
 
@@ -343,9 +327,8 @@ class Regeneration(Trait):
 
     value: int
 
-    def on_apply(self, target: CharacterBase) -> None:
-        target.register_listener(
-            EventType.TURN_START,
-            lambda t: regeneration_effect(t, self.value),
-            source_id=self._id,
+    def get_effect(self) -> TraitEffect:
+        return self._make_event_effect(
+            event_type=EventType.TURN_START,
+            callback=lambda t: regeneration_effect(t, self.value),
         )

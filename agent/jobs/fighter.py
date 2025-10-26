@@ -1,6 +1,7 @@
 from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobFeature
-from agent.jobs.feature import FeatureId, FeatureType
+from agent.jobs.feature import FeatureType
+from agent.models.enums import FeatureId
 
 Fighter = CharacterJob(
     name="Fighter",

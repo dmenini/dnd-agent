@@ -4,13 +4,12 @@ from agent.actions.common.spell import SupportSpellAction
 from agent.character.character import Character
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
-from agent.effects.base import EffectType
+from agent.effects.status_effects.base import EffectType
 from agent.effects.status_effects.hasted import Hasted
-from agent.jobs.feature import FeatureId
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
-from agent.models.enums import TargetingType
+from agent.models.enums import FeatureId, TargetingType
 from agent.models.map import GameMap
 from agent.models.state import State
 from tests.conftest import advance_turn
