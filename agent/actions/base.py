@@ -64,7 +64,7 @@ class Action(BaseModel, ABC):
     id: str
     name: str
     description: str
-    action_type: ActionType
+    type: ActionType
     category: ActionCategory
     targeting: TargetingType
     hits: int = 1
@@ -86,7 +86,7 @@ class Action(BaseModel, ABC):
         """Return a concise string describing the action for NPC AI prompts."""
         return (
             f"{self.id}: {self.name} — {self.description} "
-            f"(Type: {self.action_type.value}, Category: {self.category.value}, "
+            f"(Type: {self.type.value}, Category: {self.category.value}, "
             f"Targeting: {self.targeting.value}, Hits: {self.hits}, Range: {self.range} m)"
         )
 
@@ -96,11 +96,11 @@ class StandardAction(Action, ABC):
     breaks_stealth: bool = True
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.can_use_standard(self.action_type)
+        return action_economy.can_use_standard(self.type)
 
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
-        actor.action_economy.use_standard(self.action_type)
+        actor.action_economy.use_standard(self.type)
         if self.breaks_stealth and actor.is_hidden:
             actor.unhide()
 
@@ -110,11 +110,11 @@ class BonusAction(Action, ABC):
     breaks_stealth: bool = True
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        return action_economy.can_use_bonus(self.action_type)
+        return action_economy.can_use_bonus(self.type)
 
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
-        actor.action_economy.use_bonus(self.action_type)
+        actor.action_economy.use_bonus(self.type)
         if self.breaks_stealth and actor.is_hidden:
             actor.unhide()
 

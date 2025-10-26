@@ -15,7 +15,7 @@ class WaitAction(StandardAction):
     id: str = "wait"
     name: str = "Wait"
     description: str = "Pass turn."
-    action_type: ActionType = ActionType.WAIT
+    type: ActionType = ActionType.WAIT
     targeting: TargetingType = TargetingType.SELF
     breaks_stealth: bool = False
 

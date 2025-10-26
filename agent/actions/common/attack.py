@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class AttackAction(Action, ABC):
-    action_type: ActionType = ActionType.ATTACK
+    type: ActionType = ActionType.ATTACK
     damage_dice: str
     damage_type: DamageType
     weapon_type: WeaponType
@@ -115,7 +115,7 @@ class AttackAction(Action, ABC):
         effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"
         return (
             f"{self.id}: {self.name} — {self.description} "
-            f"(Type: {self.action_type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
             f"Stat: {self.stat.value}, Damage: {self.damage_dice} {self.damage_type.value}, "
             f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
         )
@@ -125,7 +125,7 @@ class MainHandAttackAction(StandardAction, AttackAction):
     id: str = "main_hand_attack"
     name: str = "Main Hand Attack"
     description: str = "Base attack with main hand weapon."
-    action_type: ActionType = ActionType.ATTACK
+    type: ActionType = ActionType.ATTACK
 
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
@@ -145,7 +145,7 @@ class OffHandAttackAction(BonusAction, AttackAction):
     id: str = "off_hand_attack"
     name: str = "Off Hand Attack"
     description: str = ""
-    action_type: ActionType = ActionType.OFF_HAND_ATTACK
+    type: ActionType = ActionType.OFF_HAND_ATTACK
 
     @classmethod
     def from_weapon(cls, weapon: Weapon) -> Self:
@@ -165,7 +165,7 @@ class RangedAttackAction(StandardAction, AttackAction):
     id: str = "ranged_attack"
     name: str = "Ranged Attack"
     description: str = ""
-    action_type: ActionType = ActionType.ATTACK
+    type: ActionType = ActionType.ATTACK
 
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:

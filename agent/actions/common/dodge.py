@@ -18,7 +18,7 @@ class DodgeAction(StandardAction):
         "Prepare to dodge, giving disadvantage to all attacks targeting you until next turn. "
         "Highly valuable if HP is below 50% or surrounded by multiple enemies."
     )
-    action_type: ActionType = ActionType.DODGE
+    type: ActionType = ActionType.DODGE
     targeting: TargetingType = TargetingType.SELF
     breaks_stealth: bool = False
 

@@ -11,7 +11,7 @@ class SecondWindAction(LimitedBonusAction):
     id: str
     description: str
     name: str = "Second Wind"
-    action_type: ActionType = ActionType.SPECIAL
+    type: ActionType = ActionType.SPECIAL
     targeting: TargetingType = TargetingType.SELF
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002

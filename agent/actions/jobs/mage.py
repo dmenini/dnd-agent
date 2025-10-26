@@ -16,7 +16,7 @@ class ArcaneRecoveryAction(LimitedBonusAction):
     id: str
     name: str = "Arcane Recovery"
     description: str
-    action_type: ActionType = ActionType.SPECIAL
+    type: ActionType = ActionType.SPECIAL
     targeting: TargetingType = TargetingType.SELF
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002

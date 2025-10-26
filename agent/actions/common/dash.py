@@ -18,7 +18,7 @@ class DashAction(StandardAction):
     id: str = "dash"
     name: str = "Dash"
     description: str = "Dash on the map to a new position within double the range."
-    action_type: ActionType = ActionType.DASH
+    type: ActionType = ActionType.DASH
     targeting: TargetingType = TargetingType.AREA
     range: float
     breaks_stealth: bool = False
@@ -30,7 +30,7 @@ class DashAction(StandardAction):
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
         # Here we simply check that the actor has movement available, as we still don't know the target position
-        return action_economy.can_use_standard(self.action_type) and action_economy.can_move(distance=self.range)
+        return action_economy.can_use_standard(self.type) and action_economy.can_move(distance=self.range)
 
     def execute(self, actor: Character, target: Position, ctx: CombatContext) -> None:
         if not ctx.map:

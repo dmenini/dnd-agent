@@ -22,7 +22,7 @@ class AttackSpellAction(StandardAction, AttackAction):
     id: str
     name: str
     description: str = ""
-    action_type: ActionType = ActionType.CAST_SPELL
+    type: ActionType = ActionType.CAST_SPELL
     weapon_type: WeaponType = WeaponType.MAGIC
     level: SpellLevel
     requires_save: bool = True
@@ -64,7 +64,7 @@ class AttackSpellAction(StandardAction, AttackAction):
         level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
         return (
             f"{self.id}: {self.name}{level} — {self.description} "
-            f"(Type: {self.action_type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
             f"Damage: {self.damage_dice} {self.damage_type.value}, "
             f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
         )
@@ -74,7 +74,7 @@ class SupportSpellAction(StandardAction):
     id: str
     name: str
     description: str = ""
-    action_type: ActionType = ActionType.CAST_SPELL
+    type: ActionType = ActionType.CAST_SPELL
     level: SpellLevel
     targeting: TargetingType
     stat: StatType
@@ -103,6 +103,6 @@ class SupportSpellAction(StandardAction):
         level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
         return (
             f"{self.id}: {self.name}{level} — {self.description} "
-            f"(Type: {self.action_type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
             f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
         )

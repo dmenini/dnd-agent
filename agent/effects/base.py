@@ -18,7 +18,7 @@ class Priority:
 
 
 class TraitEffect(BaseModel):
-    """Describes an event listener to register dynamically."""
+    """Event listener to register dynamically."""
 
     event_type: EventType
     callback: Callable

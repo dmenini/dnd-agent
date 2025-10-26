@@ -18,7 +18,7 @@ class MovementAction(Action):
     id: str = "move"
     name: str = "Movement"
     description: str = "Move on the map to a new position within the range, or turn towards a new direction."
-    action_type: ActionType = ActionType.MOVE
+    type: ActionType = ActionType.MOVE
     category: ActionCategory = ActionCategory.MOVEMENT
     targeting: TargetingType = TargetingType.AREA
     range: float

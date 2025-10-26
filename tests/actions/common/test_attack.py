@@ -25,7 +25,7 @@ def make_attack_action() -> AttackAction:
         weapon_type=WeaponType.SIMPLE_MELEE,
         stat=StatType.STR,
         range=1.5,
-        action_type=ActionType.ATTACK,
+        type=ActionType.ATTACK,
         category=ActionCategory.STANDARD,
     )
 

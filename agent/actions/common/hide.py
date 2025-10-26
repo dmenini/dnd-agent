@@ -15,7 +15,7 @@ class HideAction(StandardAction):
         "While hidden, enemies cannot target you, and your next attack gains advantage. "
         "Use strategically to flank, escape, or ambush."
     )
-    action_type: ActionType = ActionType.HIDE
+    type: ActionType = ActionType.HIDE
     targeting: TargetingType = TargetingType.SELF
     range: float = 1
     breaks_stealth: bool = False
