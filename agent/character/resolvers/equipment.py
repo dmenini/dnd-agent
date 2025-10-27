@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
-from agent.equipment.armor import Amulet, Armor, Shield
+from agent.equipment.armor import Amulet, Armor, Ring, Shield
 from agent.equipment.base import EquipmentBase, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_registry import get_log_registry
@@ -14,8 +14,8 @@ registry = get_log_registry()
 class EquipmentResolver(CharacterBase):
     armor: Armor | None = None
     amulet: Amulet | None = None
-    ring_left: Amulet | None = None
-    ring_right: Amulet | None = None
+    ring_left: Ring | None = None
+    ring_right: Ring | None = None
     main_hand: MeleeWeapon | None = UNARMED
     off_hand: MeleeWeapon | Shield | None = None
     ranged: RangedWeapon | None = None

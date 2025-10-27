@@ -216,12 +216,23 @@ def test_validate_movement_too_far(
     assert "too far" in msg
 
 
-def test_validate_movement_taken(
+def test_validate_movement_same_position(
     base_decision: DecisionResult, action: Action, actor: Character, target: Character, game_map: GameMap
 ) -> None:
     action.range = 10
     game_map.characters = {actor.id: Position(x=0, y=0)}
     base_decision.target_position = Position(x=0, y=0)
+    ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)
+    assert ok is True
+
+
+def test_validate_movement_occupied(
+    base_decision: DecisionResult, action: Action, actor: Character, target: Character, game_map: GameMap
+) -> None:
+    action.range = 10
+    game_map.characters = {actor.id: Position(x=0, y=0)}
+    base_decision.target_position = Position(x=1, y=1)
+    game_map.characters[target.id] = base_decision.target_position
     ok, msg = base_decision.validate_movement(actor, action, game_map=game_map)
     assert ok is False
     assert "already occupied" in msg

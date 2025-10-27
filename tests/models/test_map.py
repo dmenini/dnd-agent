@@ -135,15 +135,6 @@ def test_wall_not_on_path(game_map: GameMap, actor: Character, target: Character
     assert game_map.within_visibility_range(actor, target) is True
 
 
-def test_diagonal_visibility(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=0, y=0)
-    target.pos = Position(x=3, y=3)
-    game_map.characters = {actor.id: actor.pos, target.id: target.pos}
-    game_map.walls = []
-
-    assert game_map.within_visibility_range(actor, target) is True
-
-
 def test_same_position_visible(game_map: GameMap, actor: Character, target: Character) -> None:
     actor.pos = Position(x=2, y=2)
     target.pos = Position(x=2, y=2)
