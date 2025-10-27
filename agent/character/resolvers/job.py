@@ -67,8 +67,8 @@ class JobResolver(CharacterBase):
     def _apply_spell(self, spell: Spell) -> None:
         action = ActionRegistry.create(
             id_=spell.ref_id,
-            stat=self.attributes.spellcasting_stat,  # TODO: stat is not required for spells
-            **spell.model_dump(),
+            stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
+            **spell.model_dump(exclude={"type"}),
         )
         if isinstance(action, (AttackSpellAction, SupportSpellAction)):
             self.spells.append(action)
