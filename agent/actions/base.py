@@ -85,7 +85,7 @@ class Action(BaseModel, ABC):
     def __str__(self) -> str:
         """Return a concise string describing the action for NPC AI prompts."""
         return (
-            f"{self.id}: {self.name} — {self.description} "
+            f"- {self.id}: {self.name} — {self.description} "
             f"(Type: {self.type.value}, Category: {self.category.value}, "
             f"Targeting: {self.targeting.value}, Hits: {self.hits}, Range: {self.range} m)"
         )
