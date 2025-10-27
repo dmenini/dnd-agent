@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Literal
 
 from pydantic import Field, computed_field
 
 from agent.character.stats import StatType
-from agent.equipment.base import Equipment, EquipmentType
+from agent.equipment.base import EquipmentBase, EquipmentType
 from agent.models.constants import MELEE_RANGE
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -25,8 +26,8 @@ class WeaponHandling(str, Enum):
     VERSATILE = "versatile"
 
 
-class Weapon(Equipment):
-    type: EquipmentType = Field(default=EquipmentType.WEAPON, frozen=True)
+class Weapon(EquipmentBase):
+    type: Literal[EquipmentType.WEAPON_MELEE, EquipmentType.WEAPON_RANGED]
     weapon_type: WeaponType
     targeting: TargetingType = TargetingType.SINGLE
     handling: WeaponHandling = WeaponHandling.ONE_HANDED
@@ -36,6 +37,7 @@ class Weapon(Equipment):
 
 
 class MeleeWeapon(Weapon):
+    type: Literal[EquipmentType.WEAPON_MELEE] = Field(default=EquipmentType.WEAPON_MELEE, frozen=True)
     stat: StatType = StatType.STR
     reach: int = 0
     versatile_damage: str | None = None
@@ -49,8 +51,8 @@ class MeleeWeapon(Weapon):
 
 
 class RangedWeapon(Weapon):
+    type: Literal[EquipmentType.WEAPON_RANGED] = Field(default=EquipmentType.WEAPON_RANGED, frozen=True)
     stat: StatType = StatType.DEX
-    ammo_type: str | None = None
     range: float = 50
     max_range: float = 100
 

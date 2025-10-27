@@ -4,10 +4,9 @@ from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, Shield
-from agent.equipment.base import Equipment, EquipmentType
+from agent.equipment.base import EquipmentBase, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_registry import get_log_registry
-from agent.models.constants import BONUS_AC_FROM_SHIELDS
 
 registry = get_log_registry()
 
@@ -35,12 +34,12 @@ class EquipmentResolver(CharacterBase):
 
         if self.armor:
             ac += self.armor.base_ac
-        if self.off_hand and self.off_hand.type == EquipmentType.SHIELD:
-            ac += BONUS_AC_FROM_SHIELDS
+        if self.off_hand and isinstance(self.off_hand, Shield):
+            ac += self.off_hand.ac_bonus
         return ac
 
     @property
-    def equipment_slots(self) -> Mapping[str, Equipment | None]:
+    def equipment_slots(self) -> Mapping[str, EquipmentBase | None]:
         """Mapping of slot names to currently equipped items."""
         return {
             "armor": self.armor,
@@ -56,7 +55,7 @@ class EquipmentResolver(CharacterBase):
     def two_handed_active(self) -> bool:
         return self._two_handed_active
 
-    def _resolve_slot_for(self, item: Equipment) -> str | None:
+    def _resolve_slot_for(self, item: EquipmentBase) -> str | None:  # noqa: C901
         """Automatically determine which slot an equipment item should occupy."""
         slot: str | None = None
         match item.type:
@@ -76,16 +75,16 @@ class EquipmentResolver(CharacterBase):
                     # Both full → rotate replacement
                     self._ring_rotation_toggle = not self._ring_rotation_toggle
                     slot = "ring_left" if self._ring_rotation_toggle else "ring_right"
-            case EquipmentType.WEAPON:
+            case EquipmentType.WEAPON_MELEE:
                 if self.main_hand is None or self.main_hand == UNARMED:
                     slot = "main_hand"
                 elif self.off_hand is None:
                     slot = "off_hand"
-                else:
-                    slot = "ranged" if isinstance(item, RangedWeapon) else None
+            case EquipmentType.WEAPON_RANGED:
+                slot = "ranged"
         return slot
 
-    def equip(self, item: Equipment, slot_name: str | None = None) -> None:
+    def equip(self, item: EquipmentBase, slot_name: str | None = None) -> None:
         """Equip an item to a specific slot."""
         if slot_name is None:
             slot_name = self._resolve_slot_for(item)
@@ -100,7 +99,7 @@ class EquipmentResolver(CharacterBase):
             return
 
         # Standard slots (armor, shield, accessories)
-        current: Equipment = getattr(self, slot_name)
+        current: EquipmentBase = getattr(self, slot_name)
         if current:
             current.on_unequip(self)
 

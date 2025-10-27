@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel
 
@@ -10,6 +10,7 @@ from agent.effects.status_effects.base import StatusEffect
 from agent.models.enums import FeatureId
 
 if TYPE_CHECKING:
+
     from agent.character.resolvers.base import CharacterBase
 
 
@@ -22,13 +23,14 @@ class Rarity(str, Enum):
 
 
 class EquipmentType(str, Enum):
-    WEAPON = "weapon"
-    ARMOR = "armor"
-    SHIELD = "shield"
     AMULET = "amulet"
-    RING = "ring"
+    ARMOR = "armor"
     CONSUMABLE = "consumable"
+    RING = "ring"
+    SHIELD = "shield"
     TOOL = "tool"
+    WEAPON_MELEE = "weapon_melee"
+    WEAPON_RANGED = "weapon_ranged"
 
 
 class EquipmentFeature(BaseModel):
@@ -36,12 +38,13 @@ class EquipmentFeature(BaseModel):
     kwargs: dict = {}
 
 
-class Equipment(BaseModel):
-    type: EquipmentType
+class EquipmentBase(BaseModel):
+    type: Literal[tuple(e.value for e in EquipmentType)]  # type: ignore[valid-type]
     name: str
     description: str = ""
-    features: list[EquipmentFeature] = []  # passive effects
-    effects: list[StatusEffect] = []  # triggered effects
+    rarity: Rarity = Rarity.COMMON
+    features: list[EquipmentFeature] = []
+    effects: list[StatusEffect] = []
 
     def on_equip(self, actor: CharacterBase) -> None:
         for feature in self.features:

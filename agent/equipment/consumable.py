@@ -1,12 +1,14 @@
+from typing import Literal
+
 from pydantic import Field
 
-from agent.equipment.base import Equipment, EquipmentType
+from agent.equipment.base import EquipmentBase, EquipmentType
 
 
-class Consumable(Equipment):
-    type: EquipmentType = Field(default=EquipmentType.CONSUMABLE, frozen=True)
+class Consumable(EquipmentBase):
+    type: Literal[EquipmentType.CONSUMABLE] = Field(default=EquipmentType.CONSUMABLE, frozen=True)
     uses: int = 1
 
 
-class Tool(Equipment):
-    type: EquipmentType = Field(default=EquipmentType.TOOL, frozen=True)
+class Tool(EquipmentBase):
+    type: Literal[EquipmentType.TOOL] = Field(default=EquipmentType.TOOL, frozen=True)

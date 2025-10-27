@@ -1,0 +1,104 @@
+{
+  "equipment": [
+    {
+      "type": "weapon_melee",
+      "name": "Dagger",
+      "description": "A small, easily concealable blade, ideal for quick strikes.",
+      "weapon_type": "simple_melee",
+      "handling": "one_handed",
+      "stat": "dexterity",
+      "damage_dice": "1d4",
+      "damage_type": "piercing",
+      "finesse": true,
+      "dual_wield": true,
+      "reach": 0
+    },
+    {
+      "type": "weapon_melee",
+      "name": "Longsword",
+      "description": "A versatile martial blade, effective in one or two hands.",
+      "weapon_type": "martial_melee",
+      "handling": "versatile",
+      "stat": "strength",
+      "damage_dice": "1d8",
+      "versatile_damage": "1d10",
+      "damage_type": "slashing",
+      "reach": 0
+    },
+    {
+      "type": "weapon_melee",
+      "name": "Greatsword",
+      "description": "A massive two-handed sword, deals devastating damage.",
+      "weapon_type": "martial_melee",
+      "handling": "two_handed",
+      "stat": "strength",
+      "damage_dice": "2d6",
+      "damage_type": "slashing",
+      "reach": 0
+    },
+    {
+      "type": "weapon_ranged",
+      "name": "Shortbow",
+      "description": "A light ranged weapon, easy to carry and use.",
+      "weapon_type": "simple_ranged",
+      "handling": "one_handed",
+      "stat": "dexterity",
+      "damage_dice": "1d6",
+      "damage_type": "piercing",
+      "range_normal": 80,
+      "range_max": 320
+    },
+    {
+      "type": "armor",
+      "name": "Leather Armor",
+      "description": "Flexible armor made from tanned hides, allows freedom of movement.",
+      "armor_type": "light",
+      "base_ac": 11,
+      "max_dex_bonus": 4
+    },
+    {
+      "type": "armor",
+      "name": "Chain Shirt",
+      "description": "A shirt of interlocking metal rings, offering solid protection without restricting movement.",
+      "armor_type": "normal",
+      "base_ac": 13,
+      "max_dex_bonus": 2
+    },
+    {
+      "type": "armor",
+      "name": "Plate Armor",
+      "description": "Heavy full-body armor offering maximum protection, but limits dexterity.",
+      "armor_type": "heavy",
+      "base_ac": 18,
+      "max_dex_bonus": 0
+    },
+    {
+      "type": "shield",
+      "name": "Steel Shield",
+      "description": "A sturdy steel shield, adds +2 AC.",
+      "ac_bonus": 2
+    },
+    {
+      "type": "shield",
+      "name": "Tower Shield",
+      "description": "A large shield providing exceptional defense but bulky to carry.",
+      "ac_bonus": 3
+    },
+    {
+      "type": "amulet",
+      "name": "Amulet of Protection",
+      "description": "A magical amulet granting minor protective enchantments."
+    },
+    {
+      "type": "ring",
+      "name": "Ring of Strength",
+      "description": "A simple ring that enhances the wearer's physical power."
+    },
+    {
+      "type": "ring",
+      "name": "Ring of Dexterity",
+      "description": "A lightweight ring improving agility and finesse.",
+      "slot": "ring_right"
+    }
+  ]
+}

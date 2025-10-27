@@ -5,7 +5,9 @@ from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
-from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
+from agent.equipment.base import EquipmentType
+from agent.equipment.inventory import Inventory
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon, Weapon, WeaponHandling, WeaponType
 from agent.jobs.fighter import Fighter
 from agent.models.damage import DamageType
 
@@ -209,3 +211,38 @@ def test_two_handed_weapon_replaces_existing_main_and_off_hand(actor: EquipmentR
     assert actor.main_hand == greatsword
     assert actor.off_hand is None
     assert actor.two_handed_active
+
+
+def test_equipment_deserialization() -> None:
+    inventory_json = {
+        "equipment": [
+            {
+                "type": "weapon_melee",
+                "name": "Longsword",
+                "weapon_type": "martial_melee",
+                "stat": "strength",
+                "damage_dice": "1d8",
+                "damage_type": "slashing",
+            },
+            {"type": "armor", "name": "Chain Shirt", "base_ac": 13, "armor_type": "light"},
+            {"type": "shield", "name": "Steel Shield", "ac_bonus": 2},
+        ]
+    }
+
+    inventory = Inventory.model_validate(inventory_json)
+
+    weapon = inventory.equipment[0]
+    assert isinstance(weapon, Weapon)
+    assert isinstance(weapon, MeleeWeapon)
+    assert weapon.type == EquipmentType.WEAPON_MELEE
+    assert weapon.damage_dice == "1d8"
+
+    armor = inventory.equipment[1]
+    assert isinstance(armor, Armor)
+    assert armor.type == EquipmentType.ARMOR
+    assert armor.base_ac == 13
+
+    shield = inventory.equipment[2]
+    assert isinstance(shield, Shield)
+    assert shield.type == EquipmentType.SHIELD
+    assert shield.ac_bonus == 2

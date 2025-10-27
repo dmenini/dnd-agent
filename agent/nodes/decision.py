@@ -12,7 +12,7 @@ from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
 from agent.character.stats import Stats
-from agent.equipment.armor import Shield
+from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
 from agent.models.decision import DecisionResult
@@ -177,7 +177,7 @@ class DecisionNode:
                 weapon=actor.main_hand, is_two_handed=actor.two_handed_active, stats=actor.attributes
             )
             all_actions.append(main_action)
-        if actor.off_hand and not isinstance(actor.off_hand.type, Shield):
+        if actor.off_hand and isinstance(actor.off_hand.type, MeleeWeapon):
             off_action = OffHandAttackAction.from_weapon(weapon=actor.off_hand)
             all_actions.append(off_action)
         if actor.ranged:
