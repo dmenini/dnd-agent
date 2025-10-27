@@ -1,11 +1,11 @@
 from collections.abc import Mapping
 
-from pydantic import PrivateAttr, computed_field
+from pydantic import computed_field, PrivateAttr
 
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, Shield
 from agent.equipment.base import Equipment, EquipmentType
-from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon, UNARMED, WeaponHandling
 from agent.logs.log_registry import get_log_registry
 
 registry = get_log_registry()
@@ -21,7 +21,23 @@ class EquipmentResolver(CharacterBase):
     off_hand: MeleeWeapon | None = None
     ranged: RangedWeapon | None = None
 
-    _ring_rotation_toggle = PrivateAttr(default=False)  # track which ring to replace next
+    _ring_rotation_toggle: bool = PrivateAttr(default=False)
+    _two_handed_active: bool = PrivateAttr(default=False)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def armor_class(self) -> int:
+        """Armor Class is derived from DEX and equipment."""
+        ac = self.attributes.ac_bonus(
+            armor_type=self.armor.armor_type if self.armor else None,
+            max_dex_bonus=self.armor.max_dex_bonus if self.armor else None,
+        )
+
+        if self.armor:
+            ac += self.armor.base_ac
+        if self.shield:
+            ac += self.shield.ac_bonus
+        return ac
 
     @property
     def equipment_slots(self) -> Mapping[str, Equipment | None]:
@@ -66,36 +82,63 @@ class EquipmentResolver(CharacterBase):
                     slot = "ranged" if isinstance(item, RangedWeapon) else None
         return slot
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def armor_class(self) -> int:
-        """Armor Class is derived from DEX and equipment."""
-        ac = self.attributes.ac_bonus(
-            armor_type=self.armor.armor_type if self.armor else None,
-            max_dex_bonus=self.armor.max_dex_bonus if self.armor else None,
-        )
-
-        if self.armor:
-            ac += self.armor.base_ac
-        if self.shield:
-            ac += self.shield.ac_bonus
-        return ac
-
     def equip(self, item: Equipment, slot_name: str | None = None) -> None:
         """Equip an item to a specific slot."""
         if slot_name is None:
             slot_name = self._resolve_slot_for(item)
 
         if not slot_name or slot_name not in self.equipment_slots:
-            msg = f"Invalid equipment slot: {slot_name}"
-            raise ValueError(msg)
+            raise ValueError(f"Invalid equipment slot: {slot_name}")
 
+        # Special case for weapons
+        if isinstance(item, MeleeWeapon):
+            self.equip_melee_weapon(item, slot_name)
+            return
+
+        # Standard slots (armor, shield, accessories)
         current: Equipment = getattr(self, slot_name)
         if current:
             current.on_unequip(self)
 
         setattr(self, slot_name, item)
         item.on_equip(self)
+        self.notify_state_change(slot_name)
+
+    def equip_melee_weapon(self, weapon: MeleeWeapon, slot_name: str) -> None:
+        """
+        Equip a weapon in a specific slot.
+        Handles two-handed or versatile weapons with a private flag.
+        """
+        # Unequip existing weapon in the target slot
+        current = getattr(self, slot_name)
+        if current:
+            current.on_unequip(self)
+            setattr(self, slot_name, None)
+            self.notify_state_change(slot_name)
+
+        # Reset two-handed flag if equipping a new weapon
+        self._two_handed_active = False
+
+        # Handle two-handed weapons
+        if weapon.handling == WeaponHandling.TWO_HANDED:
+            # Only occupy main hand, leave off-hand None
+            if slot_name != "main_hand":
+                raise ValueError("Two-handed weapons must be equipped in main hand")
+            self._two_handed_active = True
+            self.off_hand = None
+            self.notify_state_change("off_hand")
+
+        # Handle versatile weapons
+        if weapon.handling == WeaponHandling.VERSATILE:
+            # Decide if we can use two hands
+            if slot_name == "main_hand" and self.off_hand is None:
+                self._two_handed_active = True
+            else:
+                self._two_handed_active = False
+
+        # Equip in the requested slot
+        setattr(self, slot_name, weapon)
+        weapon.on_equip(self)
         self.notify_state_change(slot_name)
 
     def unequip(self, slot_name: str) -> None:

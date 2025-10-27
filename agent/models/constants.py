@@ -13,4 +13,6 @@ class EventType(str, Enum):
     RECEIVE_DAMAGE = "receive_damage"
 
 
+MELEE_RANGE = 5
+
 TRAIT_LOG_LEVEL = LogLevel.DEBUG

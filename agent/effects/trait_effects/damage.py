@@ -3,10 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent.logs.events import LogLevel
-from agent.models.constants import TRAIT_LOG_LEVEL
+from agent.models.constants import MELEE_RANGE, TRAIT_LOG_LEVEL
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
-
-MELEE_RANGE = 5
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
