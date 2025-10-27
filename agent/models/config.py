@@ -19,6 +19,7 @@ class AgentConfig(BaseModel):
     retries: int
     llm: LLMConfig
     prompts: PromptsConfig
+    decision_node: dict = {}
 
 
 class Config(BaseModel):

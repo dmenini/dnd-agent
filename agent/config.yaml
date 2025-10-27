@@ -3,6 +3,10 @@ agent:
   llm:
     name: eu.anthropic.claude-3-7-sonnet-20250219-v1:0
     temperature: 0.5
+  decision_node:
+    max_retries: 3
+    history_size: 20
+    simulation: True
   tools:
   prompts:
     system: |-

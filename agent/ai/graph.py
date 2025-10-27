@@ -42,7 +42,7 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     llm = create_llm(config.llm)
 
     # Nodes
-    agent = DecisionNode(llm=llm, system_prompt=config.prompts.system)
+    agent = DecisionNode(llm=llm, system_prompt=config.prompts.system, **config.decision_node)
     verifier = RulesVerifierNode()
     start_combat = StartCombatNode(dice=DiceRoller())
     combat = ActionProcessorNode()

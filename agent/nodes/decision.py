@@ -11,7 +11,6 @@ from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
-from agent.character.stats import Stats
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
@@ -53,7 +52,7 @@ class DecisionNode:
         if actor.turn_done:
             state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
             if actor.is_player and not self.simulation:
-                input(f"Press ENTER to continue")
+                input("Press ENTER to continue")
             else:
                 state.draw_map()
 
@@ -99,14 +98,7 @@ class DecisionNode:
         visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
 
         character_sheet = (
-            f"### Character {actor.name} {actor.icon} (ID: {actor.id})\n"
-            f"HP: {actor.attributes.hp}/{actor.max_hp} | Level: {actor.level}\n"
-            f"Position: ({actor.pos.x}, {actor.pos.y}) | Facing: {actor.pos.direction}\n"
-            f"Movement Remaining: {actor.current_speed}/{actor.speed} m\n"
-            f"Hidden: {actor.is_hidden} | Party: {actor.party.name}\n"
-            f"Status Effects: {', '.join(str(eff) for eff in actor.status_effects) or 'None'}\n"
-            f"Spell Slots: {actor.spell_slots}\n"
-            f"Stats: {Stats.model_validate(actor.attributes.model_dump())}\n"
+            f"{actor}\n"
             f"---\n"
             f"### Available Actions\n"
             f"{'\n'.join([str(act) for act in actions])}\n"
@@ -193,7 +185,7 @@ class DecisionNode:
         current_group: list[str] = []
         current_is_player = None
 
-        events = registry.filter_for_ai(types=[LogLevel.MAIN, LogLevel.DETAIL])[-self.history_size:]
+        events = registry.filter_for_ai(types=[LogLevel.MAIN, LogLevel.DETAIL])[-self.history_size :]
         for event in events:
             is_player = event.is_player
             # Start a new group if this is the first event or if team changes
