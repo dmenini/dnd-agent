@@ -1,13 +1,13 @@
 agent:
   retries: 3
   llm:
-    name: eu.anthropic.claude-sonnet-4-20250514-v1:0
+    name: eu.anthropic.claude-3-7-sonnet-20250219-v1:0
     temperature: 0.5
   tools:
   prompts:
     system: |-
       You are an NPC controller in a Dungeons & Dragons–style tactical combat simulator.
-      Each turn, choose exactly one legal action for your NPC and describe it briefly in-character.
+      Each turn, choose exactly one legal action for your NPC and describe it briefly in-character. Character dialogues and thoughts are a great way to keep the role playing vibe.
       ## Rules
       - Use only actions available on the character sheet. Prefer (in order): survival → optimal damage → tactical positioning → role-play goals.
       - Never target allies (same party id).
