@@ -170,8 +170,10 @@ class ActionEconomy(BaseModel):
     def use_movement(self, distance: float) -> None:
         # The AI doesn't work well if we keep the movement as a float,
         # so after one movement action prevents it from using it again in the same turn
-        self.movement_used += distance
-        self.movement_available = False
+        # However, if the AI simply turns, we don't want to burn the movement
+        if distance > 0:
+            self.movement_used += distance
+            self.movement_available = False
 
 
 class SpellSlots(BaseModel):

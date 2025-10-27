@@ -27,7 +27,7 @@ class WaitAction(StandardAction):
 
     def finalize(self, actor: Character) -> None:
         """Consume all resources."""
-        actor.action_economy.use_movement(distance=0)
+        actor.action_economy.use_movement(distance=actor.current_speed)
         actor.action_economy.use_standard()
         actor.action_economy.use_bonus()
         actor.action_economy.use_reaction()

@@ -10,7 +10,6 @@ from agent.effects.status_effects.base import StatusEffect
 from agent.models.enums import FeatureId
 
 if TYPE_CHECKING:
-
     from agent.character.resolvers.base import CharacterBase
 
 
