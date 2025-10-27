@@ -12,6 +12,7 @@ from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
 from agent.character.stats import Stats
+from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
 from agent.models.decision import DecisionResult
@@ -171,16 +172,17 @@ class DecisionNode:
         ]
 
         # Equipment-based actions
-        equipment_map = [
-            (actor.main_hand, MainHandAttackAction),
-            (actor.off_hand, OffHandAttackAction),
-            (actor.ranged, RangedAttackAction),
-        ]
-
-        for eq, action_cls in equipment_map:
-            if eq:
-                action = action_cls.from_weapon(weapon=eq)  # type: ignore[attr-defined]
-                all_actions.append(action)
+        if actor.main_hand:
+            main_action = MainHandAttackAction.from_weapon(
+                weapon=actor.main_hand, is_two_handed=actor.two_handed_active, stats=actor.attributes
+            )
+            all_actions.append(main_action)
+        if actor.off_hand and isinstance(actor.off_hand.type, MeleeWeapon):
+            off_action = OffHandAttackAction.from_weapon(weapon=actor.off_hand)
+            all_actions.append(off_action)
+        if actor.ranged:
+            ranged_action = RangedAttackAction.from_weapon(weapon=actor.ranged)
+            all_actions.append(ranged_action)
 
         # Spells (only if slot available)
         all_actions.extend(spell for spell in actor.spells if actor.spell_slots.has_slot(spell.level))

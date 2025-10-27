@@ -18,7 +18,6 @@ def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, target:
         name="Sword",
         damage_dice="1d5",
         weapon_type=WeaponType.MARTIAL_MELEE,
-        range=5,
         targeting=TargetingType.SINGLE,
         damage_type=DamageType.SLASHING,
     )

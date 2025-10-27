@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from agent.character.stats import StatType
-from agent.equipment.base import Equipment, EquipmentType
+from agent.equipment.base import EquipmentBase, EquipmentType
+from agent.models.constants import MELEE_RANGE
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
@@ -18,24 +20,41 @@ class WeaponType(str, Enum):
     MAGIC = "magic"
 
 
-class Weapon(Equipment):
-    type: EquipmentType = Field(default=EquipmentType.WEAPON, frozen=True)
+class WeaponHandling(str, Enum):
+    ONE_HANDED = "one_handed"
+    TWO_HANDED = "two_handed"
+    VERSATILE = "versatile"
+
+
+class Weapon(EquipmentBase):
+    type: Literal[EquipmentType.WEAPON_MELEE, EquipmentType.WEAPON_RANGED]
     weapon_type: WeaponType
+    targeting: TargetingType = TargetingType.SINGLE
+    handling: WeaponHandling = WeaponHandling.ONE_HANDED
     stat: StatType
     damage_dice: str
     damage_type: DamageType
-    range: float = 5
-    targeting: TargetingType = TargetingType.SINGLE
 
 
 class MeleeWeapon(Weapon):
+    type: Literal[EquipmentType.WEAPON_MELEE] = Field(default=EquipmentType.WEAPON_MELEE, frozen=True)
     stat: StatType = StatType.STR
+    reach: int = 0
+    versatile_damage: str | None = None
+    finesse: bool = False
+    dual_wield: bool | None = None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def range(self) -> float:
+        return MELEE_RANGE + self.reach
 
 
 class RangedWeapon(Weapon):
+    type: Literal[EquipmentType.WEAPON_RANGED] = Field(default=EquipmentType.WEAPON_RANGED, frozen=True)
     stat: StatType = StatType.DEX
-    ammo_type: str | None = None
-    range: float = 10
+    range: float = 50
+    max_range: float = 100
 
 
 UNARMED = MeleeWeapon(

@@ -1,9 +1,7 @@
 from agent.character.attributes import Attributes
 from agent.character.character import Character
 from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
-from agent.equipment.armor import Accessory, Armor, ArmorType
-from agent.equipment.base import EquipmentFeature
-from agent.jobs.fighter import Fighter
+from agent.effects.traits import Resistance, Vulnerability
 from agent.models.constants import EventType
 from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
@@ -69,22 +67,12 @@ def test_same_effects(actor: Character) -> None:
 
 def test_different_traits(actor: Character) -> None:
     value = 0.5
-    acc1 = Accessory(
-        name="ring",
-        slot="ring",
-        features=[
-            EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": DamageType.FIRE})
-        ],
+    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id="ring", value=value, damage_type=DamageType.FIRE)
+    trait2 = Vulnerability(
+        feature_id=FeatureId.VULNERABILITY, source_id="ring", value=value, damage_type=DamageType.FIRE
     )
-    acc2 = Accessory(
-        name="ring",
-        slot="ring",
-        features=[
-            EquipmentFeature(ref_id=FeatureId.VULNERABILITY, kwargs={"value": value, "damage_type": DamageType.FIRE})
-        ],
-    )
-    actor.accessories = [acc1, acc2]
-    actor.equip_all()
+    actor.register_passive(trait=trait1)
+    actor.register_passive(trait=trait2)
 
     attrs = actor.attributes
 
@@ -110,29 +98,22 @@ def test_different_traits(actor: Character) -> None:
     assert_modifier(attrs, "resistance.fire", value, "ring-resistance")
     assert_modifier(attrs, "vulnerability.fire", value, "ring-vulnerability")
 
-    # Unequip and ensure cleanup
-    actor.unequip("accessories")
+    # Ensure cleanup
+    actor.unregister_passive(FeatureId.RESISTANCE, source_id="ring")
     assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]) == 0
+    assert len([p for p in actor.passives if p.feature_id == FeatureId.VULNERABILITY]) == 1
     assert_listener(actor, EventType.MODIFIER, "ring-resistance", 0)
-    assert_listener(actor, EventType.MODIFIER, "ring-vulnerability", 0)
+    assert_listener(actor, EventType.MODIFIER, "ring-vulnerability", 1)
     assert len(attrs.get_modifiers("resistance.fire")) == 0
-    assert len(attrs.get_modifiers("vulnerability.fire")) == 0
+    assert len(attrs.get_modifiers("vulnerability.fire")) == 1
 
 
 def test_same_traits_from_different_sources_stack(actor: Character) -> None:
     value = 0.5
-    accs = [
-        Accessory(
-            name=f"ring {i}",
-            slot="ring",
-            features=[
-                EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": DamageType.FIRE}),
-            ],
-        )
-        for i in range(2)
-    ]
-    actor.accessories = accs
-    actor.equip_all()
+    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id="ring 0", value=value, damage_type=DamageType.FIRE)
+    trait2 = Resistance(feature_id=FeatureId.RESISTANCE, source_id="ring 1", value=value, damage_type=DamageType.FIRE)
+    actor.register_passive(trait=trait1)
+    actor.register_passive(trait=trait2)
 
     # Passives and listeners
     for i in range(2):
@@ -152,87 +133,66 @@ def test_same_traits_from_different_sources_stack(actor: Character) -> None:
     assert total == DamageResistance(value=value * 2, type=DamageType.FIRE)
 
     # Unequip and cleanup
-    actor.unequip("accessories")
-    assert not [p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]
-    for i in range(2):
-        assert_listener(actor, EventType.MODIFIER, f"ring-{i}-resistance", 0)
-    assert not attrs.get_modifiers("resistance.fire")
+    source = "ring-0"
+    actor.unregister_passive(FeatureId.RESISTANCE, source_id=source)
+
+    assert_passive(actor, FeatureId.RESISTANCE, "ring-0", 0)
+    assert_passive(actor, FeatureId.RESISTANCE, "ring-1", 1)
+    assert_listener(actor, EventType.MODIFIER, "ring-0-resistance", 0)
+    assert_listener(actor, EventType.MODIFIER, "ring-1-resistance", 1)
 
 
 def test_traits_with_same_feature_id(actor: Character) -> None:
     value = 0.5
-    acc = Accessory(
-        name="ring 1",
-        slot="ring",
-        features=[
-            EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": dt})
-            for dt in (DamageType.COLD, DamageType.FIRE)
-        ],
-    )
-    actor.accessories = [acc]
-    actor.equip_all()
+    name = "ring"
+    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id=name, value=value, damage_type=DamageType.FIRE)
+    trait2 = Resistance(feature_id=FeatureId.RESISTANCE, source_id=name, value=value, damage_type=DamageType.COLD)
+    actor.register_passive(trait=trait1)
+    actor.register_passive(trait=trait2)
+
     attrs = actor.attributes
 
     # Two passives, same feature ID, different damage types
-    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == "ring-1"]) == 2
-    assert_listener(actor, EventType.MODIFIER, "ring-1-resistance", 2)
+    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == name]) == 2
+    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance", 2)
 
     # Modifiers applied correctly
     for dtype in (DamageType.COLD, DamageType.FIRE):
         attr_name = f"resistance.{dtype.value}"
-        assert_modifier(attrs, attr_name, value, "ring-1-resistance")
+        assert_modifier(attrs, attr_name, value, f"{name}-resistance")
         assert attrs.damage_resistance(dtype) == DamageResistance(value=value, type=dtype)
 
     # Unequip and cleanup
-    actor.unequip("accessories")
+    actor.unregister_passive(FeatureId.RESISTANCE, source_id=name)
     assert not [p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]
-    assert_listener(actor, EventType.MODIFIER, "ring-1-resistance", 0)
+    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance", 0)
     for dtype in (DamageType.COLD, DamageType.FIRE):
         assert not attrs.get_modifiers(f"resistance.{dtype.value}")
 
 
 def test_same_traits_same_source_dont_stack(actor: Character) -> None:
     value = 0.5
-    acc = Accessory(
-        name="ring",
-        slot="ring",
-        features=[
-            EquipmentFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": value, "damage_type": DamageType.FIRE}),
-        ],
-    )
-    actor.accessories = [acc]
-    actor.equip_all()
+    name = "ring"
+    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id=name, value=value, damage_type=DamageType.FIRE)
+    actor.register_passive(trait=trait1)
+
     attrs = actor.attributes
 
-    # First equip
-    assert_passive(actor, FeatureId.RESISTANCE, "ring")
-    assert_listener(actor, EventType.MODIFIER, "ring-resistance")
-    assert_modifier(attrs, "resistance.fire", value, "ring-resistance")
+    # First register
+    assert_passive(actor, FeatureId.RESISTANCE, name)
+    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance")
+    assert_modifier(attrs, "resistance.fire", value, f"{name}-resistance")
     assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
 
-    # Equip again — passives may duplicate but modifiers must not
-    actor.equip_all()
-    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == "ring"]) == 2
-    assert_listener(actor, EventType.MODIFIER, "ring-resistance", 2)
+    # Register again - passives may duplicate but modifiers must not
+    actor.register_passive(trait=trait1)
+    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == name]) == 2
+    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance", 2)
     assert len(attrs.get_modifiers("resistance.fire")) == 1
-    assert_modifier(attrs, "resistance.fire", value, "ring-resistance")
+    assert_modifier(attrs, "resistance.fire", value, f"{name}-resistance")
 
     # Unequip and cleanup
-    actor.unequip("accessories")
+    actor.unregister_passive(FeatureId.RESISTANCE, source_id=name)
     assert not [p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]
-    assert_listener(actor, EventType.MODIFIER, "ring-resistance", 0)
+    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance", 0)
     assert not attrs.get_modifiers("resistance.fire")
-
-
-def test_state_change_recomputes_traits(actor: Character) -> None:
-    actor.unequip("armor")
-    actor.change_job(Fighter)
-
-    attrs = actor.attributes
-    assert len(attrs.get_modifiers("ac")) == 0
-
-    actor.armor = Armor(name="armor", armor_type=ArmorType.MEDIUM, base_ac=5)
-    actor.equip_all()
-
-    attrs = actor.attributes
-    assert len(attrs.get_modifiers("ac")) == 1

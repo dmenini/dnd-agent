@@ -24,7 +24,6 @@ def test_restrained(config: AgentConfig, game_map: GameMap, actor: Character, ta
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.MARTIAL_MELEE,
-        range=2,
         targeting=TargetingType.SINGLE,
         effects=[Restrained(duration=2)],
     )

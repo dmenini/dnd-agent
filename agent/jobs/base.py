@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from agent.character.stats import StatType
+from agent.equipment.weapons import WeaponType
 from agent.jobs.feature import JobFeature
 from agent.jobs.spells import Spell
 
@@ -12,6 +13,7 @@ class CharacterJob(BaseModel):
     hit_die: int
     primary_stat: StatType
     save_proficiencies: list[StatType]
+    weapon_proficiencies: list[WeaponType]
     features: list[JobFeature] = []
     spells: list[Spell] = []
 

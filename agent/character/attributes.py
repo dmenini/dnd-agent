@@ -6,6 +6,7 @@ from pydantic import ConfigDict, Field, PrivateAttr
 from agent.character.modifier import Modifier, ModifierRegistry
 from agent.character.stats import Stats, StatType
 from agent.equipment.armor import ArmorType
+from agent.equipment.weapons import WeaponType
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 
 
@@ -13,6 +14,7 @@ class Attributes(Stats):
     hp: int = 15
     spellcasting_stat: StatType = StatType.INT
     save_proficiencies: list[StatType] = []
+    weapon_proficiencies: list[WeaponType] = []
 
     # Base scalar attributes
     base_hp: int = 15

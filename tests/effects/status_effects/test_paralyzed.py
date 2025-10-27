@@ -24,7 +24,6 @@ def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Character, tar
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.MARTIAL_MELEE,
-        range=2,
         targeting=TargetingType.SINGLE,
         effects=[Paralyzed(duration=2)],
     )

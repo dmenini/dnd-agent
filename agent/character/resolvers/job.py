@@ -24,6 +24,7 @@ class JobResolver(CharacterBase):
         # TODO: The primary stat should depend on the type of class (fighter should not use STR)
         self.attributes.spellcasting_stat = self.job.primary_stat
         self.attributes.save_proficiencies = self.job.save_proficiencies
+        self.attributes.weapon_proficiencies = self.job.weapon_proficiencies
 
         for feature in self.job.get_features_for_level(self.level):
             self._apply_job_feature(feature)
@@ -66,8 +67,8 @@ class JobResolver(CharacterBase):
     def _apply_spell(self, spell: Spell) -> None:
         action = ActionRegistry.create(
             id_=spell.ref_id,
-            stat=self.attributes.spellcasting_stat,  # TODO: stat is not required for spells
-            **spell.model_dump(),
+            stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
+            **spell.model_dump(exclude={"type"}),
         )
         if isinstance(action, (AttackSpellAction, SupportSpellAction)):
             self.spells.append(action)

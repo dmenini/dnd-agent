@@ -11,6 +11,7 @@ Mage = CharacterJob(
     hit_die=6,
     primary_stat=StatType.INT,
     save_proficiencies=[StatType.INT, StatType.WIS],
+    weapon_proficiencies=[],
     features=[
         JobFeature(
             ref_id=FeatureId.SPELL_SAVE_ADVANTAGE,
