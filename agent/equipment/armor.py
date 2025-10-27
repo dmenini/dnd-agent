@@ -23,7 +23,6 @@ class Armor(Equipment):
 
 class Shield(Equipment):
     type: EquipmentType = Field(default=EquipmentType.SHIELD, frozen=True)
-    ac_bonus: int = 2
 
 
 class Amulet(Equipment):

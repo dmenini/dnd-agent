@@ -14,5 +14,6 @@ class EventType(str, Enum):
 
 
 MELEE_RANGE = 5
+BONUS_AC_FROM_SHIELDS = 2
 
 TRAIT_LOG_LEVEL = LogLevel.DEBUG

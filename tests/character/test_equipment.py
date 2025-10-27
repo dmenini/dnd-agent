@@ -80,7 +80,7 @@ def test_armor_and_shield_slots(actor: EquipmentResolver) -> None:
     actor.equip(shield)
 
     assert actor.armor is armor
-    assert actor.shield is shield
+    assert actor.off_hand is shield
 
     assert actor.armor_class == 13
 

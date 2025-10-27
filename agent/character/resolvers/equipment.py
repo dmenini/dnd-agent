@@ -7,18 +7,18 @@ from agent.equipment.armor import Amulet, Armor, Shield
 from agent.equipment.base import Equipment, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_registry import get_log_registry
+from agent.models.constants import BONUS_AC_FROM_SHIELDS
 
 registry = get_log_registry()
 
 
 class EquipmentResolver(CharacterBase):
     armor: Armor | None = None
-    shield: Shield | None = None
     amulet: Amulet | None = None
     ring_left: Amulet | None = None
     ring_right: Amulet | None = None
     main_hand: MeleeWeapon | None = UNARMED
-    off_hand: MeleeWeapon | None = None
+    off_hand: MeleeWeapon | Shield | None = None
     ranged: RangedWeapon | None = None
 
     _ring_rotation_toggle: bool = PrivateAttr(default=False)
@@ -35,8 +35,8 @@ class EquipmentResolver(CharacterBase):
 
         if self.armor:
             ac += self.armor.base_ac
-        if self.shield:
-            ac += self.shield.ac_bonus
+        if self.off_hand and self.off_hand.type == EquipmentType.SHIELD:
+            ac += BONUS_AC_FROM_SHIELDS
         return ac
 
     @property
@@ -44,7 +44,6 @@ class EquipmentResolver(CharacterBase):
         """Mapping of slot names to currently equipped items."""
         return {
             "armor": self.armor,
-            "shield": self.shield,
             "amulet": self.amulet,
             "ring_left": self.ring_left,
             "ring_right": self.ring_right,
@@ -64,7 +63,7 @@ class EquipmentResolver(CharacterBase):
             case EquipmentType.ARMOR:
                 slot = "armor"
             case EquipmentType.SHIELD:
-                slot = "shield"
+                slot = "off_hand"
             case EquipmentType.AMULET:
                 slot = "amulet"
             case EquipmentType.RING:
