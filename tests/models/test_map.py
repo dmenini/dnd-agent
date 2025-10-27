@@ -72,7 +72,30 @@ def test_validate_inbound_edge_case_character_at_bounds() -> None:
 def test_visible_in_range_no_obstacles(game_map: GameMap, actor: Character, target: Character) -> None:
     actor.pos = Position(x=1, y=1, direction="E")
     target.pos = Position(x=3, y=1)
-    game_map.characters = {actor.id: Position(x=1, y=1), target.id: Position(x=3, y=1)}
+    game_map.characters = {actor.id: actor.pos, target.id: target.pos}
+
+    assert game_map.within_visibility_range(actor, target) is True
+
+
+@pytest.mark.parametrize(
+    ("pos1", "pos2"),
+    [
+        (Position(x=1, y=1, direction="E"), Position(x=3, y=1)),
+        (Position(x=1, y=1, direction="S"), Position(x=1, y=2)),
+        (Position(x=1, y=1, direction="W"), Position(x=0, y=1)),
+        (Position(x=1, y=1, direction="N"), Position(x=1, y=0)),
+        (Position(x=1, y=1, direction="SE"), Position(x=2, y=2)),
+        (Position(x=1, y=1, direction="NW"), Position(x=0, y=0)),
+        (Position(x=1, y=1, direction="SW"), Position(x=0, y=2)),
+        (Position(x=1, y=1, direction="NE"), Position(x=2, y=0)),
+    ],
+)
+def test_visible_in_range(
+    game_map: GameMap, actor: Character, target: Character, pos1: Position, pos2: Position
+) -> None:
+    actor.pos = pos1
+    target.pos = pos2
+    game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     assert game_map.within_visibility_range(actor, target) is True
 
