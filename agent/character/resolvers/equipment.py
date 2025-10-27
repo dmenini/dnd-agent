@@ -1,11 +1,11 @@
 from collections.abc import Mapping
 
-from pydantic import computed_field, PrivateAttr
+from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, Shield
 from agent.equipment.base import Equipment, EquipmentType
-from agent.equipment.weapons import MeleeWeapon, RangedWeapon, UNARMED, WeaponHandling
+from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_registry import get_log_registry
 
 registry = get_log_registry()
@@ -53,6 +53,10 @@ class EquipmentResolver(CharacterBase):
             "ranged": self.ranged,
         }
 
+    @property
+    def two_handed_active(self) -> bool:
+        return self._two_handed_active
+
     def _resolve_slot_for(self, item: Equipment) -> str | None:
         """Automatically determine which slot an equipment item should occupy."""
         slot: str | None = None
@@ -88,7 +92,8 @@ class EquipmentResolver(CharacterBase):
             slot_name = self._resolve_slot_for(item)
 
         if not slot_name or slot_name not in self.equipment_slots:
-            raise ValueError(f"Invalid equipment slot: {slot_name}")
+            msg = f"Invalid equipment slot: {slot_name}"
+            raise ValueError(msg)
 
         # Special case for weapons
         if isinstance(item, MeleeWeapon):

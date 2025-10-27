@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import re
 from abc import ABC
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
-from agent.character.stats import StatType
+from agent.character.stats import Stats, StatType
 from agent.effects.status_effects.base import StatusEffect
-from agent.equipment.weapons import RangedWeapon, Weapon, WeaponType
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.logs.events import Icon
 from agent.models.constants import EventType
 from agent.models.damage import Damage, DamageComponent, DamageType
@@ -128,14 +128,20 @@ class MainHandAttackAction(StandardAction, AttackAction):
     type: ActionType = ActionType.ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: Weapon) -> Self:
+    def from_weapon(cls, weapon: MeleeWeapon, *, is_two_handed: bool = False, stats: Stats) -> Self:
+        versatile_enabled = weapon.handling == WeaponHandling.VERSATILE and is_two_handed
+        damage_dice = weapon.versatile_damage if versatile_enabled else None
+        damage_dice = damage_dice or weapon.damage_dice
+
+        stat = (StatType.STR if stats.strength >= stats.dexterity else StatType.DEX) if weapon.finesse else weapon.stat
+
         return cls(
             description=f"Base Attack with main hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
-            damage_dice=weapon.damage_dice,
+            damage_dice=damage_dice,
             damage_type=weapon.damage_type,
-            stat=weapon.stat,
+            stat=stat,
             range=weapon.range,
             status_effects=weapon.effects,
         )
@@ -148,7 +154,7 @@ class OffHandAttackAction(BonusAction, AttackAction):
     type: ActionType = ActionType.OFF_HAND_ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: Weapon) -> Self:
+    def from_weapon(cls, weapon: MeleeWeapon, **kwargs: Any) -> Self:  # noqa: ARG003
         return cls(
             description=f"Bonus Attack with off hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
@@ -168,7 +174,7 @@ class RangedAttackAction(StandardAction, AttackAction):
     type: ActionType = ActionType.ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: RangedWeapon) -> Self:
+    def from_weapon(cls, weapon: RangedWeapon, **kwargs: Any) -> Self:  # noqa: ARG003
         return cls(
             description=f"Ranged Attack with {weapon.name}",
             weapon_type=weapon.weapon_type,

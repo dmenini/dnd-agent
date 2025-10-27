@@ -179,7 +179,9 @@ class DecisionNode:
 
         for eq, action_cls in equipment_map:
             if eq:
-                action = action_cls.from_weapon(weapon=eq)  # type: ignore[attr-defined]
+                action = action_cls.from_weapon(  # type: ignore[attr-defined]
+                    weapon=eq, is_two_handed=actor.two_handed_active, stats=actor.attributes
+                )
                 all_actions.append(action)
 
         # Spells (only if slot available)

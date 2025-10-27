@@ -71,7 +71,6 @@ def main() -> None:
         damage_dice="2d6",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.MARTIAL_MELEE,
-        range=2,
         targeting=TargetingType.SINGLE,
         effects=[Stunned(duration=1)],
     )
@@ -89,7 +88,6 @@ def main() -> None:
         damage_dice="1d5",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.SIMPLE_MELEE,
-        range=1,
         targeting=TargetingType.SINGLE,
         effects=[Poisoned(duration=3)],
     )

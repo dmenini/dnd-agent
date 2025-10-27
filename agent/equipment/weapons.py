@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import computed_field, Field
+from pydantic import Field, computed_field
 
 from agent.character.stats import StatType
 from agent.equipment.base import Equipment, EquipmentType
@@ -42,7 +42,7 @@ class MeleeWeapon(Weapon):
     finesse: bool = False
     dual_wield: bool | None = None
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def range(self) -> float:
         return MELEE_RANGE + self.reach
