@@ -12,7 +12,7 @@ Fighter = CharacterJob(
     features=[
         JobFeature(
             ref_id=FeatureId.AC_BONUS_WITH_ARMOR,
-            name="Fighting Style: Defense",
+            name="Fighting Style - Defense",
             description="+1 to AC while wearing armor.",
             level_required=1,
             type=FeatureType.PASSIVE,

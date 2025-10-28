@@ -208,7 +208,8 @@ class DecisionResult(BaseModel):
                 f"Please, select a closer position within {max_dist}m.",
             )
 
-        occupied_positions = list(game_map.characters.values()) + game_map.walls
+        occupied_positions = [v for k, v in game_map.characters.items() if k != actor.id]
+        occupied_positions = occupied_positions + game_map.walls
         if pos in occupied_positions:
             return (
                 False,

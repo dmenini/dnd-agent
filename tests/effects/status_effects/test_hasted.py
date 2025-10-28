@@ -78,7 +78,7 @@ def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target
     assert hero.attributes.get_modifiers("speed")[0].value == 0.5
     assert hero.attributes.get_modifiers("save_disadvantage.wis")[0].value is True
 
-    assert hero.current_speed == 3
+    assert hero.current_speed == 0.0
     assert hero.attributes.stat_save_advantage(StatType.WIS) == -1
 
     # Turn 2.2: Pass

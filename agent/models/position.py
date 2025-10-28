@@ -48,7 +48,7 @@ class Position(BaseModel):
         return math.hypot(dx, dy)
 
     def direction_to(self, other: Self) -> tuple[float, float]:
-        dx, dy = other.x - self.x, other.y - self.y
+        dx, dy = other.x - self.x, self.y - other.y  # account for negative y-axis
         dist = math.hypot(dx, dy)
         if dist == 0:
             return 0.0, 0.0

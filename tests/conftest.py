@@ -89,6 +89,6 @@ def advance_turn(state: State, result: DecisionResult) -> State:
     llm.with_structured_output.return_value = llm
     llm.invoke.return_value = result
 
-    state = DecisionNode(llm=llm, system_prompt="")(state)
+    state = DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
     state = ActionProcessorNode()(state)
     return EndCombatNode()(state)

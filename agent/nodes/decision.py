@@ -11,7 +11,6 @@ from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
-from agent.character.stats import Stats
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
@@ -23,11 +22,20 @@ log = getLogger(__name__)
 
 
 class DecisionNode:
-    def __init__(self, llm: BaseChatModel, system_prompt: str, max_retries: int = 3, history_size: int = 15) -> None:
+    def __init__(
+        self,
+        llm: BaseChatModel,
+        system_prompt: str,
+        *,
+        max_retries: int = 3,
+        history_size: int = 15,
+        simulation: bool = False,
+    ) -> None:
         self.llm = llm.with_structured_output(DecisionResult)
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.history_size = history_size
+        self.simulation = simulation
 
     def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
@@ -43,7 +51,11 @@ class DecisionNode:
 
         if actor.turn_done:
             state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
-            state.draw_map()
+            if actor.is_player and not self.simulation:
+                input("Press ENTER to continue")
+            else:
+                state.draw_map()
+
             actor.start_turn()
 
         state.update_visibility(actor)
@@ -81,39 +93,12 @@ class DecisionNode:
         if state.map is None:
             raise ValueError
 
-        # Prepare message history from previous main events
-        history = self.group_messages(state.log)
-
-        if state.verification_result and not state.verification_result.valid and state.verification_result.input:
-            # Hide the previous decision that lead to a validation error for a clean log history
-            state.log.hide_last_event(event_type=LogLevel.MAIN)
-            validation_event = (
-                f"{actor.id}: The previously chosen action '{state.verification_result.input.id}' is invalid:\n"
-                f"{state.verification_result.reason}\n\n"
-                "Instructions: Review the available actions and your movement. "
-                "Choose a legal action that respects range, resources, and targeting constraints. "
-                "If no target is in range, consider repositioning, using a different ability, "
-                "or skipping the turn strategically."
-            )
-        else:
-            validation_event = ""
-
         visible_characters = state.visible_characters
         visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
         visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
 
-        user_prompt = (
-            f"{validation_event}"
-            f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat.\n"
-            f"---\n"
-            f"### Character {actor.icon} (ID: {actor.id})\n"
-            f"HP: {actor.attributes.hp}/{actor.max_hp} | Level: {actor.level}\n"
-            f"Position: ({actor.pos.x}, {actor.pos.y}) | Facing: {actor.pos.direction}\n"
-            f"Movement Remaining: {actor.current_speed}/{actor.speed} m\n"
-            f"Hidden: {actor.is_hidden} | Party: {actor.party.name}\n"
-            f"Status Effects: {', '.join(str(eff) for eff in actor.status_effects) or 'None'}\n"
-            f"Spell Slots: {actor.spell_slots}\n"
-            f"Stats: {Stats.model_validate(actor.attributes.model_dump())}\n"
+        character_sheet = (
+            f"{actor}\n"
             f"---\n"
             f"### Available Actions\n"
             f"{'\n'.join([str(act) for act in actions])}\n"
@@ -127,10 +112,69 @@ class DecisionNode:
             f"### Map Overview\n"
             f"{state.map}\n"
         )
+
+        if actor.is_player and not self.simulation:
+            return self.get_player_decision(actor, character_sheet, actions)
+
+        return self.get_ai_decision(state, actor, character_sheet)
+
+    def get_player_decision(self, actor: Character, character_sheet: str, actions: list[Action]) -> DecisionResult:
+        actor.log_event(message=character_sheet, log_type=LogLevel.MAIN, show_ai=False)
+        player_input = input(f"What should {actor.name} do? (ENTER to let AI decide)")
+
+        # Option 1: Exact match
+        for action in actions:
+            if player_input.strip().lower() in (action.id.lower(), action.name.lower()):
+                return DecisionResult(action_id=action.id, description=f"{actor.name} chooses to {action.name}.")
+
+        # Option 2: Natural language command → Action prediction
+        return self.interpret_player_input(player_input, character_sheet)
+
+    def get_ai_decision(self, state: State, actor: Character, character_sheet: str) -> DecisionResult:
+        # Prepare message history from previous main events
+        history = self.group_messages(state.log)
+
+        if state.verification_result and not state.verification_result.valid and state.verification_result.input:
+            # Hide the previous decision that led to a validation error for a clean log history
+            state.log.hide_last_event(event_type=LogLevel.MAIN)
+            validation_event = (
+                f"The previously chosen action '{state.verification_result.input.id}' is invalid:\n"
+                f"{state.verification_result.reason}\n\n"
+                "Instructions: Review the available actions and your movement. "
+                "Choose a legal action that respects range, resources, and targeting constraints. "
+                "If no target is in range, consider repositioning, using a different ability, "
+                "or skipping the turn strategically."
+            )
+        else:
+            validation_event = ""
+
+        user_prompt = (
+            f"{validation_event}"
+            f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat with the following profile.\n"
+            f"---\n"
+            f"{character_sheet}"
+        )
+
         return self.llm.invoke(  # type: ignore[return-value]
             [
                 SystemMessage(content=self.system_prompt),
                 *history,
+                HumanMessage(content=user_prompt),
+            ]
+        )
+
+    def interpret_player_input(self, text: str, character_sheet: str) -> DecisionResult:
+        text = text or "No decision provided. Choose the most optimal action for the player."
+        user_prompt = (
+            f"Map the player decision to one of the available actions.\n"
+            f"---\n"
+            f"### Player decision\n"
+            f"{text}\n"
+            f"{character_sheet}"
+        )
+        return self.llm.invoke(  # type: ignore[return-value]
+            [
+                SystemMessage(content=self.system_prompt),
                 HumanMessage(content=user_prompt),
             ]
         )

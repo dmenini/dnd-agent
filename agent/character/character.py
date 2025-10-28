@@ -7,6 +7,7 @@ from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
+from agent.character.stats import Stats
 from agent.effects.traits import TargetAdvantageOnAttackRoll
 from agent.logs.events import Icon, LogLevel
 from agent.models.enums import FeatureId
@@ -92,3 +93,15 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
 
         return perception_value >= (target.stealth_value or 0)
+
+    def __str__(self) -> str:
+        return (
+            f"### Character {self.name} {self.icon} (ID: {self.id})\n"
+            f"HP: {self.attributes.hp}/{self.max_hp} | Level: {self.level}\n"
+            f"Position: ({self.pos.x}, {self.pos.y}) | Facing: {self.pos.direction}\n"
+            f"Movement Remaining: {self.current_speed}/{self.speed} m\n"
+            f"Hidden: {self.is_hidden} | Party: {self.party.name}\n"
+            f"Status Effects: {', '.join(str(eff) for eff in self.status_effects) or 'None'}\n"
+            f"Spell Slots: {self.spell_slots}\n"
+            f"Stats: {Stats.model_validate(self.attributes.model_dump())}\n"
+        )
