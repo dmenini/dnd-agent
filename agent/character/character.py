@@ -96,12 +96,13 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
 
     def __str__(self) -> str:
         return (
-            f"### Character {self.name} {self.icon} (ID: {self.id})\n"
-            f"HP: {self.attributes.hp}/{self.max_hp} | Level: {self.level}\n"
-            f"Position: ({self.pos.x}, {self.pos.y}) | Facing: {self.pos.direction}\n"
-            f"Movement Remaining: {self.current_speed}/{self.speed} m\n"
-            f"Hidden: {self.is_hidden} | Party: {self.party.name}\n"
-            f"Status Effects: {', '.join(str(eff) for eff in self.status_effects) or 'None'}\n"
-            f"Spell Slots: {self.spell_slots}\n"
-            f"Stats: {Stats.model_validate(self.attributes.model_dump())}\n"
+            f"**{self.name} {self.icon} (ID: {self.id})**\n\n"
+            f"Class: {self.job.name} | Level: {self.level} | Party: {self.party.name}\n\n"
+            f"HP: {self.attributes.hp}/{self.max_hp} | AC: {self.armor_class}\n\n"
+            f"Position: ({self.pos.x}, {self.pos.y}) | Facing: {self.pos.direction} | "
+            f"Movement Remaining: {self.current_speed}/{self.speed} m | Hidden: {self.is_hidden}\n\n"
+            f"Status Effects: {', '.join(str(eff) for eff in self.status_effects) or 'None'}\n\n"
+            f"Passives: {', '.join(eff.name for eff in self.passives) or 'None'}\n\n"
+            f"Spell Slots: {self.spell_slots}\n\n"
+            f"Stats: {Stats.model_validate(self.attributes.model_dump())}"
         )

@@ -2,6 +2,10 @@ from logging import getLogger
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from rich.console import Group
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.text import Text
 
 from agent.actions.base import Action
 from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
@@ -10,10 +14,12 @@ from agent.actions.common.dodge import DodgeAction
 from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
+from agent.actions.render import render_actions_summary
 from agent.character.character import Character
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
+from agent.logs.subscribers import rich_printer_plain
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.state import State
@@ -50,7 +56,7 @@ class DecisionNode:
             raise ValueError(msg)
 
         if actor.turn_done:
-            state.log.log_header(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}")
+            actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
             if actor.is_player and not self.simulation:
                 input("Press ENTER to continue")
             else:
@@ -93,34 +99,31 @@ class DecisionNode:
         if state.map is None:
             raise ValueError
 
-        visible_characters = state.visible_characters
-        visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
-        visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
-
-        character_sheet = (
-            f"{actor}\n"
-            f"---\n"
-            f"### Available Actions\n"
-            f"{'\n'.join([str(act) for act in actions])}\n"
-            f"---\n"
-            f"### Visible Allies\n"
-            f"{self.format_characters(visible_allies, state.map, actor)}\n"
-            f"---\n"
-            f"### Visible Enemies\n"
-            f"{self.format_characters(visible_enemies, state.map, actor)}\n"
-            f"---\n"
-            f"### Map Overview\n"
-            f"{state.map}\n"
-        )
-
         if actor.is_player and not self.simulation:
-            return self.get_player_decision(actor, character_sheet, actions)
+            return self.get_player_decision(state, actor, actions)
 
-        return self.get_ai_decision(state, actor, character_sheet)
+        return self.get_ai_decision(state, actor, actions)
 
-    def get_player_decision(self, actor: Character, character_sheet: str, actions: list[Action]) -> DecisionResult:
-        actor.log_event(message=character_sheet, log_type=LogLevel.MAIN, show_ai=False)
-        player_input = input(f"What should {actor.name} do? (ENTER to let AI decide)")
+    def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
+        visible_characters = state.visible_characters
+
+        panel = Panel(
+            Group(
+                Markdown(f"## Character {actor}\n", justify="center", style="cyan"),
+                Markdown("---\n"),
+                Markdown("## Available Actions\n\n", style="cyan"),
+                render_actions_summary(actions),
+                Markdown("---\n"),
+                Markdown("## Map Overview\n", style="cyan"),
+                Text(str(state.map), justify="center", style="cyan"),
+                Markdown("Visible Characters:\n", style="cyan"),
+                Markdown(f"{self.format_characters(visible_characters, state.map, actor)}\n", style="cyan"),
+            ),
+            border_style="yellow",
+        )
+        rich_printer_plain(panel)
+
+        player_input = input(f"What should {actor.name} do? (ENTER to let AI decide) ")
 
         # Option 1: Exact match
         for action in actions:
@@ -128,9 +131,9 @@ class DecisionNode:
                 return DecisionResult(action_id=action.id, description=f"{actor.name} chooses to {action.name}.")
 
         # Option 2: Natural language command → Action prediction
-        return self.interpret_player_input(player_input, character_sheet)
+        return self.interpret_player_input(state, actor, actions, player_input)
 
-    def get_ai_decision(self, state: State, actor: Character, character_sheet: str) -> DecisionResult:
+    def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         # Prepare message history from previous main events
         history = self.group_messages(state.log)
 
@@ -152,7 +155,7 @@ class DecisionNode:
             f"{validation_event}"
             f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat with the following profile.\n"
             f"---\n"
-            f"{character_sheet}"
+            f"{self._format_context(state, actor, actions)}"
         )
 
         return self.llm.invoke(  # type: ignore[return-value]
@@ -163,14 +166,16 @@ class DecisionNode:
             ]
         )
 
-    def interpret_player_input(self, text: str, character_sheet: str) -> DecisionResult:
+    def interpret_player_input(
+        self, state: State, actor: Character, actions: list[Action], text: str
+    ) -> DecisionResult:
         text = text or "No decision provided. Choose the most optimal action for the player."
         user_prompt = (
             f"Map the player decision to one of the available actions.\n"
             f"---\n"
             f"### Player decision\n"
             f"{text}\n"
-            f"{character_sheet}"
+            f"{self._format_context(state, actor, actions)}"
         )
         return self.llm.invoke(  # type: ignore[return-value]
             [
@@ -244,6 +249,27 @@ class DecisionNode:
             effects = ", ".join(str(e) for e in c.status_effects) or "None"
             lines.append(
                 f"- {c.icon} ID={c.id}, name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
-                f"at ({c.pos.x, c.pos.y}) facing {c.pos.direction}, distance={dist}m, LoS={los}m, effects={effects}"
+                f"at ({c.pos.x}, {c.pos.y}) facing {c.pos.direction}, distance={dist}m, LoS={los}m, effects={effects}"
             )
-        return "\n".join(lines) or "No one in sight, try to explore the map."
+        return "\n".join(lines) or "- No one in sight, try to explore the map.\n"
+
+    def _format_context(self, state: State, actor: Character, actions: list[Action]) -> str:
+        visible_characters = state.visible_characters
+        visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
+        visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
+
+        return (
+            f"### Character {actor}\n"
+            f"---\n"
+            f"### Available Actions\n"
+            f"{'\n'.join([str(act) for act in actions])}\n"
+            f"---\n"
+            f"### Visible Allies\n"
+            f"{self.format_characters(visible_allies, state.map, actor)}\n"
+            f"---\n"
+            f"### Visible Enemies\n"
+            f"{self.format_characters(visible_enemies, state.map, actor)}\n"
+            f"---\n"
+            f"### Map Overview\n"
+            f"{state.map}\n"
+        )

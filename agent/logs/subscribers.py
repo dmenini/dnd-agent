@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from rich.console import Console
 
@@ -17,3 +18,7 @@ def rich_printer(event: Event) -> None:
         or (event.type in always_log)
     ):
         console.print(event)
+
+
+def rich_printer_plain(element: Any) -> None:
+    console.print(element)

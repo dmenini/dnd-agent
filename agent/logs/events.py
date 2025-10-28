@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel
+from rich.markdown import Markdown
 from rich.text import Text
 
 
@@ -65,9 +66,8 @@ class Event(BaseModel):
 
         # Event formatting based on type
         if self.type == LogLevel.HEADER:
-            header_line = Text(self.message, style=f"bold {color}")
-            separator = Text("─" * 40, style="dim")
-            result = Text.assemble("\n", header_line, "\n", separator)
+            msg = f"# **{self.message}**"
+            result = Markdown(msg, justify="center", style=color)
 
         elif self.type == LogLevel.MAIN:
             icon = self.icon or "👤"
@@ -81,8 +81,7 @@ class Event(BaseModel):
             result = Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
 
         elif self.type == LogLevel.MAP:
-            separator = Text("─" * 40, style="dim")
-            result = Text.assemble(msg, "\n", separator)
+            result = Text(msg, style=color, justify="center")
 
         return result
 
