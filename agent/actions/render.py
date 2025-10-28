@@ -30,7 +30,7 @@ def render_action(action: Action, max_width: int = 50) -> Panel:
 
     damage = getattr(action, "damage_dice", None)
     damage_type = getattr(action, "damage_type", None)
-    table.add_row("Damage", f"{damage} {damage_type.value}" if damage else "-")
+    table.add_row("Damage", f"{damage} {damage_type.value}" if damage and damage_type else "-")
 
     stat = getattr(action, "stat", None)
     table.add_row("Stat", stat.value if stat else "-")

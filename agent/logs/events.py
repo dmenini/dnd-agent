@@ -59,10 +59,10 @@ class Event(BaseModel):
         """Highlight numbers in bold yellow for readability."""
         return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
 
-    def __rich__(self) -> Text | None:
+    def __rich__(self) -> Text | Markdown | None:
         color = self._color_for_actor()
         msg = self._highlight_numbers(self.message)
-        result = Text(msg)
+        result: Text | Markdown = Text(msg)
 
         # Event formatting based on type
         if self.type == LogLevel.HEADER:
@@ -78,7 +78,7 @@ class Event(BaseModel):
             result = Text.from_markup(f"    [dim]{self.icon} {msg} {ai_icon}[/dim]")
 
         elif self.type == LogLevel.SYSTEM:
-            result = Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
+            result = Text.from_markup(f"[bold yellow]{msg}[/bold yellow]")
 
         elif self.type == LogLevel.MAP:
             result = Text(msg, style=color, justify="center")

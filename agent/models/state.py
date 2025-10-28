@@ -5,7 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
-from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
@@ -46,6 +45,8 @@ class State(BaseModel):
     @property
     def visible_characters(self) -> list[Character]:
         actor = self.current_actor
+        if actor.id not in self.visibility:
+            return []
         return [self.characters[t] for t in self.visibility[actor.id]]
 
     @property
@@ -62,10 +63,6 @@ class State(BaseModel):
     @property
     def log(self) -> LogRegistry:
         return get_log_registry()
-
-    def draw_map(self) -> None:
-        # The chosen char aligns well with emoticons
-        self.log.log_event(message=str(self.map), log_type=LogLevel.MAP)
 
     def update_visibility(self, actor: Character) -> None:
         if not self.map:

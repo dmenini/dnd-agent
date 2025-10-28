@@ -43,7 +43,6 @@ class GameController:
     def __init__(self, graph: CompiledStateGraph, ui: GameUI) -> None:
         self.graph = graph
         self.ui = ui
-        self.pending_input = None
 
     async def get_player_input(self, state: State, prompt: str) -> str:
         self.ui.update_state(state)

@@ -46,10 +46,10 @@ class DecisionNode:
             actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
             actor.start_turn()
 
-        if not self.simulation:
-            await state.controller.get_player_input(state, prompt="Enemy turn, press ENTER to continue")
-
         state.update_visibility(actor)
+
+        if not self.simulation and not actor.is_player and state.controller:
+            await state.controller.get_player_input(state, prompt="Enemy turn, press ENTER to continue")
 
         actions = actor.get_available_actions()
         if not actions:
@@ -90,6 +90,9 @@ class DecisionNode:
         return await self.get_ai_decision(state, actor, actions)
 
     async def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
+        if not state.controller:
+            raise ValueError
+
         player_input = await state.controller.get_player_input(
             state, prompt=f"What should {actor.name} do? (ENTER to let AI decide)"
         )
@@ -193,6 +196,9 @@ class DecisionNode:
         return "\n".join(lines) or "- No one in sight, try to explore the map.\n"
 
     def _format_context(self, state: State, actor: Character, actions: list[Action]) -> str:
+        if not state.map:
+            raise ValueError
+
         visible_characters = state.visible_characters
         visible_enemies = [c for c in visible_characters if c.party.id != actor.party.id]
         visible_allies = [c for c in visible_characters if c.party.id == actor.party.id]
