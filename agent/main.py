@@ -1,12 +1,14 @@
 import logging
+import threading
 from logging import getLogger
 from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
-from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables import RunnableConfig
+from langgraph.graph.state import CompiledStateGraph
 
 from agent.ai.graph import build_graph
-from agent.ai.map_generator import build_map_generator
+from agent.ai.map_generator import build_map_generator, generate_game_map
 from agent.character.attributes import Attributes
 from agent.character.character import Party
 from agent.effects.status_effects.poisoned import Poisoned
@@ -18,9 +20,9 @@ from agent.logs.events import LogLevel
 from agent.models.config import Config
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
-from agent.models.map import GameMap
 from agent.models.state import Character, State
 from agent.registration import register_actions, register_traits
+from agent.ui.game_ui import GameUI
 
 MAX_ITER = 300
 MAP_SIZE = 10
@@ -35,18 +37,23 @@ register_actions()
 register_traits()
 
 
-def generate_game_map(chain: Runnable, enemies: list[str], players: list[str]) -> GameMap:
-    user_template = f"These are the characters that take part in the combat:\nEnemies: {enemies}\nPlayers: {players}"
-    game_map = chain.invoke(
-        {
-            "width": MAP_SIZE,
-            "height": MAP_SIZE,
-            "input": user_template,
-        }
-    )
-    if not isinstance(game_map, GameMap):
-        raise TypeError
-    return game_map
+class GameController:
+    def __init__(self, graph: CompiledStateGraph, ui: GameUI) -> None:
+        self.graph = graph
+        self.ui = ui
+        self.pending_input = None
+
+    def get_player_input(self, state: State, prompt: str):
+        self.ui.update_state(state)
+
+        actor = state.current_actor
+        self.ui.awaiting_input_for = actor
+        self.ui.show_prompt(prompt)
+        return self.ui.wait_for_input()
+
+    def run(self, state) -> None:
+        self.ui.run()
+        self.graph.invoke(state, RunnableConfig(recursion_limit=MAX_ITER))
 
 
 def main() -> None:
@@ -133,7 +140,7 @@ def main() -> None:
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.SYSTEM)
 
     gen = build_map_generator(config.agent)
-    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id])
+    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
     state.map = game_map
 
     # Set icons
@@ -152,8 +159,13 @@ def main() -> None:
     state.parties = {party_players.id: party_players, party_enemies.id: party_enemies}
 
     graph = build_graph(config=config.agent)
+    ui = GameUI(initial_state=state)
+    controller = GameController(graph, ui)
 
-    graph.invoke(state, RunnableConfig(recursion_limit=MAX_ITER))
+    state.controller = controller
+
+    # Run the game logic (blocking)
+    controller.run(state)
 
 
 if __name__ == "__main__":

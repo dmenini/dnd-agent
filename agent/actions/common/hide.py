@@ -1,10 +1,14 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from agent.actions.base import ActionType, StandardAction
-from agent.character.character import Character
 from agent.logs.events import Icon
-from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
+
+if TYPE_CHECKING:
+    from agent.character.character import Character
+    from agent.models.context import CombatContext
 
 
 class HideAction(StandardAction):

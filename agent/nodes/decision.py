@@ -2,24 +2,11 @@ from logging import getLogger
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
-from rich.console import Group
-from rich.markdown import Markdown
-from rich.panel import Panel
-from rich.text import Text
 
 from agent.actions.base import Action
-from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
-from agent.actions.common.dash import DashAction
-from agent.actions.common.dodge import DodgeAction
-from agent.actions.common.hide import HideAction
-from agent.actions.common.move import MovementAction
-from agent.actions.common.wait import WaitAction
-from agent.actions.render import render_actions_summary
 from agent.character.character import Character
-from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry
-from agent.logs.subscribers import rich_printer_plain
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.state import State
@@ -57,16 +44,14 @@ class DecisionNode:
 
         if actor.turn_done:
             actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
-            if actor.is_player and not self.simulation:
-                input("Press ENTER to continue")
-            else:
-                state.draw_map()
-
             actor.start_turn()
+
+        if self.simulation:
+            state.controller.get_player_input(state, prompt="Enemy turn, press ENTER to continue")
 
         state.update_visibility(actor)
 
-        actions = self.available_actions(actor)
+        actions = actor.get_available_actions()
         if not actions:
             state.action = None
             state.decision = None
@@ -105,25 +90,9 @@ class DecisionNode:
         return self.get_ai_decision(state, actor, actions)
 
     def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
-        visible_characters = state.visible_characters
-
-        panel = Panel(
-            Group(
-                Markdown(f"## Character {actor}\n", justify="center", style="cyan"),
-                Markdown("---\n"),
-                Markdown("## Available Actions\n\n", style="cyan"),
-                render_actions_summary(actions),
-                Markdown("---\n"),
-                Markdown("## Map Overview\n", style="cyan"),
-                Text(str(state.map), justify="center", style="cyan"),
-                Markdown("Visible Characters:\n", style="cyan"),
-                Markdown(f"{self.format_characters(visible_characters, state.map, actor)}\n", style="cyan"),
-            ),
-            border_style="yellow",
+        player_input = state.controller.get_player_input(
+            state, prompt=f"What should {actor.name} do? (ENTER to let AI decide)"
         )
-        rich_printer_plain(panel)
-
-        player_input = input(f"What should {actor.name} do? (ENTER to let AI decide) ")
 
         # Option 1: Exact match
         for action in actions:
@@ -210,36 +179,6 @@ class DecisionNode:
             messages.append(role(content="\n".join(current_group)))
 
         return messages
-
-    def available_actions(self, actor: Character) -> dict[str, Action]:
-        all_actions: list[Action] = [
-            MovementAction(range=actor.current_speed),
-            DashAction(range=actor.current_speed),
-            DodgeAction(),
-            WaitAction(),
-            HideAction(),
-        ]
-
-        # Equipment-based actions
-        if actor.main_hand:
-            main_action = MainHandAttackAction.from_weapon(
-                weapon=actor.main_hand, is_two_handed=actor.two_handed_active, stats=actor.attributes
-            )
-            all_actions.append(main_action)
-        if actor.off_hand and isinstance(actor.off_hand.type, MeleeWeapon):
-            off_action = OffHandAttackAction.from_weapon(weapon=actor.off_hand)
-            all_actions.append(off_action)
-        if actor.ranged:
-            ranged_action = RangedAttackAction.from_weapon(weapon=actor.ranged)
-            all_actions.append(ranged_action)
-
-        # Spells (only if slot available)
-        all_actions.extend(spell for spell in actor.spells if actor.spell_slots.has_slot(spell.level))
-
-        # Special abilities (can have their own categories)
-        all_actions += actor.abilities
-
-        return {action.id: action for action in all_actions if action.is_available(actor.action_economy)}
 
     def format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
         lines = []

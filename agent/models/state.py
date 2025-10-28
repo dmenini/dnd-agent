@@ -1,6 +1,7 @@
 from collections import defaultdict
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
@@ -33,6 +34,10 @@ class State(BaseModel):
     verification_result: VerificationResult | None = None
     retries: int = 0
     done: bool = False
+
+    controller: Any | None = Field(default=None, exclude=True)
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
     def alive_characters(self) -> dict[str, Character]:

@@ -2,6 +2,13 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, computed_field
 
+from agent.actions.base import Action
+from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
+from agent.actions.common.dash import DashAction
+from agent.actions.common.dodge import DodgeAction
+from agent.actions.common.hide import HideAction
+from agent.actions.common.move import MovementAction
+from agent.actions.common.wait import WaitAction
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
@@ -9,6 +16,7 @@ from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.character.stats import Stats
 from agent.effects.traits import TargetAdvantageOnAttackRoll
+from agent.equipment.weapons import MeleeWeapon
 from agent.logs.events import Icon, LogLevel
 from agent.models.enums import FeatureId
 from agent.models.position import Position
@@ -93,6 +101,36 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
 
         return perception_value >= (target.stealth_value or 0)
+
+    def get_available_actions(self) -> dict[str, Action]:
+        all_actions: list[Action] = [
+            MovementAction(range=self.current_speed),
+            DashAction(range=self.current_speed),
+            DodgeAction(),
+            WaitAction(),
+            HideAction(),
+        ]
+
+        # Equipment-based actions
+        if self.main_hand:
+            main_action = MainHandAttackAction.from_weapon(
+                weapon=self.main_hand, is_two_handed=self.two_handed_active, stats=self.attributes
+            )
+            all_actions.append(main_action)
+        if self.off_hand and isinstance(self.off_hand.type, MeleeWeapon):
+            off_action = OffHandAttackAction.from_weapon(weapon=self.off_hand)
+            all_actions.append(off_action)
+        if self.ranged:
+            ranged_action = RangedAttackAction.from_weapon(weapon=self.ranged)
+            all_actions.append(ranged_action)
+
+        # Spells (only if slot available)
+        all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
+
+        # Special abilities (can have their own categories)
+        all_actions += self.abilities
+
+        return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 
     def __str__(self) -> str:
         return (
