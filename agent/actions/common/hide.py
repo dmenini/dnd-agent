@@ -30,4 +30,4 @@ class HideAction(StandardAction):
         if can_hide:
             actor.hide()
         else:
-            actor.log_event(f"{actor.name} cannot hide: spotted by an enemy!", icon=Icon.STEALTH)
+            actor.log_event(f"{actor.name} cannot hide: spotted by an enemy!", icon=Icon.STEALTH, show_ai=True)

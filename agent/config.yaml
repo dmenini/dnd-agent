@@ -6,7 +6,7 @@ agent:
   decision_node:
     max_retries: 3
     history_size: 20
-    simulation: True
+    simulation: False
   tools:
   prompts:
     system: |-

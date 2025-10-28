@@ -195,7 +195,7 @@ class SpellSlots(BaseModel):
     def __str__(self) -> str:
         slots = []
         for level in self.slots:
-            slot_str = f"{level.name}: {self.slots[level]}/{self.max_slots[level]}"
+            slot_str = f"Level {level.value}: {self.slots[level]}/{self.max_slots[level]}"
             slots.append(slot_str)
         return " | ".join(slots)
 
