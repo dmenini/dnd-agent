@@ -9,7 +9,7 @@ log = getLogger(__name__)
 
 
 class ActionProcessorNode:
-    def __call__(self, state: State) -> State:
+    async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         if not state.action or not state.decision:

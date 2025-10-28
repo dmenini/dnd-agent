@@ -6,7 +6,7 @@ class CommandInput(Input):
     """Bottom input field for player commands."""
 
     class CommandEntered(Message):
-        def __init__(self, sender: "CommandInput", command: str) -> None:
+        def __init__(self, sender: "CommandInput", command: str) -> None:  # noqa: ARG002
             super().__init__()
             self.command = command
 

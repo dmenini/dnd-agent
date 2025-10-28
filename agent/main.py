@@ -1,5 +1,5 @@
+import asyncio
 import logging
-import threading
 from logging import getLogger
 from pathlib import Path
 
@@ -8,7 +8,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 
 from agent.ai.graph import build_graph
-from agent.ai.map_generator import build_map_generator, generate_game_map
+from agent.ai.map_generator import build_map_generator
 from agent.character.attributes import Attributes
 from agent.character.character import Party
 from agent.effects.status_effects.poisoned import Poisoned
@@ -20,6 +20,8 @@ from agent.logs.events import LogLevel
 from agent.models.config import Config
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
+from agent.models.map import GameMap
+from agent.models.position import Position
 from agent.models.state import Character, State
 from agent.registration import register_actions, register_traits
 from agent.ui.game_ui import GameUI
@@ -43,20 +45,21 @@ class GameController:
         self.ui = ui
         self.pending_input = None
 
-    def get_player_input(self, state: State, prompt: str):
+    async def get_player_input(self, state: State, prompt: str) -> str:
         self.ui.update_state(state)
-
-        actor = state.current_actor
-        self.ui.awaiting_input_for = actor
         self.ui.show_prompt(prompt)
-        return self.ui.wait_for_input()
+        return await self.ui.wait_for_input()
 
-    def run(self, state) -> None:
-        self.ui.run()
-        self.graph.invoke(state, RunnableConfig(recursion_limit=MAX_ITER))
+    async def run(self, state: State) -> None:
+        # Start the UI and run it in the current event loop
+        ui_task = asyncio.create_task(self.ui.run_async())
+
+        # Run your controller concurrently
+        await self.graph.ainvoke(state, RunnableConfig(recursion_limit=MAX_ITER))
+        await ui_task
 
 
-def main() -> None:
+async def main() -> None:
     config_path = Path(__file__).parent / "config.yaml"
     with config_path.open() as fp:
         config = yaml.safe_load(fp)
@@ -139,8 +142,21 @@ def main() -> None:
 
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.SYSTEM)
 
-    gen = build_map_generator(config.agent)
-    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
+    build_map_generator(config.agent)
+    # game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
+
+    game_map = GameMap(
+        map="",
+        width=MAP_SIZE,
+        height=MAP_SIZE,
+        walls=[],
+        characters={
+            hero.id: Position(x=0, y=0),
+            ally.id: Position(x=1, y=1),
+            orc.id: Position(x=2, y=2),
+            goblin.id: Position(x=3, y=3),
+        },
+    )
     state.map = game_map
 
     # Set icons
@@ -165,8 +181,8 @@ def main() -> None:
     state.controller = controller
 
     # Run the game logic (blocking)
-    controller.run(state)
+    await controller.run(state)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

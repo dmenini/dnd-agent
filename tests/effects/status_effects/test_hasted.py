@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from agent.actions.common.spell import SupportSpellAction
 from agent.character.character import Character
 from agent.character.resources import SpellLevel
@@ -15,7 +17,8 @@ from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+@pytest.mark.asyncio
+async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     orc_id = target.id
 
@@ -39,7 +42,7 @@ def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target
     )
 
     # Turn 1.1: Hero casts Haste on self
-    state = advance_turn(
+    state = await advance_turn(
         state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_hits={hero_id: 1}, description="")
     )
     hero = state.characters[hero_id]
@@ -53,24 +56,24 @@ def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target
     assert hero.current_speed == 12.0
     assert hero.attributes.stat_save_advantage(StatType.DEX) == 1
 
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 1.2: Orc pass
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.1: Hero double action -> haste expires, lethargy takes place at the end of turn
     assert state.current_actor.status_effects[0].type == EffectType.HASTED
     assert state.current_actor.status_effects[0].duration == 1
-    state = advance_turn(
+    state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
-    state = advance_turn(
+    state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
 
     hero._dice = MagicMock()  # fail save
     hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.LETHARGIC
@@ -82,9 +85,9 @@ def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target
     assert hero.attributes.stat_save_advantage(StatType.WIS) == -1
 
     # Turn 2.2: Pass
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 3.1: Still performs one action despite lethargy, which then expires
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert state.action is not None
     assert len(state.current_actor.status_effects) == 0

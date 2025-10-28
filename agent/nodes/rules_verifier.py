@@ -28,7 +28,7 @@ class RulesVerifierNode:
             self.check_movement,
         ]
 
-    def __call__(self, state: State) -> State:
+    async def __call__(self, state: State) -> State:
         """Runs all validation checks on the current action."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 

@@ -1,4 +1,4 @@
-import queue
+import asyncio
 
 from textual._path import CSSPathType
 from textual.app import App, ComposeResult
@@ -39,30 +39,29 @@ class GameUI(App):
         width: 30%;
         border: solid green;
     }
-    
+
     .inp {
         height: 10%;
         border: solid red;
     }
-    
+
     """
 
     def __init__(
         self,
+        *,
         driver_class: type[Driver] | None = None,
         css_path: CSSPathType | None = None,
         watch_css: bool = False,
         ansi_color: bool = False,
         initial_state: State | None = None,
-        on_command=None,
     ) -> None:
         self._external_state = initial_state
         self.log_panel = None
         self.map_panel = None
         self.char_panel = None
         self.command_input = None
-        self.on_command = on_command
-        self.input_queue = queue.Queue()
+        self.input_queue = asyncio.Queue()
         super().__init__(driver_class, css_path, watch_css, ansi_color)
 
     def compose(self) -> ComposeResult:
@@ -91,14 +90,16 @@ class GameUI(App):
         self.char_panel.update_state(state)
 
     def show_prompt(self, prompt: str) -> None:
-        self.command_input.update(f"[bold yellow]{prompt}[/]")
+        """Update the placeholder dynamically."""
+        self.command_input.placeholder = prompt
+        # Force a redraw so the new placeholder shows immediately
+        self.command_input.refresh()
 
-    def wait_for_input(self) -> str:
-        """Blocks until player enters a command."""
-        return self.input_queue.get()  # Waits synchronously
+    async def wait_for_input(self) -> str:
+        return await self.input_queue.get()
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
+    async def on_input_submitted(self, event: Input.Submitted) -> None:
         command = event.value.strip()
+        await self.input_queue.put(command)
         event.input.value = ""
-        self.input_queue.put(command)  # Resume whoever is waiting
-
+        event.input.refresh()

@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -84,11 +84,11 @@ def game_map(actor: Character, target: Character) -> GameMap:
     )
 
 
-def advance_turn(state: State, result: DecisionResult) -> State:
-    llm = MagicMock(spec=BaseChatModel)
+async def advance_turn(state: State, result: DecisionResult) -> State:
+    llm = AsyncMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
-    llm.invoke.return_value = result
+    llm.ainvoke.return_value = result
 
-    state = DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
-    state = ActionProcessorNode()(state)
-    return EndCombatNode()(state)
+    state = await DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
+    state = await ActionProcessorNode()(state)
+    return await EndCombatNode()(state)

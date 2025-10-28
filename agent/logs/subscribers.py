@@ -17,8 +17,7 @@ def rich_printer(event: Event) -> None:
         or (event.type == LogLevel.DETAIL and verbosity >= Verbosity.DETAIL)
         or (event.type in always_log)
     ):
-        # console.print(event)
-        pass
+        console.print(event)
 
 
 def rich_printer_plain(element: Any) -> None:

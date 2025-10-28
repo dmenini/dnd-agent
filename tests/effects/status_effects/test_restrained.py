@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.effects.status_effects.base import EffectType
@@ -15,7 +17,8 @@ from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_restrained(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+@pytest.mark.asyncio
+async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     orc_id = target.id
 
@@ -46,7 +49,7 @@ def test_restrained(config: AgentConfig, game_map: GameMap, actor: Character, ta
     actor._dice.roll_twice.return_value = DiceRoll(expression="2d20", rolls=[], total=value1 * 2, raw=value1)
 
     # Turn 1.1: Hero attacks and applies restrained
-    state = advance_turn(
+    state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     orc = state.characters[orc_id]
@@ -60,10 +63,10 @@ def test_restrained(config: AgentConfig, game_map: GameMap, actor: Character, ta
     assert orc.attributes.advantage("attack") == -1
     assert orc.attributes.stat_save_advantage(StatType.DEX) == -1
 
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 1.2: Orc restrained -> after attack no more actions available and passes (no need to wait)
-    state = advance_turn(
+    state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
 
@@ -73,10 +76,10 @@ def test_restrained(config: AgentConfig, game_map: GameMap, actor: Character, ta
 
     # Turn 2.1: Pass
     assert state.current_actor.id == hero_id
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.2: Orc still restrained -> skip turn
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Paralysis expires after 2 turns
     orc = state.current_actor

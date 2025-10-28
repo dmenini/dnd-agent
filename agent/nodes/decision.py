@@ -30,7 +30,7 @@ class DecisionNode:
         self.history_size = history_size
         self.simulation = simulation
 
-    def __call__(self, state: State) -> State:
+    async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         actor = state.current_actor
@@ -46,8 +46,8 @@ class DecisionNode:
             actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
             actor.start_turn()
 
-        if self.simulation:
-            state.controller.get_player_input(state, prompt="Enemy turn, press ENTER to continue")
+        if not self.simulation:
+            await state.controller.get_player_input(state, prompt="Enemy turn, press ENTER to continue")
 
         state.update_visibility(actor)
 
@@ -65,7 +65,7 @@ class DecisionNode:
         if state.retries > self.max_retries:
             result = wait
         else:
-            result = self.predict_next_action(state, actor, list(actions.values()))
+            result = await self.predict_next_action(state, actor, list(actions.values()))
 
         if result.action_id not in actions:
             result = wait  # fallback to wait if illegal
@@ -80,17 +80,17 @@ class DecisionNode:
 
         return state
 
-    def predict_next_action(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
+    async def predict_next_action(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         if state.map is None:
             raise ValueError
 
         if actor.is_player and not self.simulation:
-            return self.get_player_decision(state, actor, actions)
+            return await self.get_player_decision(state, actor, actions)
 
-        return self.get_ai_decision(state, actor, actions)
+        return await self.get_ai_decision(state, actor, actions)
 
-    def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
-        player_input = state.controller.get_player_input(
+    async def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
+        player_input = await state.controller.get_player_input(
             state, prompt=f"What should {actor.name} do? (ENTER to let AI decide)"
         )
 
@@ -102,7 +102,7 @@ class DecisionNode:
         # Option 2: Natural language command → Action prediction
         return self.interpret_player_input(state, actor, actions, player_input)
 
-    def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
+    async def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         # Prepare message history from previous main events
         history = self.group_messages(state.log)
 
@@ -127,7 +127,7 @@ class DecisionNode:
             f"{self._format_context(state, actor, actions)}"
         )
 
-        return self.llm.invoke(  # type: ignore[return-value]
+        return await self.llm.ainvoke(  # type: ignore[return-value]
             [
                 SystemMessage(content=self.system_prompt),
                 *history,

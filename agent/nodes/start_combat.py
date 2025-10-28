@@ -13,7 +13,7 @@ class StartCombatNode:
     def __init__(self, dice: DiceRoller) -> None:
         self.dice = dice
 
-    def __call__(self, state: State) -> State:
+    async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
         state.log.log_header("Starting combat!")
