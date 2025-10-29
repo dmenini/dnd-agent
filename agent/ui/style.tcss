@@ -1,0 +1,28 @@
+Screen {
+	layout: horizontal;
+}
+
+.left {
+	width: 50%;
+	layout: vertical;
+}
+
+.map {
+	height: 50%;
+	border-bottom: solid orange;
+}
+
+.logs {
+	height: 50%;
+}
+
+.character {
+	height: 100%;
+	width: 50%;
+	border-left: solid orange;
+}
+
+.inp {
+	height: 10%;
+	border: solid red;
+}

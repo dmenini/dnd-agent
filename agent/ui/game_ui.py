@@ -15,37 +15,7 @@ from agent.ui.map_panel import MapPanel
 
 
 class GameUI(App):
-    CSS = """
-    Screen {
-        layout: horizontal;
-    }
-
-    .left {
-        width: 50%;
-        layout: vertical;
-    }
-
-    .map {
-        height: 50%;
-        border: solid white;
-    }
-
-    .logs {
-        height: 50%;
-        border: solid yellow;
-    }
-
-    .character {
-        height: 100%;
-        width: 45%;
-        border: solid green;
-    }
-
-    .inp {
-        height: 10%;
-        border: solid red;
-    }
-    """
+    CSS_PATH = "style.tcss"
 
     def __init__(
         self,
@@ -56,7 +26,7 @@ class GameUI(App):
         ansi_color: bool = False,
         initial_state: State | None = None,
     ) -> None:
-        self._external_state = initial_state
+        self._init_state = initial_state
         self._log_panel: LogPanel | None = None
         self._map_panel: MapPanel | None = None
         self._char_panel: CharacterPanel | None = None
@@ -104,8 +74,8 @@ class GameUI(App):
             yield self.command_input
 
     def on_mount(self) -> None:
-        if self._external_state:
-            self.update_state(self._external_state)
+        if self._init_state:
+            self.update_state(self._init_state)
 
     def update_state(self, state: State) -> None:
         """Render a new state."""
