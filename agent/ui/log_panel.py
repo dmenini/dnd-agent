@@ -1,21 +1,24 @@
-from rich.console import Group
-from textual.widgets import Static
+from typing import Any
+
+from textual.widgets import RichLog
 
 from agent.models.state import State
 
 
-class LogPanel(Static):
+class LogPanel(RichLog):
     """Bottom-left: event logs."""
 
-    def update_state(self, state: State, *, max_messages: int = 10) -> None:
-        events = state.log.events[-100:]
-        messages = []
-        for event in reversed(events):
-            el = event.__rich__()
-            if el:
-                messages.append(el)
-                if len(messages) == max_messages:
-                    break
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(highlight=False, markup=True, wrap=False, **kwargs)
+        self._last_rendered_count = 0
 
-        renderable = Group(*messages[::-1])
-        self.update(renderable)
+    def update_state(self, state: State) -> None:
+        messages = state.log.events[-100:]  # keep last 100
+        # Only write the new messages since last update
+        for message in messages[self._last_rendered_count :]:
+            self.write(message)
+        self._last_rendered_count = len(messages)
+
+    def clear(self) -> None:
+        self.clear()
+        self._last_rendered_count = 0
