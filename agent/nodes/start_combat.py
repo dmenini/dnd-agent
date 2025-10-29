@@ -2,7 +2,7 @@ import random
 from logging import getLogger
 
 from agent.character.stats import StatType
-from agent.logs.events import LogLevel
+from agent.logs.events import Icon, LogLevel
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.state import State
 
@@ -33,7 +33,11 @@ class StartCombatNode:
         state.turn_index = 0
         state.log.log_event(
             "Initiative order: " + " → ".join(state.characters[cid].name for cid in state.turn_order),
-            log_type=LogLevel.SYSTEM,
+            log_type=LogLevel.MAIN,
         )
+        for roll, char in zip(rolls, state.characters.values(), strict=False):
+            char.log_event(
+                f"{char.name}: initiative roll={roll[0]}, DEX mod={roll[1]}", icon=Icon.ROLL, log_type=LogLevel.DETAIL
+            )
 
         return state

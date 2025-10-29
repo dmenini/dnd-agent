@@ -1,8 +1,9 @@
 import re
+import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from rich.markdown import Markdown
 from rich.text import Text
 
@@ -38,6 +39,7 @@ class Verbosity:
 
 
 class LogEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     actor_id: str | None = None
     icon: str | None = "⚙️"
     message: str
@@ -76,9 +78,6 @@ class LogEvent(BaseModel):
         elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
             ai_icon = f"({Icon.AI})" if self.show_ai else ""
             result = Text.from_markup(f"    [dim]{self.icon} {msg} {ai_icon}[/dim]")
-
-        elif self.type == LogLevel.SYSTEM:
-            result = Text.from_markup(f"[bold yellow]{msg}[/bold yellow]")
 
         elif self.type == LogLevel.MAP:
             result = Text(msg, style=color, justify="center")

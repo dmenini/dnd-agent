@@ -71,7 +71,7 @@ async def main() -> None:
 
     state.log.log_event(
         message=f"Setting up combat simulation: {party_players.name} vs {party_enemies.name}",
-        log_type=LogLevel.SYSTEM,
+        log_type=LogLevel.MAIN,
     )
 
     sword = MeleeWeapon(
@@ -139,7 +139,7 @@ async def main() -> None:
         main_hand=dagger,
     )
 
-    state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.SYSTEM)
+    state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.MAIN)
 
     build_map_generator(config.agent)
     # game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
