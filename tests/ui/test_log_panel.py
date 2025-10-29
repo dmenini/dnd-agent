@@ -90,7 +90,7 @@ async def test_selection_and_expansion_last_main(test_app: LogPanelTestApp) -> N
         await pilot.pause()
 
         # DETAIL/DEBUG logs should now appear
-        assert panel._selectable_indices == [1, 2]
+        assert panel._selectable_indices == [1, 2, 3, 4]
         assert len(panel._filtered_logs) == 5
         assert any(e.type in {LogLevel.DETAIL, LogLevel.DEBUG} for e in panel._filtered_logs)
 
@@ -126,12 +126,21 @@ async def test_selection_and_expansion_first_main(test_app: LogPanelTestApp) -> 
         await pilot.pause()
 
         # DETAIL/DEBUG logs should now appear
-        assert panel._selectable_indices == [1, 3]
+        assert panel._selectable_indices == [1, 2, 3]
         assert len(panel._filtered_logs) == 4
         assert any(e.type in {LogLevel.DETAIL, LogLevel.DEBUG} for e in panel._filtered_logs)
+
+        # Go into the DETAIL section
+        await pilot.press("down")
+        await pilot.pause()
+        assert panel.selected_index == 1
+        assert panel._filtered_logs[panel._selectable_indices[panel.selected_index]].id == "d1"
 
         # Collapse again
         await pilot.press("enter")
         await pilot.pause()
         assert len(panel._filtered_logs) == 3
         assert not any(e.type in {LogLevel.DETAIL, LogLevel.DEBUG} for e in panel._filtered_logs)
+
+        assert panel.selected_index == 0
+        assert panel._selectable_indices == [1, 2]
