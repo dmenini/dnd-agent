@@ -40,6 +40,7 @@ class LogPanel(RichLog):
         self._last_rendered_count = 0
         self._cached_logs: list[LogEvent] = []
         self._filtered_logs: list[LogEvent] = []
+        self._selectable_indices: list[int] = []
 
     def update_state(self, state: State) -> None:
         logs: list[LogEvent] = state.log.events
@@ -53,40 +54,39 @@ class LogPanel(RichLog):
         if len(self._cached_logs) > CACHE_SIZE:
             self._cached_logs = self._cached_logs[-CACHE_SIZE:]
 
-        # Clear and re-render filtered view
         self._filtered_logs = self._filter_logs(self._cached_logs)
+        self._selectable_indices = [i for i, e in enumerate(self._filtered_logs) if e.type == LogLevel.MAIN]
 
-        # Adjust selected index if out of bounds
-        if self.selected_index >= len(self._filtered_logs):
-            self.selected_index = max(0, len(self._filtered_logs) - 1)
+        # Adjust selection if out of bounds
+        if self.selected_index >= len(self._selectable_indices):
+            self.selected_index = max(0, len(self._selectable_indices) - 1)
 
         self.refresh_logs()
 
     def _filter_logs(self, logs: list[LogEvent]) -> list[LogEvent]:
-        """Filter logs by verbosity and window rules."""
+        """Show only HEADER + MAIN."""
         return [event for event in logs if event.type in (LogLevel.HEADER, LogLevel.MAIN)]
 
     def refresh_logs(self) -> None:
-        """Re-render logs with selected style."""
         self.clear()
         for idx, event in enumerate(self._filtered_logs):
             text = event.__rich__()
-            if event.type != LogLevel.HEADER and idx == self.selected_index:
-                text.stylize("reverse bold")  # Highlight selected
+            # Highlight only if this is the currently selected MAIN
+            if idx == self._selectable_indices[self.selected_index]:
+                text.stylize("reverse bold")
             self.write(text)
 
     @on(Key)
     def on_key(self, event: Key) -> None:
-        """Handle arrow keys and Enter."""
-        if not self._filtered_logs:
+        if not self._selectable_indices:
             return
 
         if event.key == "up":
             self.selected_index = max(0, self.selected_index - 1)
             self.refresh_logs()
         elif event.key == "down":
-            self.selected_index = min(len(self._filtered_logs) - 1, self.selected_index + 1)
+            self.selected_index = min(len(self._selectable_indices) - 1, self.selected_index + 1)
             self.refresh_logs()
         elif event.key == "enter":
-            selected = self._filtered_logs[self.selected_index]
+            selected = self._filtered_logs[self._selectable_indices[self.selected_index]]
             self.app.push_screen(LogDetailScreen([selected]))
