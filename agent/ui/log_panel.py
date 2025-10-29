@@ -8,7 +8,7 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen
 from textual.widgets import RichLog, Static
 
-from agent.logs.events import LogEvent, LogLevel, Verbosity
+from agent.logs.events import LogEvent, LogLevel
 from agent.models.state import State
 
 WINDOW_SIZE = 100
@@ -33,15 +33,17 @@ class LogDetailScreen(ModalScreen):
 
 class LogPanel(RichLog):
     verbosity: int = reactive(1)
+    selected_index: int = reactive(0)
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(highlight=False, markup=True, wrap=False, **kwargs)
         self._last_rendered_count = 0
         self._cached_logs: list[LogEvent] = []
+        self._filtered_logs: list[LogEvent] = []
 
     def update_state(self, state: State) -> None:
         logs: list[LogEvent] = state.log.events
-        new_logs = logs[self._last_rendered_count :]
+        new_logs = logs[self._last_rendered_count:]
 
         # Store locally so we can scroll/interact later
         self._cached_logs.extend(new_logs)
@@ -52,34 +54,39 @@ class LogPanel(RichLog):
             self._cached_logs = self._cached_logs[-CACHE_SIZE:]
 
         # Clear and re-render filtered view
-        self.clear()
-        filtered = self._filter_logs(self._cached_logs)
-        for event in filtered:
-            self.write(event)
+        self._filtered_logs = self._filter_logs(self._cached_logs)
+
+        # Adjust selected index if out of bounds
+        if self.selected_index >= len(self._filtered_logs):
+            self.selected_index = max(0, len(self._filtered_logs) - 1)
+
+        self.refresh_logs()
 
     def _filter_logs(self, logs: list[LogEvent]) -> list[LogEvent]:
         """Filter logs by verbosity and window rules."""
-        cutoff = max(0, len(logs) - WINDOW_SIZE)
-        visible = []
+        return [event for event in logs if event.type in (LogLevel.HEADER, LogLevel.MAIN)]
 
-        for idx, event in enumerate(logs):
-            # Older than cutoff → show only HEADER + MAIN
-            if idx < cutoff:
-                if event.type in (LogLevel.HEADER, LogLevel.MAIN):
-                    visible.append(event)
-            else:
-                # Inside last window → filter by verbosity
-                if event.type == LogLevel.DEBUG and self.verbosity < Verbosity.DEBUG:
-                    continue
-                if event.type == LogLevel.DETAIL and self.verbosity < Verbosity.DETAIL:
-                    continue
-                visible.append(event)
-        return visible
+    def refresh_logs(self) -> None:
+        """Re-render logs with selected style."""
+        self.clear()
+        for idx, event in enumerate(self._filtered_logs):
+            text = event.__rich__()
+            if event.type != LogLevel.HEADER and idx == self.selected_index:
+                text.stylize("reverse bold")  # Highlight selected
+            self.write(text)
 
     @on(Key)
     def on_key(self, event: Key) -> None:
-        """Handle user pressing Enter on a selected log entry."""
-        if event.key == "enter":
-            # For now just show last event's details
-            if self._cached_logs:
-                self.app.push_screen(LogDetailScreen(self._cached_logs[-1:]))
+        """Handle arrow keys and Enter."""
+        if not self._filtered_logs:
+            return
+
+        if event.key == "up":
+            self.selected_index = max(0, self.selected_index - 1)
+            self.refresh_logs()
+        elif event.key == "down":
+            self.selected_index = min(len(self._filtered_logs) - 1, self.selected_index + 1)
+            self.refresh_logs()
+        elif event.key == "enter":
+            selected = self._filtered_logs[self.selected_index]
+            self.app.push_screen(LogDetailScreen([selected]))
