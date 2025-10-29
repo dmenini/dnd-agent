@@ -10,7 +10,7 @@ from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import Trait, TraitEffect, normalize_id
 from agent.equipment.armor import Armor
-from agent.logs.events import Event, Icon, LogLevel
+from agent.logs.events import Icon, LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.constants import EventType
@@ -162,7 +162,7 @@ class CharacterBase(BaseModel):
         char_icon_pad = f"{self.icon} "
         icon = self.icon if log_type == LogLevel.MAIN else icon
         show_ai = True if log_type == LogLevel.MAIN else show_ai
-        event = Event(
+        event = LogEvent(
             actor_id=self.id,
             icon=icon or char_icon_pad,
             is_player=self.is_player,

@@ -37,7 +37,7 @@ class Verbosity:
     DEBUG = 2
 
 
-class Event(BaseModel):
+class LogEvent(BaseModel):
     actor_id: str | None = None
     icon: str | None = "⚙️"
     message: str
