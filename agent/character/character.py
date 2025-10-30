@@ -67,13 +67,11 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 
     def start_turn(self) -> None:
-        self.log_event(f"{self.name} starts turn", log_type=LogLevel.DEBUG)
         self.turn_done = False
         self.action_economy.restore_turn()
         self.try_expire_effects(is_start=True)
 
     def end_turn(self) -> None:
-        self.log_event(f"{self.name} ends turn", log_type=LogLevel.DEBUG)
         self.try_expire_effects(is_start=False)
         self.turn_done = True
 
