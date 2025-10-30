@@ -2,14 +2,42 @@ from typing import Any
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import VerticalScroll
-from textual.widgets import ContentSwitcher, DataTable, Markdown, Static, Tab, Tabs
+from textual.binding import Binding
+from textual.containers import Horizontal, VerticalScroll
+from textual.events import Key
+from textual.screen import ModalScreen
+from textual.widgets import ContentSwitcher, DataTable, Footer, Markdown, Static, Tab, Tabs
 
 from agent.actions.base import Action
 from agent.actions.common.attack import AttackAction
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.render import render_action
 from agent.character.character import Character
 from agent.models.state import State
+
+
+class ActionInfoModal(ModalScreen):
+    """Modal showing detailed information about an action."""
+
+    BINDINGS = [
+        Binding("escape", "dismiss", "Close"),
+    ]
+
+    def __init__(self, action: Action, max_width: int = 60) -> None:
+        super().__init__()
+        self.action = action
+        self.max_width = max_width
+
+    def compose(self) -> ComposeResult:
+        """Render the modal content as a card."""
+        with Horizontal(id="hcenter"):
+            yield Static(render_action(self.action, max_width=self.max_width), id="card")
+        yield Footer()
+
+    @on(Key)
+    def action_dismiss(self, _: Key) -> None:
+        """Close modal on any key press."""
+        self.dismiss()
 
 
 class ActionsSummaryTable(DataTable):
@@ -17,13 +45,13 @@ class ActionsSummaryTable(DataTable):
 
     def __init__(self, actions: list[Action]) -> None:
         super().__init__()
+        self.actions = {a.id: a for a in actions}
         self._setup_columns()
         self._populate_rows(actions)
 
     def _setup_columns(self) -> None:
         """Define consistent columns."""
         columns = [
-            "ID",
             "Name",
             "Category",
             "Range",
@@ -59,13 +87,20 @@ class ActionsSummaryTable(DataTable):
         """Add sorted rows to the table."""
         for a in sorted(actions, key=lambda x: x.name):
             self.add_row(
-                a.id,
                 f"[bold]{a.name}[/bold]",
                 a.category.value,
                 f"{a.range} m",
                 a.targeting.value,
                 self._info_for_action(a),
+                key=a.id,
             )
+
+    def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:
+        """Open a modal when a cell is clicked."""
+        action_id = event.cell_key.row_key.value
+        action = self.actions.get(action_id)
+        if action:
+            self.app.push_screen(ActionInfoModal(action))
 
 
 class CharacterSheet(Static):
@@ -81,10 +116,9 @@ class CharacterSheet(Static):
 
 
 class CharacterPanel(Static):
-    """Right-hand side: character sheet with dynamic character tabs."""
+    """Display character sheet with dynamic character tabs."""
 
     def compose(self) -> ComposeResult:
-        """Compose layout with Tabs and ContentSwitcher."""
         yield Tabs(id="character-tabs")
         yield ContentSwitcher(id="character-switcher")
 
@@ -110,7 +144,5 @@ class CharacterPanel(Static):
 
     @on(Tabs.TabActivated, "#character-tabs")
     def handle_tab_switch(self, event: Tabs.TabActivated) -> None:
-        """Switch or reset when clicking a tab."""
-
         switcher = self.query_one("#character-switcher", ContentSwitcher)
         switcher.current = event.tab.id

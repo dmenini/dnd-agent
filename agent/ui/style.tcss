@@ -23,3 +23,13 @@ Screen {
 .inp {
 	height: 10%;
 }
+
+#hcenter {
+    align: center middle;
+}
+
+#card {
+    padding: 1 2;
+    width: auto;
+    height: auto;
+}

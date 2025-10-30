@@ -13,7 +13,7 @@ from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 def render_action(action: Action, max_width: int = 50) -> Panel:
     """Render a single Action or subclass as a formatted Rich panel."""
 
-    header = f"[bold cyan]{action.name}[/bold cyan]"
+    header = f"[bold]{action.name}[/bold]"
     desc = Text(action.description + "\n", style="white")
 
     # Base info table

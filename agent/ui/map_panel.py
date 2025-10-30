@@ -7,9 +7,10 @@ from agent.models.state import State
 
 
 class MapPanel(Static):
-    """Top-left: the map."""
+    """Display map."""
 
     def update_state(self, state: State) -> None:
+        """Rebuild map given the current state."""
         group: list[Text | Markdown] = []
         if state.map:
             group.append(Markdown("## Map Overview\n", style="cyan"))
@@ -17,11 +18,11 @@ class MapPanel(Static):
 
             if state.turn_order:
                 group.append(Markdown("Visible Characters:\n", style="cyan"))
-                group.append(Markdown(f"{self.format_characters(state)}\n", style="cyan"))
+                group.append(Markdown(f"{self._format_characters(state)}\n", style="cyan"))
 
         self.update(Group(*group))
 
-    def format_characters(self, state: State) -> str:
+    def _format_characters(self, state: State) -> str:
         lines = []
         actor = state.current_actor
         visible_characters = state.visible_characters
