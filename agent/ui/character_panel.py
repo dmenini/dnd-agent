@@ -141,6 +141,7 @@ class CharacterPanel(Static):
 
         if state.turn_order:
             switcher.current = state.current_actor.id
+            tabs.active = state.current_actor.id
 
     @on(Tabs.TabActivated, "#character-tabs")
     def handle_tab_switch(self, event: Tabs.TabActivated) -> None:
