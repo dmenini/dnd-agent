@@ -80,8 +80,7 @@ class GameUI(App):
             yield self.command_input
 
     def on_mount(self) -> None:
-        if self._state:
-            self.update_state(self._state)
+        self.update_state(self._state)
 
     def update_state(self, state: State) -> None:
         """Render a new state."""
