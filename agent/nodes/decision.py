@@ -23,7 +23,7 @@ class DecisionNode:
         max_retries: int = 3,
         history_size: int = 15,
         simulation: bool = False,
-        mock_llm: bool = False
+        mock_llm: bool = False,
     ) -> None:
         self.llm = llm.with_structured_output(DecisionResult)
         self.system_prompt = system_prompt

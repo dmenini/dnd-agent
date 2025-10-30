@@ -33,3 +33,7 @@ Screen {
     width: auto;
     height: auto;
 }
+
+#map-content {
+    text-align: center;
+}

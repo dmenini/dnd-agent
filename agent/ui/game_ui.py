@@ -4,7 +4,6 @@ from asyncio import Queue
 from langchain_core.runnables import RunnableConfig
 from textual._path import CSSPathType
 from textual.app import App, ComposeResult
-from textual.command import CommandInput
 from textual.containers import Horizontal, Vertical
 from textual.driver import Driver
 from textual.widgets import Footer, Header, Input, Rule

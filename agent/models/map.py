@@ -173,4 +173,5 @@ class GameMap(BaseModel):
         for key, char in self.characters.items():
             grid[char.y][char.x] = f"{self.icons[key]}{direction_icons[char.direction]}"
 
-        return "\n".join(" ".join(row) for row in grid)
+        self.map = "\n".join(" ".join(row) for row in grid)
+        return self.map
