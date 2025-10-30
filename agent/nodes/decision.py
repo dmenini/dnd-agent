@@ -23,12 +23,14 @@ class DecisionNode:
         max_retries: int = 3,
         history_size: int = 15,
         simulation: bool = False,
+        mock_llm: bool = False
     ) -> None:
         self.llm = llm.with_structured_output(DecisionResult)
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.history_size = history_size
         self.simulation = simulation
+        self.mock_llm = mock_llm
 
     async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
@@ -61,7 +63,7 @@ class DecisionNode:
         wait = DecisionResult(
             action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
         )
-        if state.retries > self.max_retries:
+        if state.retries > self.max_retries or self.mock_llm:
             result = wait
         else:
             result = await self.predict_next_action(state, actor, list(actions.values()))

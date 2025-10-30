@@ -13,12 +13,12 @@ class MapPanel(Static):
         """Rebuild map given the current state."""
         group: list[Text | Markdown] = []
         if state.map:
-            group.append(Markdown("## Map Overview\n", style="cyan"))
-            group.append(Text(str(state.map), justify="center", style="cyan"))
+            group.append(Markdown("## Map Overview\n"))
+            group.append(Text(str(state.map), justify="center"))
 
             if state.turn_order:
-                group.append(Markdown("Visible Characters:\n", style="cyan"))
-                group.append(Markdown(f"{self._format_characters(state)}\n", style="cyan"))
+                group.append(Markdown("Visible Characters:\n"))
+                group.append(Markdown(f"{self._format_characters(state)}\n"))
 
         self.update(Group(*group))
 

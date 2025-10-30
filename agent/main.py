@@ -17,6 +17,8 @@ from agent.logs.events import LogLevel
 from agent.models.config import Config
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
+from agent.models.map import GameMap
+from agent.models.position import Position
 from agent.models.state import Character, State
 from agent.registration import register_actions, register_traits
 from agent.ui.game_ui import GameUI
@@ -118,7 +120,23 @@ async def main() -> None:
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.MAIN)
 
     gen = build_map_generator(config.agent)
-    game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
+
+    if config.agent.decision_node.get("mock_llm"):
+        game_map = GameMap(
+            map="",
+            width=MAP_SIZE,
+            height=MAP_SIZE,
+            walls=[],
+            characters={
+                hero.id: Position(x=0, y=0),
+                ally.id: Position(x=1, y=1),
+                orc.id: Position(x=2, y=2),
+                goblin.id: Position(x=3, y=3),
+            },
+        )
+    else:
+        game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
+
     state.map = game_map
 
     # Set icons

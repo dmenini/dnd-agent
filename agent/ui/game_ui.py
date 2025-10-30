@@ -49,7 +49,7 @@ class GameUI(App):
                 yield Rule(orientation="vertical")
                 yield CharacterPanel(id="character", classes="character")
 
-            yield CommandInput(id="user-input", classes="inp", placeholder="Press ENTER to start game...")
+            yield Input(id="user-input", classes="inp", placeholder="Press ENTER to start game...")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -75,7 +75,7 @@ class GameUI(App):
 
     async def advance_graph(self) -> None:
         """Manually step the graph."""
-        command_input = self.query_one("#user-input", CommandInput)
+        command_input = self.query_one("#user-input", Input)
         command_input.placeholder = "Thinking..."
         command_input.refresh()
 

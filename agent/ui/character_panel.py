@@ -110,8 +110,8 @@ class CharacterSheet(Static):
 
     def compose(self) -> ComposeResult:
         with VerticalScroll():
-            yield Markdown(f"## Character {self.char}\n")
-            yield Markdown("## Available Actions\n\n")
+            yield Markdown(f"# Character {self.char}\n")
+            yield Markdown("# Available Actions\n\n")
             yield ActionsSummaryTable(actions=list(self.char.get_available_actions().values()))
 
 
