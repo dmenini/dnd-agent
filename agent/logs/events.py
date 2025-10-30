@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -81,6 +81,7 @@ class LogEvent(BaseModel):
     def __rich__(self) -> Text | Markdown | None:
         color = self._color_for_actor()
         msg = self._highlight_numbers(str(self))
+        result: Text | Markdown
 
         # Event formatting based on type
         if self.type == LogLevel.HEADER:

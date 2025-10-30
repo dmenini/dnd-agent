@@ -10,7 +10,7 @@ class MapPanel(Static):
     """Top-left: the map."""
 
     def update_state(self, state: State) -> None:
-        group = []
+        group: list[Text | Markdown] = []
         if state.map:
             group.append(Markdown("## Map Overview\n", style="cyan"))
             group.append(Text(str(state.map), justify="center", style="cyan"))
