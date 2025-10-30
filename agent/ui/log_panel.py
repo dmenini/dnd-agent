@@ -1,10 +1,7 @@
-from typing import Any
-
-from rich.text import Text
 from textual import on
 from textual.events import Key
 from textual.reactive import reactive
-from textual.widgets import RichLog
+from textual.widgets import ListItem, ListView, Markdown, Static
 
 from agent.logs.events import LogEvent, LogLevel
 from agent.models.state import State
@@ -13,29 +10,20 @@ WINDOW_SIZE = 100
 CACHE_SIZE = 1000
 
 
-class LogPanel(RichLog):
-    """
-    1. HEADER and MAIN logs are always visible.
-    2. Only MAIN logs are selectable by default.
-    3. When a MAIN log is expanded, its DETAIL/DEBUG logs become selectable.
-    4. Pressing Enter on any selectable log under an expanded MAIN collapses the MAIN.
-    """
-
+class LogPanel(ListView):
     verbosity: reactive[int] = reactive(1)
-    selected_index: reactive[int | None] = reactive(None)
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(highlight=False, markup=True, wrap=True, auto_scroll=False, **kwargs)
-        self._last_rendered_count = 0
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._cached_logs: list[LogEvent] = []
+        self._expanded_mains: set[str] = set()
+        self._main_lookup: dict[int, str] = {}  # index -> parent MAIN id
         self._filtered_logs: list[LogEvent] = []
-        self._selectable_indices: list[int] = []  # indices of visible logs that can be selected
-        self._expanded_mains: set[str] = set()  # ids of MAIN logs that are expanded
-        self._main_lookup: dict[int, str] = {}  # maps visible log idx -> parent MAIN id
+        self._last_rendered_count = 0
 
     def update_state(self, state: State) -> None:
         logs: list[LogEvent] = state.log.events
-        new_logs = logs[self._last_rendered_count :]
+        new_logs = logs[self._last_rendered_count:]
 
         # Store locally so we can scroll/interact later
         self._cached_logs.extend(new_logs)
@@ -45,21 +33,11 @@ class LogPanel(RichLog):
         if len(self._cached_logs) > CACHE_SIZE:
             self._cached_logs = self._cached_logs[-CACHE_SIZE:]
 
-        self._filtered_logs = self._filter_logs()
-
-        # Start from the bottom
-        if self.selected_index is None:
-            self.selected_index = len(self._selectable_indices) - 1
-
-        # Adjust selection if out of bounds
-        if self.selected_index >= len(self._selectable_indices):
-            self.selected_index = max(0, len(self._selectable_indices) - 1)
-
+        self._expanded_mains.clear()
         self.refresh_logs()
         self.scroll_end()
 
     def _filter_logs(self) -> list[LogEvent]:
-        """Return logs and determine which lines are selectable."""
         visible: list[LogEvent] = []
         self._main_lookup.clear()
 
@@ -75,56 +53,47 @@ class LogPanel(RichLog):
                     self._main_lookup[len(visible) - 1] = event.id  # associate sub-item with parent MAIN
                     sub_idx += 1
 
-        # Compute selectable indices: MAIN always, expanded DETAIL/DEBUG too
-        self._selectable_indices = [
-            idx for idx, e in enumerate(visible) if e.type == LogLevel.MAIN or idx in self._main_lookup
-        ]
-
         return visible
 
     def refresh_logs(self) -> None:
-        if self.selected_index is None and self._selectable_indices:
-            self.selected_index = len(self._selectable_indices) - 1
-
+        self._filtered_logs = self._filter_logs()
         self.clear()
-        for idx, event in enumerate(self._filtered_logs):
-            text = event.__rich__()
-            if self._selectable_indices and idx == self._selectable_indices[self.selected_index]:
-                if not isinstance(text, Text):
-                    raise TypeError
-                text.stylize("reverse bold")
-            self.write(text)
+
+        for event in self._filtered_logs:
+            if event.type == LogLevel.MAIN:
+                item = ListItem(Markdown(str(event)))
+            elif event.type == LogLevel.HEADER:
+                # TODO: Make headers not selectable
+                item = ListItem(Markdown(str(event)))
+            else:
+                item = ListItem(Static(str(event)))
+            self.append(item)
 
     @on(Key)
     def on_key(self, event: Key) -> None:
-        if not self._selectable_indices or self.selected_index is None:
-            return
-        if event.key == "up":
-            self.selected_index = max(0, self.selected_index - 1)
-            self.refresh_logs()
-        elif event.key == "down":
-            self.selected_index = min(len(self._selectable_indices) - 1, self.selected_index + 1)
-            self.refresh_logs()
-        elif event.key == "enter":
-            self._handle_collapse_expand()
-
-    def _handle_collapse_expand(self) -> None:
-        idx = self._selectable_indices[self.selected_index]
-        log = self._filtered_logs[idx]
-
-        # Determine the parent MAIN id
-        main_id = log.id if log.type == LogLevel.MAIN else self._main_lookup.get(idx)
-        if main_id is None:
+        if self.index is None or not self._filtered_logs:
             return
 
-        if main_id in self._expanded_mains:
-            # Collapse and reset the selection to the parent item
-            self._expanded_mains.remove(main_id)
-            self.selected_index = next(
-                (i for i, e_idx in enumerate(self._selectable_indices) if self._filtered_logs[e_idx].id == main_id), 0
-            )
-        else:
-            self._expanded_mains.add(main_id)
+        if event.key == "enter":
+            idx = self.index
+            log = self._filtered_logs[idx]
 
-        self._filtered_logs = self._filter_logs()
-        self.refresh_logs()
+            # Determine main id (either self or parent)
+            main_id = log.id if log.type == LogLevel.MAIN else self._main_lookup.get(idx)
+            if main_id is None:
+                return
+
+            if main_id in self._expanded_mains:
+                # Collapse
+                self._expanded_mains.remove(main_id)
+            else:
+                # Expand
+                self._expanded_mains.add(main_id)
+
+            self.refresh_logs()
+
+            # Move selection to parent MAIN
+            for i, e in enumerate(self._filtered_logs):
+                if e.id == main_id:
+                    self.index = i
+                    break

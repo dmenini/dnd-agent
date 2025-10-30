@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -61,28 +61,41 @@ class LogEvent(BaseModel):
         """Highlight numbers in bold yellow for readability."""
         return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
 
-    def __rich__(self) -> Text | Markdown | None:
-        color = self._color_for_actor()
-        msg = self._highlight_numbers(self.message)
-        result: Text | Markdown = Text(msg)
-
+    def __str__(self) -> str:
         # Event formatting based on type
+        result = self.message
+
         if self.type == LogLevel.HEADER:
-            msg = f"# **{self.message}**"
-            result = Markdown(msg, justify="center", style=color)
+            result = f"### **{result}**"
 
         elif self.type == LogLevel.MAIN:
             icon = self.icon or "👤"
-            result = Text.from_markup(f"[bold {color}]{icon} → {msg}[/bold {color}]")
+            result = f"{icon} → {result}"
 
         elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
             ai_icon = f"({Icon.AI})" if self.show_ai else ""
-            result = Text.from_markup(f"    [dim]{self.icon} {msg} {ai_icon}[/dim]")
-
-        elif self.type == LogLevel.MAP:
-            result = Text(msg, style=color, justify="center")
+            result = f"    {self.icon} {result} {ai_icon}"
 
         return result
 
-    def __str__(self) -> str:
-        return f"{self.actor_id or 'system'}: {self.message}"
+    def __rich__(self) -> Text | Markdown | None:
+        color = self._color_for_actor()
+        msg = self._highlight_numbers(str(self))
+
+        # Event formatting based on type
+        if self.type == LogLevel.HEADER:
+            result = Markdown(str(self), justify="center", style=color)
+
+        elif self.type == LogLevel.MAIN:
+            result = Text.from_markup(f"[bold {color}]{msg}[/bold {color}]")
+
+        elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
+            result = Text.from_markup(f"    [dim]{msg}[/dim]")
+
+        elif self.type == LogLevel.MAP:
+            result = Text(str(self), style=color, justify="center")
+
+        else:
+            result = Text(msg)
+
+        return result
