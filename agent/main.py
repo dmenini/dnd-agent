@@ -4,10 +4,7 @@ from logging import getLogger
 from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
-from langchain_core.runnables import RunnableConfig
-from langgraph.graph.state import CompiledStateGraph
 
-from agent.ai.graph import build_graph
 from agent.ai.map_generator import build_map_generator
 from agent.character.attributes import Attributes
 from agent.character.character import Party
@@ -37,25 +34,6 @@ getLogger("langchain_aws").setLevel(logging.WARNING)
 
 register_actions()
 register_traits()
-
-
-class GameController:
-    def __init__(self, graph: CompiledStateGraph, ui: GameUI) -> None:
-        self.graph = graph
-        self.ui = ui
-
-    async def get_player_input(self, state: State, prompt: str) -> str:
-        self.ui.update_state(state)
-        self.ui.show_prompt(prompt)
-        return await self.ui.wait_for_input()
-
-    async def run(self, state: State) -> None:
-        # Start the UI and run it in the current event loop
-        ui_task = asyncio.create_task(self.ui.run_async())
-
-        # Run your controller concurrently
-        await self.graph.ainvoke(state, RunnableConfig(recursion_limit=MAX_ITER))
-        await ui_task
 
 
 async def main() -> None:
@@ -173,14 +151,8 @@ async def main() -> None:
     state.characters = {hero.id: hero, ally.id: ally, orc.id: orc, goblin.id: goblin}
     state.parties = {party_players.id: party_players, party_enemies.id: party_enemies}
 
-    graph = build_graph(config=config.agent)
-    ui = GameUI(initial_state=state)
-    controller = GameController(graph, ui)
-
-    state.controller = controller
-
-    # Run the game logic (blocking)
-    await controller.run(state)
+    ui = GameUI(initial_state=state, config=config)
+    await ui.run_async()
 
 
 if __name__ == "__main__":

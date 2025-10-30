@@ -16,6 +16,9 @@ class StartCombatNode:
     async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
+        if state.turn_order:
+            return state
+
         state.log.log_header("Starting combat!")
 
         rolls = []

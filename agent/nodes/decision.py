@@ -48,9 +48,6 @@ class DecisionNode:
 
         state.update_visibility(actor)
 
-        if not self.simulation and not actor.is_player and state.controller:
-            await state.controller.get_player_input(state, prompt="Enemy turn, press ENTER to continue")
-
         actions = actor.get_available_actions()
         if not actions:
             state.action = None
@@ -90,12 +87,7 @@ class DecisionNode:
         return await self.get_ai_decision(state, actor, actions)
 
     async def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
-        if not state.controller:
-            raise ValueError
-
-        player_input = await state.controller.get_player_input(
-            state, prompt=f"What should {actor.name} do? (ENTER to let AI decide)"
-        )
+        player_input = state.command
 
         # Option 1: Exact match
         for action in actions:
@@ -103,7 +95,7 @@ class DecisionNode:
                 return DecisionResult(action_id=action.id, description=f"{actor.name} chooses to {action.name}.")
 
         # Option 2: Natural language command → Action prediction
-        return self.interpret_player_input(state, actor, actions, player_input)
+        return await self.interpret_player_input(state, actor, actions, player_input)
 
     async def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         # Prepare message history from previous main events
@@ -138,7 +130,7 @@ class DecisionNode:
             ]
         )
 
-    def interpret_player_input(
+    async def interpret_player_input(
         self, state: State, actor: Character, actions: list[Action], text: str
     ) -> DecisionResult:
         text = text or "No decision provided. Choose the most optimal action for the player."
@@ -149,7 +141,7 @@ class DecisionNode:
             f"{text}\n"
             f"{self._format_context(state, actor, actions)}"
         )
-        return self.llm.invoke(  # type: ignore[return-value]
+        return await self.llm.ainvoke(  # type: ignore[return-value]
             [
                 SystemMessage(content=self.system_prompt),
                 HumanMessage(content=user_prompt),

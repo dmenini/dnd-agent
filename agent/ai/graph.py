@@ -24,12 +24,6 @@ class TurnPhase(str, Enum):
     END = "end"
 
 
-def should_continue(state: State) -> str:
-    if state.done:
-        return END
-    return TurnPhase.DECIDE
-
-
 def is_valid_action(state: State) -> str:
     if state.verification_result and state.verification_result.valid:
         return TurnPhase.EXECUTE
@@ -61,6 +55,5 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     graph.add_edge(TurnPhase.DECIDE, TurnPhase.VERIFY)
     graph.add_conditional_edges(TurnPhase.VERIFY, is_valid_action)
     graph.add_edge(TurnPhase.EXECUTE, TurnPhase.END)
-    graph.add_conditional_edges(TurnPhase.END, should_continue)
 
     return graph.compile()
