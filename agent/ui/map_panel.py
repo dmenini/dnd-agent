@@ -10,14 +10,16 @@ class MapPanel(Static):
     """Top-left: the map."""
 
     def update_state(self, state: State) -> None:
-        if state.map and state.turn_order:
-            renderable = Group(
-                Markdown("## Map Overview\n", style="cyan"),
-                Text(str(state.map), justify="center", style="cyan"),
-                Markdown("Visible Characters:\n", style="cyan"),
-                Markdown(f"{self.format_characters(state)}\n", style="cyan"),
-            )
-            self.update(renderable)
+        group = []
+        if state.map:
+            group.append(Markdown("## Map Overview\n", style="cyan"))
+            group.append(Text(str(state.map), justify="center", style="cyan"))
+
+            if state.turn_order:
+                group.append(Markdown("Visible Characters:\n", style="cyan"))
+                group.append(Markdown(f"{self.format_characters(state)}\n", style="cyan"))
+
+        self.update(Group(*group))
 
     def format_characters(self, state: State) -> str:
         lines = []
