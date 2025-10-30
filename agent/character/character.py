@@ -17,7 +17,7 @@ from agent.character.resources import ActionEconomy, SpellSlots
 from agent.character.stats import Stats
 from agent.effects.traits import TargetAdvantageOnAttackRoll
 from agent.equipment.weapons import MeleeWeapon
-from agent.logs.events import Icon, LogLevel
+from agent.logs.events import Icon
 from agent.models.enums import FeatureId
 from agent.models.position import Position
 

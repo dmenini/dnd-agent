@@ -1,5 +1,5 @@
-from textual import on
-from textual.events import Key
+from typing import Any
+
 from textual.reactive import reactive
 from textual.widgets import ListItem, ListView, Markdown, Static
 
@@ -13,7 +13,7 @@ CACHE_SIZE = 1000
 class LogPanel(ListView):
     verbosity: reactive[int] = reactive(1)
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._cached_logs: list[LogEvent] = []
         self._expanded_mains: set[str] = set()
@@ -23,7 +23,7 @@ class LogPanel(ListView):
 
     def update_state(self, state: State) -> None:
         logs: list[LogEvent] = state.log.events
-        new_logs = logs[self._last_rendered_count:]
+        new_logs = logs[self._last_rendered_count :]
 
         # Store locally so we can scroll/interact later
         self._cached_logs.extend(new_logs)

@@ -5,7 +5,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, VerticalScroll
 from textual.events import Key
-from textual.screen import ModalScreen
+from textual.screen import ModalScreen, ScreenResultType
 from textual.widgets import ContentSwitcher, DataTable, Footer, Markdown, Static, Tab, Tabs
 
 from agent.actions.base import Action
@@ -35,7 +35,7 @@ class ActionInfoModal(ModalScreen):
         yield Footer()
 
     @on(Key)
-    def action_dismiss(self, _: Key) -> None:
+    def action_dismiss(self, _: ScreenResultType | None = None) -> None:  # type: ignore[override]
         """Close modal on any key press."""
         self.dismiss()
 
@@ -77,7 +77,7 @@ class ActionsSummaryTable(DataTable):
         elif isinstance(action, SupportSpellAction):
             info = f"Lv {action.level.value}"
 
-        elif getattr(action, "status_effects", None):
+        elif hasattr(action, "status_effects"):
             eff = ", ".join(e.type.value for e in action.status_effects)
             info += f" (+ {eff})"
 
@@ -98,7 +98,7 @@ class ActionsSummaryTable(DataTable):
     def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:
         """Open a modal when a cell is clicked."""
         action_id = event.cell_key.row_key.value
-        action = self.actions.get(action_id)
+        action = self.actions.get(action_id or "")
         if action:
             self.app.push_screen(ActionInfoModal(action))
 
@@ -112,7 +112,7 @@ class CharacterSheet(Static):
         with VerticalScroll():
             yield Markdown(f"## Character {self.char}\n")
             yield Markdown("## Available Actions\n\n")
-            yield ActionsSummaryTable(actions=self.char.get_available_actions().values())
+            yield ActionsSummaryTable(actions=list(self.char.get_available_actions().values()))
 
 
 class CharacterPanel(Static):

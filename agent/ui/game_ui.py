@@ -79,17 +79,23 @@ class GameUI(App):
         command_input.placeholder = "Thinking..."
         command_input.refresh()
 
+        def report_update(state: State) -> None:
+            self._state = state
+            self.update_state(self._state)
+
+            placeholder = (
+                f"What should {self._state.current_actor.name} do? (ENTER to let AI decide)"
+                if self._state.is_player_turn
+                else "Enemy's turn, press ENTER to continue"
+            )
+            command_input.placeholder = placeholder
+            command_input.refresh()
+
+        self._state.update_callback = report_update
+
         state = await self.graph.ainvoke(
             self._state,
             RunnableConfig(recursion_limit=20),
         )
         self._state = State.model_validate(state)
-
         self.update_state(self._state)
-        placeholder = (
-            f"What should {self._state.current_actor.name} do? (ENTER to let AI decide)"
-            if self._state.is_player_turn
-            else "Enemy's turn, press ENTER to continue"
-        )
-        command_input.placeholder = placeholder
-        command_input.refresh()

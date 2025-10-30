@@ -47,6 +47,8 @@ class DecisionNode:
             actor.start_turn()
 
         state.update_visibility(actor)
+        if state.update_callback is not None:
+            state.update_callback(state)
 
         actions = actor.get_available_actions()
         if not actions:
