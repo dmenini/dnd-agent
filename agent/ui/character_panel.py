@@ -3,11 +3,69 @@ from typing import Any
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
-from textual.widgets import ContentSwitcher, Markdown, Static, Tab, Tabs
+from textual.widgets import ContentSwitcher, DataTable, Markdown, Static, Tab, Tabs
 
-from agent.actions.render import render_actions_summary
+from agent.actions.base import Action
+from agent.actions.common.attack import AttackAction
+from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.character.character import Character
 from agent.models.state import State
+
+
+class ActionsSummaryTable(DataTable):
+    """A compact summary table of all actions with minimal info."""
+
+    def __init__(self, actions: list[Action]) -> None:
+        super().__init__()
+        self._setup_columns()
+        self._populate_rows(actions)
+
+    def _setup_columns(self) -> None:
+        """Define consistent columns."""
+        columns = [
+            "ID",
+            "Name",
+            "Category",
+            "Range",
+            "Targeting",
+            "Info",
+        ]
+        for name in columns:
+            self.add_column(name)
+
+    def _info_for_action(self, action: Action) -> str:
+        """Build the info field dynamically depending on subclass."""
+        info = ""
+
+        if isinstance(action, AttackAction):
+            info = f"{action.hits} hit(s) for {action.damage_dice} {action.damage_type.value} damage"
+
+        elif isinstance(action, AttackSpellAction):
+            info = (
+                f"Lv {action.level.value}, {action.hits} hit(s) for "
+                f"{action.damage_dice} {action.damage_type.value} damage"
+            )
+
+        elif isinstance(action, SupportSpellAction):
+            info = f"Lv {action.level.value}"
+
+        elif getattr(action, "status_effects", None):
+            eff = ", ".join(e.type.value for e in action.status_effects)
+            info += f" (+ {eff})"
+
+        return info or "-"
+
+    def _populate_rows(self, actions: list[Action]) -> None:
+        """Add sorted rows to the table."""
+        for a in sorted(actions, key=lambda x: x.name):
+            self.add_row(
+                a.id,
+                f"[bold]{a.name}[/bold]",
+                a.category.value,
+                f"{a.range} m",
+                a.targeting.value,
+                self._info_for_action(a),
+            )
 
 
 class CharacterSheet(Static):
@@ -18,9 +76,8 @@ class CharacterSheet(Static):
     def compose(self) -> ComposeResult:
         with VerticalScroll():
             yield Markdown(f"## Character {self.char}\n")
-            yield Markdown("---\n")
             yield Markdown("## Available Actions\n\n")
-            yield Static(render_actions_summary(list(self.char.get_available_actions().values())))
+            yield ActionsSummaryTable(actions=self.char.get_available_actions().values())
 
 
 class CharacterPanel(Static):

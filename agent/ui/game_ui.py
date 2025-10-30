@@ -7,7 +7,7 @@ from textual.app import App, ComposeResult
 from textual.command import CommandInput
 from textual.containers import Horizontal, Vertical
 from textual.driver import Driver
-from textual.widgets import Footer, Header, Input
+from textual.widgets import Footer, Header, Input, Rule
 
 from agent.ai.graph import build_graph
 from agent.models.config import Config
@@ -43,8 +43,10 @@ class GameUI(App):
             with Horizontal():
                 with Vertical():
                     yield MapPanel(id="map", classes="map")
+                    yield Rule()
                     yield LogPanel(id="logs", classes="logs")
 
+                yield Rule(orientation="vertical")
                 yield CharacterPanel(id="character", classes="character")
 
             yield CommandInput(id="user-input", classes="inp", placeholder="Press ENTER to start game...")
