@@ -201,7 +201,7 @@ class CharacterBase(BaseModel):
 
     @field_validator("passives", mode="before")
     @classmethod
-    def deserialize_traits(cls, v: Any) -> list[Action]:
+    def deserialize_traits(cls, v: Any) -> list[Trait]:
         if not isinstance(v, list):
             msg = f"Invalid trait payload: {v}"
             raise TypeError(msg)
