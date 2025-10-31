@@ -4,7 +4,9 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
+from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.equipment.armor import Armor, ArmorType
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.decision import DecisionResult
@@ -56,6 +58,7 @@ def actor() -> Character:
         name="Alfred",
         icon="⚔️",
         pos=Position(x=2, y=2),
+        attributes=Attributes(strength=20),
         is_player=True,
         party=party_players,
     )
@@ -70,6 +73,12 @@ def target() -> Character:
         icon="👹",
         pos=Position(x=3, y=2),
         party=party_players,
+        armor=Armor(
+            name="Armor",
+            description="",
+            armor_type=ArmorType.HEAVY,
+            base_ac=0,
+        )
     )
 
 

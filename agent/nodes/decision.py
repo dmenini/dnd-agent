@@ -62,7 +62,7 @@ class DecisionNode:
         wait = DecisionResult(
             action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
         )
-        if state.retries > self.max_retries or self.mock_llm:
+        if state.retries > self.max_retries:
             result = wait
         else:
             result = await self.predict_next_action(state, actor, list(actions.values()))
@@ -84,9 +84,16 @@ class DecisionNode:
             raise ValueError
 
         if actor.is_player and not self.simulation:
+            # In case of simulation enabled, treat player as the AI
             return await self.get_player_decision(state, actor, actions)
 
-        return await self.get_ai_decision(state, actor, actions)
+        if not self.mock_llm:
+            return await self.get_ai_decision(state, actor, actions)
+
+        # Skip turn as fallback
+        return DecisionResult(
+            action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
+        )
 
     async def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         player_input = state.command
@@ -96,7 +103,13 @@ class DecisionNode:
             if player_input.strip().lower() in (action.id.lower(), action.name.lower()):
                 return DecisionResult(action_id=action.id, description=f"{actor.name} chooses to {action.name}.")
 
-        # Option 2: Natural language command → Action prediction
+        # Option 2: Raw decision (for testing purpose)
+        try:
+            return DecisionResult.model_validate_json(player_input)
+        except ValueError:
+            pass
+
+        # Option 3: Natural language command → Action prediction
         return await self.interpret_player_input(state, actor, actions, player_input)
 
     async def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:

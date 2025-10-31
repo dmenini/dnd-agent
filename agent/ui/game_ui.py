@@ -1,6 +1,7 @@
 import uuid
 
 from langchain_core.runnables import RunnableConfig
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 from textual._path import CSSPathType
 from textual.app import App, ComposeResult
@@ -32,7 +33,8 @@ class GameUI(App):
         super().__init__(driver_class, css_path, watch_css, ansi_color)
         self.title = "DnD Agent"
 
-        self.state = initial_state
+        self._init_state = initial_state.model_copy(deep=True)
+        self.state = initial_state.model_copy(deep=True)
         self.graph = build_graph(config=config.agent)
 
         self.started = False
@@ -72,6 +74,11 @@ class GameUI(App):
         event.input.placeholder = "Thinking..."
         event.input.refresh()
 
+        # Handle new game
+        if self.state.done:
+            self.started = False
+            self.update_state(self._init_state)
+
         config = RunnableConfig(recursion_limit=20, configurable={"thread_id": self.thread_id})
 
         # First run - start the graph
@@ -86,8 +93,9 @@ class GameUI(App):
             state = State.model_validate(result)
             self.update_state(state)
 
-            # Immediately continue execution until the next interrupt
-            result = await self.graph.ainvoke(self.state, config)
+            if not state.done:
+                # Immediately continue execution until the next interrupt
+                result = await self.graph.ainvoke(self.state, config)
 
         state = State.model_validate(result)
         self.update_state(state)
@@ -95,4 +103,8 @@ class GameUI(App):
         # If new interrupt, update UI placeholder
         if intr := result.get("__interrupt__"):
             event.input.placeholder = intr[0].value
+            event.input.refresh()
+
+        if state.done:
+            event.input.placeholder = "Press ENTER to start game..."
             event.input.refresh()

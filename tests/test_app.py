@@ -17,7 +17,6 @@ async def test_on_input_submitted(
     actor: Character,
     target: Character,
     game_map: GameMap,
-    mocker: MockerFixture
 ) -> None:
     target.attributes.hp = 1
 
@@ -71,9 +70,22 @@ async def test_on_input_submitted(
         await pilot.pause()
 
         # Enemy turn skipped as it's dead
-        assert "Thinking" in input_widget.placeholder
+        assert "Press ENTER to start game..." in input_widget.placeholder
         assert ui.state.current_actor.id == actor.id
         assert ui.state.log.events[-1].message == "The players are victorious! Party 'Heroes' stands triumphant!"
         assert ui.state.done is True
 
-        # TODO: Actor kills monster and wins
+        # Game starts again upon ENTER
+        await pilot.click(input_widget)
+        await pilot.press("enter")
+        await pilot.pause()
+
+        # Actor turn -> wait
+        assert actor.name in input_widget.placeholder
+        assert ui.state.current_actor.id == actor.id
+        assert log_panel._filtered_logs[-1].message == f"Turn 1.1 - {actor.name}"
+        assert ui.state.log.events[-1].message == f"Turn 1.1 - {actor.name}"
+        await pilot.click(input_widget)
+        input_widget.value = "wait"
+        await pilot.press("enter")
+        await pilot.pause()
