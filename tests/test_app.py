@@ -27,6 +27,9 @@ async def test_game_loop(
     )
     config.decision_node["mock_llm"] = True  # To always wait and pass turn
 
+    num_passives = len(actor.passives)
+    num_abilities = len(actor.abilities)
+
     ui = GameUI(initial_state=state, config=Config(agent=config))
     async with ui.run_test() as pilot:
         log_panel = pilot.app.query_one("#logs", LogPanel)
@@ -43,6 +46,10 @@ async def test_game_loop(
         assert ui.state.current_actor.id == actor.id
         assert log_panel._filtered_logs[-1].message == f"Turn 1.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 1.1 - {actor.name}"
+        # No changes due to serialization
+        assert len(ui.state.characters[actor.id].abilities) == num_abilities
+        assert len(ui.state.characters[actor.id].passives) == num_passives
+
         await pilot.click(input_widget)
         input_widget.value = "wait"
         await pilot.press("enter")

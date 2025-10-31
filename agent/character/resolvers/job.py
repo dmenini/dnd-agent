@@ -41,8 +41,9 @@ class JobResolver(CharacterBase):
                 uses_per_rest=feature.uses_per_rest,
                 **feature.kwargs,
             )
-            self.abilities.append(action)
-            self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DEBUG)
+            if action not in self.abilities:
+                self.abilities.append(action)
+                self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DEBUG)
 
         elif feature.type == FeatureType.PASSIVE:
             trait = TraitRegistry.create(
@@ -52,8 +53,9 @@ class JobResolver(CharacterBase):
                 description=feature.description,
                 **feature.kwargs,
             )
-            self.register_passive(trait)
-            self.log_event(f"{self.name} gained passive trait {feature.name}", log_type=LogLevel.DEBUG)
+            if trait not in self.passives:
+                self.register_passive(trait)
+                self.log_event(f"{self.name} gained passive trait {feature.name}", log_type=LogLevel.DEBUG)
 
     def _remove_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
@@ -70,6 +72,6 @@ class JobResolver(CharacterBase):
             stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
             **spell.model_dump(exclude={"type"}),
         )
-        if isinstance(action, (AttackSpellAction, SupportSpellAction)):
+        if isinstance(action, (AttackSpellAction, SupportSpellAction)) and action not in self.spells:
             self.spells.append(action)
             self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DEBUG)
