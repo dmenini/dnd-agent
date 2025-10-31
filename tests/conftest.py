@@ -78,7 +78,7 @@ def target() -> Character:
             description="",
             armor_type=ArmorType.HEAVY,
             base_ac=0,
-        )
+        ),
     )
 
 

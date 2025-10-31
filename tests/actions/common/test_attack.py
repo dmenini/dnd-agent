@@ -75,6 +75,7 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
 def test_attack_critical_hit(actor: Character, target: Character, mocker: MockerFixture) -> None:
     action = make_attack_action()
     roll2 = 5
+    actor.attributes.strength = 10
 
     actor._dice = mocker.MagicMock()
     actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[20], total=20, raw=20)

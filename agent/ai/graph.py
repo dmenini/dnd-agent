@@ -1,9 +1,11 @@
 from enum import Enum
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.types import Command
 
 from agent.ai.components import create_llm
 from agent.models.config import AgentConfig
@@ -58,3 +60,32 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
 
     memory = MemorySaver()
     return graph.compile(checkpointer=memory)
+
+
+async def run_interrupt_loop(state: State, graph: CompiledStateGraph) -> None:
+    started = False
+    print("Press ENTER to start game...")
+    while True:
+        command = input()
+
+        config = RunnableConfig(recursion_limit=20, configurable={"thread_id": "thread-1"})
+
+        # First run - start the graph
+        if not started:
+            result = await graph.ainvoke(state, config)
+            started = True
+
+        # User responded - resume last interrupt
+        else:
+            # Resume the last interrupt (continues thread)
+            result = await graph.ainvoke(Command(resume=command), config)
+            state = State.model_validate(result)
+
+            # Immediately continue execution until the next interrupt
+            result = await graph.ainvoke(state, config)
+
+        state = State.model_validate(result)
+
+        # If new interrupt, update UI placeholder
+        if intr := result.get("__interrupt__"):
+            print(intr[0].value)

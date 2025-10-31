@@ -114,15 +114,6 @@ async def main() -> None:
             job=Fighter,
             party=enemy_party,
         ),
-        Character(
-            id="goblin_1",
-            name="Goblin Dramer",
-            icon="🧌",
-            pos=Position(x=3, y=3),
-            job=Mage,
-            party=enemy_party,
-            main_hand=dagger,
-        ),
     ]
 
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.MAIN)

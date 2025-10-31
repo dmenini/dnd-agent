@@ -91,9 +91,7 @@ class DecisionNode:
             return await self.get_ai_decision(state, actor, actions)
 
         # Skip turn as fallback
-        return DecisionResult(
-            action_id="wait", description=f"{actor.name} doesn't play by the rules and is forced to skip turn."
-        )
+        return DecisionResult(action_id="wait", description=f"{actor.name} passes turn.")
 
     async def get_player_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         player_input = state.command
@@ -110,7 +108,10 @@ class DecisionNode:
             pass
 
         # Option 3: Natural language command → Action prediction
-        return await self.interpret_player_input(state, actor, actions, player_input)
+        if not self.mock_llm:
+            return await self.interpret_player_input(state, actor, actions, player_input)
+
+        return DecisionResult(action_id="wait", description=f"{actor.name} passes turn.")
 
     async def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         # Prepare message history from previous main events
@@ -190,7 +191,7 @@ class DecisionNode:
 
         return messages
 
-    def format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
+    def _format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
         lines = []
         for c in visible_characters:
             dist = game_map.distance(actor.pos, c.pos)
@@ -217,10 +218,10 @@ class DecisionNode:
             f"{'\n'.join([str(act) for act in actions])}\n"
             f"---\n"
             f"### Visible Allies\n"
-            f"{self.format_characters(visible_allies, state.map, actor)}\n"
+            f"{self._format_characters(visible_allies, state.map, actor)}\n"
             f"---\n"
             f"### Visible Enemies\n"
-            f"{self.format_characters(visible_enemies, state.map, actor)}\n"
+            f"{self._format_characters(visible_enemies, state.map, actor)}\n"
             f"---\n"
             f"### Map Overview\n"
             f"{state.map}\n"

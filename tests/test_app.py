@@ -1,5 +1,4 @@
 import pytest
-from pytest_mock import MockerFixture
 from textual.widgets import Input
 
 from agent.character.character import Character
@@ -12,7 +11,7 @@ from agent.ui.log_panel import LogPanel
 
 
 @pytest.mark.asyncio
-async def test_on_input_submitted(
+async def test_game_loop(
     config: AgentConfig,
     actor: Character,
     target: Character,
@@ -64,8 +63,9 @@ async def test_on_input_submitted(
         assert log_panel._filtered_logs[-1].message == f"Turn 2.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 2.1 - {actor.name}"
         await pilot.click(input_widget)
-        input_widget.value = DecisionResult(action_id="main_hand_attack", target_hits={target.id: 1},
-                                            description="Main attack").model_dump_json()
+        input_widget.value = DecisionResult(
+            action_id="main_hand_attack", target_hits={target.id: 1}, description="Main attack"
+        ).model_dump_json()
         await pilot.press("enter")
         await pilot.pause()
 
