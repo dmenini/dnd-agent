@@ -2,6 +2,7 @@ from logging import getLogger
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langgraph.types import interrupt
 
 from agent.actions.base import Action
 from agent.character.character import Character
@@ -44,13 +45,11 @@ class DecisionNode:
             msg = "Map not initialized"
             raise ValueError(msg)
 
-        if actor.turn_done:
-            actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
-            actor.start_turn()
-
-        state.update_visibility(actor)
-        if state.update_callback is not None:
-            state.update_callback(state)
+        if not self.simulation:
+            if actor.is_player:
+                state.command = interrupt(f"What should {actor.name} do? (ENTER to let AI decide)")
+            else:
+                state.command = interrupt("Enemy's turn, press ENTER to continue")
 
         actions = actor.get_available_actions()
         if not actions:
@@ -74,7 +73,6 @@ class DecisionNode:
         state.action = actions[result.action_id]
         state.decision = result
 
-        state.log.log_newline()
         action_names = [a.name for a in actions.values()]
         actor.log_event(result.description, log_type=LogLevel.MAIN)
         actor.log_event(f"Available actions: {action_names}")

@@ -1,11 +1,11 @@
 from enum import Enum
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from agent.ai.components import create_llm
-from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig
 from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
@@ -38,7 +38,7 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     # Nodes
     agent = DecisionNode(llm=llm, system_prompt=config.prompts.system, **config.decision_node)
     verifier = RulesVerifierNode()
-    start_combat = StartCombatNode(dice=DiceRoller())
+    start_combat = StartCombatNode()
     combat = ActionProcessorNode()
     end_combat = EndCombatNode()
 
@@ -56,4 +56,5 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     graph.add_conditional_edges(TurnPhase.VERIFY, is_valid_action)
     graph.add_edge(TurnPhase.EXECUTE, TurnPhase.END)
 
-    return graph.compile()
+    memory = MemorySaver()
+    return graph.compile(checkpointer=memory)

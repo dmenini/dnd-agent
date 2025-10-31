@@ -27,7 +27,7 @@ MAX_ITER = 300
 MAP_SIZE = 10
 
 log = getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename="log.txt", level=logging.INFO)
 
 getLogger("botocore").setLevel(logging.INFO)
 getLogger("langchain_aws").setLevel(logging.WARNING)

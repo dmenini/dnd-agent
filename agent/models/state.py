@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -34,8 +33,6 @@ class State(BaseModel):
     retries: int = 0
     done: bool = False
     command: str = ""
-
-    update_callback: Any | None = Field(default=None, exclude=True)
 
     @property
     def alive_characters(self) -> dict[str, Character]:

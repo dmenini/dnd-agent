@@ -1,7 +1,7 @@
-import asyncio
-from asyncio import Queue
+import uuid
 
 from langchain_core.runnables import RunnableConfig
+from langgraph.types import Command
 from textual._path import CSSPathType
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -29,12 +29,14 @@ class GameUI(App):
         watch_css: bool = False,
         ansi_color: bool = False,
     ) -> None:
-        self._state = initial_state
-        self.input_queue: Queue = asyncio.Queue()
         super().__init__(driver_class, css_path, watch_css, ansi_color)
-
-        self.graph = build_graph(config=config.agent)
         self.title = "DnD Agent"
+
+        self.state = initial_state
+        self.graph = build_graph(config=config.agent)
+
+        self.started = False
+        self.thread_id = str(uuid.uuid4())
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -52,49 +54,45 @@ class GameUI(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.update_state(self._state)
+        self.update_state(self.state)
         self.theme = "monokai"
 
     def update_state(self, state: State) -> None:
         """Render a new state."""
+        self.state = state
         self.query_one("#map", MapPanel).update_state(state)
         self.query_one("#logs", LogPanel).update_state(state)
         self.query_one("#character", CharacterPanel).update_state(state)
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         command = event.value.strip()
+
+        # Acknowledge input by changing placeholder
         event.input.value = ""
+        event.input.placeholder = "Thinking..."
         event.input.refresh()
 
-        # Store command directly in the state
-        self._state.command = command
+        config = RunnableConfig(recursion_limit=20, configurable={"thread_id": self.thread_id})
 
-        # Run one graph step
-        await self.advance_graph()
+        # First run - start the graph
+        if not self.started:
+            result = await self.graph.ainvoke(self.state, config)
+            self.started = True
 
-    async def advance_graph(self) -> None:
-        """Manually step the graph."""
-        command_input = self.query_one("#user-input", Input)
-        command_input.placeholder = "Thinking..."
-        command_input.refresh()
+        # User responded - resume last interrupt
+        else:
+            # Resume the last interrupt (continues thread)
+            result = await self.graph.ainvoke(Command(resume=command), config)
+            state = State.model_validate(result)
+            self.update_state(state)
 
-        def report_update(state: State) -> None:
-            self._state = state
-            self.update_state(self._state)
+            # Immediately continue execution until the next interrupt
+            result = await self.graph.ainvoke(self.state, config)
 
-            placeholder = (
-                f"What should {self._state.current_actor.name} do? (ENTER to let AI decide)"
-                if self._state.is_player_turn
-                else "Enemy's turn, press ENTER to continue"
-            )
-            command_input.placeholder = placeholder
-            command_input.refresh()
+        state = State.model_validate(result)
+        self.update_state(state)
 
-        self._state.update_callback = report_update
-
-        state = await self.graph.ainvoke(
-            self._state,
-            RunnableConfig(recursion_limit=20),
-        )
-        self._state = State.model_validate(state)
-        self.update_state(self._state)
+        # If new interrupt, update UI placeholder
+        if intr := result.get("__interrupt__"):
+            event.input.placeholder = intr[0].value
+            event.input.refresh()

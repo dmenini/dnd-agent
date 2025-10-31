@@ -14,6 +14,7 @@ from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
+from agent.nodes.start_combat import StartCombatNode
 from agent.registration import register_actions, register_traits
 
 register_actions()
@@ -68,7 +69,6 @@ def target() -> Character:
         name="Orc",
         icon="👹",
         pos=Position(x=3, y=2),
-        is_player=True,
         party=party_players,
     )
 
@@ -89,6 +89,7 @@ async def advance_turn(state: State, result: DecisionResult) -> State:
     llm.with_structured_output.return_value = llm
     llm.ainvoke.return_value = result
 
+    state = await StartCombatNode()(state)
     state = await DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
     state = await ActionProcessorNode()(state)
     return await EndCombatNode()(state)
