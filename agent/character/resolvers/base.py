@@ -1,14 +1,16 @@
 from collections import defaultdict
 from typing import Any
 
-from pydantic import BaseModel, PrivateAttr, computed_field
+from pydantic import BaseModel, PrivateAttr, computed_field, field_validator
 
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.registry import ActionRegistry
 from agent.character.attributes import Attributes
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import Trait, TraitEffect, normalize_id
+from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor
 from agent.logs.events import Icon, LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
@@ -171,3 +173,53 @@ class CharacterBase(BaseModel):
             show_ai=show_ai,
         )
         registry.append(event)
+
+    @field_validator("spells", "abilities", mode="before")
+    @classmethod
+    def deserialize_action(cls, v: Any) -> list[Action]:
+        if not isinstance(v, list):
+            msg = f"Invalid action payload: {v}"
+            raise TypeError(msg)
+
+        actions = []
+        for el in v:
+            # If it's already an Action instance, return as-is
+            if isinstance(el, Action):
+                actions.append(el)
+
+            # Otherwise, assume it's a dict with an "id"
+            elif isinstance(el, dict):
+                id_ = el.pop("id")
+                feature_id = FeatureId(id_)
+                actions.append(ActionRegistry.create(id_=feature_id, **el))
+
+            else:
+                msg = f"Invalid action payload: {v}"
+                raise TypeError(msg)
+
+        return actions
+
+    @field_validator("passives", mode="before")
+    @classmethod
+    def deserialize_traits(cls, v: Any) -> list[Action]:
+        if not isinstance(v, list):
+            msg = f"Invalid trait payload: {v}"
+            raise TypeError(msg)
+
+        passives = []
+        for el in v:
+            # If it's already a Trait instance, return as-is
+            if isinstance(el, Trait):
+                passives.append(el)
+
+            # Otherwise, assume it's a dict with an "id"
+            elif isinstance(el, dict):
+                id_ = el.pop("feature_id")
+                feature_id = FeatureId(id_)
+                passives.append(TraitRegistry.create(feature_id=feature_id, **el))
+
+            else:
+                msg = f"Invalid trait payload: {v}"
+                raise TypeError(msg)
+
+        return passives
