@@ -8,15 +8,15 @@ Screen {
 }
 
 .map {
-	height: 50%;
+	height: 45%;
 }
 
 .logs {
-	height: 50%;
+	height: 45%;
 }
 
 .character {
-	height: 100%;
+	height: 90%;
 	width: 50%;
 }
 
