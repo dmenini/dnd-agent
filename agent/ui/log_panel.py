@@ -43,7 +43,7 @@ class LogPanel(ListView):
 
         logs = self._cached_logs
         for idx, event in enumerate(logs):
-            if event.type in {LogLevel.MAIN, LogLevel.HEADER}:
+            if event.type in {LogLevel.MAIN, LogLevel.SYSTEM, LogLevel.HEADER}:
                 visible.append(event)
 
             if event.type == LogLevel.MAIN and event.id in self._expanded_mains:
@@ -60,7 +60,7 @@ class LogPanel(ListView):
         self.clear()
 
         for event in self._filtered_logs:
-            if event.type == LogLevel.MAIN:
+            if event.type in {LogLevel.MAIN, LogLevel.SYSTEM}:
                 item = ListItem(Markdown(str(event)))
             elif event.type == LogLevel.HEADER:
                 item = ListItem(Markdown(str(event)))
@@ -77,7 +77,7 @@ class LogPanel(ListView):
         log = self._filtered_logs[idx]
 
         # Determine main id (either self or parent)
-        main_id = log.id if log.type == LogLevel.MAIN else self._main_lookup.get(idx)
+        main_id = log.id if log.type in {LogLevel.MAIN, LogLevel.SYSTEM} else self._main_lookup.get(idx)
         if main_id is None:
             return
 
