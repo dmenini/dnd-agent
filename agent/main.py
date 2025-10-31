@@ -44,11 +44,11 @@ async def main() -> None:
 
     state = State()
 
-    party_players = Party(id="p1", name="Heroes", is_player_party=True)
-    party_enemies = Party(id="p2", name="Goblins", is_player_party=False)
+    player_party = Party(id="p1", name="Heroes", is_player_party=True)
+    enemy_party = Party(id="p2", name="Goblins", is_player_party=False)
 
     state.log.log_event(
-        message=f"Setting up combat simulation: {party_players.name} vs {party_enemies.name}",
+        message=f"Setting up combat simulation: {player_party.name} vs {enemy_party.name}",
         log_type=LogLevel.MAIN,
     )
 
@@ -79,80 +79,76 @@ async def main() -> None:
         effects=[Poisoned(duration=3)],
     )
 
-    hero = Character(
-        id="pc_alfred",
-        name="Alfred",
-        icon="🤡",
-        job=Fighter,
-        attributes=Attributes(base_hp=20),
-        is_player=True,
-        party=party_players,
-        main_hand=sword,
-        ranged=bow,
-    )
-    ally = Character(
-        id="pc_alice",
-        name="Alice",
-        icon="👧",
-        job=Mage,
-        attributes=Attributes(base_hp=20),
-        is_player=True,
-        party=party_players,
-        main_hand=sword,
-        ranged=bow,
-    )
-    orc = Character(
-        id="orc_1",
-        name="Orc Grunt",
-        icon="👹",
-        job=Fighter,
-        party=party_enemies,
-    )
-    goblin = Character(
-        id="goblin_1",
-        name="Goblin Dramer",
-        icon="🧌",
-        job=Mage,
-        party=party_enemies,
-        main_hand=dagger,
-    )
+    heroes = [
+        Character(
+            id="pc_alfred",
+            name="Alfred",
+            icon="🤡",
+            pos=Position(x=0, y=0),
+            job=Fighter,
+            attributes=Attributes(base_hp=20),
+            is_player=True,
+            party=player_party,
+            main_hand=sword,
+            ranged=bow,
+        ),
+        Character(
+            id="pc_alice",
+            name="Alice",
+            icon="👧",
+            pos=Position(x=1, y=1),
+            job=Mage,
+            attributes=Attributes(base_hp=20),
+            is_player=True,
+            party=player_party,
+            main_hand=sword,
+            ranged=bow,
+        ),
+    ]
+    enemies = [
+        Character(
+            id="orc_1",
+            name="Orc Grunt",
+            icon="👹",
+            pos=Position(x=2, y=2),
+            job=Fighter,
+            party=enemy_party,
+        ),
+        Character(
+            id="goblin_1",
+            name="Goblin Dramer",
+            icon="🧌",
+            pos=Position(x=3, y=3),
+            job=Mage,
+            party=enemy_party,
+            main_hand=dagger,
+        ),
+    ]
 
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.MAIN)
 
     gen = build_map_generator(config.agent)
 
     if config.agent.decision_node.get("mock_llm"):
-        game_map = GameMap(
-            map="",
-            width=MAP_SIZE,
-            height=MAP_SIZE,
-            walls=[],
-            characters={
-                hero.id: Position(x=0, y=0),
-                ally.id: Position(x=1, y=1),
-                orc.id: Position(x=2, y=2),
-                goblin.id: Position(x=3, y=3),
-            },
-        )
+        positions = {c.id: c.pos for c in heroes + enemies}
+        game_map = GameMap(map="", width=MAP_SIZE, height=MAP_SIZE, walls=[], characters=positions)
     else:
-        game_map = generate_game_map(gen, enemies=[goblin.id, orc.id], players=[hero.id, ally.id], map_size=MAP_SIZE)
+        game_map = generate_game_map(
+            gen,
+            enemies=[c.id for c in enemies],
+            players=[c.id for c in heroes],
+            map_size=MAP_SIZE,
+        )
 
     state.map = game_map
 
-    # Set icons
-    game_map.icons[hero.id] = hero.icon
-    game_map.icons[ally.id] = ally.icon
-    game_map.icons[goblin.id] = goblin.icon
-    game_map.icons[orc.id] = orc.icon
+    for char in heroes + enemies:
+        game_map.icons[char.id] = char.icon
+        char.pos = game_map.characters[char.id]
 
-    # Set positions
-    hero.pos = game_map.characters[hero.id]
-    ally.pos = game_map.characters[ally.id]
-    orc.pos = game_map.characters[orc.id]
-    goblin.pos = game_map.characters[goblin.id]
-
-    state.characters = {hero.id: hero, ally.id: ally, orc.id: orc, goblin.id: goblin}
-    state.parties = {party_players.id: party_players, party_enemies.id: party_enemies}
+    # Register in state
+    state.characters = {c.id: c for c in heroes + enemies}
+    state.parties = {player_party.id: player_party, enemy_party.id: enemy_party}
 
     ui = GameUI(initial_state=state, config=config)
     await ui.run_async()
