@@ -1,6 +1,6 @@
 from enum import Enum
 
-from agent.logs.events import LogLevel
+from agent.logs.log_event import LogLevel
 
 
 class EventType(str, Enum):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from agent.actions.base import ActionType, StandardAction
-from agent.logs.events import Icon
+from agent.logs.log_event import Icon
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:

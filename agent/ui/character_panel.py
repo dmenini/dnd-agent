@@ -6,7 +6,7 @@ from agent.ui.widgets.character_sheet import CharacterSheet
 
 
 class CharacterPanel(Static):
-    """Display character sheets using TabbedContent."""
+    """Display tabs for character sheets."""
 
     def compose(self) -> ComposeResult:
         yield TabbedContent(id="character-tabs")

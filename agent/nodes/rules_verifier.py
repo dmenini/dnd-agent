@@ -5,7 +5,7 @@ from logging import getLogger
 from agent.actions.common.attack import AttackAction
 from agent.actions.common.dash import DashAction
 from agent.actions.common.move import MovementAction
-from agent.logs.events import Icon, LogLevel
+from agent.logs.log_event import Icon, LogLevel
 from agent.models.enums import TargetingType
 from agent.models.state import State, VerificationResult
 

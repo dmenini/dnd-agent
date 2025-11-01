@@ -1,5 +1,7 @@
 from typing import Self
 
+from pydantic import computed_field
+
 from agent.character.resolvers.base import CharacterBase
 from agent.character.stats import StatType
 from agent.mechanics.advantage import resolve_advantage
@@ -11,10 +13,12 @@ D20 = "1d20"
 class RollResolver(CharacterBase):
     _dice: DiceRoller = DiceRoller()
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def initiative_modifier(self) -> int:
         return self.attributes.initiative()
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def proficiency_bonus(self) -> int:
         return self.attributes.proficiency_bonus(level=self.level)

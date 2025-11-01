@@ -2,7 +2,7 @@ import random
 from logging import getLogger
 
 from agent.character.stats import StatType
-from agent.logs.events import Icon, LogLevel
+from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
 
 log = getLogger(__name__)

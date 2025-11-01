@@ -1,7 +1,7 @@
 from enum import Enum
 
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.constants import START
+from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -18,7 +18,6 @@ from agent.nodes.start_combat import StartCombatNode
 class TurnPhase(str, Enum):
     DECIDE = "decide"
     VERIFY = "verify"
-    ROLL = "roll"
     EXECUTE = "execute"
     START = "start"
     END = "end"
@@ -55,6 +54,7 @@ def build_graph(config: AgentConfig) -> CompiledStateGraph:
     graph.add_edge(TurnPhase.DECIDE, TurnPhase.VERIFY)
     graph.add_conditional_edges(TurnPhase.VERIFY, is_valid_action)
     graph.add_edge(TurnPhase.EXECUTE, TurnPhase.END)
+    graph.add_edge(TurnPhase.END, END)
 
     memory = MemorySaver()
     return graph.compile(checkpointer=memory)

@@ -3,7 +3,7 @@ from typing import Any
 
 from rich.console import Console
 
-from agent.logs.events import LogEvent, LogLevel, Verbosity
+from agent.logs.log_event import LogEvent, LogLevel, Verbosity
 
 console = Console()
 
