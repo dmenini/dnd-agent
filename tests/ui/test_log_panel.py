@@ -37,13 +37,14 @@ class TestApp(App):
         yield LogPanel()
 
 
-# Simplified tests - access panel and pilot within the test
+@pytest.fixture
+def app() -> App:
+    return TestApp()
 
 
 @pytest.mark.asyncio
-async def test_initialization() -> None:
+async def test_initialization(app: App) -> None:
     """Test that LogPanel initializes with correct default values."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
 
@@ -58,9 +59,8 @@ async def test_initialization() -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_state_adds_new_logs(mock_state: State) -> None:
+async def test_update_state_adds_new_logs(app: App, mock_state: State) -> None:
     """Test that update_state adds new logs to cached logs."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -70,9 +70,8 @@ async def test_update_state_adds_new_logs(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_press_v_key_changes_verbosity(mock_state: State) -> None:
+async def test_press_v_key_changes_verbosity(app: App, mock_state: State) -> None:
     """Test that pressing 'v' key cycles through verbosity levels."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -102,9 +101,8 @@ async def test_press_v_key_changes_verbosity(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_press_space_key_expands_item(mock_state: State) -> None:
+async def test_press_space_key_expands_item(app: App, mock_state: State) -> None:
     """Test that pressing space key expands/collapses items."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -125,9 +123,8 @@ async def test_press_space_key_expands_item(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_press_enter_key_expands_item(mock_state: State) -> None:
+async def test_press_enter_key_expands_item(app: App, mock_state: State) -> None:
     """Test that pressing enter key expands/collapses items."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -145,9 +142,8 @@ async def test_press_enter_key_expands_item(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_expansion_with_keyboard_navigation(mock_state: State) -> None:
+async def test_expansion_with_keyboard_navigation(app: App, mock_state: State) -> None:
     """Test expanding items while navigating with arrow keys."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -170,9 +166,8 @@ async def test_expansion_with_keyboard_navigation(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_verbosity_change_with_expanded_items(mock_state: State) -> None:
+async def test_verbosity_change_with_expanded_items(app: App, mock_state: State) -> None:
     """Test that verbosity changes work correctly with expanded items."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -195,9 +190,8 @@ async def test_verbosity_change_with_expanded_items(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_filter_logs_without_expansion(sample_logs: list[LogEvent]) -> None:
+async def test_filter_logs_without_expansion(app: App, sample_logs: list[LogEvent]) -> None:
     """Test that filter_logs only shows top-level items when nothing is expanded."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
         panel._cached_logs = sample_logs
@@ -208,9 +202,8 @@ async def test_filter_logs_without_expansion(sample_logs: list[LogEvent]) -> Non
 
 
 @pytest.mark.asyncio
-async def test_filter_logs_with_expansion(sample_logs: list[LogEvent]) -> None:
+async def test_filter_logs_with_expansion(app: App, sample_logs: list[LogEvent]) -> None:
     """Test that filter_logs shows children when parent is expanded."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
         panel._cached_logs = sample_logs
@@ -227,9 +220,8 @@ async def test_filter_logs_with_expansion(sample_logs: list[LogEvent]) -> None:
 
 
 @pytest.mark.asyncio
-async def test_filter_logs_with_expansion_verbose(sample_logs: list[LogEvent]) -> None:
+async def test_filter_logs_with_expansion_verbose(app: App, sample_logs: list[LogEvent]) -> None:
     """Test that filter_logs shows all children including DEBUG when verbose."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
         panel.verbosity = 2  # Set to verbose to include DEBUG
@@ -246,9 +238,8 @@ async def test_filter_logs_with_expansion_verbose(sample_logs: list[LogEvent]) -
 
 
 @pytest.mark.asyncio
-async def test_multiple_expansions(mock_state: State) -> None:
+async def test_multiple_expansions(app: App, mock_state: State) -> None:
     """Test expanding multiple main items simultaneously."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -268,9 +259,8 @@ async def test_multiple_expansions(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_cache_size_limit() -> None:
+async def test_cache_size_limit(app: App) -> None:
     """Test that cached logs are limited to CACHE_SIZE."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
 
@@ -284,9 +274,8 @@ async def test_cache_size_limit() -> None:
 
 
 @pytest.mark.asyncio
-async def test_incremental_append_optimization(sample_logs: list[LogEvent]) -> None:
+async def test_incremental_append_optimization(app: App, sample_logs: list[LogEvent]) -> None:
     """Test that new logs are appended incrementally when expansion state unchanged."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
 
@@ -303,9 +292,8 @@ async def test_incremental_append_optimization(sample_logs: list[LogEvent]) -> N
 
 
 @pytest.mark.asyncio
-async def test_toggle_expand_with_child_item(mock_state: State) -> None:
+async def test_toggle_expand_with_child_item(app: App, mock_state: State) -> None:
     """Test toggling expansion when selecting a child item."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -326,9 +314,8 @@ async def test_toggle_expand_with_child_item(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_rapid_key_presses(mock_state: State) -> None:
+async def test_rapid_key_presses(app: App, mock_state: State) -> None:
     """Test handling rapid key presses."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
         panel.update_state(mock_state)
@@ -344,9 +331,8 @@ async def test_rapid_key_presses(mock_state: State) -> None:
 
 
 @pytest.mark.asyncio
-async def test_expansion_state_preserved_across_updates(sample_logs: list[LogEvent]) -> None:
+async def test_expansion_state_preserved_across_updates(app: App, sample_logs: list[LogEvent]) -> None:
     """Test that expansion state is preserved when new logs arrive."""
-    app = TestApp()
     async with app.run_test() as pilot:
         panel = app.query_one(LogPanel)
 
@@ -371,9 +357,8 @@ async def test_expansion_state_preserved_across_updates(sample_logs: list[LogEve
 
 
 @pytest.mark.asyncio
-async def test_update_state_incremental(sample_logs: list[LogEvent]) -> None:
+async def test_update_state_incremental(app: App, sample_logs: list[LogEvent]) -> None:
     """Test that update_state only processes new logs on subsequent calls."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
 
@@ -392,9 +377,8 @@ async def test_update_state_incremental(sample_logs: list[LogEvent]) -> None:
 
 
 @pytest.mark.asyncio
-async def test_update_state_no_new_logs(mock_state: State) -> None:
+async def test_update_state_no_new_logs(app: App, mock_state: State) -> None:
     """Test that update_state skips processing when no new logs."""
-    app = TestApp()
     async with app.run_test():
         panel = app.query_one(LogPanel)
 
@@ -406,3 +390,192 @@ async def test_update_state_no_new_logs(mock_state: State) -> None:
 
         # Should not process anything
         assert len(panel._filtered_logs) == initial_count
+
+
+@pytest.mark.asyncio
+async def test_items_without_children_are_disabled(app: App) -> None:
+    """Test that MAIN/SYSTEM items without children are disabled."""
+    async with app.run_test():
+        panel = app.query_one(LogPanel)
+
+        # Create logs where some MAIN items have children and some don't
+        logs_with_mixed_children = [
+            LogEvent(id="main1", type=LogLevel.MAIN, message="Main with children"),
+            LogEvent(id="detail1", type=LogLevel.DETAIL, message="Detail 1"),
+            LogEvent(id="main2", type=LogLevel.MAIN, message="Main without children"),
+            LogEvent(id="main3", type=LogLevel.MAIN, message="Another main with children"),
+            LogEvent(id="debug3", type=LogLevel.DEBUG, message="Debug 3"),
+            LogEvent(id="system1", type=LogLevel.SYSTEM, message="System without children"),
+            LogEvent(id="header1", type=LogLevel.HEADER, message="Header"),
+        ]
+
+        state = State()
+        state.log.events = logs_with_mixed_children
+        panel.update_state(state)
+
+        # Check that items are properly disabled/enabled
+        list_items = list(panel.children)
+
+        # main1 has children -> should be enabled
+        assert list_items[0].disabled is False
+
+        # main2 has no children -> should be disabled
+        assert list_items[1].disabled is True
+
+        # main3 has children -> should be enabled
+        assert list_items[2].disabled is False
+
+        # system1 has no children -> should be disabled
+        assert list_items[3].disabled is True
+
+        # header1 -> should be disabled (headers are always disabled)
+        assert list_items[4].disabled is True
+
+
+@pytest.mark.asyncio
+async def test_items_with_children_become_selectable(app: App) -> None:
+    """Test that items with children are selectable and can be expanded."""
+    async with app.run_test() as pilot:
+        panel = app.query_one(LogPanel)
+
+        logs = [
+            LogEvent(id="main1", type=LogLevel.MAIN, message="Main with children"),
+            LogEvent(id="detail1", type=LogLevel.DETAIL, message="Detail 1"),
+            LogEvent(id="debug1", type=LogLevel.DEBUG, message="Debug 1"),
+        ]
+
+        state = State()
+        state.log.events = logs
+        panel.update_state(state)
+        panel.focus()
+
+        # main1 should be enabled (has children)
+        list_items = list(panel.children)
+        assert list_items[0].disabled is False
+
+        # Should be able to expand it
+        panel.index = 0
+        await pilot.press("space")
+
+        assert "main1" in panel._expanded_mains
+        # With verbosity 1, should see main1 and detail1 (not debug1)
+        assert len(panel._filtered_logs) == 2
+
+
+@pytest.mark.asyncio
+async def test_disabled_items_cannot_be_expanded(app: App) -> None:
+    """Test that disabled items (without children) cannot be expanded."""
+    async with app.run_test() as pilot:
+        panel = app.query_one(LogPanel)
+
+        logs = [
+            LogEvent(id="main1", type=LogLevel.MAIN, message="Main without children"),
+            LogEvent(id="main2", type=LogLevel.MAIN, message="Another main without children"),
+        ]
+
+        state = State()
+        state.log.events = logs
+        panel.update_state(state)
+        panel.focus()
+
+        # Both items should be disabled
+        list_items = list(panel.children)
+        assert list_items[0].disabled is True
+        assert list_items[1].disabled is True
+
+        # Try to expand main1
+        panel.index = 0
+        await pilot.press("space")
+
+        # Should not be expanded (disabled items shouldn't respond)
+        assert "main1" not in panel._expanded_mains
+
+
+@pytest.mark.asyncio
+async def test_child_items_are_always_enabled(app: App) -> None:
+    """Test that DETAIL and DEBUG items are never disabled."""
+    async with app.run_test():
+        panel = app.query_one(LogPanel)
+        panel.verbosity = 2  # Show all logs including DEBUG
+
+        logs = [
+            LogEvent(id="main1", type=LogLevel.MAIN, message="Main event"),
+            LogEvent(id="detail1", type=LogLevel.DETAIL, message="Detail 1"),
+            LogEvent(id="debug1", type=LogLevel.DEBUG, message="Debug 1"),
+        ]
+
+        state = State()
+        state.log.events = logs
+        panel.update_state(state)
+
+        # Expand to show children
+        panel._expanded_mains.add("main1")
+        panel.refresh_logs()
+
+        list_items = list(panel.children)
+
+        # main1 should be enabled
+        assert list_items[0].disabled is False
+
+        # detail1 and debug1 should be enabled (child items are always enabled)
+        assert list_items[1].disabled is False  # detail1
+        assert list_items[2].disabled is False  # debug1
+
+
+@pytest.mark.asyncio
+async def test_disabled_state_updates_on_new_logs(app: App) -> None:
+    """Test that disabled state is updated when new logs arrive."""
+    async with app.run_test():
+        panel = app.query_one(LogPanel)
+
+        # Start with a main without children
+        logs1 = [
+            LogEvent(id="main1", type=LogLevel.MAIN, message="Main without children"),
+        ]
+
+        state1 = State()
+        state1.log.events = logs1
+        panel.update_state(state1)
+
+        # main1 should be disabled (no children)
+        list_items = list(panel.children)
+        assert list_items[0].disabled is True
+
+        # Add children to main1
+        logs2 = [
+            LogEvent(id="main1", type=LogLevel.MAIN, message="Main without children"),
+            LogEvent(id="detail1", type=LogLevel.DETAIL, message="Detail 1"),
+        ]
+
+        state2 = State()
+        state2.log.events = logs2
+        panel.update_state(state2)
+
+        # main1 should now be enabled (has children)
+        list_items = list(panel.children)
+        assert list_items[0].disabled is False
+
+
+@pytest.mark.asyncio
+async def test_system_events_without_children_are_disabled(app: App) -> None:
+    """Test that SYSTEM events without children are disabled."""
+    async with app.run_test():
+        panel = app.query_one(LogPanel)
+
+        logs = [
+            LogEvent(id="system1", type=LogLevel.SYSTEM, message="System without children"),
+            LogEvent(id="system2", type=LogLevel.SYSTEM, message="System with children"),
+            LogEvent(id="detail2", type=LogLevel.DETAIL, message="Detail for system2"),
+        ]
+
+        state = State()
+        state.log.events = logs
+        panel.update_state(state)
+
+        list_items = list(panel.children)
+
+        # system1 has no children -> should be disabled
+        assert list_items[0].disabled is True
+
+        # system2 has children -> should be enabled
+        assert list_items[1].disabled is False

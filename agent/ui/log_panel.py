@@ -103,6 +103,9 @@ class LogPanel(ListView):
 
         new_filtered = self._filter_logs()
 
+        # Build map once for efficiency
+        children_map = self._build_children_map()
+
         # Full rebuild if expansion or verbosity changed
         if expansion_changed or verbosity_changed:
             self._filtered_logs = new_filtered
@@ -111,18 +114,40 @@ class LogPanel(ListView):
             self.clear()
 
             for event in self._filtered_logs:
-                is_expanded = event.id in self._expanded_mains
-                log_item = LogItem(event, is_expanded=is_expanded)
-                self.append(log_item.to_list_item())
+                self.append(self._create_list_item(event, children_map))
         else:
+            # TODO: The last log may have children now -> update disabled flag
             # Incremental update: only append new items
             new_items = new_filtered[old_count:]
             self._filtered_logs = new_filtered
 
             for event in new_items:
-                is_expanded = event.id in self._expanded_mains
-                log_item = LogItem(event, is_expanded=is_expanded)
-                self.append(log_item.to_list_item())
+                self.append(self._create_list_item(event, children_map))
+
+    def _build_children_map(self) -> dict[str, bool]:
+        """Build a map of which events have children."""
+        children_map = {}
+        logs = self._cached_logs
+
+        for idx, event in enumerate(logs):
+            if event.type in {LogLevel.MAIN, LogLevel.SYSTEM}:
+                # Check if next event is a detail/debug
+                has_children = idx + 1 < len(logs) and logs[idx + 1].type in {LogLevel.DETAIL, LogLevel.DEBUG}
+                children_map[event.id] = has_children
+
+        return children_map
+
+    def _create_list_item(self, event: LogEvent, children_map: dict[str, bool]) -> ListItem:
+        """Create a list item for a log event."""
+        is_expanded = event.id in self._expanded_mains
+        log_item = LogItem(event, is_expanded=is_expanded)
+        list_item = log_item.to_list_item()
+
+        # Disable selection if it's a main/system event without children
+        if event.type in {LogLevel.MAIN, LogLevel.SYSTEM} and not children_map.get(event.id, False):
+            list_item.disabled = True
+
+        return list_item
 
     def watch_verbosity(self) -> None:
         """React to verbosity changes."""
@@ -171,8 +196,10 @@ class LogPanel(ListView):
             # Collapse
             self._expanded_mains.remove(main_id)
         else:
-            # Expand
-            self._expanded_mains.add(main_id)
+            # Expand only if there are children
+            children_map = self._build_children_map()
+            if children_map.get(main_id):
+                self._expanded_mains.add(main_id)
 
         self.refresh_logs()
 

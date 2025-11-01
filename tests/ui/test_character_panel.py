@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import Iterator
 
 import pytest
 from textual.app import App
@@ -9,20 +9,16 @@ from agent.models.state import State
 from agent.ui.character_panel import CharacterPanel, CharacterSheet
 
 
+class TestApp(App):
+    """Test application for LogPanel."""
+
+    def compose(self) -> Iterator[CharacterPanel]:
+        yield CharacterPanel()
+
+
 @pytest.fixture
 def app() -> App:
-    class TestApp(App):
-        pass
-
     return TestApp()
-
-
-@pytest.fixture
-async def panel(app: App) -> AsyncIterator[CharacterPanel]:
-    async with app.run_test():
-        panel = CharacterPanel()
-        await app.mount(panel)
-        yield panel
 
 
 @pytest.mark.asyncio

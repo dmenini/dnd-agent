@@ -39,7 +39,7 @@ class Verbosity:
 
 
 class LogEvent(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    id: str = Field(default_factory=lambda: f"0{uuid.uuid4().hex.lower()}")
     actor_id: str | None = None
     icon: str | None = "⚙️"
     message: str
