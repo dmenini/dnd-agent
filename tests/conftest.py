@@ -7,6 +7,8 @@ from pytest_mock import MockerFixture
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.equipment.armor import Armor, ArmorType
+from agent.jobs.fighter import Fighter
+from agent.jobs.mage import Mage
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.decision import DecisionResult
@@ -57,6 +59,7 @@ def actor() -> Character:
         id="hero",
         name="Alfred",
         icon="⚔️",
+        job=Fighter,
         pos=Position(x=2, y=2),
         attributes=Attributes(strength=20),
         is_player=True,
@@ -71,6 +74,7 @@ def target() -> Character:
         id="orc",
         name="Orc",
         icon="👹",
+        job=Mage,
         pos=Position(x=3, y=2),
         party=party_players,
         armor=Armor(

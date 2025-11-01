@@ -213,7 +213,7 @@ class DamageOverTime(Trait):
 
     value: int
     damage_type: DamageType
-    _priority = Priority.HIGH
+    priority: int = Priority.HIGH
 
     def get_effect(self) -> TraitEffect:
         return self._make_event_effect(
@@ -251,7 +251,7 @@ class ExtraActions(Trait):
 class HalfAttacks(Trait):
     """Reduce number of attack-type extra actions by half."""
 
-    _priority = Priority.LOW
+    priority: int = Priority.LOW
 
     def get_effect(self) -> TraitEffect:
         return self._make_event_effect(event_type=EventType.TURN_START, callback=half_attacks_effect)
@@ -262,7 +262,7 @@ class ReflectMeleeDamage(Trait):
 
     ratio: float = Field(default=0.1, ge=0, le=1)
     damage_type: DamageType
-    _priority = Priority.LOW
+    priority: int = Priority.LOW
 
     def get_effect(self) -> TraitEffect:
         return self._make_event_effect(
@@ -275,7 +275,7 @@ class LifeSteal(Trait):
     """Heal the attacker by a portion of the damage they deal."""
 
     ratio: float = Field(default=0.1, ge=0, le=1)
-    _priority = Priority.LOW
+    priority: int = Priority.LOW
 
     def get_effect(self) -> TraitEffect:
         return self._make_event_effect(

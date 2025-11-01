@@ -46,7 +46,7 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
     action.execute(actor, target, ctx=CombatContext())
 
     assert target.attributes.hp == start_hp - damage_roll - 3
-    target._dice.roll_with_context.assert_called_once_with(dice_expression="1d20+0", advantage=None)
+    target._dice.roll_with_context.assert_called_once_with(dice_expression="1d20+2", advantage=True)
     actor._dice.roll_once.assert_called_once_with("1d8+3")
 
     action.finalize(actor)
@@ -70,7 +70,7 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
     action.execute(actor, target, ctx=CombatContext())
 
     assert target.attributes.hp == start_hp
-    target._dice.roll_with_context.assert_called_once_with(dice_expression="1d20+2", advantage=None)
+    target._dice.roll_with_context.assert_called_once_with(dice_expression="1d20+2", advantage=True)
     actor._dice.roll_once.assert_not_called()
 
     action.finalize(actor)

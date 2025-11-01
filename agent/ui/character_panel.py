@@ -117,7 +117,6 @@ class ActionsSummaryTable(DataTable):
 
         return info or "-"
 
-
     def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:
         """Open a modal when a cell is clicked."""
         action_id = event.cell_key.row_key.value

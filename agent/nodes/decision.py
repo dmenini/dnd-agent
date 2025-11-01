@@ -118,10 +118,13 @@ class DecisionNode:
         history = self.group_messages(state.log)
 
         if state.verification_result and not state.verification_result.valid and state.verification_result.input:
-            # Hide the previous decision that led to a validation error for a clean log history
+            # Hide the previous decision that led to a validation error for a clean AI history
             state.log.hide_last_event(event_type=LogLevel.MAIN)
+            # Due to Action serialization, the input may be a dict instead of a pydantic model
+            prev_inp = state.verification_result.input
+            id_ = prev_inp["id"] if isinstance(prev_inp, dict) else prev_inp.id
             validation_event = (
-                f"The previously chosen action '{state.verification_result.input.id}' is invalid:\n"
+                f"The previously chosen action '{id_}' is invalid:\n"
                 f"{state.verification_result.reason}\n\n"
                 "Instructions: Review the available actions and your movement. "
                 "Choose a legal action that respects range, resources, and targeting constraints. "

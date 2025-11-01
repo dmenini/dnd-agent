@@ -1,4 +1,4 @@
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import pytest
 from textual.app import App
@@ -19,7 +19,7 @@ def app() -> App:
 
 @pytest.fixture
 async def panel(app: App) -> AsyncIterator[CharacterPanel]:
-    async with app.run_test() as pilot:
+    async with app.run_test():
         panel = CharacterPanel()
         await app.mount(panel)
         yield panel
@@ -29,7 +29,7 @@ async def panel(app: App) -> AsyncIterator[CharacterPanel]:
 async def test_initial_compose(app: App) -> None:
     """Test that panel composes with Tabs and ContentSwitcher."""
 
-    async with app.run_test() as pilot:
+    async with app.run_test():
         panel = CharacterPanel()
         await app.mount(panel)
 
@@ -73,7 +73,7 @@ async def test_add_new_character(app: App, actor: Character) -> None:
 
 
 @pytest.mark.asyncio
-async def test_add_multiple_characters(app: App, actor: Character, target: Character):
+async def test_add_multiple_characters(app: App, actor: Character, target: Character) -> None:
     """Test adding multiple characters."""
 
     async with app.run_test() as pilot:
@@ -137,7 +137,7 @@ async def test_update_existing_character(app: App, actor: Character) -> None:
 
 
 @pytest.mark.asyncio
-async def test_remove_character(app: App, actor: Character, target: Character):
+async def test_remove_character(app: App, actor: Character, target: Character) -> None:
     """Test removing a character removes tab and sheet."""
 
     async with app.run_test() as pilot:

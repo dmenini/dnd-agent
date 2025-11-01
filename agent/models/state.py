@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +17,7 @@ registry = get_log_registry()
 class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
-    input: Action | None = None
+    input: Any
 
 
 class State(BaseModel):

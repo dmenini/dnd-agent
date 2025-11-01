@@ -69,7 +69,7 @@ async def main() -> None:
         range=10,
         targeting=TargetingType.SINGLE,
     )
-    dagger = MeleeWeapon(
+    MeleeWeapon(
         name="Dagger",
         description="Poisonous dagger",
         damage_dice="1d5",

@@ -1,6 +1,6 @@
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, computed_field
+from pydantic import BaseModel, computed_field
 
 from agent.actions.base import Action
 from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
@@ -34,8 +34,6 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     spell_slots: SpellSlots = SpellSlots()
     action_economy: ActionEconomy = ActionEconomy()
     turn_done: bool = True
-
-    model_config = ConfigDict(extra="allow")  # To mock during tests
 
     def model_post_init(self, _: Any, /) -> None:
         self.equip_all()

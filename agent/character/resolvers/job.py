@@ -34,14 +34,14 @@ class JobResolver(CharacterBase):
 
     def _apply_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
-            action = ActionRegistry.create(
-                id_=feature.ref_id,
-                name=feature.name,
-                description=feature.description,
-                uses_per_rest=feature.uses_per_rest,
-                **feature.kwargs,
-            )
-            if action not in self.abilities:
+            if feature.ref_id not in {a.id for a in self.abilities}:
+                action = ActionRegistry.create(
+                    id_=feature.ref_id,
+                    name=feature.name,
+                    description=feature.description,
+                    uses_per_rest=feature.uses_per_rest,
+                    **feature.kwargs,
+                )
                 self.abilities.append(action)
                 self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DEBUG)
 
@@ -53,7 +53,8 @@ class JobResolver(CharacterBase):
                 description=feature.description,
                 **feature.kwargs,
             )
-            if trait not in self.passives:
+            # ID represents uniqueness by both source and feature id
+            if all(trait.id != p.id for p in self.passives):
                 self.register_passive(trait)
                 self.log_event(f"{self.name} gained passive trait {feature.name}", log_type=LogLevel.DEBUG)
 
@@ -67,11 +68,12 @@ class JobResolver(CharacterBase):
             self.log_event(f"{self.name} lost passive trait {feature.name}", log_type=LogLevel.DEBUG)
 
     def _apply_spell(self, spell: Spell) -> None:
-        action = ActionRegistry.create(
-            id_=spell.ref_id,
-            stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
-            **spell.model_dump(exclude={"type"}),
-        )
-        if isinstance(action, (AttackSpellAction, SupportSpellAction)) and action not in self.spells:
-            self.spells.append(action)
-            self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DEBUG)
+        if spell.ref_id not in {a.id for a in self.spells}:
+            action = ActionRegistry.create(
+                id_=spell.ref_id,
+                stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
+                **spell.model_dump(exclude={"type"}),
+            )
+            if isinstance(action, (AttackSpellAction, SupportSpellAction)):
+                self.spells.append(action)
+                self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DEBUG)

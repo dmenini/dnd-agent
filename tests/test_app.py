@@ -11,7 +11,7 @@ from agent.ui.log_panel import LogPanel
 
 
 @pytest.mark.asyncio
-async def test_game_loop(
+async def test_game_loop(  # noqa: PLR0915
     config: AgentConfig,
     actor: Character,
     target: Character,
