@@ -1,14 +1,11 @@
-import uuid
-
-from langchain_core.runnables import RunnableConfig
-from langgraph.types import Command
+from textual import work
 from textual._path import CSSPathType
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.driver import Driver
 from textual.widgets import Footer, Header, Input, Rule
 
-from agent.ai.graph import build_graph
+from agent.ai.backend import GameBackend, GameResult
 from agent.models.config import Config
 from agent.models.state import State
 from agent.ui.character_panel import CharacterPanel
@@ -30,14 +27,8 @@ class GameUI(App):
         ansi_color: bool = False,
     ) -> None:
         super().__init__(driver_class, css_path, watch_css, ansi_color)
-        self.title = "DnD Agent"
-
-        self._init_state = initial_state.model_copy(deep=True)
         self.state = initial_state.model_copy(deep=True)
-        self.graph = build_graph(config=config.agent)
-
-        self.started = False
-        self.thread_id = str(uuid.uuid4())
+        self.backend = GameBackend(initial_state, config)
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -65,45 +56,54 @@ class GameUI(App):
         self.query_one("#logs", LogPanel).update_state(state)
         self.query_one("#character", CharacterPanel).update_state(state)
 
-    async def on_input_submitted(self, event: Input.Submitted) -> None:
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle user input submission."""
         command = event.value.strip()
 
-        # Acknowledge input by changing placeholder
+        # Clear input and show thinking state
         event.input.value = ""
         event.input.placeholder = "Thinking..."
+        event.input.disabled = True
         event.input.refresh()
 
-        # Handle new game
+        # Handle game reset
         if self.state.done:
-            self.started = False
-            self.update_state(self._init_state)
+            self.state = self.backend.reset()
+            self.update_state(self.state)
 
-        config = RunnableConfig(recursion_limit=20, configurable={"thread_id": self.thread_id})
-
-        # First run - start the graph
-        if not self.started:
-            result = await self.graph.ainvoke(self.state, config)
-            self.started = True
-
-        # User responded - resume last interrupt
+        # Process command in background
+        if not self.backend.started:
+            self.process_start_game()
         else:
-            # Resume the last interrupt (continues thread)
-            result = await self.graph.ainvoke(Command(resume=command), config)
-            state = State.model_validate(result)
-            self.update_state(state)
+            self.process_command(command)
 
-            if not state.done:
-                # Immediately continue execution until the next interrupt
-                result = await self.graph.ainvoke(self.state, config)
+    @work(thread=True)
+    async def process_start_game(self) -> None:
+        """Start the game in a background thread."""
+        result = await self.backend.start_game(self.state)
+        self.call_from_thread(self.handle_game_result, result)
 
-        state = State.model_validate(result)
-        self.update_state(state)
+    @work(thread=True)
+    async def process_command(self, command: str) -> None:
+        """Process a user command in a background thread."""
+        result = await self.backend.submit_command(command, self.state)
+        self.call_from_thread(self.handle_game_result, result)
 
-        # If new interrupt, update UI placeholder
-        if intr := result.get("__interrupt__"):
-            event.input.placeholder = intr[0].value
-            event.input.refresh()
+    def handle_game_result(self, result: GameResult) -> None:
+        """Handle the result of a game operation (runs on main thread)."""
+        # Update state
+        self.update_state(result.state)
 
-        if state.done:
-            event.input.placeholder = "Press ENTER to start game..."
-            event.input.refresh()
+        # Update input field
+        input_widget = self.query_one("#user-input", Input)
+        input_widget.disabled = False
+
+        if result.done:
+            input_widget.placeholder = "Press ENTER to start new game..."
+        elif result.interrupt:
+            input_widget.placeholder = result.interrupt
+        else:
+            input_widget.placeholder = "Enter command..."
+
+        input_widget.focus()
+        input_widget.refresh()

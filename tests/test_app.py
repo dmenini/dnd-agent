@@ -77,7 +77,7 @@ async def test_game_loop(  # noqa: PLR0915
         await pilot.pause()
 
         # Enemy turn skipped as it's dead
-        assert "Press ENTER to start game..." in input_widget.placeholder
+        assert "Press ENTER to start new game..." in input_widget.placeholder
         assert ui.state.current_actor.id == actor.id
         assert ui.state.log.events[-1].message == "The players are victorious! Party 'Heroes' stands triumphant!"
         assert ui.state.done is True

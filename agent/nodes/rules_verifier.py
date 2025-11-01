@@ -34,7 +34,7 @@ class RulesVerifierNode:
 
         valid = True
         if not state.current_actor.is_alive or not state.action or not state.decision:
-            state.verification_result = VerificationResult(valid=valid)
+            state.verification_result = VerificationResult(valid=valid, input=None)
             return state
 
         if state.retries > 1:

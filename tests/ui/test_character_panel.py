@@ -133,6 +133,7 @@ async def test_update_existing_character(app: App, actor: Character) -> None:
         assert updated_sheet is original_sheet
 
         # Verify update_character was called
+        assert updated_sheet.char is not None
         assert updated_sheet.char.name == actor_updated.name
 
 
@@ -298,6 +299,7 @@ async def test_mixed_add_update_remove(app: App, actor: Character, target: Chara
         # char2 updated (still exists)
         assert len(tabs.query(f"#{actor.id}")) == 1
         sheet2 = switcher.query_one(f"#{actor.id}", CharacterSheet)
+        assert sheet2.char is not None
         assert sheet2.char.name == actor_updated.name
 
         # char3 added
@@ -319,6 +321,7 @@ async def test_update_character_updates_content(app: App, actor: Character) -> N
         await pilot.pause()
 
         # Verify the character reference was updated
+        assert sheet.char.char is not None
         assert sheet.char.name == actor_updated.name
 
         # Verify markdown was updated
