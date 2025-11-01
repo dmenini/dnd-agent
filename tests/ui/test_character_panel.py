@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 from textual.app import App
-from textual.widgets import ContentSwitcher, Markdown, Tab, Tabs
+from textual.widgets import Markdown, Tab, TabbedContent, TabPane
 
 from agent.character.character import Character
 from agent.models.state import State
@@ -31,10 +31,7 @@ async def test_initial_compose(app: App) -> None:
 
         # Check that tabs and switcher exist
         tabs = panel.query_one("#character-tabs")
-        switcher = panel.query_one("#character-switcher")
-
         assert tabs is not None
-        assert switcher is not None
 
 
 @pytest.mark.asyncio
@@ -58,14 +55,9 @@ async def test_add_new_character(app: App, actor: Character) -> None:
 
         # Verify tab was created
         tabs = panel.query_one("#character-tabs")
-        tab = tabs.query_one(f"#{actor.id}", Tab)
+        tab = tabs.query_one(f"#{actor.id}", TabPane)
         assert tab is not None
-        assert tab.label.plain == actor.name
-
-        # Verify sheet was created
-        switcher = panel.query_one("#character-switcher")
-        sheet = switcher.query_one(f"#{actor.id}")
-        assert sheet is not None
+        assert tab._title == actor.name
 
 
 @pytest.mark.asyncio
@@ -87,10 +79,8 @@ async def test_add_multiple_characters(app: App, actor: Character, target: Chara
         await pilot.pause()
 
         tabs = panel.query_one("#character-tabs")
-        assert len(tabs.query("Tab")) == 2
-
-        switcher = panel.query_one("#character-switcher")
-        assert len(switcher.query("CharacterSheet")) == 2
+        assert len(tabs.query(Tab)) == 2
+        assert len(tabs.query(CharacterSheet)) == 2
 
 
 @pytest.mark.asyncio
@@ -109,8 +99,8 @@ async def test_update_existing_character(app: App, actor: Character) -> None:
         await pilot.pause()
 
         # Get reference to original sheet
-        switcher = panel.query_one("#character-switcher")
-        original_sheet = switcher.query_one(f"#{actor.id}", CharacterSheet)
+        pane = panel.query_one(f"#{actor.id}", TabPane)
+        original_sheet = pane.query_one(f"#{actor.id}", CharacterSheet)
 
         # Update character with same ID
         actor_updated = actor.model_copy(deep=True)
@@ -125,7 +115,7 @@ async def test_update_existing_character(app: App, actor: Character) -> None:
         await pilot.pause()
 
         # Verify same sheet instance (not recreated)
-        updated_sheet = switcher.query_one(f"#{actor.id}", CharacterSheet)
+        updated_sheet = pane.query_one(f"#{actor.id}", CharacterSheet)
         assert updated_sheet is original_sheet
 
         # Verify update_character was called
@@ -163,12 +153,10 @@ async def test_remove_character(app: App, actor: Character, target: Character) -
         tabs = panel.query_one("#character-tabs")
         assert len(tabs.query(f"#{target.id}")) == 0
 
-        switcher = panel.query_one("#character-switcher")
-        assert len(switcher.query(f"#{target.id}")) == 0
-
         # Verify char2 is still there
-        assert len(tabs.query(f"#{actor.id}")) == 1
-        assert len(switcher.query(f"#{actor.id}")) == 1
+        nodes = tabs.query(f"#{actor.id}").nodes
+        assert isinstance(nodes[0], TabPane)
+        assert isinstance(nodes[1], CharacterSheet)
 
 
 @pytest.mark.asyncio
@@ -198,10 +186,7 @@ async def test_remove_all_characters(app: App, actor: Character) -> None:
         await pilot.pause()
 
         tabs = panel.query_one("#character-tabs")
-        switcher = panel.query_one("#character-switcher")
-
-        assert len(tabs.query("Tab")) == 0
-        assert len(switcher.query("CharacterSheet")) == 0
+        assert len(tabs.query(f"#{actor.id}")) == 0
 
 
 @pytest.mark.asyncio
@@ -222,11 +207,8 @@ async def test_set_active_tab_with_turn_order(app: App, actor: Character, target
         panel.update_state(state)
         await pilot.pause()
 
-        tabs = panel.query_one("#character-tabs", Tabs)
-        switcher = panel.query_one("#character-switcher", ContentSwitcher)
-
+        tabs = panel.query_one("#character-tabs", TabbedContent)
         assert tabs.active == actor.id
-        assert switcher.current == actor.id
 
 
 @pytest.mark.asyncio
@@ -286,21 +268,23 @@ async def test_mixed_add_update_remove(app: App, actor: Character, target: Chara
         await pilot.pause()
 
         tabs = panel.query_one("#character-tabs")
-        switcher = panel.query_one("#character-switcher")
 
         # char1 removed
         assert len(tabs.query(f"#{target.id}")) == 0
-        assert len(switcher.query(f"#{target.id}")) == 0
 
         # char2 updated (still exists)
-        assert len(tabs.query(f"#{actor.id}")) == 1
-        sheet2 = switcher.query_one(f"#{actor.id}", CharacterSheet)
-        assert sheet2.char is not None
-        assert sheet2.char.name == actor_updated.name
+        nodes = tabs.query(f"#{actor.id}").nodes
+        assert isinstance(nodes[0], TabPane)
+        assert isinstance(nodes[1], CharacterSheet)
+        assert nodes[1].char is not None
+        assert nodes[1].char.name == actor_updated.name
 
         # char3 added
-        assert len(tabs.query(f"#{actor_new.id}")) == 1
-        assert len(switcher.query(f"#{actor_new.id}")) == 1
+        nodes = tabs.query(f"#{actor_new.id}").nodes
+        assert isinstance(nodes[0], TabPane)
+        assert isinstance(nodes[1], CharacterSheet)
+        assert nodes[1].char is not None
+        assert nodes[1].char.name == actor_new.name
 
 
 @pytest.mark.asyncio
