@@ -13,7 +13,7 @@ from agent.effects.status_effects.stunned import Stunned
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponType
 from agent.jobs.fighter import Fighter
 from agent.jobs.mage import Mage
-from agent.logs.events import LogLevel
+from agent.logs.log_event import LogLevel
 from agent.models.config import Config
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
@@ -106,6 +106,14 @@ async def main() -> None:
         ),
     ]
     enemies = [
+        Character(
+            id="orc_1",
+            name="Orc Grunt",
+            icon="👹",
+            pos=Position(x=3, y=3),
+            job=Fighter,
+            party=enemy_party,
+        ),
         Character(
             id="orc_1",
             name="Orc Grunt",

@@ -6,7 +6,7 @@ from langgraph.types import interrupt
 
 from agent.actions.base import Action
 from agent.character.character import Character
-from agent.logs.events import LogLevel
+from agent.logs.log_event import LogLevel
 from agent.logs.log_registry import LogRegistry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap

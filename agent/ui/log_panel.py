@@ -3,7 +3,7 @@ from typing import Any
 from textual.reactive import reactive
 from textual.widgets import ListItem, ListView, Markdown, Static
 
-from agent.logs.events import LogEvent, LogLevel
+from agent.logs.log_event import LogEvent, LogLevel
 from agent.models.state import State
 
 WINDOW_SIZE = 100

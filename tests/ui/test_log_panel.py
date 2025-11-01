@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from textual.app import App
 
-from agent.logs.events import LogEvent, LogLevel
+from agent.logs.log_event import LogEvent, LogLevel
 from agent.models.state import State
 from agent.ui.log_panel import CACHE_SIZE, LogPanel
 

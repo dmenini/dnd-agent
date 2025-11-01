@@ -2,7 +2,7 @@ import math
 
 from agent.actions.base import ActionType, LimitedBonusAction
 from agent.character.character import Character
-from agent.logs.events import LogLevel
+from agent.logs.log_event import LogLevel
 from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
 

@@ -4,7 +4,7 @@ import math
 from typing import TYPE_CHECKING
 
 from agent.character.modifier import Modifier
-from agent.logs.events import Icon
+from agent.logs.log_event import Icon
 from agent.models.constants import TRAIT_LOG_LEVEL
 
 if TYPE_CHECKING:

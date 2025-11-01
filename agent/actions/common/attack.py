@@ -8,7 +8,7 @@ from agent.actions.base import Action, ActionType, BonusAction, StandardAction
 from agent.character.stats import Stats, StatType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
-from agent.logs.events import Icon
+from agent.logs.log_event import Icon
 from agent.models.constants import EventType
 from agent.models.damage import Damage, DamageComponent, DamageType
 

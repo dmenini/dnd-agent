@@ -12,7 +12,7 @@ from agent.character.stats import StatType
 from agent.effects.base import Trait, TraitEffect, normalize_id
 from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor
-from agent.logs.events import Icon, LogEvent, LogLevel
+from agent.logs.log_event import Icon, LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.constants import EventType

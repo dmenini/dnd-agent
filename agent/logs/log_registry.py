@@ -2,7 +2,7 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import Self
 
-from agent.logs.events import LogEvent, LogLevel
+from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.subscribers import rich_printer
 
 
