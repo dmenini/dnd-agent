@@ -1,10 +1,14 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
+from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.equipment.armor import Armor, ArmorType
+from agent.jobs.fighter import Fighter
+from agent.jobs.mage import Mage
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.decision import DecisionResult
@@ -14,6 +18,7 @@ from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
+from agent.nodes.start_combat import StartCombatNode
 from agent.registration import register_actions, register_traits
 
 register_actions()
@@ -54,7 +59,9 @@ def actor() -> Character:
         id="hero",
         name="Alfred",
         icon="⚔️",
+        job=Fighter,
         pos=Position(x=2, y=2),
+        attributes=Attributes(strength=20),
         is_player=True,
         party=party_players,
     )
@@ -67,9 +74,15 @@ def target() -> Character:
         id="orc",
         name="Orc",
         icon="👹",
+        job=Mage,
         pos=Position(x=3, y=2),
-        is_player=True,
         party=party_players,
+        armor=Armor(
+            name="Armor",
+            description="",
+            armor_type=ArmorType.HEAVY,
+            base_ac=0,
+        ),
     )
 
 
@@ -84,11 +97,12 @@ def game_map(actor: Character, target: Character) -> GameMap:
     )
 
 
-def advance_turn(state: State, result: DecisionResult) -> State:
-    llm = MagicMock(spec=BaseChatModel)
+async def advance_turn(state: State, result: DecisionResult) -> State:
+    llm = AsyncMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
-    llm.invoke.return_value = result
+    llm.ainvoke.return_value = result
 
-    state = DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
-    state = ActionProcessorNode()(state)
-    return EndCombatNode()(state)
+    state = await StartCombatNode()(state)
+    state = await DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
+    state = await ActionProcessorNode()(state)
+    return await EndCombatNode()(state)

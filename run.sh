@@ -20,4 +20,4 @@ if [[ -z "$AWS_SESSION_TOKEN" ]]; then
   exit 1
 fi
 
-PYTHONPATH="." streamlit run agent/app.py
+python -m agent.main

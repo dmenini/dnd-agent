@@ -1,9 +1,7 @@
-import uuid
 from collections.abc import Callable
 from typing import Any, Literal
 
 from anthropic import BaseModel
-from pydantic import PrivateAttr, computed_field
 
 from agent.character.modifier import Modifier
 from agent.effects.trait_effects.support import apply_modifier
@@ -35,8 +33,7 @@ class Trait(BaseModel):
     source_id: str
     name: str = ""
     description: str = ""
-    _id: str = PrivateAttr(default_factory=lambda: str(uuid.uuid4()))
-    _priority: int = PrivateAttr(default=Priority.MEDIUM)
+    priority: int = Priority.MEDIUM
 
     def model_post_init(self, _: Any) -> None:
         if not self.name:
@@ -46,7 +43,6 @@ class Trait(BaseModel):
 
         self.source_id = normalize_id(self.source_id)
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
         return f"{self.source_id}-{normalize_id(self.name)}"
@@ -56,7 +52,7 @@ class Trait(BaseModel):
         raise NotImplementedError
 
     def _make_event_effect(self, event_type: EventType, callback: Callable[..., None]) -> TraitEffect:
-        return TraitEffect(source_id=self.id, event_type=event_type, callback=callback, priority=self._priority)
+        return TraitEffect(source_id=self.id, event_type=event_type, callback=callback, priority=self.priority)
 
     def _make_modifier(self, attr: str, value: Any, op: Literal["set", "add", "mul"]) -> TraitEffect:
         mod = Modifier(source_id=self.id, attribute=attr, value=value, operation=op)

@@ -1,0 +1,39 @@
+Screen {
+	layout: horizontal;
+}
+
+.left {
+	width: 50%;
+	layout: vertical;
+}
+
+.map {
+	height: 45%;
+}
+
+.logs {
+	height: 45%;
+}
+
+.character {
+	height: 90%;
+	width: 50%;
+}
+
+.inp {
+	height: 10%;
+}
+
+#hcenter {
+    align: center middle;
+}
+
+#card {
+    padding: 1 2;
+    width: auto;
+    height: auto;
+}
+
+#map-content {
+    text-align: center;
+}

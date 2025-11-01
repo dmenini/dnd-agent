@@ -1,3 +1,5 @@
+import pytest
+
 from agent.character.character import Character
 from agent.effects.status_effects.base import EffectType
 from agent.equipment.weapons import MeleeWeapon, WeaponType
@@ -10,7 +12,8 @@ from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+@pytest.mark.asyncio
+async def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     orc_id = target.id
 
@@ -31,7 +34,9 @@ def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, target:
     )
 
     # Turn 1.1: Hero casts Haste on self
-    state = advance_turn(state, result=DecisionResult(action_id="dodge", target_hits={hero_id: 1}, description=""))
+    state = await advance_turn(
+        state, result=DecisionResult(action_id="dodge", target_hits={hero_id: 1}, description="")
+    )
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.DODGING
     assert hero.status_effects[0].duration == 1
@@ -39,13 +44,13 @@ def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, target:
 
     assert hero.attributes.advantage("defense") == -1
 
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 1.2: Orc pass
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.1: Dodge expires
     assert state.current_actor.status_effects[0].type == EffectType.DODGING
     assert state.current_actor.status_effects[0].duration == 1
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert len(state.current_actor.status_effects) == 0

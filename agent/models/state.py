@@ -1,10 +1,10 @@
 from collections import defaultdict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.character import Character, Party
-from agent.logs.events import LogLevel
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
@@ -17,7 +17,7 @@ registry = get_log_registry()
 class VerificationResult(BaseModel):
     valid: bool = True
     reason: str = ""
-    input: Action | None = None
+    input: Any
 
 
 class State(BaseModel):
@@ -33,6 +33,7 @@ class State(BaseModel):
     verification_result: VerificationResult | None = None
     retries: int = 0
     done: bool = False
+    command: str = ""
 
     @property
     def alive_characters(self) -> dict[str, Character]:
@@ -41,7 +42,13 @@ class State(BaseModel):
     @property
     def visible_characters(self) -> list[Character]:
         actor = self.current_actor
+        if actor.id not in self.visibility:
+            return []
         return [self.characters[t] for t in self.visibility[actor.id]]
+
+    @property
+    def is_player_turn(self) -> bool:
+        return self.current_actor.is_player
 
     @property
     def current_actor(self) -> Character:
@@ -57,10 +64,6 @@ class State(BaseModel):
     @property
     def log(self) -> LogRegistry:
         return get_log_registry()
-
-    def draw_map(self) -> None:
-        # The chosen char aligns well with emoticons
-        self.log.log_event(message=str(self.map), log_type=LogLevel.MAP)
 
     def update_visibility(self, actor: Character) -> None:
         if not self.map:

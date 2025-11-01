@@ -1,8 +1,10 @@
 import re
+import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from rich.markdown import Markdown
 from rich.text import Text
 
 
@@ -36,7 +38,8 @@ class Verbosity:
     DEBUG = 2
 
 
-class Event(BaseModel):
+class LogEvent(BaseModel):
+    id: str = Field(default_factory=lambda: f"0{uuid.uuid4().hex.lower()}")
     actor_id: str | None = None
     icon: str | None = "⚙️"
     message: str
@@ -58,33 +61,42 @@ class Event(BaseModel):
         """Highlight numbers in bold yellow for readability."""
         return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
 
-    def __rich__(self) -> Text | None:
-        color = self._color_for_actor()
-        msg = self._highlight_numbers(self.message)
-        result = Text(msg)
-
+    def __str__(self) -> str:
         # Event formatting based on type
+        result = self.message
+
         if self.type == LogLevel.HEADER:
-            header_line = Text(self.message, style=f"bold {color}")
-            separator = Text("─" * 40, style="dim")
-            result = Text.assemble("\n", header_line, "\n", separator)
+            result = f"### **{result}**"
 
         elif self.type == LogLevel.MAIN:
             icon = self.icon or "👤"
-            result = Text.from_markup(f"[bold {color}]{icon} → {msg}[/bold {color}]")
+            result = f"{icon} → {result}"
 
         elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
             ai_icon = f"({Icon.AI})" if self.show_ai else ""
-            result = Text.from_markup(f"    [dim]{self.icon} {msg} {ai_icon}[/dim]")
-
-        elif self.type == LogLevel.SYSTEM:
-            result = Text.from_markup(f"\n[bold yellow]⚙️ {msg}[/bold yellow]")
-
-        elif self.type == LogLevel.MAP:
-            separator = Text("─" * 40, style="dim")
-            result = Text.assemble(msg, "\n", separator)
+            result = f"    {self.icon} {result} {ai_icon}"
 
         return result
 
-    def __str__(self) -> str:
-        return f"{self.actor_id or 'system'}: {self.message}"
+    def __rich__(self) -> Text | Markdown | None:
+        color = self._color_for_actor()
+        msg = self._highlight_numbers(str(self))
+        result: Text | Markdown
+
+        # Event formatting based on type
+        if self.type == LogLevel.HEADER:
+            result = Markdown(str(self), justify="center", style=color)
+
+        elif self.type == LogLevel.MAIN:
+            result = Text.from_markup(f"[bold {color}]{msg}[/bold {color}]")
+
+        elif self.type in {LogLevel.DETAIL, LogLevel.DEBUG}:
+            result = Text.from_markup(f"    [dim]{msg}[/dim]")
+
+        elif self.type == LogLevel.MAP:
+            result = Text(str(self), style=color, justify="center")
+
+        else:
+            result = Text(msg)
+
+        return result

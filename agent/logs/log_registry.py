@@ -2,7 +2,7 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import Self
 
-from agent.logs.events import Event, LogLevel
+from agent.logs.events import LogEvent, LogLevel
 from agent.logs.subscribers import rich_printer
 
 
@@ -10,8 +10,8 @@ class LogRegistry:
     _instance: Self | None = None
 
     def __init__(self) -> None:
-        self.events: list[Event] = []
-        self.subscribers: list[Callable[[Event], None]] = []
+        self.events: list[LogEvent] = []
+        self.subscribers: list[Callable[[LogEvent], None]] = []
 
     @classmethod
     def instance(cls) -> Self:
@@ -19,30 +19,30 @@ class LogRegistry:
             cls._instance = cls()
         return cls._instance
 
-    def append(self, event: Event) -> None:
+    def append(self, event: LogEvent) -> None:
         self.events.append(event)
         for subscriber in self.subscribers:
             subscriber(event)
 
     def log_header(self, message: str) -> None:
         """Log an event as header."""
-        event = Event(message=message, type=LogLevel.HEADER)
+        event = LogEvent(message=message, type=LogLevel.HEADER)
         self.append(event)
 
     def log_event(self, message: str, log_type: LogLevel = LogLevel.DETAIL, icon: str = "") -> None:
         """Log an event."""
-        event = Event(message=message, type=log_type, icon=icon, show_ai=False)
+        event = LogEvent(message=message, type=log_type, icon=icon, show_ai=False)
         self.append(event)
 
     def log_newline(self) -> None:
         """Log a newline."""
-        event = Event(message="", type=LogLevel.CUSTOM)
+        event = LogEvent(message="", type=LogLevel.CUSTOM)
         self.append(event)
 
-    def subscribe(self, callback: Callable[[Event], None]) -> None:
+    def subscribe(self, callback: Callable[[LogEvent], None]) -> None:
         self.subscribers.append(callback)
 
-    def filter_for_ai(self, *, types: list[str] | None = None, actor_ids: list[int] | None = None) -> list[Event]:
+    def filter_for_ai(self, *, types: list[str] | None = None, actor_ids: list[int] | None = None) -> list[LogEvent]:
         results = self.events
         if types is not None:
             results = [e for e in results if e.type in types and e.show_ai]

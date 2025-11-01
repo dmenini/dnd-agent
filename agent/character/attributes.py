@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any, Literal
 
-from pydantic import ConfigDict, Field, PrivateAttr
+from pydantic import ConfigDict, PrivateAttr
 
 from agent.character.modifier import Modifier, ModifierRegistry
 from agent.character.stats import Stats, StatType
@@ -27,13 +27,13 @@ class Attributes(Stats):
     base_perception: int = 10
 
     # Base nested attributes
-    base_advantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
-    base_disadvantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
-    base_save_advantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
-    base_save_disadvantage: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
-    base_save_autofail: defaultdict[str, bool] = Field(default_factory=lambda: defaultdict(lambda: False))
-    base_resistance: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
-    base_vulnerability: defaultdict[str, float] = Field(default_factory=lambda: defaultdict(lambda: 0.0))
+    base_advantage: defaultdict[str, bool] = defaultdict(bool)
+    base_disadvantage: defaultdict[str, bool] = defaultdict(bool)
+    base_save_advantage: defaultdict[str, bool] = defaultdict(bool)
+    base_save_disadvantage: defaultdict[str, bool] = defaultdict(bool)
+    base_save_autofail: defaultdict[str, bool] = defaultdict(bool)
+    base_resistance: defaultdict[str, float] = defaultdict(float)
+    base_vulnerability: defaultdict[str, float] = defaultdict(float)
 
     _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
 

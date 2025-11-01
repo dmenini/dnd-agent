@@ -68,7 +68,7 @@ class Action(BaseModel, ABC):
     category: ActionCategory
     targeting: TargetingType
     hits: int = 1
-    range: float = 0
+    range: float = 0.0
 
     @abstractmethod
     def is_available(self, action_economy: ActionEconomy) -> bool:
@@ -123,20 +123,20 @@ class LimitedBonusAction(BonusAction, ABC):
     category: ActionCategory = ActionCategory.BONUS
     uses_per_rest: int = 1
 
-    _current_uses: int = 0
+    current_uses: int = 0  # internal but needed for serialization
 
     def is_available(self, action_economy: ActionEconomy) -> bool:
-        use_available = self._current_uses < self.uses_per_rest
+        use_available = self.current_uses < self.uses_per_rest
         return use_available and super().is_available(action_economy)
 
     def _consume_use(self) -> None:
-        if self._current_uses >= self.uses_per_rest:
+        if self.current_uses >= self.uses_per_rest:
             raise ValueError
-        self._current_uses += 1
+        self.current_uses += 1
 
     def finalize(self, actor: Character) -> None:
         super().finalize(actor)
         self._consume_use()
 
     def rest(self) -> None:
-        self._current_uses = 0
+        self.current_uses = 0

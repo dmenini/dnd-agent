@@ -7,7 +7,7 @@ log = getLogger(__name__)
 
 
 class EndCombatNode:
-    def __call__(self, state: State) -> State:
+    async def __call__(self, state: State) -> State:
         """Advance turn, check victory conditions, and append logs."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 

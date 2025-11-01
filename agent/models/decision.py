@@ -136,7 +136,9 @@ class DecisionResult(BaseModel):
     def validate_targets_exist(self, characters: Mapping[str, Character]) -> tuple[bool, str]:
         for target_id in self.target_ids:
             if target_id not in characters:
-                return False, f"Target '{target_id}' not found. Please, retry with a valid target: {characters.keys()}."
+                return False, (
+                    f"Target '{target_id}' not found. Please, retry with a valid target: {list(characters.keys())}."
+                )
         return True, ""
 
     def validate_targets_alive(self, characters: Mapping[str, Character]) -> tuple[bool, str]:

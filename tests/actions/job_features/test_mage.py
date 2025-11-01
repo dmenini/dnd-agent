@@ -39,4 +39,4 @@ def test_arcane_recovery(actor: Character) -> None:
     # Finalize action consumes the bonus use
     action.finalize(actor)
     assert action.is_available(actor.action_economy) is False
-    assert action._current_uses == 1
+    assert action.current_uses == 1

@@ -2,22 +2,34 @@ import random
 from logging import getLogger
 
 from agent.character.stats import StatType
-from agent.logs.events import LogLevel
-from agent.mechanics.dice_roller import DiceRoller
+from agent.logs.events import Icon, LogLevel
 from agent.models.state import State
 
 log = getLogger(__name__)
 
 
 class StartCombatNode:
-    def __init__(self, dice: DiceRoller) -> None:
-        self.dice = dice
-
-    def __call__(self, state: State) -> State:
+    async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        state.log.log_header("Starting combat!")
+        if not state.turn_order:
+            state.log.log_header("Starting combat!")
+            self.decide_turn_order(state)
 
+        actor = state.current_actor
+
+        if not actor.is_alive:
+            return state
+
+        if actor.turn_done:
+            actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
+            actor.start_turn()
+
+        state.update_visibility(actor)
+
+        return state
+
+    def decide_turn_order(self, state: State) -> None:
         rolls = []
         for cid, char in state.characters.items():
             # First check roll result
@@ -33,7 +45,9 @@ class StartCombatNode:
         state.turn_index = 0
         state.log.log_event(
             "Initiative order: " + " → ".join(state.characters[cid].name for cid in state.turn_order),
-            log_type=LogLevel.SYSTEM,
+            log_type=LogLevel.MAIN,
         )
-
-        return state
+        for roll, char in zip(rolls, state.characters.values(), strict=False):
+            char.log_event(
+                f"{char.name}: initiative roll={roll[0]}, DEX mod={roll[1]}", icon=Icon.ROLL, log_type=LogLevel.DETAIL
+            )

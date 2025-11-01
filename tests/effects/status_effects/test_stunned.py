@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock
 
+import pytest
+
 from agent.character.character import Character
 from agent.character.stats import StatType
 from agent.effects.status_effects.base import EffectType
@@ -15,7 +17,8 @@ from agent.models.state import State
 from tests.conftest import advance_turn
 
 
-def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+@pytest.mark.asyncio
+async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     orc_id = target.id
 
@@ -43,7 +46,7 @@ def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, targe
     target._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
 
     # Turn 1.1: Hero attacks and applies stun
-    state = advance_turn(
+    state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     orc = state.characters[orc_id]
@@ -57,10 +60,10 @@ def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, targe
     assert orc.attributes.save_autofail(StatType.STR) is True
     assert orc.attributes.save_autofail(StatType.DEX) is True
 
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 1.2: Orc stunned -> skip turn
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert state.action is None
     assert state.decision is None
 
@@ -69,10 +72,10 @@ def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, targe
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Pass
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.2: Orc still stunned -> skip turn
-    state = advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert state.action is None
     assert state.decision is None
 
