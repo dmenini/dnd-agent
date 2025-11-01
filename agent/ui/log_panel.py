@@ -69,12 +69,10 @@ class LogPanel(ListView):
         if len(self._cached_logs) > CACHE_SIZE:
             self._cached_logs = self._cached_logs[-CACHE_SIZE:]
 
-        # Don't clear expansion state - preserve user's view
+        # Refresh logs and scroll to bottom to keep focus on last events
+        # Don't clear expansion state to preserve user's view
         self.refresh_logs()
-
-        # Only auto-scroll if user was already at bottom
-        if self._was_at_bottom:
-            self.scroll_end()
+        self.scroll_end()
 
     def _filter_logs(self) -> list[LogEvent]:
         visible: list[LogEvent] = []
