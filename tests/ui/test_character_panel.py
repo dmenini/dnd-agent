@@ -321,7 +321,7 @@ async def test_update_character_updates_content(app: App, actor: Character) -> N
         await pilot.pause()
 
         # Verify the character reference was updated
-        assert sheet.char.char is not None
+        assert sheet.char is not None
         assert sheet.char.name == actor_updated.name
 
         # Verify markdown was updated
