@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from collections import deque
-from typing import TYPE_CHECKING, Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from agent.character.resolvers.base import CharacterBase
+
+WALL_CELL = "#  "
+EMPTY_CELL = "·  "
+DIRECTION_ICON = {"N": "↑", "S": "↓", "E": "→", "W": "←", "NE": "↗", "NW": "↖", "SE": "↘", "SW": "↙"}
 
 
 def is_inbound(pos: Position, width: int, height: int) -> bool:
@@ -163,15 +167,17 @@ class GameMap(BaseModel):
         return points
 
     def __str__(self) -> str:
-        grid = [["·  " for _ in range(self.width)] for _ in range(self.height)]
+        self.map = "\n".join(" ".join(row) for row in self.grid)
+        return self.map
+
+    @property
+    def grid(self) -> list[list[str]]:
+        grid = [[EMPTY_CELL for _ in range(self.width)] for _ in range(self.height)]
 
         for wall in self.walls:
-            grid[wall.y][wall.x] = "#  "
-
-        direction_icons = {"N": "↑", "S": "↓", "E": "→", "W": "←", "NE": "↗", "NW": "↖", "SE": "↘", "SW": "↙"}
+            grid[wall.y][wall.x] = WALL_CELL
 
         for key, char in self.characters.items():
-            grid[char.y][char.x] = f"{self.icons[key]}{direction_icons[char.direction]}"
+            grid[char.y][char.x] = f"{self.icons[key]}{DIRECTION_ICON[char.direction]}"
 
-        self.map = "\n".join(" ".join(row) for row in grid)
-        return self.map
+        return grid

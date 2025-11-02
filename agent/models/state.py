@@ -41,10 +41,12 @@ class State(BaseModel):
 
     @property
     def visible_characters(self) -> list[Character]:
-        actor = self.current_actor
-        if actor.id not in self.visibility:
-            return []
-        return [self.characters[t] for t in self.visibility[actor.id]]
+        if self.turn_order:
+            actor = self.current_actor
+            if actor.id not in self.visibility:
+                return []
+            return [self.characters[t] for t in self.visibility[actor.id]]
+        return []
 
     @property
     def is_player_turn(self) -> bool:
