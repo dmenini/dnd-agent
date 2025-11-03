@@ -24,12 +24,13 @@ class MapCell(Static):
             self.y = y
             self.info = info
 
-    def __init__(self, x: int, y: int, content: str = " ", tooltip_info: str = "", classes: str | None = None) -> None:
+    def __init__(self, x: int, y: int, content: str = " ", info: str = "", classes: str | None = None) -> None:
         super().__init__(content=content, classes=classes)
         self.x = x
         self.y = y
+        self.info = info
         self.content = content
-        self.tooltip_info = tooltip_info
+        self.tooltip = f"({x}, {y})"
         self.update(content)
 
     def on_click(self) -> None:
@@ -41,13 +42,7 @@ class MapCell(Static):
         # Select this cell
         self.add_class("selected")
 
-        self.post_message(self.Clicked(self.x, self.y, self.tooltip_info))
-
-    def on_enter(self) -> None:
-        """Handle mouse enter."""
-        if self.tooltip_info:
-            # Update a tooltip widget or status bar
-            self.app.query_one("#map-tooltip", Static).update(self.tooltip_info)
+        self.post_message(self.Clicked(self.x, self.y, self.info))
 
 
 class InteractiveMapGrid(Grid):
@@ -70,11 +65,11 @@ class InteractiveMapGrid(Grid):
     }
 
     MapCell.light {
-        background: $surface;
+        background: $surface-darken-1;
     }
 
     MapCell.dark {
-        background: $surface-darken-1;
+        background: $surface-darken-3;
     }
 
     MapCell:hover {
@@ -111,18 +106,21 @@ class InteractiveMapGrid(Grid):
             row = []
             for x in range(self.game_map.width):
                 cell_content = self._get_cell_content(x, y)
-                tooltip = self._get_tooltip_info(x, y)
+                info = self._get_cell_info(x, y)
                 color_class = "light" if (x + y) % 2 == 0 else "dark"
-                cell = MapCell(x=x, y=y, content=cell_content, tooltip_info=tooltip, classes=color_class)
+                cell = MapCell(x=x, y=y, content=cell_content, info=info, classes=color_class)
                 row.append(cell)
                 yield cell
             self.cells.append(row)
 
     def _get_cell_content(self, x: int, y: int) -> str:
-        return self.grid[y][x].strip()
+        content = self.grid[y][x]
+        if content == EMPTY_CELL:
+            return ""
+        return content.strip()
 
-    def _get_tooltip_info(self, x: int, y: int) -> str:
-        """Generate tooltip information for a cell."""
+    def _get_cell_info(self, x: int, y: int) -> str:
+        """Generate information for a cell."""
         lines = [f"Position: ({x}, {y})"]
 
         # Check if there's a character at this position
@@ -137,20 +135,12 @@ class InteractiveMapGrid(Grid):
                     lines.append(f"Distance: {dist}m")
                 break
 
-        # Add tile type information
-        cell_content = self._get_cell_content(x, y)
-        if cell_content == WALL_CELL:
-            lines.append("Type: Wall")
-        elif cell_content == EMPTY_CELL:
-            lines.append("Type: Walkable")
-
         return " | ".join(lines)
 
     def on_map_cell_clicked(self, message: MapCell.Clicked) -> None:
         """Handle cell click events."""
         # Post a message to parent or handle directly
-        self.app.query_one("#map-tooltip", Static).update(message.info)
-        self.app.notify(f"Clicked cell at ({message.x}, {message.y})")
+        self.app.query_one("#map-detail", Static).update(message.info)
 
 
 class MapPanel(Static):
@@ -163,7 +153,7 @@ class MapPanel(Static):
         padding: 1 0 1 2;
     }
 
-    #map-tooltip {
+    #map-detail {
         height: 10%;
         text-align: center;
     }
@@ -173,7 +163,7 @@ class MapPanel(Static):
         """Build static structure of the panel."""
         with ScrollableContainer(id="map-display-area"):
             yield Static("Loading map...", id="map-content")
-        yield Static("Hover over cells for info", id="map-tooltip")
+        yield Static("Click over cells for info", id="map-detail")
 
     def update_state(self, state: State) -> None:
         """Update the map display according to the current state."""
