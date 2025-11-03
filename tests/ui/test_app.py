@@ -43,6 +43,7 @@ async def test_game_loop(  # noqa: PLR0915
 
         # Actor turn -> wait
         assert actor.name in input_widget.placeholder
+        assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == actor.id
         assert log_panel._filtered_logs[-1].message == f"Turn 1.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 1.1 - {actor.name}"
@@ -57,6 +58,7 @@ async def test_game_loop(  # noqa: PLR0915
 
         # Enemy turn -> waits automatically
         assert "Enemy" in input_widget.placeholder
+        assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == target.id
         assert log_panel._filtered_logs[-1].message == f"Turn 1.2 - {target.name}"
         assert ui.state.log.events[-1].message == f"Turn 1.2 - {target.name}"
@@ -66,6 +68,7 @@ async def test_game_loop(  # noqa: PLR0915
 
         # Actor turn -> Attack enemy and kills
         assert actor.name in input_widget.placeholder
+        assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == actor.id
         assert log_panel._filtered_logs[-1].message == f"Turn 2.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 2.1 - {actor.name}"
@@ -78,6 +81,7 @@ async def test_game_loop(  # noqa: PLR0915
 
         # Enemy turn skipped as it's dead
         assert "Press ENTER to start new game..." in input_widget.placeholder
+        assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == actor.id
         assert ui.state.log.events[-1].message == "The players are victorious! Party 'Heroes' stands triumphant!"
         assert ui.state.done is True
@@ -89,6 +93,7 @@ async def test_game_loop(  # noqa: PLR0915
 
         # Actor turn -> wait
         assert actor.name in input_widget.placeholder
+        assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == actor.id
         assert log_panel._filtered_logs[-1].message == f"Turn 1.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 1.1 - {actor.name}"

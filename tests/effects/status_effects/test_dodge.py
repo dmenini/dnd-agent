@@ -50,7 +50,9 @@ async def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, t
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.1: Dodge expires
+    assert state.current_actor is not None
     assert state.current_actor.status_effects[0].type == EffectType.DODGING
     assert state.current_actor.status_effects[0].duration == 1
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    assert state.current_actor is not None
     assert len(state.current_actor.status_effects) == 0

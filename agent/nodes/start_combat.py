@@ -16,8 +16,10 @@ class StartCombatNode:
             state.log.log_header("Starting combat!")
             self.decide_turn_order(state)
 
-        actor = state.current_actor
+        if state.current_actor is None:
+            raise ValueError
 
+        actor = state.current_actor
         if not actor.is_alive:
             return state
 

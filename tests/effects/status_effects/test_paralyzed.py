@@ -96,6 +96,7 @@ async def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Characte
     assert state.decision is None
 
     # Paralysis expires after 2 turns
+    assert state.current_actor is not None
     orc = state.current_actor
     assert len(orc.status_effects) == 0
     assert orc.attributes.get_modifiers("defense_advantage") == []

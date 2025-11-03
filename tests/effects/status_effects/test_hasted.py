@@ -62,6 +62,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Turn 2.1: Hero double action -> haste expires, lethargy takes place at the end of turn
+    assert state.current_actor is not None
     assert state.current_actor.status_effects[0].type == EffectType.HASTED
     assert state.current_actor.status_effects[0].duration == 1
     state = await advance_turn(
@@ -90,4 +91,5 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     # Turn 3.1: Still performs one action despite lethargy, which then expires
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert state.action is not None
+    assert state.current_actor is not None
     assert len(state.current_actor.status_effects) == 0

@@ -34,5 +34,5 @@ class CharacterPanel(Static):
                 sheet.update_character(char)
 
         # Switch to the current actor if available
-        if state.turn_order:
+        if state.current_actor:
             tabbed.active = state.current_actor.id

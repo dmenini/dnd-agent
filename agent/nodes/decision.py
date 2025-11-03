@@ -36,14 +36,14 @@ class DecisionNode:
     async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
+        if state.current_actor is None or not state.map:
+            msg = "Incorrect initialization"
+            raise ValueError(msg)
+
         actor = state.current_actor
 
         if not actor.is_alive:
             return state
-
-        if not state.map:
-            msg = "Map not initialized"
-            raise ValueError(msg)
 
         if not self.simulation:
             if actor.is_player:

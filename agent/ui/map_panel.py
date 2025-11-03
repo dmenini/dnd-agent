@@ -99,12 +99,17 @@ class InteractiveMapGrid(Grid):
 
     def __init__(self, state: State, cell_size: Literal["small", "large"] = "large") -> None:
         super().__init__()
+
+        if state.map is None:
+            msg = "Map must be defined"
+            raise ValueError(msg)
+
         self.game_map = state.map
         self.grid = state.map.grid
         self.state = state
         self.cells: list[list[MapCell]] = []
-        self.selected_x: int = 0
-        self.selected_y: int = 0
+        self.selected_x: int | None = 0
+        self.selected_y: int | None = 0
         self.can_focus = True  # Allow grid to receive keyboard events
         self.cell_size = cell_size
 
@@ -177,17 +182,19 @@ class InteractiveMapGrid(Grid):
         """Handle keyboard navigation."""
         key = event.key
 
+        sel_x, sel_y = self.selected_x or 0, self.selected_y or 0
+
         if key == "up":
-            self._select_cell(self.selected_x, self.selected_y - 1)
+            self._select_cell(sel_x, sel_y - 1)
             event.prevent_default()
         elif key == "down":
-            self._select_cell(self.selected_x, self.selected_y + 1)
+            self._select_cell(sel_x, sel_y + 1)
             event.prevent_default()
         elif key == "left":
-            self._select_cell(self.selected_x - 1, self.selected_y)
+            self._select_cell(sel_x - 1, sel_y)
             event.prevent_default()
         elif key == "right":
-            self._select_cell(self.selected_x + 1, self.selected_y)
+            self._select_cell(sel_x + 1, sel_y)
             event.prevent_default()
 
     def on_map_cell_clicked(self, message: MapCell.Clicked) -> None:
@@ -248,7 +255,7 @@ class InteractiveMapGrid(Grid):
         """Highlight cells in the vision cone of a character at given position."""
         # Find character at this position
         character = None
-        for char in self.game_map.characters.values():
+        for char in self.state.characters.values():
             if char.pos.x == x and char.pos.y == y:
                 character = char
                 break
