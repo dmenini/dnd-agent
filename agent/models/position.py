@@ -6,22 +6,24 @@ from pydantic import BaseModel
 
 # Pre-normalised direction vectors (y increases downward).
 DIRECTION_VECTORS = {
-    "N": (0, 1),
-    "S": (0, -1),
+    "N": (0, -1),
+    "S": (0, 1),
     "E": (1, 0),
     "W": (-1, 0),
-    "NE": (math.sqrt(0.5), math.sqrt(0.5)),
-    "NW": (-math.sqrt(0.5), math.sqrt(0.5)),
-    "SE": (math.sqrt(0.5), -math.sqrt(0.5)),
-    "SW": (-math.sqrt(0.5), -math.sqrt(0.5)),
+    "NE": (math.sqrt(0.5), -math.sqrt(0.5)),
+    "NW": (-math.sqrt(0.5), -math.sqrt(0.5)),
+    "SE": (math.sqrt(0.5), math.sqrt(0.5)),
+    "SW": (-math.sqrt(0.5), math.sqrt(0.5)),
 }
+
+Direction = Literal["N", "S", "E", "W", "NE", "NW", "SE", "SW"]
 
 
 @total_ordering
 class Position(BaseModel):
     x: int
     y: int
-    direction: Literal["N", "S", "E", "W", "NE", "NW", "SE", "SW"] = "N"
+    direction: Direction = "N"
 
     def __str__(self) -> str:
         return f"({self.x}, {self.y}, {self.direction})"
@@ -48,7 +50,7 @@ class Position(BaseModel):
         return math.hypot(dx, dy)
 
     def direction_to(self, other: Self) -> tuple[float, float]:
-        dx, dy = other.x - self.x, self.y - other.y  # account for negative y-axis
+        dx, dy = other.x - self.x, other.y - self.y
         dist = math.hypot(dx, dy)
         if dist == 0:
             return 0.0, 0.0

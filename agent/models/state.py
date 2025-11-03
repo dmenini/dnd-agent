@@ -77,7 +77,7 @@ class State(BaseModel):
                 continue
 
             # Check range + line of sight before doing perception
-            if not self.map.within_visibility_range(actor, target):
+            if not self.map.within_visibility_range(actor, target.pos):
                 continue
 
             # Handle stealth / perception contest

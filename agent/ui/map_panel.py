@@ -1,9 +1,11 @@
+from textual import events
 from textual.app import ComposeResult
 from textual.containers import Grid, ScrollableContainer
 from textual.message import Message
 from textual.widgets import Static
 
-from agent.models.map import EMPTY_CELL, WALL_CELL, GameMap
+from agent.models.map import EMPTY_CELL, GameMap
+from agent.models.position import Position
 from agent.models.state import State
 
 
@@ -13,36 +15,21 @@ class MapCell(Static):
     class Clicked(Message):
         """Posted when a cell is clicked."""
 
-        def __init__(
-            self,
-            x: int,
-            y: int,
-            info: str,
-        ) -> None:
+        def __init__(self, x: int, y: int) -> None:
             super().__init__()
             self.x = x
             self.y = y
-            self.info = info
 
-    def __init__(self, x: int, y: int, content: str = " ", info: str = "", classes: str | None = None) -> None:
+    def __init__(self, x: int, y: int, content: str = " ", classes: str | None = None) -> None:
         super().__init__(content=content, classes=classes)
         self.x = x
         self.y = y
-        self.info = info
-        self.content = content
-        self.tooltip = f"({x}, {y})"
+        self.tooltip = f"({x}, {y})"  # Simple tooltip with coordinates
         self.update(content)
 
     def on_click(self) -> None:
         """Handle click event."""
-        # Deselect all other cells
-        for cell in self.app.query(MapCell):
-            cell.remove_class("selected")
-
-        # Select this cell
-        self.add_class("selected")
-
-        self.post_message(self.Clicked(self.x, self.y, self.info))
+        self.post_message(self.Clicked(self.x, self.y))
 
 
 class InteractiveMapGrid(Grid):
@@ -50,7 +37,6 @@ class InteractiveMapGrid(Grid):
 
     DEFAULT_CSS = """
     InteractiveMapGrid {
-        content-align: center middle;
         padding: 0;
         margin: 0;
         grid-gutter: 0;
@@ -80,6 +66,11 @@ class InteractiveMapGrid(Grid):
         background: $accent;
         text-style: bold;
     }
+
+    MapCell.in-vision {
+        background: $warning-darken-1;
+        opacity: 0.7;
+    }
     """
 
     def __init__(self, game_map: GameMap, state: State) -> None:
@@ -88,6 +79,9 @@ class InteractiveMapGrid(Grid):
         self.grid = game_map.grid
         self.state = state
         self.cells: list[list[MapCell]] = []
+        self.selected_x: int = 0
+        self.selected_y: int = 0
+        self.can_focus = True  # Allow grid to receive keyboard events
 
     def on_mount(self) -> None:
         """Set up grid layout cleanly."""
@@ -106,9 +100,8 @@ class InteractiveMapGrid(Grid):
             row = []
             for x in range(self.game_map.width):
                 cell_content = self._get_cell_content(x, y)
-                info = self._get_cell_info(x, y)
                 color_class = "light" if (x + y) % 2 == 0 else "dark"
-                cell = MapCell(x=x, y=y, content=cell_content, info=info, classes=color_class)
+                cell = MapCell(x=x, y=y, content=cell_content, classes=color_class)
                 row.append(cell)
                 yield cell
             self.cells.append(row)
@@ -120,7 +113,7 @@ class InteractiveMapGrid(Grid):
         return content.strip()
 
     def _get_cell_info(self, x: int, y: int) -> str:
-        """Generate information for a cell."""
+        """Generate detailed information for a cell."""
         lines = [f"Position: ({x}, {y})"]
 
         # Check if there's a character at this position
@@ -128,19 +121,73 @@ class InteractiveMapGrid(Grid):
             if char.pos.x == x and char.pos.y == y:
                 lines.append(f"Character: {char.name}")
                 lines.append(f"HP: {char.attributes.hp}/{char.max_hp}")
-                if cid not in self.state.visible_characters:
-                    lines.append("Out of sight")
                 if self.state.turn_order:
+                    if cid not in self.state.visible_characters:
+                        lines.append("Out of sight")
                     dist = self.state.map.distance(self.state.current_actor.pos, char.pos)
                     lines.append(f"Distance: {dist}m")
                 break
 
         return " | ".join(lines)
 
+    def _select_cell(self, x: int, y: int) -> None:
+        """Select a cell and show its information."""
+        # Deselect all cells and clear vision cone
+        for row in self.cells:
+            for cell in row:
+                cell.remove_class("selected")
+                cell.remove_class("in-vision")
+
+        # Select new cell
+        if 0 <= x < self.game_map.width and 0 <= y < self.game_map.height:
+            self.selected_x = x
+            self.selected_y = y
+            self.cells[y][x].add_class("selected")
+
+            # Show cell info
+            info = self._get_cell_info(x, y)
+            self.app.query_one("#map-info", Static).update(info)
+
+            # Show vision cone if there's a character at this position
+            self._show_vision_cone(x, y)
+
+    def _show_vision_cone(self, x: int, y: int) -> None:
+        """Highlight cells in the vision cone of a character at given position."""
+        # Find character at this position
+        character = None
+        for char in self.state.characters.values():
+            if char.pos.x == x and char.pos.y == y:
+                character = char
+                break
+
+        if not character:
+            return
+
+        for tx in range(self.game_map.width):
+            for ty in range(self.game_map.height):
+                if self.game_map.within_visibility_range(character, target=Position(x=tx, y=ty)):
+                    self.cells[ty][tx].add_class("in-vision")
+
+    def on_key(self, event: events.Key) -> None:
+        """Handle keyboard navigation."""
+        key = event.key
+
+        if key == "up":
+            self._select_cell(self.selected_x, self.selected_y - 1)
+            event.prevent_default()
+        elif key == "down":
+            self._select_cell(self.selected_x, self.selected_y + 1)
+            event.prevent_default()
+        elif key == "left":
+            self._select_cell(self.selected_x - 1, self.selected_y)
+            event.prevent_default()
+        elif key == "right":
+            self._select_cell(self.selected_x + 1, self.selected_y)
+            event.prevent_default()
+
     def on_map_cell_clicked(self, message: MapCell.Clicked) -> None:
         """Handle cell click events."""
-        # Post a message to parent or handle directly
-        self.app.query_one("#map-detail", Static).update(message.info)
+        self._select_cell(message.x, message.y)
 
 
 class MapPanel(Static):
@@ -153,9 +200,10 @@ class MapPanel(Static):
         padding: 1 0 1 2;
     }
 
-    #map-detail {
+    #map-info {
         height: 10%;
         text-align: center;
+        background: $surface;
     }
     """
 
@@ -163,7 +211,7 @@ class MapPanel(Static):
         """Build static structure of the panel."""
         with ScrollableContainer(id="map-display-area"):
             yield Static("Loading map...", id="map-content")
-        yield Static("Click over cells for info", id="map-detail")
+        yield Static("Select a cell to see info", id="map-info")
 
     def update_state(self, state: State) -> None:
         """Update the map display according to the current state."""

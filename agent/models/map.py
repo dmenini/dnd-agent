@@ -4,6 +4,8 @@ import math
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+import tcod
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from agent.models.position import Position
@@ -84,19 +86,67 @@ class GameMap(BaseModel):
 
         return None  # unreachable
 
+    def get_visible_positions(self, observer: CharacterBase) -> set[Position]:
+        """
+        Compute visible tiles using the recursive shadowcasting algorithm.
+        This is the standard method for roguelike FOV (field of view).
+        """
+        visible = set()
+
+        # Observer position and attributes
+        cx, cy = observer.pos.x, observer.pos.y
+        radius = int(observer.attributes.vision_range())
+        fov_angle = float(observer.attributes.base_vision_fov)  # degrees
+        fx, fy = observer.pos.facing_vector
+
+        # Create a 2D numpy array marking transparency (True = transparent)
+        transparency = np.ones((self.height, self.width), dtype=bool)
+        for wall in self.walls:
+            if 0 <= wall.y < self.height and 0 <= wall.x < self.width:
+                transparency[wall.y, wall.x] = False
+
+        # Compute FOV using recursive shadowcasting
+        fov_mask = tcod.map.compute_fov(
+            transparency,
+            (cy, cx),  # tcod uses (row, col) = (y, x)
+            radius=radius,
+            light_walls=True,
+            algorithm=tcod.constants.FOV_SHADOW,
+        )
+
+        # Precompute cosine of half-angle for dot product test
+        cos_half = math.cos(math.radians(fov_angle / 2.0))
+
+        # Always see own tile
+        visible.add(Position(x=cx, y=cy))
+
+        # Iterate tcod-visible positions
+        ys, xs = np.where(fov_mask)
+        for y, x in zip(ys, xs, strict=False):
+            pos = Position(x=x, y=y)
+            if pos.x == cx and pos.y == cy:
+                continue
+
+            dir_vec = observer.pos.direction_to(pos)
+            dot = fx * dir_vec[0] + fy * dir_vec[1]
+
+            if dot >= cos_half:
+                visible.add(pos)
+
+        return visible
+
     def is_walkable(self, x: int, y: int) -> bool:
         return (0 <= x < self.width) and (0 <= y < self.height) and (Position(x=x, y=y) not in self.walls)
 
-    def within_visibility_range(self, observer: CharacterBase, target: CharacterBase) -> bool:
+    def within_visibility_range(self, observer: CharacterBase, target: Position) -> bool:
         """Check whether the target is visible to the actor, considering range and walls."""
         observer_pos = observer.pos
-        target_pos = target.pos
 
-        if observer_pos == target_pos:
+        if observer_pos == target:
             return True
 
         # 1. Distance check
-        distance = observer_pos.euclidean_distance(target_pos)
+        distance = observer_pos.euclidean_distance(target)
         if distance > observer.attributes.vision_range():
             return False
 
@@ -107,10 +157,10 @@ class GameMap(BaseModel):
         # 3. Line of sight check (Bresenham's line)
         return self.has_line_of_sight(observer, target)
 
-    def in_vision_cone(self, observer: CharacterBase, target: CharacterBase) -> bool:
+    def in_vision_cone(self, observer: CharacterBase, target: Position) -> bool:
         """Return True if target is within observer's vision cone."""
         facing_x, facing_y = observer.pos.facing_vector
-        tx, ty = observer.pos.direction_to(target.pos)
+        tx, ty = observer.pos.direction_to(target)
 
         dot = facing_x * tx + facing_y * ty
         dot = max(-1.0, min(1.0, dot))  # numerical stability
@@ -118,10 +168,9 @@ class GameMap(BaseModel):
         angle = math.degrees(math.acos(dot))
         return angle <= observer.attributes.base_vision_fov / 2
 
-    def has_line_of_sight(self, observer: CharacterBase, target: CharacterBase) -> bool:
+    def has_line_of_sight(self, observer: CharacterBase, target: Position) -> bool:
         observer_pos = observer.pos
-        target_pos = target.pos
-        for x, y in self._bresenham_line(observer_pos, target_pos):
+        for x, y in self._bresenham_line(observer_pos, target):
             # If any wall blocks the view, line of sight is broken
             if any(wall.x == x and wall.y == y for wall in self.walls):
                 return False

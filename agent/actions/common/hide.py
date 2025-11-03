@@ -29,7 +29,7 @@ class HideAction(StandardAction):
             raise ValueError
 
         # Only allow hiding if no enemy has line of sight
-        can_hide = all(not ctx.map.within_visibility_range(enemy, actor) for enemy in ctx.enemies)
+        can_hide = all(not ctx.map.within_visibility_range(enemy, actor.pos) for enemy in ctx.enemies)
 
         if can_hide:
             actor.hide()

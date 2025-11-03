@@ -2,7 +2,7 @@ import pytest
 
 from agent.character.character import Character
 from agent.models.map import GameMap, is_inbound
-from agent.models.position import Position
+from agent.models.position import Direction, Position
 
 
 def test_validate_not_overlapping_success() -> None:
@@ -74,7 +74,7 @@ def test_visible_in_range_no_obstacles(game_map: GameMap, actor: Character, targ
     target.pos = Position(x=3, y=1)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
-    assert game_map.within_visibility_range(actor, target) is True
+    assert game_map.within_visibility_range(actor, target.pos) is True
 
 
 @pytest.mark.parametrize(
@@ -97,7 +97,7 @@ def test_visible_in_range(
     target.pos = pos2
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
-    assert game_map.within_visibility_range(actor, target) is True
+    assert game_map.within_visibility_range(actor, target.pos) is True
 
 
 def test_not_visible_out_of_range(game_map: GameMap, actor: Character, target: Character) -> None:
@@ -106,7 +106,7 @@ def test_not_visible_out_of_range(game_map: GameMap, actor: Character, target: C
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     actor.attributes.vision_range = lambda: 2  # short-sighted
 
-    assert game_map.within_visibility_range(actor, target) is False
+    assert game_map.within_visibility_range(actor, target.pos) is False
 
 
 def test_out_of_vision_cone(game_map: GameMap, actor: Character, target: Character) -> None:
@@ -114,7 +114,7 @@ def test_out_of_vision_cone(game_map: GameMap, actor: Character, target: Charact
     target.pos = Position(x=3, y=1)
     game_map.characters = {actor.id: Position(x=1, y=1), target.id: Position(x=3, y=1)}
 
-    assert game_map.within_visibility_range(actor, target) is False
+    assert game_map.within_visibility_range(actor, target.pos) is False
 
 
 def test_blocked_by_wall(game_map: GameMap, actor: Character, target: Character) -> None:
@@ -123,7 +123,7 @@ def test_blocked_by_wall(game_map: GameMap, actor: Character, target: Character)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     game_map.walls = [Position(x=2, y=0)]  # wall directly in line
 
-    assert game_map.within_visibility_range(actor, target) is False
+    assert game_map.within_visibility_range(actor, target.pos) is False
 
 
 def test_wall_not_on_path(game_map: GameMap, actor: Character, target: Character) -> None:
@@ -132,7 +132,7 @@ def test_wall_not_on_path(game_map: GameMap, actor: Character, target: Character
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     game_map.walls = [Position(x=2, y=1)]  # wall near line, not blocking
 
-    assert game_map.within_visibility_range(actor, target) is True
+    assert game_map.within_visibility_range(actor, target.pos) is True
 
 
 def test_same_position_visible(game_map: GameMap, actor: Character, target: Character) -> None:
@@ -140,7 +140,7 @@ def test_same_position_visible(game_map: GameMap, actor: Character, target: Char
     target.pos = Position(x=2, y=2)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
-    assert game_map.within_visibility_range(actor, target) is True
+    assert game_map.within_visibility_range(actor, target.pos) is True
 
 
 def test_distance_same_position(game_map: GameMap) -> None:
@@ -202,3 +202,74 @@ def test_distance_out_of_bounds_returns_none(game_map: GameMap) -> None:
     start = Position(x=0, y=0)
     end = Position(x=10, y=10)  # Outside grid
     assert game_map.distance(start, end) is None
+
+
+def test_visibility_no_walls(game_map: GameMap, actor: Character) -> None:
+    """Test visible cells with 360 degree FoV."""
+
+    actor.pos = Position(x=5, y=5)
+    actor.attributes.base_vision_fov = 360
+    actor.attributes.base_vision_range = 3
+
+    visible = game_map.get_visible_positions(actor)
+
+    # Rough check: should include a circle of radius 3 around the observer
+    assert Position(x=5, y=5) in visible
+    assert Position(x=8, y=5) in visible  # right
+    assert Position(x=5, y=8) in visible  # down
+    assert Position(x=2, y=5) in visible  # left
+    assert Position(x=5, y=2) in visible  # up
+    assert len(visible) > 20
+
+
+def test_visibility_with_wall_blocking(game_map: GameMap, actor: Character) -> None:
+    """Test with wall blocking visibility to the right."""
+    walls = [Position(x=6, y=5)]
+    game_map.walls = walls
+
+    actor.pos = Position(x=5, y=5)
+    actor.attributes.base_vision_fov = 360
+    actor.attributes.base_vision_range = 3
+
+    visible = game_map.get_visible_positions(actor)
+
+    assert Position(x=5, y=5) in visible
+    assert Position(x=6, y=5) in visible  # wall itself visible
+    assert Position(x=7, y=5) not in visible  # blocked behind wall
+
+
+@pytest.mark.parametrize(
+    ("facing", "expected_visible"),
+    [
+        ("E", {Position(x=6, y=5)}),
+        ("N", {Position(x=5, y=4)}),
+        ("W", {Position(x=4, y=5)}),
+        ("S", {Position(x=5, y=6)}),
+    ],
+)
+def test_fov_directional(
+    facing: Direction, expected_visible: set[Position], game_map: GameMap, actor: Character
+) -> None:
+    """Test visible cells with directional FoV."""
+    actor.pos = Position(x=5, y=5, direction=facing)
+    actor.attributes.base_vision_fov = 90
+    actor.attributes.base_vision_range = 3
+
+    visible = game_map.get_visible_positions(actor)
+
+    # Ensure FOV is directional: cell in front is visible, cell behind is not
+    for ex in expected_visible:
+        assert ex in visible
+
+    behind = Position(x=int(actor.pos.x - actor.pos.facing_vector[0]), y=int(actor.pos.y - actor.pos.facing_vector[1]))
+    assert behind not in visible
+
+
+def test_visibility_edges_of_map(game_map: GameMap, actor: Character) -> None:
+    actor.pos = Position(x=0, y=0)
+    actor.attributes.base_vision_fov = 90
+    actor.attributes.base_vision_range = 3
+
+    visible = game_map.get_visible_positions(actor)
+    # Should not include out-of-bounds positions
+    assert all(0 <= pos.x < game_map.width and 0 <= pos.y < game_map.height for pos in visible)
