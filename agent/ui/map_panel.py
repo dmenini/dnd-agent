@@ -1,3 +1,5 @@
+from typing import Literal
+
 from textual import events
 from textual.app import ComposeResult
 from textual.containers import Grid, ScrollableContainer
@@ -14,42 +16,7 @@ DEFAULT_INFO = "Select a cell to see info"
 class MapCell(Static):
     """A single cell in the map grid."""
 
-    class Clicked(Message):
-        """Posted when a cell is clicked."""
-
-        def __init__(self, x: int, y: int) -> None:
-            super().__init__()
-            self.x = x
-            self.y = y
-
-    def __init__(self, x: int, y: int, content: str = " ", classes: str | None = None) -> None:
-        super().__init__(content=content, classes=classes)
-        self.x = x
-        self.y = y
-        self.tooltip = f"({x}, {y})"  # Simple tooltip with coordinates
-        self.update(content)
-
-    def is_wall(self) -> bool:
-        return self.has_class("wall")
-
-    def is_selected(self) -> bool:
-        return self.has_class("selected")
-
-    def on_click(self) -> None:
-        """Handle click event."""
-        self.post_message(self.Clicked(self.x, self.y))
-
-
-class InteractiveMapGrid(Grid):
-    """An interactive grid display for the game map."""
-
     DEFAULT_CSS = """
-    InteractiveMapGrid {
-        padding: 0;
-        margin: 0;
-        grid-gutter: 0;
-    }
-
     MapCell {
         width: 4;
         height: 2;
@@ -86,7 +53,51 @@ class InteractiveMapGrid(Grid):
     }
     """
 
-    def __init__(self, state: State) -> None:
+    class Clicked(Message):
+        """Posted when a cell is clicked."""
+
+        def __init__(self, x: int, y: int) -> None:
+            super().__init__()
+            self.x = x
+            self.y = y
+
+    def __init__(self, x: int, y: int, content: str = " ", classes: str | None = None) -> None:
+        super().__init__(content=content, classes=classes)
+        self.x = x
+        self.y = y
+        self.tooltip = f"({x}, {y})"  # Simple tooltip with coordinates
+        self.update(content)
+
+    def is_wall(self) -> bool:
+        return self.has_class("wall")
+
+    def is_selected(self) -> bool:
+        return self.has_class("selected")
+
+    def on_click(self) -> None:
+        """Handle click event."""
+        self.post_message(self.Clicked(self.x, self.y))
+
+
+class InteractiveMapGrid(Grid):
+    """An interactive grid display for the game map."""
+
+    DEFAULT_CSS = """
+    InteractiveMapGrid {
+        padding: 0;
+        margin: 0;
+        grid-gutter: 0;
+    }
+    """
+
+    BINDINGS = [
+        ("up", "move_up", "Move Up"),
+        ("down", "move_down", "Move Down"),
+        ("left", "move_left", "Move Left"),
+        ("right", "move_right", "Move Right"),
+    ]
+
+    def __init__(self, state: State, cell_size: Literal["small", "large"] = "large") -> None:
         super().__init__()
         self.game_map = state.map
         self.grid = state.map.grid
@@ -95,6 +106,7 @@ class InteractiveMapGrid(Grid):
         self.selected_x: int = 0
         self.selected_y: int = 0
         self.can_focus = True  # Allow grid to receive keyboard events
+        self.cell_size = cell_size
 
     def on_mount(self) -> None:
         """Set up grid layout cleanly."""
@@ -103,9 +115,13 @@ class InteractiveMapGrid(Grid):
         self.styles.grid_size_columns = self.game_map.width
         self.styles.grid_size_rows = self.game_map.height
 
-        # Set explicit size to ensure scrolling
-        self.styles.width = self.game_map.width * 4  # 3 columns per cell
-        self.styles.height = self.game_map.height * 2  # 2 rows per cell
+        # Set explicit size to ensure scrolling and square cells
+        if self.cell_size == "large":
+            self.styles.width = self.game_map.width * 4
+            self.styles.height = self.game_map.height * 2
+        else:
+            self.styles.width = self.game_map.width * 2
+            self.styles.height = self.game_map.height * 1
 
     def compose(self) -> ComposeResult:
         """Create the grid of cells."""
@@ -145,6 +161,7 @@ class InteractiveMapGrid(Grid):
         # Check if there's a character at this position
         for cid, char in self.state.characters.items():
             if char.pos == pos:
+                lines.append(f"Facing {char.pos.direction}")
                 lines.append(f"Character: {char.name}")
                 lines.append(f"HP: {char.attributes.hp}/{char.max_hp}")
                 if (actor := self.state.current_actor) and actor.id != cid:
@@ -180,6 +197,7 @@ class InteractiveMapGrid(Grid):
         if x is None or y is None:
             return
 
+        # Do not select walls
         if self.cells[y][x].is_wall():
             return
 
@@ -230,14 +248,18 @@ class InteractiveMapGrid(Grid):
         """Highlight cells in the vision cone of a character at given position."""
         # Find character at this position
         character = None
-        for char in self.state.characters.values():
+        for char in self.game_map.characters.values():
             if char.pos.x == x and char.pos.y == y:
                 character = char
                 break
 
         if not character:
             return
+
+        # Exclude character position
         visible = self.game_map.get_visible_positions(character)
+        visible.remove(character.pos)
+
         for pos in visible:
             self.cells[pos.y][pos.x].add_class("in-vision")
 
@@ -247,15 +269,12 @@ class MapPanel(Static):
 
     DEFAULT_CSS = """
     #map-display-area {
-        height: 90%;
         align: center middle;
-        padding: 1 0 1 2;
+        margin: 1 0;
     }
 
     #map-info {
-        height: 10%;
         text-align: center;
-        background: $surface;
     }
     """
 
