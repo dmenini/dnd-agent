@@ -1,10 +1,9 @@
 from textual.app import ComposeResult
-from textual.containers import Container, Grid, VerticalScroll
-from textual.css.model import RuleSet
+from textual.containers import Grid, ScrollableContainer
 from textual.message import Message
-from textual.widgets import Rule, Static
+from textual.widgets import Static
 
-from agent.models.map import EMPTY_CELL, GameMap, WALL_CELL
+from agent.models.map import EMPTY_CELL, WALL_CELL, GameMap
 from agent.models.state import State
 
 
@@ -14,7 +13,12 @@ class MapCell(Static):
     class Clicked(Message):
         """Posted when a cell is clicked."""
 
-        def __init__(self, x: int, y: int, info: str, ) -> None:
+        def __init__(
+            self,
+            x: int,
+            y: int,
+            info: str,
+        ) -> None:
             super().__init__()
             self.x = x
             self.y = y
@@ -51,31 +55,28 @@ class InteractiveMapGrid(Grid):
 
     DEFAULT_CSS = """
     InteractiveMapGrid {
-        align: center middle;
+        content-align: center middle;
         padding: 0;
         margin: 0;
         grid-gutter: 0;
-        width: 90w;
-        height: 90h;
     }
 
     MapCell {
-        width: 1fr;
-        height: 1fr;
+        width: 4;
+        height: 2;
         padding: 0;
         margin: 0;
-        border: none;
         content-align: center middle;
     }
 
     MapCell.light {
         background: $surface;
     }
-    
+
     MapCell.dark {
         background: $surface-darken-1;
     }
-    
+
     MapCell:hover {
         background: $boost;
     }
@@ -99,6 +100,10 @@ class InteractiveMapGrid(Grid):
             return
         self.styles.grid_size_columns = self.game_map.width
         self.styles.grid_size_rows = self.game_map.height
+
+        # Set explicit size to ensure scrolling
+        self.styles.width = self.game_map.width * 4  # 3 columns per cell
+        self.styles.height = self.game_map.height * 2  # 2 rows per cell
 
     def compose(self) -> ComposeResult:
         """Create the grid of cells."""
@@ -155,7 +160,7 @@ class MapPanel(Static):
     #map-display-area {
         height: 90%;
         align: center middle;
-        padding: 0;
+        padding: 1 0 1 2;
     }
 
     #map-tooltip {
@@ -166,14 +171,13 @@ class MapPanel(Static):
 
     def compose(self) -> ComposeResult:
         """Build static structure of the panel."""
-        with VerticalScroll(id="map-container"):
-            with Container(id="map-display-area"):
-                yield Static("Loading map...", id="map-content")
-            yield Static("Hover over cells for info", id="map-tooltip")
+        with ScrollableContainer(id="map-display-area"):
+            yield Static("Loading map...", id="map-content")
+        yield Static("Hover over cells for info", id="map-tooltip")
 
     def update_state(self, state: State) -> None:
         """Update the map display according to the current state."""
-        map_content_container = self.query_one("#map-display-area", Container)
+        map_content_container = self.query_one("#map-display-area", ScrollableContainer)
 
         if not state.map:
             # Remove old grid and show empty message
