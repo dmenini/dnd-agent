@@ -72,6 +72,7 @@ class State(BaseModel):
             raise ValueError
 
         visible_targets = []
+        self.map.get_visible_positions(actor)
         for target_id, target in self.alive_characters.items():
             if actor.id == target_id:
                 continue

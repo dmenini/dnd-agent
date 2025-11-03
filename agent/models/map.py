@@ -100,14 +100,11 @@ class GameMap(BaseModel):
         fx, fy = observer.pos.facing_vector
 
         # Create a 2D numpy array marking transparency (True = transparent)
-        transparency = np.ones((self.height, self.width), dtype=bool)
-        for wall in self.walls:
-            if 0 <= wall.y < self.height and 0 <= wall.x < self.width:
-                transparency[wall.y, wall.x] = False
+        transparency_mask = self._transparency_mask()
 
         # Compute FOV using recursive shadowcasting
         fov_mask = tcod.map.compute_fov(
-            transparency,
+            transparency_mask,
             (cy, cx),  # tcod uses (row, col) = (y, x)
             radius=radius,
             light_walls=True,
@@ -162,58 +159,29 @@ class GameMap(BaseModel):
         facing_x, facing_y = observer.pos.facing_vector
         tx, ty = observer.pos.direction_to(target)
 
+        cos_half = math.cos(math.radians(observer.attributes.base_vision_fov / 2))
         dot = facing_x * tx + facing_y * ty
-        dot = max(-1.0, min(1.0, dot))  # numerical stability
-
-        angle = math.degrees(math.acos(dot))
-        return angle <= observer.attributes.base_vision_fov / 2
+        return dot >= cos_half
 
     def has_line_of_sight(self, observer: CharacterBase, target: Position) -> bool:
-        observer_pos = observer.pos
-        for x, y in self._bresenham_line(observer_pos, target):
-            # If any wall blocks the view, line of sight is broken
-            if any(wall.x == x and wall.y == y for wall in self.walls):
-                return False
-        return True
+        """Fast line-of-sight using libtcod's Bresenham algorithm."""
+        # Build a local transparency map
+        transparency_mask = self._transparency_mask()
 
-    def _bresenham_line(self, start: Position, end: Position) -> list[tuple[int, int]]:
-        """
-        Compute the grid cells traversed by a straight line between two positions using Bresenham's algorithm.
-        Excludes the starting point, but includes all intermediate cells up to (but not including) the end point.
-        """
-        points = []
+        start = (observer.pos.y, observer.pos.x)
+        end = (target.y, target.x)
+        # tcod returns all tiles in the line, inclusive of endpoints
+        line = tcod.los.bresenham(start, end).tolist()
 
-        # Initialize coordinates
-        x0, y0 = start.x, start.y
-        x1, y1 = end.x, end.y
+        # If any step is non-transparent → blocked
+        return all(transparency_mask[y, x] for y, x in line)
 
-        # Compute deltas (absolute distances along x and y)
-        dx = abs(x1 - x0)
-        dy = abs(y1 - y0)
-
-        # Determine the step direction for x and y
-        sx = 1 if x0 < x1 else -1
-        sy = 1 if y0 < y1 else -1
-
-        # Error term (difference between ideal line and rasterized line)
-        err = dx - dy
-
-        # Start at the initial position and iterate until we reach the end position
-        x, y = x0, y0
-        while (x, y) != (x1, y1):
-            e2 = err * 2
-            if e2 > -dy:
-                err -= dy
-                x += sx  # Move horizontally
-            if e2 < dx:
-                err += dx
-                y += sy  # Move vertically
-
-            # Add intermediate points (exclude the final cell)
-            if (x, y) != (x1, y1):
-                points.append((x, y))
-
-        return points
+    def _transparency_mask(self) -> np.ndarray:
+        transparency = np.ones((self.height, self.width), dtype=bool)
+        for wall in self.walls:
+            if 0 <= wall.y < self.height and 0 <= wall.x < self.width:
+                transparency[wall.y, wall.x] = False
+        return transparency
 
     def __str__(self) -> str:
         self.map = "\n".join(" ".join(row) for row in self.grid)

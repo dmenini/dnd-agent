@@ -124,7 +124,7 @@ class InteractiveMapGrid(Grid):
                 if self.state.turn_order:
                     if cid not in self.state.visible_characters:
                         lines.append("Out of sight")
-                    dist = self.state.map.distance(self.state.current_actor.pos, char.pos)
+                    dist = self.game_map.distance(self.state.current_actor.pos, char.pos)
                     lines.append(f"Distance: {dist}m")
                 break
 
