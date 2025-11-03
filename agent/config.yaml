@@ -1,3 +1,4 @@
+generate_map: False
 agent:
   retries: 3
   llm:
@@ -7,7 +8,7 @@ agent:
     max_retries: 3
     history_size: 20
     simulation: False
-    mock_llm: True
+    mock_llm: False
   tools:
   prompts:
     system: |-

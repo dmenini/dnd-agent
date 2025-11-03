@@ -84,7 +84,7 @@ async def main() -> None:
             id="pc_alfred",
             name="Alfred",
             icon="🤡",
-            pos=Position(x=0, y=0),
+            pos=Position(x=1, y=1, direction="SE"),
             job=Fighter,
             attributes=Attributes(base_hp=20),
             is_player=True,
@@ -96,7 +96,7 @@ async def main() -> None:
             id="pc_alice",
             name="Alice",
             icon="👧",
-            pos=Position(x=1, y=1),
+            pos=Position(x=5, y=5, direction="N"),
             job=Mage,
             attributes=Attributes(base_hp=20),
             is_player=True,
@@ -110,7 +110,7 @@ async def main() -> None:
             id="orc_1",
             name="Orc Grunt",
             icon="👹",
-            pos=Position(x=2, y=2),
+            pos=Position(x=8, y=3, direction="W"),
             job=Fighter,
             party=enemy_party,
         ),
@@ -118,12 +118,24 @@ async def main() -> None:
 
     state.log.log_event(message=f"Generating combat map of size {MAP_SIZE}x{MAP_SIZE}", log_type=LogLevel.MAIN)
 
-    gen = build_map_generator(config.agent)
-
-    if config.agent.decision_node.get("mock_llm"):
+    if not config.generate_map:
+        map_str = [
+            "##########",
+            "#........#",
+            "#...##...#",
+            "#...##...#",
+            "#........#",
+            "#........#",
+            "#........#",
+            "#...##...#",
+            "#........#",
+            "##########",
+        ]
         positions = {c.id: c.pos for c in heroes + enemies}
-        game_map = GameMap(map="", width=MAP_SIZE, height=MAP_SIZE, walls=[], characters=positions)
+        walls = [Position(x=x, y=y) for y, row in enumerate(map_str) for x, ch in enumerate(row) if ch == "#"]
+        game_map = GameMap(map="", width=MAP_SIZE, height=MAP_SIZE, walls=walls, characters=positions)
     else:
+        gen = build_map_generator(config.agent)
         game_map = generate_game_map(
             gen,
             enemies=[c.id for c in enemies],

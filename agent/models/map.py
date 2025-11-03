@@ -88,8 +88,7 @@ class GameMap(BaseModel):
 
     def get_visible_positions(self, observer: CharacterBase) -> set[Position]:
         """
-        Compute visible tiles using the recursive shadowcasting algorithm.
-        This is the standard method for roguelike FOV (field of view).
+        Compute visible tiles. Walls are included in the visible positions if they are in sight.
         """
         visible = set()
 
@@ -108,20 +107,21 @@ class GameMap(BaseModel):
             (cy, cx),  # tcod uses (row, col) = (y, x)
             radius=radius,
             light_walls=True,
-            algorithm=tcod.constants.FOV_SHADOW,
+            algorithm=tcod.constants.FOV_RESTRICTIVE,
         )
 
         # Precompute cosine of half-angle for dot product test
         cos_half = math.cos(math.radians(fov_angle / 2.0))
 
         # Always see own tile
-        visible.add(Position(x=cx, y=cy))
+        center = Position(x=cx, y=cy)
+        visible.add(center)
 
         # Iterate tcod-visible positions
         ys, xs = np.where(fov_mask)
         for y, x in zip(ys, xs, strict=False):
             pos = Position(x=x, y=y)
-            if pos.x == cx and pos.y == cy:
+            if pos == center:
                 continue
 
             dir_vec = observer.pos.direction_to(pos)

@@ -53,7 +53,9 @@ class State(BaseModel):
         return self.current_actor.is_player
 
     @property
-    def current_actor(self) -> Character:
+    def current_actor(self) -> Character | None:
+        if not self.turn_order:
+            return None
         return self.characters[self.turn_order[self.turn_index]]
 
     def get_party_members(self, party_id: str, *, alive_only: bool = False) -> list[Character]:
@@ -72,7 +74,6 @@ class State(BaseModel):
             raise ValueError
 
         visible_targets = []
-        self.map.get_visible_positions(actor)
         for target_id, target in self.alive_characters.items():
             if actor.id == target_id:
                 continue

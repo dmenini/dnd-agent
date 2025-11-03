@@ -4,9 +4,11 @@ from textual.containers import Grid, ScrollableContainer
 from textual.message import Message
 from textual.widgets import Static
 
-from agent.models.map import EMPTY_CELL, GameMap
+from agent.models.map import EMPTY_CELL, WALL_CELL
 from agent.models.position import Position
 from agent.models.state import State
+
+DEFAULT_INFO = "Select a cell to see info"
 
 
 class MapCell(Static):
@@ -26,6 +28,12 @@ class MapCell(Static):
         self.y = y
         self.tooltip = f"({x}, {y})"  # Simple tooltip with coordinates
         self.update(content)
+
+    def is_wall(self) -> bool:
+        return self.has_class("wall")
+
+    def is_selected(self) -> bool:
+        return self.has_class("selected")
 
     def on_click(self) -> None:
         """Handle click event."""
@@ -69,14 +77,19 @@ class InteractiveMapGrid(Grid):
 
     MapCell.in-vision {
         background: $warning-darken-1;
-        opacity: 0.7;
+        opacity: 0.9;
+    }
+
+    MapCell.wall {
+        background: $primary-darken-3;
+        text-style: bold;
     }
     """
 
-    def __init__(self, game_map: GameMap, state: State) -> None:
+    def __init__(self, state: State) -> None:
         super().__init__()
-        self.game_map = game_map
-        self.grid = game_map.grid
+        self.game_map = state.map
+        self.grid = state.map.grid
         self.state = state
         self.cells: list[list[MapCell]] = []
         self.selected_x: int = 0
@@ -101,14 +114,22 @@ class InteractiveMapGrid(Grid):
             for x in range(self.game_map.width):
                 cell_content = self._get_cell_content(x, y)
                 color_class = "light" if (x + y) % 2 == 0 else "dark"
+
+                if Position(x=x, y=y) in self.game_map.walls:
+                    color_class = "wall"
+
                 cell = MapCell(x=x, y=y, content=cell_content, classes=color_class)
                 row.append(cell)
                 yield cell
             self.cells.append(row)
 
+        if self.state.current_actor:
+            pos = self.state.current_actor.pos
+            self._select_cell(pos.x, pos.y)
+
     def _get_cell_content(self, x: int, y: int) -> str:
         content = self.grid[y][x]
-        if content == EMPTY_CELL:
+        if content in {EMPTY_CELL, WALL_CELL}:
             return ""
         return content.strip()
 
@@ -116,57 +137,24 @@ class InteractiveMapGrid(Grid):
         """Generate detailed information for a cell."""
         lines = [f"Position: ({x}, {y})"]
 
+        pos = Position(x=x, y=y)
+
+        if pos in self.game_map.walls:
+            lines.append("Wall")
+
         # Check if there's a character at this position
         for cid, char in self.state.characters.items():
-            if char.pos.x == x and char.pos.y == y:
+            if char.pos == pos:
                 lines.append(f"Character: {char.name}")
                 lines.append(f"HP: {char.attributes.hp}/{char.max_hp}")
-                if self.state.turn_order:
+                if (actor := self.state.current_actor) and actor.id != cid:
+                    dist = self.game_map.distance(actor.pos, char.pos)
+                    lines.append(f"Distance: {dist}m")
                     if cid not in self.state.visible_characters:
                         lines.append("Out of sight")
-                    dist = self.game_map.distance(self.state.current_actor.pos, char.pos)
-                    lines.append(f"Distance: {dist}m")
                 break
 
         return " | ".join(lines)
-
-    def _select_cell(self, x: int, y: int) -> None:
-        """Select a cell and show its information."""
-        # Deselect all cells and clear vision cone
-        for row in self.cells:
-            for cell in row:
-                cell.remove_class("selected")
-                cell.remove_class("in-vision")
-
-        # Select new cell
-        if 0 <= x < self.game_map.width and 0 <= y < self.game_map.height:
-            self.selected_x = x
-            self.selected_y = y
-            self.cells[y][x].add_class("selected")
-
-            # Show cell info
-            info = self._get_cell_info(x, y)
-            self.app.query_one("#map-info", Static).update(info)
-
-            # Show vision cone if there's a character at this position
-            self._show_vision_cone(x, y)
-
-    def _show_vision_cone(self, x: int, y: int) -> None:
-        """Highlight cells in the vision cone of a character at given position."""
-        # Find character at this position
-        character = None
-        for char in self.state.characters.values():
-            if char.pos.x == x and char.pos.y == y:
-                character = char
-                break
-
-        if not character:
-            return
-
-        for tx in range(self.game_map.width):
-            for ty in range(self.game_map.height):
-                if self.game_map.within_visibility_range(character, target=Position(x=tx, y=ty)):
-                    self.cells[ty][tx].add_class("in-vision")
 
     def on_key(self, event: events.Key) -> None:
         """Handle keyboard navigation."""
@@ -187,7 +175,71 @@ class InteractiveMapGrid(Grid):
 
     def on_map_cell_clicked(self, message: MapCell.Clicked) -> None:
         """Handle cell click events."""
-        self._select_cell(message.x, message.y)
+        x, y = message.x, message.y
+
+        if x is None or y is None:
+            return
+
+        if self.cells[y][x].is_wall():
+            return
+
+        # If clicking the same cell again → unselect
+        if self.selected_x == x and self.selected_y == y:
+            self._unselect_cell()
+        else:
+            self._select_cell(x, y)
+
+    def _select_cell(self, x: int, y: int) -> None:
+        """Select a cell and show its information."""
+        # First, clear previous selection and vision cone
+        for row in self.cells:
+            for cell in row:
+                cell.remove_class("selected")
+                cell.remove_class("in-vision")
+
+        # Check bounds
+        if not (0 <= x < self.game_map.width and 0 <= y < self.game_map.height):
+            return
+
+        self.selected_x = x
+        self.selected_y = y
+        selected_cell = self.cells[y][x]
+        selected_cell.add_class("selected")
+
+        # Show cell info
+        info = self._get_cell_info(x, y)
+        self.app.query_one("#map-info", Static).update(info)
+
+        # Show vision cone if there's a character at this position
+        self._show_vision_cone(x, y)
+
+    def _unselect_cell(self) -> None:
+        """Clear current selection and vision cone."""
+        for row in self.cells:
+            for cell in row:
+                cell.remove_class("selected")
+                cell.remove_class("in-vision")
+
+        self.selected_x = None
+        self.selected_y = None
+
+        # Clear info panel
+        self.app.query_one("#map-info", Static).update(DEFAULT_INFO)
+
+    def _show_vision_cone(self, x: int, y: int) -> None:
+        """Highlight cells in the vision cone of a character at given position."""
+        # Find character at this position
+        character = None
+        for char in self.state.characters.values():
+            if char.pos.x == x and char.pos.y == y:
+                character = char
+                break
+
+        if not character:
+            return
+        visible = self.game_map.get_visible_positions(character)
+        for pos in visible:
+            self.cells[pos.y][pos.x].add_class("in-vision")
 
 
 class MapPanel(Static):
@@ -211,7 +263,7 @@ class MapPanel(Static):
         """Build static structure of the panel."""
         with ScrollableContainer(id="map-display-area"):
             yield Static("Loading map...", id="map-content")
-        yield Static("Select a cell to see info", id="map-info")
+        yield Static(DEFAULT_INFO, id="map-info")
 
     def update_state(self, state: State) -> None:
         """Update the map display according to the current state."""
@@ -225,5 +277,5 @@ class MapPanel(Static):
 
         # Remove old grid and create new one
         map_content_container.remove_children()
-        interactive_grid = InteractiveMapGrid(state.map, state)
+        interactive_grid = InteractiveMapGrid(state)
         map_content_container.mount(interactive_grid)
