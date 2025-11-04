@@ -203,7 +203,7 @@ class DecisionNode:
             los = actor.los_distance(c.pos)
             lines.append(
                 f"- {c.id}: {c.icon} name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
-                f"at ({c.pos.x}, {c.pos.y}) facing {c.pos.direction}, distance={dist}m, LoS={los}m"
+                f"at ({c.pos.x}, {c.pos.y}) facing {c.pos.direction}, distance={dist} steps, LoS={los}m"
             )
         return "\n".join(lines) or "- No one in sight, try to explore the map.\n"
 

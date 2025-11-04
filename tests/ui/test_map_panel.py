@@ -9,7 +9,8 @@ from agent.main import MAP_SIZE
 from agent.models.map import GameMap
 from agent.models.position import Position
 from agent.models.state import State
-from agent.ui.map_panel import InteractiveMapGrid, MapCell, MapPanel
+from agent.ui.map_panel import MapPanel
+from agent.ui.widgets.map_grid import InteractiveMapGrid, MapCell
 
 
 class TestApp(App):
