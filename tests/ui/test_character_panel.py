@@ -26,8 +26,7 @@ async def test_initial_compose(app: App) -> None:
     """Test that panel composes with Tabs and ContentSwitcher."""
 
     async with app.run_test():
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         # Check that tabs and switcher exist
         tabs = panel.query_one("#character-tabs")
@@ -39,8 +38,7 @@ async def test_add_new_character(app: App, actor: Character) -> None:
     """Test adding a new character creates tab and sheet."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         # Create state with one character
         state = State(
@@ -65,8 +63,7 @@ async def test_add_multiple_characters(app: App, actor: Character, target: Chara
     """Test adding multiple characters."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         state = State(
             map=None,
@@ -86,8 +83,7 @@ async def test_add_multiple_characters(app: App, actor: Character, target: Chara
 @pytest.mark.asyncio
 async def test_update_existing_character(app: App, actor: Character) -> None:
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         # Add initial character
         state1 = State(
@@ -128,8 +124,7 @@ async def test_remove_character(app: App, actor: Character, target: Character) -
     """Test removing a character removes tab and sheet."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         # Add two characters
         state1 = State(
@@ -164,8 +159,7 @@ async def test_remove_all_characters(app: App, actor: Character) -> None:
     """Test removing all characters."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         # Add characters
         state1 = State(
@@ -194,8 +188,7 @@ async def test_set_active_tab_with_turn_order(app: App, actor: Character, target
     """Test that active tab is set based on current actor."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         state = State(
             characters={actor.id: actor, target.id: target},
@@ -216,8 +209,7 @@ async def test_no_turn_order_doesnt_change_active(app: App, actor: Character) ->
     """Test that without turn_order, active tab isn't changed."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         state = State(
             characters={actor.id: actor},
@@ -238,8 +230,7 @@ async def test_mixed_add_update_remove(app: App, actor: Character, target: Chara
     """Test adding, updating, and removing characters in one update."""
 
     async with app.run_test() as pilot:
-        panel = CharacterPanel()
-        await app.mount(panel)
+        panel = app.query_one(CharacterPanel)
 
         # Initial state
         state1 = State(
