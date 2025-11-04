@@ -101,13 +101,22 @@ class GameMap(BaseModel):
         # Create a 2D numpy array marking transparency (True = transparent)
         transparency_mask = self._transparency_mask()
 
-        # Compute FOV using recursive shadowcasting
+        # Compute FOV using recursive symmetric shadowcasting. Examples:
+        # R=8               R=3 no walls
+        # #.....+++#        ..........
+        # #...##+++#        ...+++++..
+        # #+..+#+++#        ...+++++..
+        # #+++#++++#        ...++@++..
+        # #++++@+++#        ...+++++..
+        # #++++++#.#        ...+++++..
+        # #+++##++.#        ..........
+        # #++...+++#
         fov_mask = tcod.map.compute_fov(
             transparency_mask,
             (cy, cx),  # tcod uses (row, col) = (y, x)
             radius=radius,
             light_walls=True,
-            algorithm=tcod.constants.FOV_RESTRICTIVE,
+            algorithm=tcod.constants.FOV_SYMMETRIC_SHADOWCAST,
         )
 
         # Precompute cosine of half-angle for dot product test

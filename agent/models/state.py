@@ -73,12 +73,13 @@ class State(BaseModel):
             raise ValueError
 
         visible_targets = []
+        visible_positions = self.map.get_visible_positions(actor)
         for target_id, target in self.alive_characters.items():
             if actor.id == target_id:
                 continue
 
-            # Check range + line of sight before doing perception
-            if not self.map.within_visibility_range(actor, target.pos):
+            # Check target is visible
+            if target.pos not in visible_positions:
                 continue
 
             # Handle stealth / perception contest

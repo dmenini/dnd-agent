@@ -213,12 +213,19 @@ def test_visibility_no_walls(game_map: GameMap, actor: Character) -> None:
 
     visible = game_map.get_visible_positions(actor)
 
-    # Rough check: should include a circle of radius 3 around the observer
+    # Rough check: should include a rectangle around the observer
+    # ..........
+    # ...+++++..
+    # ...+++++..
+    # ...++@++..
+    # ...+++++..
+    # ...+++++..
+    # ..........
     assert Position(x=5, y=5) in visible
-    assert Position(x=8, y=5) in visible  # right
-    assert Position(x=5, y=8) in visible  # down
-    assert Position(x=2, y=5) in visible  # left
-    assert Position(x=5, y=2) in visible  # up
+    assert Position(x=7, y=5) in visible  # right
+    assert Position(x=5, y=7) in visible  # down
+    assert Position(x=3, y=5) in visible  # left
+    assert Position(x=5, y=3) in visible  # up
     assert len(visible) > 20
 
 
@@ -229,13 +236,24 @@ def test_visibility_with_wall_blocking(game_map: GameMap, actor: Character) -> N
 
     actor.pos = Position(x=5, y=5)
     actor.attributes.base_vision_fov = 360
-    actor.attributes.base_vision_range = 3
+    actor.attributes.base_vision_range = 8
+    # ++++++++++
+    # ++++++++++
+    # ++++++++..
+    # +++++@#...
+    # ++++++++..
+    # ++++++++++
+    # ++++++++++
+    # ++++++++++
 
     visible = game_map.get_visible_positions(actor)
 
     assert Position(x=5, y=5) in visible
     assert Position(x=6, y=5) in visible  # wall itself visible
     assert Position(x=7, y=5) not in visible  # blocked behind wall
+    assert Position(x=8, y=5) not in visible
+    assert Position(x=8, y=4) not in visible
+    assert Position(x=8, y=6) not in visible
 
 
 @pytest.mark.parametrize(
