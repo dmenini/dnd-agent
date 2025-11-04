@@ -80,7 +80,6 @@ class State(BaseModel):
 
             # Check target is visible
             if target.pos not in visible_positions:
-                actor.log_event(f"Target {target.name} is not visible")
                 continue
 
             # Handle stealth / perception contest

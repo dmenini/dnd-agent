@@ -22,7 +22,7 @@ class Attributes(Stats):
     base_speed: float = 6.0
     base_crit_roll_bonus: int = 0
     base_vision_range: float = 10.0
-    base_vision_fov: float = 90.0
+    base_vision_fov: float = 120.0
     base_spell_save_dc: int = 8
     base_perception: int = 10
 

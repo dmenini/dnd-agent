@@ -5,6 +5,7 @@ from agent.character.character import Character
 from agent.models.config import AgentConfig, Config
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
+from agent.models.position import Position
 from agent.models.state import State
 from agent.ui.game_ui import GameUI
 from agent.ui.log_panel import LogPanel
@@ -101,3 +102,78 @@ async def test_game_loop(  # noqa: PLR0915
         input_widget.value = "wait"
         await pilot.press("enter")
         await pilot.pause()
+
+
+@pytest.mark.asyncio
+async def test_action_resources_are_used(
+    config: AgentConfig,
+    actor: Character,
+    target: Character,
+    game_map: GameMap,
+) -> None:
+    state = State(
+        map=game_map,
+        characters={actor.id: actor, target.id: target},
+        parties={actor.party.id: actor.party, target.party.id: target.party},
+        turn_order=[actor.id, target.id],
+    )
+    config.decision_node["mock_llm"] = True  # To always wait and pass turn
+
+    ui = GameUI(initial_state=state, config=Config(agent=config))
+    async with ui.run_test() as pilot:
+        input_widget = pilot.app.query_one("#user-input", Input)
+        assert input_widget.placeholder == "Press ENTER to start game..."
+
+        # Game starts and interrupt stops execution at player's decision time
+        await pilot.click(input_widget)
+        await pilot.press("enter")
+        await pilot.pause()
+
+        # Actor turn -> attack
+        assert actor.name in input_widget.placeholder
+        await pilot.click(input_widget)
+        input_widget.value = DecisionResult(
+            action_id="main_hand_attack", target_hits={target.id: 1}, description="Main attack"
+        ).model_dump_json()
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert ui.state.current_actor is not None
+        assert "main_hand_attack" not in ui.state.current_actor.get_available_actions()
+
+        # Actor turn -> second wind (due to serialization it may be restored)
+        assert actor.name in input_widget.placeholder
+        await pilot.click(input_widget)
+        input_widget.value = DecisionResult(action_id="second_wind", description="Second wind").model_dump_json()
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert ui.state.current_actor is not None
+        assert "second_wind" not in ui.state.current_actor.get_available_actions()
+
+        # Actor turn -> turn around is free
+        new_pos = Position(x=actor.pos.x, y=actor.pos.y, direction="S")
+        assert actor.name in input_widget.placeholder
+        await pilot.click(input_widget)
+        input_widget.value = DecisionResult(
+            action_id="move", target_position=new_pos, description="Second wind"
+        ).model_dump_json()
+        await pilot.press("enter")
+        await pilot.pause()
+
+        assert ui.state.current_actor is not None
+        assert "move" in ui.state.current_actor.get_available_actions()
+
+        # Actor turn -> move
+        new_pos = Position(x=actor.pos.x, y=actor.pos.y + 1, direction="S")
+        assert actor.name in input_widget.placeholder
+        await pilot.click(input_widget)
+        input_widget.value = DecisionResult(
+            action_id="move", target_position=new_pos, description="Second wind"
+        ).model_dump_json()
+        await pilot.press("enter")
+        await pilot.pause()
+
+        # No more resources, turns is automatically passed to next char
+        assert ui.state.current_actor is not None
+        assert ui.state.current_actor.name == target.name
