@@ -13,7 +13,9 @@ class EventType(str, Enum):
     RECEIVE_DAMAGE = "receive_damage"
 
 
-MELEE_RANGE = 5
+# Traditionally is 5, but in our map it looks weird to be able to attack a target 5 tiles away
+MELEE_RANGE = 2
+
 BONUS_AC_FROM_SHIELDS = 2
 
 TRAIT_LOG_LEVEL = LogLevel.DEBUG

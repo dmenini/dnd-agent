@@ -15,16 +15,16 @@ class ActionProcessorNode:
         if not state.action or not state.decision:
             return state
 
+        if state.current_actor is None or not state.map:
+            msg = "Incorrect initialization"
+            raise ValueError(msg)
+
         decision = state.decision
         action = state.action
         actor = state.current_actor
 
         if not actor.is_alive:
             return state
-
-        if not state.map:
-            msg = "Map not initialized"
-            raise ValueError(msg)
 
         enemies = [c for c in state.characters.values() if c.id != actor.id and c.party.id != actor.party.id]
 

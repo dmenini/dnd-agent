@@ -41,17 +41,20 @@ class State(BaseModel):
 
     @property
     def visible_characters(self) -> list[Character]:
-        actor = self.current_actor
-        if actor.id not in self.visibility:
-            return []
-        return [self.characters[t] for t in self.visibility[actor.id]]
+        if actor := self.current_actor:
+            if actor.id not in self.visibility:
+                return []
+            return [self.characters[t] for t in self.visibility[actor.id]]
+        return []
 
     @property
     def is_player_turn(self) -> bool:
-        return self.current_actor.is_player
+        return self.current_actor is not None and self.current_actor.is_player
 
     @property
-    def current_actor(self) -> Character:
+    def current_actor(self) -> Character | None:
+        if not self.turn_order:
+            return None
         return self.characters[self.turn_order[self.turn_index]]
 
     def get_party_members(self, party_id: str, *, alive_only: bool = False) -> list[Character]:
@@ -70,16 +73,17 @@ class State(BaseModel):
             raise ValueError
 
         visible_targets = []
+        visible_positions = self.map.get_visible_positions(actor)
         for target_id, target in self.alive_characters.items():
             if actor.id == target_id:
                 continue
 
-            # Check range + line of sight before doing perception
-            if not self.map.within_visibility_range(actor, target):
+            # Check target is visible
+            if target.pos not in visible_positions:
                 continue
 
             # Handle stealth / perception contest
-            if not target.is_hidden or actor.detect_target(target, use_passive=True):
+            if actor.detect_target(target, use_passive=True):
                 visible_targets.append(target_id)
 
         self.visibility[actor.id] = visible_targets

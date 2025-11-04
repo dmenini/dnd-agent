@@ -36,14 +36,14 @@ class DecisionNode:
     async def __call__(self, state: State) -> State:
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
+        if state.current_actor is None or not state.map:
+            msg = "Incorrect initialization"
+            raise ValueError(msg)
+
         actor = state.current_actor
 
         if not actor.is_alive:
             return state
-
-        if not state.map:
-            msg = "Map not initialized"
-            raise ValueError(msg)
 
         if not self.simulation:
             if actor.is_player:
@@ -116,26 +116,9 @@ class DecisionNode:
     async def get_ai_decision(self, state: State, actor: Character, actions: list[Action]) -> DecisionResult:
         # Prepare message history from previous main events
         history = self.group_messages(state.log)
-
-        if state.verification_result and not state.verification_result.valid and state.verification_result.input:
-            # Hide the previous decision that led to a validation error for a clean AI history
-            state.log.hide_last_event(event_type=LogLevel.MAIN)
-            # Due to Action serialization, the input may be a dict instead of a pydantic model
-            prev_inp = state.verification_result.input
-            id_ = prev_inp["id"] if isinstance(prev_inp, dict) else prev_inp.id
-            validation_event = (
-                f"The previously chosen action '{id_}' is invalid:\n"
-                f"{state.verification_result.reason}\n\n"
-                "Instructions: Review the available actions and your movement. "
-                "Choose a legal action that respects range, resources, and targeting constraints. "
-                "If no target is in range, consider repositioning, using a different ability, "
-                "or skipping the turn strategically."
-            )
-        else:
-            validation_event = ""
-
+        validation = self._format_validation(state)
         user_prompt = (
-            f"{validation_event}"
+            f"{validation}"
             f"You are controlling **{actor.name}**, an NPC in a tactical D&D-like combat with the following profile.\n"
             f"---\n"
             f"{self._format_context(state, actor, actions)}"
@@ -152,8 +135,10 @@ class DecisionNode:
     async def interpret_player_input(
         self, state: State, actor: Character, actions: list[Action], text: str
     ) -> DecisionResult:
+        validation = self._format_validation(state)
         text = text or "No decision provided. Choose the most optimal action for the player."
         user_prompt = (
+            f"{validation}\n"
             f"Map the player decision to one of the available actions.\n"
             f"---\n"
             f"### Player decision\n"
@@ -194,15 +179,31 @@ class DecisionNode:
 
         return messages
 
+    def _format_validation(self, state: State) -> str:
+        if state.verification_result and not state.verification_result.valid and state.verification_result.input:
+            # Hide the previous decision that led to a validation error for a clean AI history
+            state.log.hide_last_event(event_type=LogLevel.MAIN)
+            # Due to Action serialization, the input may be a dict instead of a pydantic model
+            prev_inp = state.verification_result.input
+            id_ = prev_inp["id"] if isinstance(prev_inp, dict) else prev_inp.id
+            return (
+                f"The previously chosen action '{id_}' is invalid:\n"
+                f"{state.verification_result.reason}\n\n"
+                "Instructions: Review the available actions and your movement. "
+                "Choose a legal action that respects range, resources, and targeting constraints. "
+                "If no target is in range, consider repositioning, using a different ability, "
+                "or skipping the turn strategically."
+            )
+        return ""
+
     def _format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
         lines = []
         for c in visible_characters:
             dist = game_map.distance(actor.pos, c.pos)
             los = actor.los_distance(c.pos)
-            effects = ", ".join(str(e) for e in c.status_effects) or "None"
             lines.append(
-                f"- {c.icon} ID={c.id}, name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
-                f"at ({c.pos.x}, {c.pos.y}) facing {c.pos.direction}, distance={dist}m, LoS={los}m, effects={effects}"
+                f"- {c.id}: {c.icon} name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
+                f"at ({c.pos.x}, {c.pos.y}) facing {c.pos.direction}, distance={dist} steps, LoS={los}m"
             )
         return "\n".join(lines) or "- No one in sight, try to explore the map.\n"
 
@@ -227,5 +228,7 @@ class DecisionNode:
             f"{self._format_characters(visible_enemies, state.map, actor)}\n"
             f"---\n"
             f"### Map Overview\n"
-            f"{state.map}\n"
+            f"{state.map}\n\n"
+            f"Walls/obstacles (#): {state.map.walls}\n"
+            f"Movement steps available: {actor.current_speed}"
         )

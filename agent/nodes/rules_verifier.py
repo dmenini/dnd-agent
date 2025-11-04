@@ -32,6 +32,9 @@ class RulesVerifierNode:
         """Runs all validation checks on the current action."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
+        if state.current_actor is None:
+            raise ValueError
+
         valid = True
         if not state.current_actor.is_alive or not state.action or not state.decision:
             state.verification_result = VerificationResult(valid=valid, input=None)
@@ -88,13 +91,16 @@ class RulesVerifierNode:
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
         if not isinstance(state.action, AttackAction):
             return True, None
-        return state.decision.validate_friendly_fire(actor=state.current_actor, characters=state.characters)
+        return state.decision.validate_friendly_fire(
+            actor=state.current_actor,  # type: ignore[arg-type]
+            characters=state.characters,
+        )
 
     def check_range(self, state: State) -> tuple[bool, str | None]:
         if not hasattr(state.action, "range"):
             return True, None
         return state.decision.validate_range(
-            actor=state.current_actor,
+            actor=state.current_actor,  # type: ignore[arg-type]
             characters=state.characters,
             available_movement=state.action.range,
         )
@@ -105,7 +111,7 @@ class RulesVerifierNode:
         if not state.map:
             raise ValueError
         return state.decision.validate_movement(
-            actor=state.current_actor,
+            actor=state.current_actor,  # type: ignore[arg-type]
             action=state.action,
             game_map=state.map,
         )

@@ -76,6 +76,7 @@ async def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Characte
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Hero attacks -> crit
+    actor = state.characters[actor.id]
     actor._dice = MagicMock()
     value2 = 5
     actor._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value2, raw=value2)
@@ -86,6 +87,7 @@ async def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Characte
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     crit_damage = value2 + value2
+    orc = state.characters[orc_id]
     assert orc.attributes.hp == starting_hp - value1 - crit_damage
 
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
@@ -96,6 +98,7 @@ async def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Characte
     assert state.decision is None
 
     # Paralysis expires after 2 turns
+    assert state.current_actor is not None
     orc = state.current_actor
     assert len(orc.status_effects) == 0
     assert orc.attributes.get_modifiers("defense_advantage") == []

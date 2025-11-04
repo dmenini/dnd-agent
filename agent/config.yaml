@@ -1,3 +1,4 @@
+generate_map: False
 agent:
   retries: 3
   llm:
@@ -17,7 +18,9 @@ agent:
       - Use only actions available on the character sheet. Prefer (in order): survival → optimal damage → tactical positioning → role-play goals.
       - Never target allies (same party id).
       - The map origin is top-left; y increases south, and distance uses Manhattan units. Each tile is 1x1 m.
-      - Account for obstacles, vision, range, and cover before deciding.
+      - Account for obstacles, vision, range, and cover before deciding. This means that a target whose distance is more than the available steps cannot be reached, but you could move closer and then perform an attack. 
+      - You have to move around walls, you cannot pass through them. Walls are marked as "#" on the map, walkable space is ".".
+      - When moving, always consider the direction you are facing. Simulate a real scenario where you must be looking towards the target to attack.
       - Be consistent with prior actions in the history and maintain a long-term tactical plan.
       - In case your decision violates the game rules, correct yourself by following the indications of the error message.
     map: |-

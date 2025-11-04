@@ -75,6 +75,7 @@ async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Charact
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Pass
+    assert state.current_actor is not None
     assert state.current_actor.id == hero_id
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
@@ -82,6 +83,7 @@ async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Charact
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     # Paralysis expires after 2 turns
+    assert state.current_actor is not None
     orc = state.current_actor
     assert len(orc.status_effects) == 0
     assert orc.attributes.get_modifiers("defense_advantage") == []

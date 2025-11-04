@@ -4,6 +4,8 @@ import math
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+import tcod
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from agent.models.position import Position
@@ -12,6 +14,10 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from agent.character.resolvers.base import CharacterBase
+
+WALL_CELL = "#  "
+EMPTY_CELL = "·  "
+DIRECTION_ICON = {"N": "↑", "S": "↓", "E": "→", "W": "←", "NE": "↗", "NW": "↖", "SE": "↘", "SW": "↙"}
 
 
 def is_inbound(pos: Position, width: int, height: int) -> bool:
@@ -80,19 +86,73 @@ class GameMap(BaseModel):
 
         return None  # unreachable
 
+    def get_visible_positions(self, observer: CharacterBase) -> set[Position]:
+        """
+        Compute visible tiles. Walls are included in the visible positions if they are in sight.
+        """
+        visible = set()
+
+        # Observer position and attributes
+        cx, cy = observer.pos.x, observer.pos.y
+        radius = int(observer.attributes.vision_range())
+        fov_angle = float(observer.attributes.base_vision_fov)  # degrees
+        fx, fy = observer.pos.facing_vector
+
+        # Create a 2D numpy array marking transparency (True = transparent)
+        transparency_mask = self._transparency_mask()
+
+        # Compute FOV using recursive symmetric shadowcasting. Examples:
+        # R=8               R=3 no walls
+        # #.....+++#        ..........
+        # #...##+++#        ...+++++..
+        # #+..+#+++#        ...+++++..
+        # #+++#++++#        ...++@++..
+        # #++++@+++#        ...+++++..
+        # #++++++#.#        ...+++++..
+        # #+++##++.#        ..........
+        # #++...+++#
+        fov_mask = tcod.map.compute_fov(
+            transparency_mask,
+            (cy, cx),  # tcod uses (row, col) = (y, x)
+            radius=radius,
+            light_walls=True,
+            algorithm=tcod.constants.FOV_SYMMETRIC_SHADOWCAST,
+        )
+
+        # Precompute cosine of half-angle for dot product test
+        cos_half = math.cos(math.radians(fov_angle / 2.0))
+
+        # Always see own tile
+        center = Position(x=cx, y=cy)
+        visible.add(center)
+
+        # Iterate tcod-visible positions
+        ys, xs = np.where(fov_mask)
+        for y, x in zip(ys, xs, strict=False):
+            pos = Position(x=x, y=y)
+            if pos == center:
+                continue
+
+            dir_vec = observer.pos.direction_to(pos)
+            dot = fx * dir_vec[0] + fy * dir_vec[1]
+
+            if dot >= cos_half:
+                visible.add(pos)
+
+        return visible
+
     def is_walkable(self, x: int, y: int) -> bool:
         return (0 <= x < self.width) and (0 <= y < self.height) and (Position(x=x, y=y) not in self.walls)
 
-    def within_visibility_range(self, observer: CharacterBase, target: CharacterBase) -> bool:
+    def within_visibility_range(self, observer: CharacterBase, target: Position) -> bool:
         """Check whether the target is visible to the actor, considering range and walls."""
         observer_pos = observer.pos
-        target_pos = target.pos
 
-        if observer_pos == target_pos:
+        if observer_pos == target:
             return True
 
         # 1. Distance check
-        distance = observer_pos.euclidean_distance(target_pos)
+        distance = observer_pos.euclidean_distance(target)
         if distance > observer.attributes.vision_range():
             return False
 
@@ -103,75 +163,47 @@ class GameMap(BaseModel):
         # 3. Line of sight check (Bresenham's line)
         return self.has_line_of_sight(observer, target)
 
-    def in_vision_cone(self, observer: CharacterBase, target: CharacterBase) -> bool:
+    def in_vision_cone(self, observer: CharacterBase, target: Position) -> bool:
         """Return True if target is within observer's vision cone."""
         facing_x, facing_y = observer.pos.facing_vector
-        tx, ty = observer.pos.direction_to(target.pos)
+        tx, ty = observer.pos.direction_to(target)
 
+        cos_half = math.cos(math.radians(observer.attributes.base_vision_fov / 2))
         dot = facing_x * tx + facing_y * ty
-        dot = max(-1.0, min(1.0, dot))  # numerical stability
+        return dot >= cos_half
 
-        angle = math.degrees(math.acos(dot))
-        return angle <= observer.attributes.base_vision_fov / 2
+    def has_line_of_sight(self, observer: CharacterBase, target: Position) -> bool:
+        """Fast line-of-sight using libtcod's Bresenham algorithm."""
+        # Build a local transparency map
+        transparency_mask = self._transparency_mask()
 
-    def has_line_of_sight(self, observer: CharacterBase, target: CharacterBase) -> bool:
-        observer_pos = observer.pos
-        target_pos = target.pos
-        for x, y in self._bresenham_line(observer_pos, target_pos):
-            # If any wall blocks the view, line of sight is broken
-            if any(wall.x == x and wall.y == y for wall in self.walls):
-                return False
-        return True
+        start = (observer.pos.y, observer.pos.x)
+        end = (target.y, target.x)
+        # tcod returns all tiles in the line, inclusive of endpoints
+        line = tcod.los.bresenham(start, end).tolist()
 
-    def _bresenham_line(self, start: Position, end: Position) -> list[tuple[int, int]]:
-        """
-        Compute the grid cells traversed by a straight line between two positions using Bresenham's algorithm.
-        Excludes the starting point, but includes all intermediate cells up to (but not including) the end point.
-        """
-        points = []
+        # If any step is non-transparent → blocked
+        return all(transparency_mask[y, x] for y, x in line)
 
-        # Initialize coordinates
-        x0, y0 = start.x, start.y
-        x1, y1 = end.x, end.y
-
-        # Compute deltas (absolute distances along x and y)
-        dx = abs(x1 - x0)
-        dy = abs(y1 - y0)
-
-        # Determine the step direction for x and y
-        sx = 1 if x0 < x1 else -1
-        sy = 1 if y0 < y1 else -1
-
-        # Error term (difference between ideal line and rasterized line)
-        err = dx - dy
-
-        # Start at the initial position and iterate until we reach the end position
-        x, y = x0, y0
-        while (x, y) != (x1, y1):
-            e2 = err * 2
-            if e2 > -dy:
-                err -= dy
-                x += sx  # Move horizontally
-            if e2 < dx:
-                err += dx
-                y += sy  # Move vertically
-
-            # Add intermediate points (exclude the final cell)
-            if (x, y) != (x1, y1):
-                points.append((x, y))
-
-        return points
+    def _transparency_mask(self) -> np.ndarray:
+        transparency = np.ones((self.height, self.width), dtype=bool)
+        for wall in self.walls:
+            if 0 <= wall.y < self.height and 0 <= wall.x < self.width:
+                transparency[wall.y, wall.x] = False
+        return transparency
 
     def __str__(self) -> str:
-        grid = [["·  " for _ in range(self.width)] for _ in range(self.height)]
+        self.map = "\n".join(" ".join(row) for row in self.grid)
+        return self.map
+
+    @property
+    def grid(self) -> list[list[str]]:
+        grid = [[EMPTY_CELL for _ in range(self.width)] for _ in range(self.height)]
 
         for wall in self.walls:
-            grid[wall.y][wall.x] = "#  "
-
-        direction_icons = {"N": "↑", "S": "↓", "E": "→", "W": "←", "NE": "↗", "NW": "↖", "SE": "↘", "SW": "↙"}
+            grid[wall.y][wall.x] = WALL_CELL
 
         for key, char in self.characters.items():
-            grid[char.y][char.x] = f"{self.icons[key]}{direction_icons[char.direction]}"
+            grid[char.y][char.x] = f"{self.icons[key]}{DIRECTION_ICON[char.direction]}"
 
-        self.map = "\n".join(" ".join(row) for row in grid)
-        return self.map
+        return grid

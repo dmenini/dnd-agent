@@ -13,12 +13,12 @@ def build_map_generator(config: AgentConfig) -> Runnable:
     return prompt_template | llm
 
 
-def generate_game_map(chain: Runnable, enemies: list[str], players: list[str], map_size: int) -> GameMap:
+def generate_game_map(chain: Runnable, enemies: list[str], players: list[str], map_size: tuple[int, int]) -> GameMap:
     user_template = f"These are the characters that take part in the combat:\nEnemies: {enemies}\nPlayers: {players}"
     game_map = chain.invoke(
         {
-            "width": map_size,
-            "height": map_size,
+            "width": map_size[0],
+            "height": map_size[1],
             "input": user_template,
         }
     )

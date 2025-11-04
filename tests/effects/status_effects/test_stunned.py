@@ -80,6 +80,7 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
     assert state.decision is None
 
     # Stunned expires after 2 turns
+    assert state.current_actor is not None
     orc = state.current_actor
     assert len(orc.status_effects) == 0
     assert orc.attributes.get_modifiers("advantage.defense") == []

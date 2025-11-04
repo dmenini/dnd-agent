@@ -11,11 +11,11 @@ class EndCombatNode:
         """Advance turn, check victory conditions, and append logs."""
         log.debug(self.__class__.__name__, extra=state.model_dump(mode="json"))
 
-        actor = state.current_actor
-
-        if not state.map:
-            msg = "Map not initialized"
+        if state.current_actor is None or not state.map:
+            msg = "Incorrect initialization"
             raise ValueError(msg)
+
+        actor = state.current_actor
 
         state.map.update_map(characters=state.characters)
 
