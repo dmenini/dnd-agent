@@ -30,7 +30,7 @@ def is_valid_action(state: State) -> str:
     return TurnPhase.DECIDE  # re-evaluate action
 
 
-def build_graph(config: AgentConfig) -> CompiledStateGraph:
+def build_combat_graph(config: AgentConfig) -> CompiledStateGraph:
     graph = StateGraph(state_schema=State)
     llm = create_llm(config.llm)
 

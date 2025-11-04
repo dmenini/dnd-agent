@@ -5,7 +5,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 from pydantic import BaseModel
 
-from agent.ai.graph import build_graph
+from agent.ai.combat_graph import build_combat_graph
 from agent.models.config import Config
 from agent.models.state import State
 
@@ -23,7 +23,7 @@ class GameBackend:
 
     def __init__(self, initial_state: State, config: Config) -> None:
         self.initial_state = initial_state.model_copy(deep=True)
-        self.graph = build_graph(config=config.agent)
+        self.combat_graph = build_combat_graph(config=config.agent)
         self.thread_id = str(uuid.uuid4())
         self.started = False
         self.recursion_limit = 20
@@ -41,7 +41,7 @@ class GameBackend:
     async def start_game(self, state: State) -> GameResult:
         """Start a new game session."""
         config = self._get_config()
-        result = await self.graph.ainvoke(state, config)
+        result = await self.combat_graph.ainvoke(state, config)
         self.started = True
 
         return self._process_result(result)
@@ -51,12 +51,12 @@ class GameBackend:
         config = self._get_config()
 
         # Resume the last interrupt
-        result = await self.graph.ainvoke(Command(resume=command), config)
+        result = await self.combat_graph.ainvoke(Command(resume=command), config)
         state = State.model_validate(result)
 
         # If not done, continue execution until next interrupt
         if not state.done:
-            result = await self.graph.ainvoke(state, config)
+            result = await self.combat_graph.ainvoke(state, config)
 
         return self._process_result(result)
 
