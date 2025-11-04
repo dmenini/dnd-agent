@@ -80,10 +80,11 @@ class State(BaseModel):
 
             # Check target is visible
             if target.pos not in visible_positions:
+                actor.log_event(f"Target {target.name} is not visible")
                 continue
 
             # Handle stealth / perception contest
-            if not target.is_hidden or actor.detect_target(target, use_passive=True):
+            if actor.detect_target(target, use_passive=True):
                 visible_targets.append(target_id)
 
         self.visibility[actor.id] = visible_targets
