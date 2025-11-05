@@ -1,3 +1,5 @@
+import hashlib
+import json
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -45,7 +47,10 @@ class Trait(BaseModel):
 
     @property
     def id(self) -> str:
-        return f"{self.source_id}-{normalize_id(self.name)}"
+        data = self.model_dump(exclude={"id"}, mode="json")
+        serialized = json.dumps(data, sort_keys=True)
+        hash_part = hashlib.sha1(serialized.encode()).hexdigest()[:8]
+        return f"{self.source_id}-{normalize_id(self.name)}-{hash_part}"
 
     def get_effect(self) -> TraitEffect:
         """Return a Modifier or Event effect to apply."""

@@ -1,10 +1,10 @@
 from agent.character.stats import StatType
-from agent.jobs.base import CharacterJob, JobFeature
+from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
 from agent.models.enums import FeatureId
 
 Fighter = CharacterJob(
-    name="Fighter",
+    type=JobType.FIGHTER,
     hit_die=10,
     primary_stat=StatType.STR,
     save_proficiencies=[StatType.STR, StatType.CON],
