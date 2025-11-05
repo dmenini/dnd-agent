@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Any
 
-from pydantic import BaseModel, PrivateAttr, computed_field, field_validator
+from pydantic import BaseModel, computed_field, field_validator, PrivateAttr
 
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
@@ -9,7 +9,7 @@ from agent.actions.registry import ActionRegistry
 from agent.character.attributes import Attributes
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import Trait, TraitEffect, normalize_id
+from agent.effects.base import normalize_id, Trait, TraitEffect
 from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor
 from agent.logs.log_event import Icon, LogEvent, LogLevel
@@ -97,7 +97,12 @@ class CharacterBase(BaseModel):
         return damage
 
     def register_passive(self, trait: Trait) -> None:
-        self.passives.append(trait)
+        if all(trait.id != p.id for p in self.passives):
+            self.passives.append(trait)
+            self.log_event(f"{self.name} gained passive trait {trait.feature_id}", log_type=LogLevel.DETAIL)
+
+        # Still try to register effect, as during serialization listeners may be lost, and we need to recreate them
+        # If effect already exists (same source id), it will be ignored
         effect = trait.get_effect()
         self.register_listener(effect)
 
@@ -124,12 +129,15 @@ class CharacterBase(BaseModel):
 
     def register_listener(self, event: TraitEffect) -> None:
         """Register a listener for a given event."""
-        self._event_listeners[event.event_type.value].append(event)
-        self.log_event(
-            f"Added listener {event.source_id} for {event.event_type.value}",
-            icon=Icon.EFFECT_APPLIED,
-            log_type=LogLevel.DEBUG,
-        )
+        listeners = self._event_listeners[event.event_type.value]
+        # Only add listener if different source ID to avoid duplication
+        if all(listener.source_id != event.source_id for listener in listeners):
+            listeners.append(event)
+            self.log_event(
+                f"Added listener {event.source_id} for {event.event_type.value}",
+                icon=Icon.EFFECT_APPLIED,
+                log_type=LogLevel.DEBUG,
+            )
 
     def unregister_listeners(self, source_id: str) -> None:
         """Remove all listeners registered by a given source (e.g., a trait)."""

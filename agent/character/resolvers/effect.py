@@ -44,7 +44,7 @@ class EffectResolver(CharacterBase):
             self.log_event(f"{self.name} is {effect}", icon=Icon.EFFECT_APPLIED)
             return
 
-        # There is already an effect of this type -> remove old one, apply new
+        # There is already an effect of this type → remove old one, apply new
         existing_effect.on_expire(self)
         self.status_effects.remove(existing_effect)
         self.status_effects.append(effect)

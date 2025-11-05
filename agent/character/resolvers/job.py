@@ -13,11 +13,23 @@ class JobResolver(CharacterBase):
     job: CharacterJob = Fighter
 
     def change_job(self, job: CharacterJob) -> None:
-        for feature in self.job.get_features_for_level(self.level):
+        old_job = self.job
+
+        # Remove old features
+        for feature in old_job.get_features_for_level(self.level):
             self._remove_job_feature(feature)
+
+        # Remove old spells
+        for spell in old_job.get_spells_for_level(self.level):
+            self._remove_spell(spell)
 
         self.job = job
         self.apply_job_features()
+
+        self.log_event(
+            f"{self.name} changed from {old_job.type.value} to {job.type.value}",
+            log_type=LogLevel.MAIN
+        )
 
     def apply_job_features(self) -> None:
         """Register class features based on current level."""
@@ -53,10 +65,7 @@ class JobResolver(CharacterBase):
                 description=feature.description,
                 **feature.kwargs,
             )
-            # ID represents uniqueness by both source and feature id
-            if all(trait.id != p.id for p in self.passives):
-                self.register_passive(trait)
-                self.log_event(f"{self.name} gained passive trait {feature.name}", log_type=LogLevel.DETAIL)
+            self.register_passive(trait)
 
     def _remove_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
@@ -77,3 +86,10 @@ class JobResolver(CharacterBase):
             if isinstance(action, (AttackSpellAction, SupportSpellAction)):
                 self.spells.append(action)
                 self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)
+
+    def _remove_spell(self, spell: Spell) -> None:
+        self.spells = [s for s in self.spells if s.id != spell.ref_id]
+        self.log_event(
+            f"{self.name} lost spell {spell.ref_id}",
+            log_type=LogLevel.DETAIL
+        )

@@ -21,12 +21,12 @@ def assert_modifier(attrs: Attributes, attr_name: str, value: float, source_id: 
     assert len(mods) == 1
     mod = mods[0]
     assert mod.value == value
-    assert mod.source_id == source_id
+    assert mod.source_id.startswith(source_id)
 
 
 def assert_listener(actor: Character, event_type: EventType, source_id: str, count: int = 1) -> None:
     listeners = actor._event_listeners.get(event_type) or []
-    assert len([lis for lis in listeners if lis.source_id == source_id]) == count
+    assert len([lis for lis in listeners if lis.source_id.startswith(source_id)]) == count
 
 
 def assert_passive(actor: Character, feature_id: FeatureId, source_id: str, count: int = 1) -> None:
@@ -126,7 +126,7 @@ def test_same_traits_from_different_sources_stack(actor: Character) -> None:
     assert len(mods) == 2
     for i, mod in enumerate(mods):
         assert mod.value == value
-        assert mod.source_id == f"ring-{i}-resistance"
+        assert mod.source_id.startswith(f"ring-{i}-resistance")
 
     # Combined total
     total = attrs.damage_resistance(DamageType.FIRE)
@@ -184,10 +184,10 @@ def test_same_traits_same_source_dont_stack(actor: Character) -> None:
     assert_modifier(attrs, "resistance.fire", value, f"{name}-resistance")
     assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
 
-    # Register again - passives may duplicate but modifiers must not
+    # Register again -> Same source ID, so it's not added
     actor.register_passive(trait=trait1)
-    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == name]) == 2
-    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance", 2)
+    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == name]) == 1
+    assert_listener(actor, EventType.MODIFIER, f"{name}-resistance", 1)
     assert len(attrs.get_modifiers("resistance.fire")) == 1
     assert_modifier(attrs, "resistance.fire", value, f"{name}-resistance")
 

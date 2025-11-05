@@ -128,7 +128,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def __str__(self) -> str:
         return (
             f"**{self.name} {self.icon} (ID: {self.id})**\n\n"
-            f"Class: {self.job.name} | Level: {self.level} | Party: {self.party.name}\n\n"
+            f"Class: {self.job.type.value} | Level: {self.level} | Party: {self.party.name}\n\n"
             f"HP: {self.attributes.hp}/{self.max_hp} | AC: {self.armor_class}\n\n"
             f"Position: ({self.pos.x}, {self.pos.y}) | Facing: {self.pos.direction} | "
             f"Movement Remaining: {self.current_speed}/{self.speed} m | Hidden: {self.is_hidden}\n\n"
