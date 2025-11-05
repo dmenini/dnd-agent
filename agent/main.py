@@ -5,13 +5,11 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-from agent.logs.log_event import LogLevel
 from agent.models.config import Config
 from agent.models.state import State
 from agent.registration import register_actions, register_traits
 from agent.ui.game_ui import GameUI
 
-MAX_ITER = 300
 MAP_SIZE = (12, 8)
 
 log = getLogger(__name__)
@@ -31,11 +29,6 @@ async def main() -> None:
         config = Config.model_validate(config)
 
     state = State()
-
-    state.log.log_event(
-        message="Setting up combat simulation.",
-        log_type=LogLevel.MAIN,
-    )
 
     ui = GameUI(initial_state=state, config=config)
     await ui.run_async()

@@ -55,6 +55,18 @@ class GameBackend:
         self.combat_graph = build_combat_graph(config=config.agent)
         self.char_agent = CharacterCreationAgent(config=self.config.agent)
 
+        enemy_party = Party(id="p2", name="Goblins", is_player_party=False)
+        self.default_enemies = [
+            Character(
+                id="orc",
+                name="Grunt",
+                icon="👹",
+                pos=Position(x=8, y=3, direction="W"),
+                job=Fighter,
+                party=enemy_party,
+            ),
+        ]
+
     def _get_config(self) -> RunnableConfig:
         return RunnableConfig(
             recursion_limit=self.recursion_limit,
@@ -103,6 +115,7 @@ class GameBackend:
         if result.done and result.character:
             character = result.character.to_character()
             self.state.characters[character.id] = character
+            self.state.parties.update({character.party.id: character.party})
             self.phase = GamePhase.STORY
             interrupt = f"Character {character.name} created!"
             # TODO: allow to create multiple characters
@@ -131,17 +144,7 @@ class GameBackend:
         }
 
         if result["trigger_combat"]:
-            enemy_party = Party(id="p2", name="Goblins", is_player_party=False)
-            enemies = [
-                Character(
-                    id="orc_1",
-                    name="Orc Grunt",
-                    icon="👹",
-                    pos=Position(x=8, y=3, direction="W"),
-                    job=Fighter,
-                    party=enemy_party,
-                ),
-            ]
+            enemies = self.default_enemies
             return await self._start_combat(encounter=enemies)
 
         return GameResult(output=str(result["output"]), phase=self.phase, state=self.state)
@@ -160,6 +163,8 @@ class GameBackend:
             "#####.######",
         ]
 
+        key = next(iter(self.state.characters.keys()))
+        self.state.characters[key].pos = Position(x=1, y=1, direction="SE")
         chars = list(self.state.characters.values()) + encounter
         walls = [Position(x=x, y=y) for y, row in enumerate(map_str) for x, ch in enumerate(row) if ch == "#"]
         self.state.map = GameMap(

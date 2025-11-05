@@ -7,7 +7,7 @@ class ToolsConfig(BaseModel):
 
 class LLMConfig(BaseModel):
     name: str
-    temperature: float
+    temperature: float = 0.5
 
 
 class PromptsConfig(BaseModel):
@@ -18,7 +18,8 @@ class PromptsConfig(BaseModel):
 
 
 class AgentConfig(BaseModel):
-    retries: int
+    mock_character: bool = False
+    retries: int = 3
     llm: LLMConfig
     prompts: PromptsConfig
     decision_node: dict = {}

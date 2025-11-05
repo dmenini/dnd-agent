@@ -58,7 +58,7 @@ def context() -> CombatContext:
 def actor() -> Character:
     party_players = Party(id="p1", name="Heroes", is_player_party=True)
     return Character(
-        id="hero",
+        id="alfred",
         name="Alfred",
         icon="⚔️",
         job=Fighter,

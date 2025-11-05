@@ -15,15 +15,16 @@ class CharacterBuilder(BaseModel):
     party: str = Field(description="Party name (shared with the other players)")
     job: JobType = Field(description="Character class/job")
     stats: Stats = Field(
+        default=Stats(),
         description=(
             "Attributes derived from the character background. Free assignment, but total points must be below 72."
-        )
+        ),
     )
-    race: str = Field(description="Race")
-    backstory: str = Field(description="Backstory")
-    personality: list[str] = Field(description="Personality traits.")
-    alignment: str = Field(description="Categorization of the ethical and moral perspective.")
-    summary: str = Field(description="Short summary of the character profile.")
+    race: str = Field(default="human", description="Race")
+    backstory: str = Field(default="", description="Backstory")
+    personality: str = Field(default="", description="Personality traits.")
+    alignment: str = Field(default="", description="Categorization of the ethical and moral perspective.")
+    summary: str = Field(default="", description="Short summary of the character profile.")
 
     def to_character(self) -> Character:
         if self.job == JobType.FIGHTER:
@@ -42,7 +43,7 @@ class CharacterBuilder(BaseModel):
             experience=0,
             attributes=Attributes.model_validate(self.stats.model_dump()),
             job=job,
-            party=Party(id=self.party.lower().replace(" ", "-"), name=self.party, is_player_party=True),
+            party=Party(id="players", name=self.party, is_player_party=True),
             narrative=NarrativeAttributes(
                 race=self.race,
                 backstory=self.backstory,

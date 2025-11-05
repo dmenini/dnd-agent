@@ -1,4 +1,3 @@
-
 import pytest
 from pytest_mock import MockerFixture
 
@@ -7,7 +6,6 @@ from agent.ai.character_generator import CharacterCreationState
 from agent.character.builder import CharacterBuilder
 from agent.character.stats import Stats
 from agent.jobs.base import JobType
-from agent.logs.log_event import Icon, LogLevel
 from agent.models.config import AgentConfig, Config
 from agent.models.state import State
 
@@ -16,16 +14,36 @@ from agent.models.state import State
 async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> None:
     # --- Mock config and state ---
     state = State()
-    state.log.log_event = mocker.MagicMock()
 
     # --- Mock graphs ---
     fake_combat_graph = mocker.AsyncMock()
-    fake_combat_graph.ainvoke.return_value = {
-        "__interrupt__": [],
-        "done": True,
-        "some_field": "after combat",
-    }
-
+    fake_combat_graph.ainvoke.side_effect = [
+        {
+            "__interrupt__": [],
+            "done": False,
+            "some_field": "combat start",
+        },
+        {
+            "__interrupt__": [],
+            "done": False,
+            "some_field": "combat resume",
+        },
+        {
+            "__interrupt__": [],
+            "done": False,
+            "some_field": "combat continue",
+        },
+        {
+            "__interrupt__": [],
+            "done": False,
+            "some_field": "combat resume",
+        },
+        {
+            "__interrupt__": [],
+            "done": True,
+            "some_field": "after combat",
+        },
+    ]
     fake_char_agent = mocker.AsyncMock()
     fake_char_agent.respond = mocker.AsyncMock()
     fake_char_agent.respond.side_effect = [
@@ -44,9 +62,9 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
                 race="human",
                 job=JobType.FIGHTER,
                 backstory="",
-                personality=[],
+                personality="",
                 alignment="",
-                summary=""
+                summary="",
             ),
         ),
     ]
@@ -60,11 +78,14 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     result: GameResult = await backend.start()
     assert result.phase == GamePhase.CHARACTER_CREATION
     assert result.state == state
-    state.log.log_event.assert_called_with(message="Welcome to your adventure!", icon=Icon.AI, log_type=LogLevel.MAIN)
+
+    logs = [e.message for e in state.log.events]
+    assert "Welcome to your adventure!" in logs
 
     result = await backend.submit_command("create hero")
     assert "created" in (result.interrupt or "").lower()
-    state.log.log_event.assert_called_with(message="Here is your character!", icon=Icon.AI, log_type=LogLevel.MAIN)
+    logs = [e.message for e in state.log.events]
+    assert "Here is your character!" in logs
 
     # --- Story phase ---
     backend.phase = GamePhase.STORY
@@ -74,5 +95,9 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
 
     # --- Combat phase ---
     result = await backend.submit_command("attack goblin")
+    assert result.done is False
+    assert backend.phase == GamePhase.COMBAT
+
+    result = await backend.submit_command("attack goblin")
     assert result.done
-    assert backend.phase == GamePhase.STORY  # after combat, returns to story
+    assert backend.phase == GamePhase.STORY

@@ -1,9 +1,9 @@
 from textual.app import ComposeResult
-from textual.containers import Center, ScrollableContainer
+from textual.containers import ScrollableContainer
 from textual.widgets import Static
 
 from agent.models.state import State
-from agent.ui.widgets.map_grid import DEFAULT_INFO, InteractiveMapGrid
+from agent.ui.widgets.map_grid import InteractiveMapGrid
 
 
 class MapPanel(Static):

@@ -6,6 +6,7 @@ from pydantic import Field
 
 from agent.ai.components import create_llm
 from agent.character.builder import CharacterBuilder
+from agent.jobs.base import JobType
 from agent.models.config import AgentConfig
 
 
@@ -27,6 +28,8 @@ class CharacterCreationAgent:
 
     def __init__(self, config: AgentConfig) -> None:
         llm = create_llm(config.llm)
+        self.mock_character = config.mock_character
+
         self.controller_llm = llm.with_structured_output(CharacterIntent)
         self.character_llm = llm.with_structured_output(CharacterBuilder)
 
@@ -41,10 +44,11 @@ class CharacterCreationAgent:
         """Generate DM response and optionally finalize character."""
         # Get DM's response and intent
         messages = self.prompt.format_messages(messages=state.messages)
-        intent = await self.controller_llm.ainvoke(messages)
 
-        if not isinstance(intent, CharacterIntent):
-            raise TypeError
+        if self.mock_character:
+            intent = CharacterIntent(action="finalize", message="Welcome, I'm gonna generate a character.")
+        else:
+            intent = await self.controller_llm.ainvoke(messages)  # type: ignore[assignment]
 
         # Add DM's message to history
         state.messages.append({"role": "assistant", "content": intent.message})
@@ -55,9 +59,16 @@ class CharacterCreationAgent:
 
             finalize_prompt = f"""Based on this conversation, create a complete character:\n{conversation_summary}"""
 
-            char = await self.character_llm.ainvoke(finalize_prompt)
-            if not isinstance(char, CharacterBuilder):
-                raise TypeError
+            if self.mock_character:
+                char = CharacterBuilder(
+                    name="Alfred",
+                    icon="😊",
+                    party="heros",
+                    job=JobType.MAGE,
+                    summary="The default Hero of our story",
+                )
+            else:
+                char = await self.character_llm.ainvoke(finalize_prompt)  # type: ignore[assignment]
 
             state.character = char
             state.done = True

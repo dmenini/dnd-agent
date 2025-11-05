@@ -29,6 +29,7 @@ class GameUI(App):
         super().__init__(driver_class, css_path, watch_css, ansi_color)
         self.state = initial_state.model_copy(deep=True)
         self.backend = GameBackend(initial_state, config)
+        self.title = "DnD Agent"
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -65,11 +66,6 @@ class GameUI(App):
         event.input.placeholder = "Thinking..."
         event.input.disabled = True
         event.input.refresh()
-
-        # Handle game reset
-        if self.state.done:
-            state = self.backend.reset()
-            self.update_state(state)
 
         # Process command in background
         if self.backend.phase == GamePhase.START:
