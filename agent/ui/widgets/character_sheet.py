@@ -39,8 +39,8 @@ class CharacterSheet(Static):
             return
 
         # Update the character header
-        header = self.query_one("#char-header", Markdown)
-        header.update(f"# Character {self.char}\n")
+        sheet = self.query_one("#char-header", Markdown)
+        sheet.update(self.get_content(char=self.char))
 
         # Update the actions table
         actions_table = self.query_one("#actions-table", ActionsSummaryTable)
@@ -50,3 +50,17 @@ class CharacterSheet(Static):
     def update_character(self, char: Character) -> None:
         """Update the sheet with new character data."""
         self.char = char  # This automatically triggers watch_char
+
+    def get_content(self, char: Character) -> str:
+        return (
+            f"# Character **{char.name} {char.icon} (ID: {char.id})**\n\n"
+            f"{char.narrative.summary}\n\n"
+            f"Class: {char.job.type.value} | Level: {char.level} | Party: {char.party.name}\n\n"
+            f"HP: {char.attributes.hp}/{char.max_hp} | AC: {char.armor_class}\n\n"
+            f"Position: ({char.pos.x}, {char.pos.y}) | Facing: {char.pos.direction} | "
+            f"Movement Remaining: {char.current_speed}/{char.speed} m | Hidden: {char.is_hidden}\n\n"
+            f"Status Effects: {', '.join(str(eff) for eff in char.status_effects) or 'None'}\n\n"
+            f"Passives: {', '.join(eff.name for eff in char.passives) or 'None'}\n\n"
+            f"Spell Slots: {char.spell_slots}\n\n"
+            f"Stats: {char.attributes}"
+        )
