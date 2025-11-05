@@ -29,4 +29,6 @@ def test_serialization(actor: Character, game_map: GameMap) -> None:
 
     assert state.model_dump() == state2.model_dump()
     assert len(state.characters[actor.id]._event_listeners) == len(state2.characters[actor.id]._event_listeners)
-    assert len(state.characters[actor.id].attributes._registry._modifiers) == len(state2.characters[actor.id].attributes._registry._modifiers)
+    assert len(state.characters[actor.id].attributes._registry._modifiers) == len(
+        state2.characters[actor.id].attributes._registry._modifiers
+    )

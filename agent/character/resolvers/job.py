@@ -26,10 +26,7 @@ class JobResolver(CharacterBase):
         self.job = job
         self.apply_job_features()
 
-        self.log_event(
-            f"{self.name} changed from {old_job.type.value} to {job.type.value}",
-            log_type=LogLevel.MAIN
-        )
+        self.log_event(f"{self.name} changed from {old_job.type.value} to {job.type.value}", log_type=LogLevel.MAIN)
 
     def apply_job_features(self) -> None:
         """Register class features based on current level."""
@@ -89,7 +86,4 @@ class JobResolver(CharacterBase):
 
     def _remove_spell(self, spell: Spell) -> None:
         self.spells = [s for s in self.spells if s.id != spell.ref_id]
-        self.log_event(
-            f"{self.name} lost spell {spell.ref_id}",
-            log_type=LogLevel.DETAIL
-        )
+        self.log_event(f"{self.name} lost spell {spell.ref_id}", log_type=LogLevel.DETAIL)
