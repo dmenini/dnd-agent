@@ -26,7 +26,7 @@ class LogLevel(str, Enum):
     HEADER = "header"  # Narrative main events
     MAIN = "main"  # Narrative main events
     DETAIL = "detail"  # Step-by-step debug info
-    SYSTEM = "system"  # Global system events
+    SYSTEM = "npc"  # Global npc events
     MAP = "map"  # Map / spatial events (optional)
     CUSTOM = "custom"
     DEBUG = "debug"

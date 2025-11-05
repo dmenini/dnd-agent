@@ -11,8 +11,10 @@ class LLMConfig(BaseModel):
 
 
 class PromptsConfig(BaseModel):
-    system: str
+    npc: str
     map: str
+    dm: str
+    character_builder: str
 
 
 class AgentConfig(BaseModel):

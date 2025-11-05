@@ -141,7 +141,7 @@ class LogPanel(ListView):
         log_item = LogItem(event, is_expanded=is_expanded)
         list_item = log_item.to_list_item()
 
-        # Disable selection if it's a main/system event without children
+        # Disable selection if it's a main/npc event without children
         if event.type in {LogLevel.MAIN, LogLevel.SYSTEM} and not children_map.get(event.id, False):
             list_item.disabled = True
 
