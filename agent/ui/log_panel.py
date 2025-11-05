@@ -49,13 +49,14 @@ class LogPanel(ListView):
         self._was_at_bottom = True
         self._last_expanded_state: set[str] = set()
         self._last_verbosity = 1
+        self._last_selected = None
 
     def update_state(self, state: State) -> None:
         # Track if user was at bottom before update
         self._was_at_bottom = self.scroll_offset.y >= self.max_scroll_y - 10
 
         logs: list[LogEvent] = state.log.events
-        new_logs = logs[self._last_rendered_count :]
+        new_logs = logs[self._last_rendered_count:]
 
         # If no new logs, skip everything
         if not new_logs:
@@ -142,8 +143,8 @@ class LogPanel(ListView):
         list_item = log_item.to_list_item()
 
         # Disable selection if it's a main/npc event without children
-        if event.type in {LogLevel.MAIN, LogLevel.SYSTEM} and not children_map.get(event.id, False):
-            list_item.disabled = True
+        # if event.type in {LogLevel.MAIN, LogLevel.SYSTEM} and not children_map.get(event.id, False):
+        #     list_item.disabled = True
 
         return list_item
 
@@ -159,9 +160,16 @@ class LogPanel(ListView):
         level_names = {0: "Minimal", 1: "Normal", 2: "Verbose"}
         self.notify(f"Verbosity: {level_names[self.verbosity]}")
 
-    def on_list_view_selected(self, _: ListView.Selected) -> None:
+    def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Handle mouse/click selection."""
-        self._toggle_expand_at_index(self.index)
+        if hasattr(self, '_last_selected') and self._last_selected == event.list_view.index:
+            # Same item clicked again, deselect it
+            event.list_view.index = None
+            self._last_selected = None
+        else:
+            # New item selected
+            self._toggle_expand_at_index(event.list_view.index)
+            self._last_selected = event.list_view.index
 
     def action_toggle_expand(self) -> None:
         """Handle keyboard shortcut to toggle expansion."""
