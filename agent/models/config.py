@@ -27,3 +27,4 @@ class AgentConfig(BaseModel):
 class Config(BaseModel):
     agent: AgentConfig
     generate_map: bool = False
+    map_size: tuple[int, int] = (12, 8)

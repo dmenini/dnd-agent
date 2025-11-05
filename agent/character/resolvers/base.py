@@ -7,6 +7,7 @@ from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.attributes import Attributes
+from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
 from agent.effects.base import Trait, normalize_id
@@ -32,6 +33,7 @@ class CharacterBase(BaseModel):
     experience: int = 0
     pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
+    narrative: NarrativeAttributes = NarrativeAttributes()
     stealth_value: int = 0
 
     spells: list[AttackSpellAction | SupportSpellAction] = []

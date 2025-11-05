@@ -1,14 +1,20 @@
-from pathlib import Path
 from typing import Literal
 
-import yaml
-from langchain.prompts import ChatPromptTemplate
-from langchain_core.runnables import Runnable, RunnableLambda
-from pydantic import BaseModel
+from anthropic import BaseModel
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from pydantic import Field
 
 from agent.ai.components import create_llm
 from agent.character.builder import CharacterBuilder
-from agent.models.config import AgentConfig, Config
+from agent.models.config import AgentConfig
+
+
+class CharacterCreationState(BaseModel):
+    """State for character creation dialogue."""
+
+    messages: list[dict] = Field(default_factory=list)
+    character: CharacterBuilder | None = None
+    done: bool = False
 
 
 class CharacterIntent(BaseModel):
@@ -16,53 +22,44 @@ class CharacterIntent(BaseModel):
     message: str
 
 
-def build_character_generator(config: AgentConfig) -> Runnable:
-    # Base conversational LLM
-    llm = create_llm(config.llm)
+class CharacterCreationAgent:
+    """Simple agent for character creation dialogue."""
 
-    # The LLM that can decide whether to continue or finalize
-    controller_llm = llm.with_structured_output(CharacterIntent)
+    def __init__(self, config: AgentConfig) -> None:
+        llm = create_llm(config.llm)
+        self.controller_llm = llm.with_structured_output(CharacterIntent)
+        self.character_llm = llm.with_structured_output(CharacterBuilder)
 
-    # The LLM that generates the final structured character
-    character_llm = llm.with_structured_output(CharacterBuilder)
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", config.prompts.character_builder.format(dm=config.prompts.dm)),
+                MessagesPlaceholder("messages"),
+            ]
+        )
 
-    # Prompt for each conversational turn
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", config.prompts.character_builder.format(dm=config.prompts.dm)),
-            ("user", "{input}"),
-        ]
-    )
+    async def respond(self, state: CharacterCreationState) -> CharacterCreationState:
+        """Generate DM response and optionally finalize character."""
+        # Get DM's response and intent
+        messages = self.prompt.format_messages(messages=state.messages)
+        intent = await self.controller_llm.ainvoke(messages)
 
-    def agent_loop(user_input: str, memory: list[str]) -> CharacterBuilder | str:
-        """Main agent loop."""
-        while True:
-            # Build input prompt with conversation context
-            context = "\n".join(memory)
-            messages = prompt.format_messages(input=f"{context}\nUser: {user_input}")
+        if not isinstance(intent, CharacterIntent):
+            raise TypeError
 
-            # Ask the controller what to do
-            intent = controller_llm.invoke(messages)
-            memory.append(f"DM: {intent.message}")
+        # Add DM's message to history
+        state.messages.append({"role": "assistant", "content": intent.message})
 
-            if intent.action == "finalize":
-                # Generate final structured character
-                summary = "\n".join(memory)
-                return character_llm.invoke(f"Summarize and structure this character:\n{summary}")
-            # Continue conversation
-            print(intent.message)
-            user_input = input("> ")  # (or handle through UI)
-            memory.append(f"User: {user_input}")
+        if intent.action == "finalize":
+            # Generate final structured character from conversation
+            conversation_summary = "\n".join([f"{msg['role']}: {msg['content']}" for msg in state.messages])
 
-    return RunnableLambda(lambda x: agent_loop(x["input"], []))
+            finalize_prompt = f"""Based on this conversation, create a complete character:\n{conversation_summary}"""
 
+            char = await self.character_llm.ainvoke(finalize_prompt)
+            if not isinstance(char, CharacterBuilder):
+                raise TypeError
 
-if __name__ == "__main__":
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    with config_path.open() as fp:
-        config = yaml.safe_load(fp)
-        config = Config.model_validate(config)
+            state.character = char
+            state.done = True
 
-    gen = build_character_generator(config.agent)
-    result = gen.invoke({"input": "I'd like to create a tiefling bard who grew up in a circus."})
-    print(result)
+        return state

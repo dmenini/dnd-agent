@@ -61,7 +61,6 @@ agent:
       - Alignment
       - Backstory
       - Personality traits
-      - Abilities
-
+    
       Ask a few clarifying questions if details are missing, but stay in character as a DM. Do not ask too many questions at once, but rather discover what you need by evolving the dialogue in an organic way.
       When you have enough information to generate the complete character sheet, conclude naturally and signal readiness.

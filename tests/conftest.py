@@ -30,7 +30,9 @@ def config() -> AgentConfig:
     """Mocked config with fake LLM setup."""
     return AgentConfig(
         llm=LLMConfig(name="fake", temperature=0),
-        prompts=PromptsConfig(npc="You are a decision-making combat AI.", map="Generate the map"),
+        prompts=PromptsConfig(
+            npc="You are a decision-making combat AI.", map="Generate the map", character_builder="", dm=""
+        ),
         retries=1,
     )
 
