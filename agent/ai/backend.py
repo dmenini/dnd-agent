@@ -27,6 +27,7 @@ class GameBackend:
     """
 
     DEFAULT_RECURSION_LIMIT = 20
+    MAX_PARTY_SIZE = 4
 
     def __init__(self, initial_state: State, config: Config) -> None:
         self.config = config
@@ -123,12 +124,7 @@ class GameBackend:
         # Only send greeting if this is a fresh start
         if not self.character_creation_state.messages:
             greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
-            self.character_creation_state.messages.append(
-                {
-                    "role": "user",
-                    "content": greeting_prompt,
-                }
-            )
+            self.character_creation_state.messages.append({"role": "user", "content": greeting_prompt})
 
             try:
                 result = await self.char_agent.respond(self.character_creation_state)
@@ -139,9 +135,9 @@ class GameBackend:
             except Exception as e:
                 msg = f"Failed to start character creation: {e}"
                 raise CharacterCreationError(msg) from e
-        else:
-            # Resuming existing character creation
-            return GameResult(output="Resuming character creation...", phase=self.phase, state=self.state)
+
+        # Resuming existing character creation
+        return GameResult(output="Resuming character creation...", phase=self.phase, state=self.state)
 
     async def _start_story(self) -> GameResult:
         """Start or resume story phase."""
@@ -221,13 +217,15 @@ class GameBackend:
 
         interrupt = None
 
-        # Check if character creation is complete
-        if result.done and result.character:
-            character = result.character.to_character()
+        # Detect completion of a character
+        if result.current_character:
+            character = result.current_character.to_character(party=self.character_creation_state.party)
             self._register_character(character)
-            self.phase = GamePhase.STORY
             interrupt = f"Character {character.name} created!"
-            # TODO: allow to create multiple characters
+
+        # Continue when done
+        if result.done:
+            self.phase = GamePhase.STORY
 
         self.character_creation_state = result
 

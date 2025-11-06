@@ -26,10 +26,9 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
     fake_char_agent.respond.return_value = CharacterCreationState(
         messages=[{"role": "assistant", "content": "Here is your character!"}],
         done=True,
-        character=CharacterBuilder(
+        current_character=CharacterBuilder(
             name=actor.name,
             icon=actor.icon,
-            party=actor.party.name,
             job=actor.job.type,
         ),
     )
@@ -115,7 +114,10 @@ async def test_app(  # noqa: PLR0915
         assert "Press ENTER to start new game..." in input_widget.placeholder
         assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == actor.id
-        assert ui.state.log.events[-2].message == "The players are victorious! Party 'Heroes' stands triumphant!"
+        assert (
+            ui.state.log.events[-2].message
+            == f"The players are victorious! Party '{actor.party.name}' stands triumphant!"
+        )
         assert ui.state.done is True
         assert ui.backend.phase == GamePhase.STORY
 

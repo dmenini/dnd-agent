@@ -81,10 +81,9 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
         CharacterCreationState(
             messages=[{"role": "assistant", "content": "Here is your character!"}],
             done=True,
-            character=CharacterBuilder(
+            current_character=CharacterBuilder(
                 name="name",
                 icon="",
-                party="heros",
                 stats=Stats(),
                 race="human",
                 job=JobType.FIGHTER,

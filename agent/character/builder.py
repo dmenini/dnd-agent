@@ -12,7 +12,6 @@ from agent.jobs.mage import Mage
 class CharacterBuilder(BaseModel):
     name: str = Field(description="Character name")
     icon: str = Field(description="Icon on the map")
-    party: str = Field(description="Party name (shared with the other players)")
     job: JobType = Field(description="Character class/job")
     stats: Stats = Field(
         default=Stats(),
@@ -26,7 +25,7 @@ class CharacterBuilder(BaseModel):
     alignment: str = Field(default="", description="Categorization of the ethical and moral perspective.")
     summary: str = Field(default="", description="Short summary of the character profile.")
 
-    def to_character(self) -> Character:
+    def to_character(self, party: str) -> Character:
         if self.job == JobType.FIGHTER:
             job = Fighter
         elif self.job == JobType.MAGE:
@@ -43,7 +42,7 @@ class CharacterBuilder(BaseModel):
             experience=0,
             attributes=Attributes.model_validate(self.stats.model_dump()),
             job=job,
-            party=Party(id="players", name=self.party, is_player_party=True),
+            party=Party(id="players", name=party, is_player_party=True),
             narrative=NarrativeAttributes(
                 race=self.race,
                 backstory=self.backstory,
