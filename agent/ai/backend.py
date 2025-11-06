@@ -38,7 +38,6 @@ class GameBackend:
 
         # Current game state
         self.state: State = initial_state.model_copy(deep=True)
-        self.character_creation_state = CharacterCreationState()
 
         # Initialize AI agents
         self.combat_graph = build_combat_graph(config=config.agent)
@@ -73,9 +72,7 @@ class GameBackend:
             state=self.state.model_copy(deep=True),
             phase=self.phase,
             thread_id=self.thread_id,
-            character_creation_state=self.character_creation_state
-            if self.phase == GamePhase.CHARACTER_CREATION
-            else None,
+            character_creation_state=self.char_agent.state if self.phase == GamePhase.CHARACTER_CREATION else None,
             recursion_limit=self.recursion_limit,
         )
 
@@ -87,16 +84,16 @@ class GameBackend:
         self.recursion_limit = snapshot.recursion_limit
 
         if snapshot.character_creation_state:
-            self.character_creation_state = snapshot.character_creation_state
+            self.char_agent.state = snapshot.character_creation_state
         else:
-            self.character_creation_state = CharacterCreationState()
+            self.char_agent.state = CharacterCreationState()
 
     def reset(self) -> State:
         """Reset the entire game session to initial state."""
         self.thread_id = str(uuid.uuid4())
         self.phase = GamePhase.START
         self.state = self.initial_state.model_copy(deep=True)
-        self.character_creation_state = CharacterCreationState()
+        self.char_agent.state = CharacterCreationState()
         return self.state
 
     async def start(self, from_phase: GamePhase | None = None) -> GameResult:
@@ -121,14 +118,9 @@ class GameBackend:
 
     async def _start_character_creation(self) -> GameResult:
         """Start or resume character creation phase."""
-        # Only send greeting if this is a fresh start
-        if not self.character_creation_state.messages:
-            greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
-            self.character_creation_state.messages.append({"role": "user", "content": greeting_prompt})
-
+        if not self.char_agent.started:
             try:
-                result = await self.char_agent.respond(self.character_creation_state)
-                message = result.messages[-1]["content"]
+                message = await self.char_agent.respond(user_input="")
                 self._log_dm_message(message)
 
                 return GameResult(output=message, phase=self.phase, state=self.state)
@@ -209,25 +201,20 @@ class GameBackend:
 
     async def _handle_character_creation(self, command: str) -> GameResult:
         """Handle character creation phase input."""
-        self.character_creation_state.messages.append({"role": "user", "content": command})
-
-        result = await self.char_agent.respond(self.character_creation_state)
-        message = result.messages[-1]["content"]
+        message = await self.char_agent.respond(command)
         self._log_dm_message(message)
 
         interrupt = None
 
         # Detect completion of a character
-        if result.current_character:
-            character = result.current_character.to_character(party=self.character_creation_state.party)
+        if char_builder := self.char_agent.current_character:
+            character = char_builder.to_character(party=self.char_agent.party)
             self._register_character(character)
             interrupt = f"Character {character.name} created!"
 
         # Continue when done
-        if result.done:
+        if self.char_agent.is_done:
             self.phase = GamePhase.STORY
-
-        self.character_creation_state = result
 
         return GameResult(output=message, interrupt=interrupt, state=self.state, phase=self.phase)
 
@@ -337,7 +324,7 @@ class GameBackend:
         """Give the player character starting equipment."""
         sword = MeleeWeapon(
             name="Sword",
-            description="Heavy sword that may stun the enemy",
+            description="Heavy sword",
             damage_dice="2d10",
             damage_type=DamageType.SLASHING,
             weapon_type=WeaponType.MARTIAL_MELEE,

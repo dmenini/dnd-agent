@@ -19,7 +19,6 @@ class CharacterCreationState(BaseModel):
     awaiting_continue_decision: bool = False
     done: bool = False
     characters: list[CharacterBuilder] = []
-    party: str = DEFAULT_PARTY_NAME
 
 
 class CharacterIntent(BaseModel):
@@ -37,6 +36,8 @@ class CharacterCreationAgent:
 
         self.dialogue_llm = llm.with_structured_output(CharacterIntent)
         self.character_llm = llm.with_structured_output(CharacterBuilder)
+        self.state = CharacterCreationState()
+        self.party = DEFAULT_PARTY_NAME
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
@@ -45,17 +46,38 @@ class CharacterCreationAgent:
             ]
         )
 
-    async def respond(self, state: CharacterCreationState) -> CharacterCreationState:
+    @property
+    def is_done(self) -> bool:
+        """Public helper to know if party creation is complete."""
+        return self.state.done
+
+    @property
+    def started(self) -> bool:
+        return len(self.state.messages) == 0 and len(self.state.characters) == 0
+
+    @property
+    def current_character(self) -> CharacterBuilder | None:
+        """Return the created characters once done."""
+        return self.state.current_character
+
+    async def respond(self, user_input: str) -> str:
         """Handle one conversational step, delegating by state context."""
-        if state.awaiting_continue_decision:
-            return await self._handle_continue_decision(state)
-        return await self._handle_character_dialogue(state)
+        if not user_input:
+            greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
+            self.state.messages.append({"role": "system", "content": greeting_prompt})
+        else:
+            self.state.messages.append({"role": "user", "content": user_input})
+
+        if self.state.awaiting_continue_decision:
+            self.state = await self._handle_continue_decision(self.state)
+        self.state = await self._handle_character_dialogue(self.state)
+        return self.state.messages[-1]["content"]
 
     async def _handle_continue_decision(self, state: CharacterCreationState) -> CharacterCreationState:
         """Interpret the user's response after being asked to continue or stop."""
         messages = self.prompt.format_messages(messages=state.messages)
 
-        intent = (
+        intent: CharacterIntent = (
             CharacterIntent(action="finalize", message="Let's stop here.")
             if self.mock_character
             else await self.dialogue_llm.ainvoke(messages)  # type: ignore[assignment]
@@ -66,7 +88,7 @@ class CharacterCreationAgent:
         if intent.action == "continue":
             # TODO: This may feel robotic. Rephrase with DM?
             # Reset conversation so that next summarization doesn't hallucinate, but provide context as system message
-            context = "So far we created {len(state.characters)} characters:\n"
+            context = f"So far we created {len(state.characters)} characters:\n"
             for char in state.characters:
                 context += f"\n- {char.name}: {char.summary}"
             state.messages = [
@@ -86,13 +108,12 @@ class CharacterCreationAgent:
         """Run the main dialogue flow for character creation."""
         messages = self.prompt.format_messages(messages=state.messages)
 
-        intent = (
+        intent: CharacterIntent = (
             CharacterIntent(action="finalize", message="Let's build your first hero!")
             if self.mock_character
             else await self.dialogue_llm.ainvoke(messages)  # type: ignore[assignment]
         )
 
-        # TODO: This message is not logged as it's followed by the continuation message right afterwards
         state.messages.append({"role": "assistant", "content": intent.message})
 
         if intent.action == "finalize":
@@ -108,7 +129,7 @@ class CharacterCreationAgent:
         )
         finalize_prompt = f"Based on this conversation, create a complete character:\n{conversation_summary}"
 
-        character = (
+        character: CharacterBuilder = (
             CharacterBuilder(
                 name=f"Hero {len(state.characters) + 1}",
                 icon="🧝",
@@ -124,10 +145,10 @@ class CharacterCreationAgent:
 
         if len(state.characters) < self.max_players:
             continuation_prompt = (
-                f"You now have {len(state.characters)} character(s) in your party. "
+                f"\nYou now have {len(state.characters)} character(s) in your party. "
                 f"Would you like to create another one?"
             )
-            state.messages.append({"role": "assistant", "content": continuation_prompt})
+            state.messages[-1]["content"] += continuation_prompt
             state.awaiting_continue_decision = True
         else:
             state.awaiting_continue_decision = False

@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 from textual.widgets import Input
 
-from agent.ai.character_generator import CharacterCreationState
+from agent.ai.character_generator import DEFAULT_PARTY_NAME
 from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
 from agent.models.config import AgentConfig, Config
@@ -21,16 +21,15 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
 
     ui = GameUI(initial_state=state, config=Config(agent=config))
 
-    fake_char_agent = mocker.AsyncMock()
+    fake_char_agent = mocker.MagicMock()
     fake_char_agent.respond = mocker.AsyncMock()
-    fake_char_agent.respond.return_value = CharacterCreationState(
-        messages=[{"role": "assistant", "content": "Here is your character!"}],
-        done=True,
-        current_character=CharacterBuilder(
-            name=actor.name,
-            icon=actor.icon,
-            job=actor.job.type,
-        ),
+    fake_char_agent.respond.return_value = "Here is your character!"
+    fake_char_agent.is_done = True
+    fake_char_agent.party = DEFAULT_PARTY_NAME
+    fake_char_agent.current_character = CharacterBuilder(
+        name=actor.name,
+        icon=actor.icon,
+        job=actor.job.type,
     )
     ui.backend.char_agent = fake_char_agent
     ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])

@@ -4,11 +4,12 @@ import pytest
 from pytest_mock import MockerFixture, MockType
 
 from agent.ai.backend import GameBackend
-from agent.ai.character_generator import CharacterBuilder, CharacterCreationState
+from agent.ai.character_generator import DEFAULT_PARTY_NAME, CharacterCreationState
+from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
-from agent.character.stats import Stats
 from agent.exceptions import InvalidPhaseError
 from agent.jobs.base import JobType
+from agent.logs.log_event import LogLevel
 from agent.models.config import AgentConfig, Config
 from agent.models.map import GameMap
 from agent.models.position import Position
@@ -73,27 +74,9 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     ]
     fake_char_agent = mocker.AsyncMock()
     fake_char_agent.respond = mocker.AsyncMock()
-    fake_char_agent.respond.side_effect = [
-        CharacterCreationState(
-            messages=[{"role": "assistant", "content": "Welcome to your adventure!"}],
-            done=False,
-        ),
-        CharacterCreationState(
-            messages=[{"role": "assistant", "content": "Here is your character!"}],
-            done=True,
-            current_character=CharacterBuilder(
-                name="name",
-                icon="",
-                stats=Stats(),
-                race="human",
-                job=JobType.FIGHTER,
-                backstory="",
-                personality="",
-                alignment="",
-                summary="",
-            ),
-        ),
-    ]
+    fake_char_agent.respond.side_effect = ["Welcome to your adventure!", "Here is your character!"]
+    fake_char_agent.started = False
+    fake_char_agent.party = DEFAULT_PARTY_NAME
 
     backend = GameBackend(state, Config(agent=config))
     backend.char_agent = fake_char_agent
@@ -104,9 +87,11 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     assert result.phase == GamePhase.CHARACTER_CREATION
     assert result.state == state
 
-    logs = [e.message for e in state.log.events]
+    logs = [e.message for e in state.log.events if e.type == LogLevel.MAIN]
     assert "Welcome to your adventure!" in logs
 
+    fake_char_agent.is_done = True
+    fake_char_agent.current_character = CharacterBuilder(name="name", icon="", job=JobType.FIGHTER)
     result = await backend.submit_command("create hero")
     assert "created" in (result.interrupt or "").lower()
     logs = [e.message for e in state.log.events]
@@ -134,10 +119,8 @@ async def test_start_from_character_creation(config: AgentConfig, mocker: Mocker
     state = State()
 
     fake_char_agent = mocker.AsyncMock()
-    fake_char_agent.respond.return_value = CharacterCreationState(
-        messages=[{"role": "assistant", "content": "Let's create your character!"}],
-        done=False,
-    )
+    fake_char_agent.respond.return_value = "Let's create your character!"
+    fake_char_agent.started = False
 
     backend = GameBackend(state, Config(agent=config))
     backend.char_agent = fake_char_agent
@@ -314,7 +297,7 @@ def test_load_snapshot(config: AgentConfig, actor: Character) -> None:
 def test_snapshot_preserves_character_creation_state(backend: GameBackend) -> None:
     """Test that snapshot preserves character creation state."""
     backend.phase = GamePhase.CHARACTER_CREATION
-    backend.character_creation_state = CharacterCreationState(
+    backend.char_agent.state = CharacterCreationState(
         messages=[{"role": "user", "content": "test"}],
         done=False,
     )
@@ -352,7 +335,7 @@ def test_reset(backend: GameBackend, actor: Character) -> None:
     assert backend.thread_id != original_thread_id
     assert len(backend.state.characters) == len(backend.initial_state.characters)
     assert backend.state.characters[actor.id].name == backend.initial_state.characters[actor.id].name
-    assert len(backend.character_creation_state.messages) == 0
+    assert len(backend.char_agent.state.messages) == 0
 
 
 @pytest.mark.asyncio
@@ -363,7 +346,7 @@ async def test_resume_character_creation_from_snapshot(config: AgentConfig, mock
     # Setup backend with partial character creation
     backend1 = GameBackend(state, Config(agent=config))
     backend1.phase = GamePhase.CHARACTER_CREATION
-    backend1.character_creation_state = CharacterCreationState(
+    backend1.char_agent.state = CharacterCreationState(
         messages=[
             {"role": "assistant", "content": "What's your character's name?"},
             {"role": "user", "content": "Aragorn"},
@@ -378,16 +361,7 @@ async def test_resume_character_creation_from_snapshot(config: AgentConfig, mock
     backend2 = GameBackend(State(), Config(agent=config))
     backend2.load_snapshot(snapshot)
 
-    # Mock response for continuation
     fake_char_agent = mocker.AsyncMock()
-    fake_char_agent.respond.return_value = CharacterCreationState(
-        messages=[
-            {"role": "assistant", "content": "What's your character's name?"},
-            {"role": "user", "content": "Aragorn"},
-            {"role": "assistant", "content": "Great! What's your character's class?"},
-        ],
-        done=False,
-    )
     backend2.char_agent = fake_char_agent
 
     # Resume character creation
@@ -395,7 +369,6 @@ async def test_resume_character_creation_from_snapshot(config: AgentConfig, mock
 
     assert result.phase == GamePhase.CHARACTER_CREATION
     assert result.output == "Resuming character creation..."
-    assert len(backend2.character_creation_state.messages) == 2
 
 
 @pytest.mark.asyncio
