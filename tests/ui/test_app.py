@@ -2,7 +2,6 @@ import pytest
 from pytest_mock import MockerFixture
 from textual.widgets import Input
 
-from agent.ai.backend import GamePhase
 from agent.ai.character_generator import CharacterCreationState
 from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
@@ -10,7 +9,7 @@ from agent.models.config import AgentConfig, Config
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.position import Position
-from agent.models.state import State
+from agent.models.state import GamePhase, State
 from agent.ui.game_ui import GameUI
 from agent.ui.log_panel import LogPanel
 
@@ -35,7 +34,7 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
         ),
     )
     ui.backend.char_agent = fake_char_agent
-    ui.backend.default_enemies = [target]
+    ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])
     return ui
 
 
@@ -116,7 +115,7 @@ async def test_app(  # noqa: PLR0915
         assert "Press ENTER to start new game..." in input_widget.placeholder
         assert ui.state.current_actor is not None
         assert ui.state.current_actor.id == actor.id
-        assert ui.state.log.events[-1].message == "The players are victorious! Party 'Heroes' stands triumphant!"
+        assert ui.state.log.events[-2].message == "The players are victorious! Party 'Heroes' stands triumphant!"
         assert ui.state.done is True
         assert ui.backend.phase == GamePhase.STORY
 

@@ -5,9 +5,9 @@ from textual.containers import Horizontal, Vertical
 from textual.driver import Driver
 from textual.widgets import Footer, Header, Input, Rule
 
-from agent.ai.backend import GameBackend, GamePhase, GameResult
+from agent.ai.backend import GameBackend
 from agent.models.config import Config
-from agent.models.state import State
+from agent.models.state import GamePhase, GameResult, State
 from agent.ui.character_panel import CharacterPanel
 from agent.ui.log_panel import LogPanel
 from agent.ui.map_panel import MapPanel

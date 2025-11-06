@@ -12,10 +12,8 @@ from agent.models.state import State
 
 @pytest.mark.asyncio
 async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> None:
-    # --- Mock config and state ---
     state = State()
 
-    # --- Mock graphs ---
     fake_combat_graph = mocker.AsyncMock()
     fake_combat_graph.ainvoke.side_effect = [
         {
@@ -69,12 +67,11 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
         ),
     ]
 
-    # --- Patch the backend ---
     backend = GameBackend(state, Config(agent=config))
     backend.char_agent = fake_char_agent
     backend.combat_graph = fake_combat_graph
 
-    # --- Character creation ---
+    # Character creation
     result: GameResult = await backend.start()
     assert result.phase == GamePhase.CHARACTER_CREATION
     assert result.state == state
@@ -87,13 +84,13 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     logs = [e.message for e in state.log.events]
     assert "Here is your character!" in logs
 
-    # --- Story phase ---
+    # Story phase
     backend.phase = GamePhase.STORY
     result = await backend.submit_command("explore the dungeon")
     assert result.phase == GamePhase.COMBAT  # because combat starts
     assert backend.phase == GamePhase.COMBAT
 
-    # --- Combat phase ---
+    # Combat phase
     result = await backend.submit_command("attack goblin")
     assert result.done is False
     assert backend.phase == GamePhase.COMBAT

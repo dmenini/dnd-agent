@@ -1,4 +1,5 @@
 from collections import defaultdict
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -8,8 +9,6 @@ from agent.character.character import Character, Party
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
-
-CELL_WIDTH = 2
 
 registry = get_log_registry()
 
@@ -87,3 +86,22 @@ class State(BaseModel):
                 visible_targets.append(target_id)
 
         self.visibility[actor.id] = visible_targets
+
+
+class GamePhase(Enum):
+    """Represents the current phase of the game."""
+
+    START = "start"
+    CHARACTER_CREATION = "creation"
+    STORY = "story"
+    COMBAT = "combat"
+
+
+class GameResult(BaseModel):
+    """Result from a game backend operation."""
+
+    output: str | None = None
+    state: State
+    interrupt: Any | None = None
+    done: bool = False
+    phase: GamePhase | None = None
