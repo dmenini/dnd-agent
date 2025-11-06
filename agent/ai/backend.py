@@ -42,7 +42,7 @@ class GameBackend:
 
         # Initialize AI agents
         self.combat_graph = build_combat_graph(config=config.agent)
-        self.char_agent = CharacterCreationAgent(config=self.config.agent)
+        self.char_agent = CharacterCreationAgent(config=self.config.agent, max_players=self.config.max_players)
 
         # Cache default enemies
         self._default_enemy_party = Party(id="p2", name="Goblins", is_player_party=False)

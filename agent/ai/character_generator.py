@@ -30,9 +30,10 @@ class CharacterIntent(BaseModel):
 class CharacterCreationAgent:
     """Handles natural dialogue flow for creating multiple characters."""
 
-    def __init__(self, config: AgentConfig) -> None:
+    def __init__(self, config: AgentConfig, max_players: int = 2) -> None:
         llm = create_llm(config.llm)
         self.mock_character = config.mock_character
+        self.max_players = max_players
 
         self.dialogue_llm = llm.with_structured_output(CharacterIntent)
         self.character_llm = llm.with_structured_output(CharacterBuilder)
@@ -109,7 +110,7 @@ class CharacterCreationAgent:
 
         character = (
             CharacterBuilder(
-                name=f"Hero {len(state.context) + 1}",
+                name=f"Hero {len(state.characters) + 1}",
                 icon="🧝",
                 job=JobType.MAGE,
                 summary="The default Hero of our story.",
@@ -121,8 +122,13 @@ class CharacterCreationAgent:
         state.current_character = character
         state.characters.append(character)
 
-        continuation_prompt = (
-            f"You now have {len(state.context)} character(s) in your party. Would you like to create another one?"
-        )
-        state.messages.append({"role": "assistant", "content": continuation_prompt})
-        state.awaiting_continue_decision = True
+        if len(state.characters) < self.max_players:
+            continuation_prompt = (
+                f"You now have {len(state.characters)} character(s) in your party. "
+                f"Would you like to create another one?"
+            )
+            state.messages.append({"role": "assistant", "content": continuation_prompt})
+            state.awaiting_continue_decision = True
+        else:
+            state.awaiting_continue_decision = False
+            state.done = True
