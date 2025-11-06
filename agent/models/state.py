@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
+from agent.ai.character_generator import CharacterCreationState
 from agent.character.character import Character, Party
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.decision import DecisionResult
@@ -105,3 +106,13 @@ class GameResult(BaseModel):
     interrupt: Any | None = None
     done: bool = False
     phase: GamePhase | None = None
+
+
+class GameSnapshot(BaseModel):
+    """Complete snapshot of game state for save/load functionality."""
+
+    state: State
+    phase: GamePhase
+    thread_id: str
+    character_creation_state: CharacterCreationState | None = None
+    recursion_limit: int = 20

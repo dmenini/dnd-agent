@@ -15,15 +15,15 @@ from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.map import GameMap
 from agent.models.position import Position
-from agent.models.state import GamePhase, GameResult, State
+from agent.models.state import GamePhase, GameResult, GameSnapshot, State
 
 
 class GameBackend:
     """
     Manages the full game lifecycle: character creation → story → combat.
 
-    This class orchestrates the game flow between different phases and maintains
-    the game state throughout the session.
+    This class orchestrates the game flow between different phases and maintains the game state
+    throughout the session. Supports starting from any phase for save/resume functionality.
     """
 
     DEFAULT_RECURSION_LIMIT = 20
@@ -44,8 +44,7 @@ class GameBackend:
         self.char_agent = CharacterCreationAgent(config=self.config.agent)
 
         # Cache default enemies
-        self._default_enemy_party = Party(id="enemies", name="Monsters", is_player_party=False)
-        self._default_enemies_cache: list[Character] | None = None
+        self._default_enemy_party = Party(id="p2", name="Goblins", is_player_party=False)
 
     def get_default_enemies(self) -> list[Character]:
         """Lazily create default enemies to avoid mutation issues."""
@@ -67,30 +66,131 @@ class GameBackend:
             configurable={"thread_id": self.thread_id},
         )
 
+    def create_snapshot(self) -> GameSnapshot:
+        """Create a complete snapshot of the current game state."""
+        return GameSnapshot(
+            state=self.state.model_copy(deep=True),
+            phase=self.phase,
+            thread_id=self.thread_id,
+            character_creation_state=self.character_creation_state
+            if self.phase == GamePhase.CHARACTER_CREATION
+            else None,
+            recursion_limit=self.recursion_limit,
+        )
+
+    def load_snapshot(self, snapshot: GameSnapshot) -> None:
+        """Load a game snapshot, restoring all state."""
+        self.state = snapshot.state.model_copy(deep=True)
+        self.phase = snapshot.phase
+        self.thread_id = snapshot.thread_id
+        self.recursion_limit = snapshot.recursion_limit
+
+        if snapshot.character_creation_state:
+            self.character_creation_state = snapshot.character_creation_state
+        else:
+            self.character_creation_state = CharacterCreationState()
+
     def reset(self) -> State:
         """Reset the entire game session to initial state."""
         self.thread_id = str(uuid.uuid4())
-        self.phase = GamePhase.CHARACTER_CREATION
+        self.phase = GamePhase.START
         self.state = self.initial_state.model_copy(deep=True)
         self.character_creation_state = CharacterCreationState()
         return self.state
 
-    async def start(self) -> GameResult:
-        """Start the game from character creation phase."""
-        self.phase = GamePhase.CHARACTER_CREATION
+    async def start(self, from_phase: GamePhase | None = None) -> GameResult:
+        """Start or resume the game from a specific phase."""
+        target_phase = from_phase or GamePhase.CHARACTER_CREATION
 
-        greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
-        self.character_creation_state.messages.append({"role": "user", "content": greeting_prompt})
+        if target_phase == GamePhase.START:
+            raise InvalidPhaseError("Cannot start from START phase. Use CHARACTER_CREATION, STORY, or COMBAT.")
 
-        try:
-            result = await self.char_agent.respond(self.character_creation_state)
-            message = result.messages[-1]["content"]
-            self._log_dm_message(message)
+        self.phase = target_phase
 
-            return GameResult(output=message, phase=self.phase, state=self.state)
-        except Exception as e:
-            msg = f"Failed to start game: {e}"
-            raise CharacterCreationError(msg) from e
+        # Delegate to phase-specific start methods
+        if target_phase == GamePhase.CHARACTER_CREATION:
+            return await self._start_character_creation()
+        if target_phase == GamePhase.STORY:
+            return await self._start_story()
+        if target_phase == GamePhase.COMBAT:
+            return await self._start_combat_phase()
+
+        msg = f"Unknown phase: {target_phase}"
+        raise InvalidPhaseError(msg)
+
+    async def _start_character_creation(self) -> GameResult:
+        """Start or resume character creation phase."""
+        # Only send greeting if this is a fresh start
+        if not self.character_creation_state.messages:
+            greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
+            self.character_creation_state.messages.append(
+                {
+                    "role": "user",
+                    "content": greeting_prompt,
+                }
+            )
+
+            try:
+                result = await self.char_agent.respond(self.character_creation_state)
+                message = result.messages[-1]["content"]
+                self._log_dm_message(message)
+
+                return GameResult(output=message, phase=self.phase, state=self.state)
+            except Exception as e:
+                msg = f"Failed to start character creation: {e}"
+                raise CharacterCreationError(msg) from e
+        else:
+            # Resuming existing character creation
+            return GameResult(output="Resuming character creation...", phase=self.phase, state=self.state)
+
+    async def _start_story(self) -> GameResult:
+        """Start or resume story phase."""
+        # Verify we have at least one character
+        if not self.state.characters:
+            raise InvalidPhaseError("Cannot start story phase without characters. Create a character first.")
+
+        # TODO: Generate story intro from LLM based on current state
+        message = "Your adventure begins... What would you like to do?"
+        self._log_dm_message(message)
+
+        return GameResult(output=message, phase=self.phase, state=self.state)
+
+    async def _start_combat_phase(self) -> GameResult:
+        """Start or resume combat phase."""
+        # Verify we have characters and a map
+        if not self.state.characters:
+            raise InvalidPhaseError("Cannot start combat without characters.")
+
+        if not self.state.map:
+            raise InvalidPhaseError("Cannot start combat without a map. Use start_combat() to initialize.")
+
+        # Resume existing combat
+        config = self._get_config()
+        result = await self.combat_graph.ainvoke(self.state.model_copy(deep=True), config)
+
+        return self._process_combat_result(result)
+
+    async def start_combat(
+        self, encounter: list[Character] | None = None, map_layout: list[str] | None = None
+    ) -> GameResult:
+        """Initialize and start a new combat encounter from any phase."""
+        enemies = encounter or self.get_default_enemies()
+
+        # Initialize combat map
+        self._initialize_combat_map(enemies, map_layout)
+
+        # Register enemies in state
+        for character in enemies:
+            self._register_character(character)
+
+        # Transition to combat phase
+        self.phase = GamePhase.COMBAT
+
+        # Start combat graph
+        config = self._get_config()
+        result = await self.combat_graph.ainvoke(self.state.model_copy(deep=True), config)
+
+        return self._process_combat_result(result)
 
     async def submit_command(self, command: str) -> GameResult:
         """Main input handler. Delegates to the active phase handler."""
@@ -102,14 +202,14 @@ class GameBackend:
 
         handler = phase_handlers.get(self.phase)
         if handler is None:
-            msg = f"Unknown game phase: {self.phase}"
+            msg = f"Unknown game phase: {self.phase}. Use start() to begin."
             raise InvalidPhaseError(msg)
 
         try:
             return await handler(command)
         except Exception as e:  # noqa: BLE001
             self._log_error(f"Error handling command in {self.phase.name}: {e}")
-            return GameResult(interrupt=f"Error: {e!s}", phase=self.phase, state=self.state, done=True)
+            return GameResult(output=f"Error: {e}", phase=self.phase, state=self.state, done=True)
 
     async def _handle_character_creation(self, command: str) -> GameResult:
         """Handle character creation phase input."""
@@ -147,26 +247,9 @@ class GameBackend:
         trigger_combat = True  # This should come from story LLM
 
         if trigger_combat:
-            return await self._start_combat(encounter=self.get_default_enemies())
+            return await self.start_combat()
 
         return GameResult(output=command, phase=self.phase, state=self.state)
-
-    async def _start_combat(self, encounter: list[Character]) -> GameResult:
-        """Initialize and start a combat encounter."""
-        self.phase = GamePhase.COMBAT
-
-        # Initialize combat map
-        self._initialize_combat_map(encounter)
-
-        # Register enemies in state
-        for character in encounter:
-            self._register_character(character)
-
-        # Start combat graph
-        config = self._get_config()
-        result = await self.combat_graph.ainvoke(self.state.model_copy(deep=True), config)
-
-        return self._process_combat_result(result)
 
     async def _handle_combat(self, command: str) -> GameResult:
         """Handle combat phase input."""
@@ -205,21 +288,28 @@ class GameBackend:
             phase=self.phase,
         )
 
-    def _initialize_combat_map(self, encounter: list[Character]) -> None:
-        """Initialize the combat map with characters and terrain."""
-        # TODO: Generate map dynamically via DM agent
-        map_layout = [
-            "############",
-            "#..........#",
-            "#...###....#",
-            "#...###....#",
-            "#..........#",
-            "#..........#",
-            "#..#..##...#",
-            "#####.######",
-        ]
+    def _initialize_combat_map(self, encounter: list[Character], map_layout: list[str] | None = None) -> None:
+        """
+        Initialize the combat map with characters and terrain.
+
+        Note:
+            Map generation should eventually be delegated to a DM/map generator
+        """
+        # Use custom or default map layout
+        if map_layout is None:
+            map_layout = [
+                "############",
+                "#..........#",
+                "#...###....#",
+                "#...###....#",
+                "#..........#",
+                "#..........#",
+                "#..#..##...#",
+                "#####.######",
+            ]
 
         # Position player character
+        # TODO: Placement on the combat map should be random
         player_char = self._get_first_player_character()
         if player_char:
             player_char.pos = Position(x=1, y=1, direction="SE")
