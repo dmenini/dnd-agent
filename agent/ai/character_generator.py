@@ -1,29 +1,16 @@
-from typing import Literal
+import uuid
 
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from pydantic import BaseModel, Field
+from langchain.agents import create_agent
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import tool
+from langgraph.checkpoint.memory import MemorySaver
 
 from agent.ai.components import create_llm
 from agent.character.builder import CharacterBuilder
 from agent.jobs.base import JobType
-from agent.models.config import AgentConfig
+from agent.models.config import AgentConfig, Config
 
 DEFAULT_PARTY_NAME = "Players"
-
-
-class CharacterCreationState(BaseModel):
-    """State for dialogue-based multi-character creation."""
-
-    messages: list[dict] = Field(default_factory=list)
-    current_character: CharacterBuilder | None = None
-    awaiting_continue_decision: bool = False
-    done: bool = False
-    characters: list[CharacterBuilder] = []
-
-
-class CharacterIntent(BaseModel):
-    action: Literal["continue", "finalize"]
-    message: str
 
 
 class CharacterCreationAgent:
@@ -31,125 +18,180 @@ class CharacterCreationAgent:
 
     def __init__(self, config: AgentConfig, max_players: int = 2) -> None:
         llm = create_llm(config.llm)
-        self.mock_character = config.mock_character
         self.max_players = max_players
-
-        self.dialogue_llm = llm.with_structured_output(CharacterIntent)
-        self.character_llm = llm.with_structured_output(CharacterBuilder)
-        self.state = CharacterCreationState()
+        self.mock_character = config.mock_character
         self.party = DEFAULT_PARTY_NAME
 
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", config.prompts.character_builder.format(dm=config.prompts.dm)),
-                MessagesPlaceholder("messages"),
-            ]
+        # State
+        self.characters: list[CharacterBuilder] = []
+        self._thread_id = str(uuid.uuid4())
+        self._done = False
+        self._started = False
+
+        tools = self._create_tools()
+
+        self.agent = create_agent(
+            model=llm,
+            tools=tools,
+            system_prompt=config.prompts.character_builder.format(dm=config.prompts.dm),
+            checkpointer=MemorySaver(),
         )
+        self.greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
+
+    @property
+    def has_started(self) -> bool:
+        """Check if party creation has started."""
+        return self._started
 
     @property
     def is_done(self) -> bool:
-        """Public helper to know if party creation is complete."""
-        return self.state.done
-
-    @property
-    def started(self) -> bool:
-        return len(self.state.messages) == 0 and len(self.state.characters) == 0
+        """Check if party creation is complete."""
+        return self._done or len(self.characters) == self.max_players
 
     @property
     def current_character(self) -> CharacterBuilder | None:
-        """Return the created characters once done."""
-        return self.state.current_character
+        """Get last created character."""
+        return self.characters[-1] if self.characters else None
+
+    def _create_tools(self) -> list:
+        """Create the tools for the agent."""
+
+        @tool
+        def create_character(character: CharacterBuilder) -> str:
+            """
+            Create and save a character with all required information.
+            Call this ONLY when you have all the necessary info collected.
+
+            Returns:
+                Confirmation message
+            """
+            self.characters.append(character)
+            if len(self.characters) == self.max_players:
+                self._done = True
+            return f"Character {character} created!"
+
+        @tool
+        def get_party_status() -> str:
+            """
+            Get the current status of party creation.
+
+            Returns:
+                Summary of current characters and maximum allowed.
+            """
+            remaining = self.max_players - len(self.characters)
+
+            if remaining > 0:
+                context = f"Players have created {len(self.characters)}/{self.max_players} character(s)"
+                for char in self.characters:
+                    context += f"\n- {char.name}: {char.summary}"
+                context += f"\n\nThey can create {remaining} more."
+                return context
+
+            return f"Players have created the maximum of {self.max_players} characters! Party is complete."
+
+        @tool
+        def finalize_party() -> str:
+            """
+            Finalize the character creation process.
+            Call this when the player is done creating characters or maximum is reached.
+
+            Returns:
+                Summary of the created party
+            """
+            self._done = True
+
+            context = f"Players have created {len(self.characters)}/{self.max_players} character(s)"
+            for char in self.characters:
+                context += f"\n- {char.name}: {char.summary}"
+            return context
+
+        return [
+            create_character,
+            get_party_status,
+            finalize_party,
+        ]
+
+    def reset(self) -> None:
+        self.characters = []
+        self._thread_id = str(uuid.uuid4())
+        self._done = False
+        self._started = False
+
+    def create_snapshot(self) -> dict:
+        """Create a complete snapshot of the current state."""
+        return {
+            "characters": self.characters,
+            "thread_id": self._thread_id,
+            "done": self._done,
+            "started": self._started,
+        }
+
+    def load_snapshot(self, snapshot: dict) -> None:
+        """Load a snapshot, restoring state."""
+        self.characters = snapshot["characters"]
+        self._thread_id = snapshot["thread_id"]
+        self._done = snapshot["done"]
+        self._started = snapshot["started"]
 
     async def respond(self, user_input: str) -> str:
-        """Handle one conversational step, delegating by state context."""
-        if not user_input:
-            greeting_prompt = "Greet the player explaining who you are and what's the first step in their journey."
-            self.state.messages.append({"role": "system", "content": greeting_prompt})
-        else:
-            self.state.messages.append({"role": "user", "content": user_input})
+        """Handle one conversational step."""
+        self._started = True
 
-        if self.state.awaiting_continue_decision:
-            self.state = await self._handle_continue_decision(self.state)
-        self.state = await self._handle_character_dialogue(self.state)
-        return self.state.messages[-1]["content"]
-
-    async def _handle_continue_decision(self, state: CharacterCreationState) -> CharacterCreationState:
-        """Interpret the user's response after being asked to continue or stop."""
-        messages = self.prompt.format_messages(messages=state.messages)
-
-        intent: CharacterIntent = (
-            CharacterIntent(action="finalize", message="Let's stop here.")
-            if self.mock_character
-            else await self.dialogue_llm.ainvoke(messages)  # type: ignore[assignment]
-        )
-
-        state.messages.append({"role": "assistant", "content": intent.message})
-
-        if intent.action == "continue":
-            # TODO: This may feel robotic. Rephrase with DM?
-            # Reset conversation so that next summarization doesn't hallucinate, but provide context as system message
-            context = f"So far we created {len(state.characters)} characters:\n"
-            for char in state.characters:
-                context += f"\n- {char.name}: {char.summary}"
-            state.messages = [
-                {
-                    "role": "system",
-                    "content": f"{context}\n\nLet's create another member of your party. Any input for me?",
-                }
-            ]
-            state.current_character = None
-        else:
-            state.done = True
-
-        state.awaiting_continue_decision = False
-        return state
-
-    async def _handle_character_dialogue(self, state: CharacterCreationState) -> CharacterCreationState:
-        """Run the main dialogue flow for character creation."""
-        messages = self.prompt.format_messages(messages=state.messages)
-
-        intent: CharacterIntent = (
-            CharacterIntent(action="finalize", message="Let's build your first hero!")
-            if self.mock_character
-            else await self.dialogue_llm.ainvoke(messages)  # type: ignore[assignment]
-        )
-
-        state.messages.append({"role": "assistant", "content": intent.message})
-
-        if intent.action == "finalize":
-            await self._finalize_character(state)
-
-        return state
-
-    async def _finalize_character(self, state: CharacterCreationState) -> None:
-        """Finalize the current character and ask whether to create another."""
-        # Summarize conversation but exclude system message containing previous context to reduce hallucinations
-        conversation_summary = "\n".join(
-            [f"{msg['role']}: {msg['content']}" for msg in state.messages if msg["role"] != "system"]
-        )
-        finalize_prompt = f"Based on this conversation, create a complete character:\n{conversation_summary}"
-
-        character: CharacterBuilder = (
-            CharacterBuilder(
-                name=f"Hero {len(state.characters) + 1}",
+        if self.mock_character:
+            default_char = CharacterBuilder(
+                name="Alfred",
                 icon="🧝",
                 job=JobType.MAGE,
                 summary="The default Hero of our story.",
             )
-            if self.mock_character
-            else await self.character_llm.ainvoke(finalize_prompt)  # type: ignore[assignment]
-        )
+            self.characters = [default_char]
+            self._done = True
+            return f"The default hero {default_char.name} was created!"
 
-        state.current_character = character
-        state.characters.append(character)
+        config = RunnableConfig(configurable={"thread_id": self._thread_id})
 
-        if len(state.characters) < self.max_players:
-            continuation_prompt = (
-                f"\nYou now have {len(state.characters)} character(s) in your party. "
-                f"Would you like to create another one?"
-            )
-            state.messages[-1]["content"] += continuation_prompt
-            state.awaiting_continue_decision = True
+        if not user_input:
+            messages = [("system", self.greeting_prompt)]
         else:
-            state.awaiting_continue_decision = False
-            state.done = True
+            messages = [("user", user_input)]
+
+        response = await self.agent.ainvoke({"messages": messages}, config=config)
+        return response["messages"][-1].content
+
+    def run(self) -> None:
+        config = RunnableConfig(configurable={"thread_id": "character_creation_session"})
+
+        # Start the conversation
+        for event in self.agent.stream(
+            {"messages": [("system", self.greeting_prompt)]}, config=config, stream_mode="values"
+        ):
+            if "messages" in event:
+                event["messages"][-1].pretty_print()
+
+        self._started = True
+
+        # Interactive loop
+        while not self._done:
+            user_input = input("\nYou: ").strip()
+
+            if user_input.lower() in ["quit", "exit"]:
+                print("\nExiting character creation.")
+                break
+
+            for event in self.agent.stream({"messages": [("user", user_input)]}, config=config, stream_mode="values"):
+                if "messages" in event:
+                    event["messages"][-1].pretty_print()
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+
+    import yaml  # type: ignore[import-untyped]
+
+    config_path = Path(__file__).parent.parent / "config.yaml"
+    with config_path.open() as fp:
+        _config = yaml.safe_load(fp)
+        _config = Config.model_validate(_config)
+
+    agent = CharacterCreationAgent(_config.agent)
+    agent.run()

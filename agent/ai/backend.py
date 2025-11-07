@@ -3,7 +3,7 @@ import uuid
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
-from agent.ai.character_generator import CharacterCreationAgent, CharacterCreationState
+from agent.ai.character_generator import CharacterCreationAgent
 from agent.ai.combat_graph import build_combat_graph
 from agent.character.character import Character, Party
 from agent.equipment.weapons import MeleeWeapon, WeaponType
@@ -72,8 +72,8 @@ class GameBackend:
             state=self.state.model_copy(deep=True),
             phase=self.phase,
             thread_id=self.thread_id,
-            character_creation_state=self.char_agent.state if self.phase == GamePhase.CHARACTER_CREATION else None,
             recursion_limit=self.recursion_limit,
+            char_creation_state=self.char_agent.create_snapshot(),
         )
 
     def load_snapshot(self, snapshot: GameSnapshot) -> None:
@@ -82,18 +82,14 @@ class GameBackend:
         self.phase = snapshot.phase
         self.thread_id = snapshot.thread_id
         self.recursion_limit = snapshot.recursion_limit
-
-        if snapshot.character_creation_state:
-            self.char_agent.state = snapshot.character_creation_state
-        else:
-            self.char_agent.state = CharacterCreationState()
+        self.char_agent.load_snapshot(snapshot.char_creation_state)
 
     def reset(self) -> State:
         """Reset the entire game session to initial state."""
         self.thread_id = str(uuid.uuid4())
         self.phase = GamePhase.START
         self.state = self.initial_state.model_copy(deep=True)
-        self.char_agent.state = CharacterCreationState()
+        self.char_agent.reset()
         return self.state
 
     async def start(self, from_phase: GamePhase | None = None) -> GameResult:
@@ -118,7 +114,7 @@ class GameBackend:
 
     async def _start_character_creation(self) -> GameResult:
         """Start or resume character creation phase."""
-        if not self.char_agent.started:
+        if not self.char_agent.has_started:
             try:
                 message = await self.char_agent.respond(user_input="")
                 self._log_dm_message(message)
@@ -207,10 +203,11 @@ class GameBackend:
         interrupt = None
 
         # Detect completion of a character
-        if char_builder := self.char_agent.current_character:
-            character = char_builder.to_character(party=self.char_agent.party)
-            self._register_character(character)
-            interrupt = f"Character {character.name} created!"
+        if self.char_agent.current_character:
+            character = self.char_agent.current_character.to_character(party=self.char_agent.party)
+            if character.id not in self.state.characters:
+                self._register_character(character)
+                interrupt = f"Character {character.name} created!"
 
         # Continue when done
         if self.char_agent.is_done:

@@ -11,7 +11,7 @@ from agent.jobs.mage import Mage
 
 class CharacterBuilder(BaseModel):
     name: str = Field(description="Character name")
-    icon: str = Field(description="Icon on the map")
+    icon: str = Field(description="Icon on the map (emojy)")
     job: JobType = Field(description="Character class/job")
     stats: Stats = Field(
         default=Stats(),

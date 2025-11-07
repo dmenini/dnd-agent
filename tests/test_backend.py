@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture, MockType
 
 from agent.ai.backend import GameBackend
-from agent.ai.character_generator import DEFAULT_PARTY_NAME, CharacterCreationState
+from agent.ai.character_generator import DEFAULT_PARTY_NAME
 from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
 from agent.exceptions import InvalidPhaseError
@@ -75,7 +75,7 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     fake_char_agent = mocker.AsyncMock()
     fake_char_agent.respond = mocker.AsyncMock()
     fake_char_agent.respond.side_effect = ["Welcome to your adventure!", "Here is your character!"]
-    fake_char_agent.started = False
+    fake_char_agent.has_started = False
     fake_char_agent.party = DEFAULT_PARTY_NAME
 
     backend = GameBackend(state, Config(agent=config))
@@ -120,7 +120,7 @@ async def test_start_from_character_creation(config: AgentConfig, mocker: Mocker
 
     fake_char_agent = mocker.AsyncMock()
     fake_char_agent.respond.return_value = "Let's create your character!"
-    fake_char_agent.started = False
+    fake_char_agent.has_started = False
 
     backend = GameBackend(state, Config(agent=config))
     backend.char_agent = fake_char_agent
@@ -294,33 +294,6 @@ def test_load_snapshot(config: AgentConfig, actor: Character) -> None:
     assert backend2.state.characters[actor.id].name == actor.name
 
 
-def test_snapshot_preserves_character_creation_state(backend: GameBackend) -> None:
-    """Test that snapshot preserves character creation state."""
-    backend.phase = GamePhase.CHARACTER_CREATION
-    backend.char_agent.state = CharacterCreationState(
-        messages=[{"role": "user", "content": "test"}],
-        done=False,
-    )
-
-    snapshot = backend.create_snapshot()
-
-    assert snapshot.character_creation_state is not None
-    assert len(snapshot.character_creation_state.messages) == 1
-
-
-def test_snapshot_clears_character_creation_state_in_other_phases(backend: GameBackend) -> None:
-    """Test that snapshot doesn't include character creation state in non-creation phases."""
-    backend.phase = GamePhase.STORY
-    backend.character_creation_state = CharacterCreationState(
-        messages=[{"role": "user", "content": "test"}],
-        done=False,
-    )
-
-    snapshot = backend.create_snapshot()
-
-    assert snapshot.character_creation_state is None
-
-
 def test_reset(backend: GameBackend, actor: Character) -> None:
     """Test resetting the game backend."""
     backend.state.characters[actor.id] = actor
@@ -335,7 +308,7 @@ def test_reset(backend: GameBackend, actor: Character) -> None:
     assert backend.thread_id != original_thread_id
     assert len(backend.state.characters) == len(backend.initial_state.characters)
     assert backend.state.characters[actor.id].name == backend.initial_state.characters[actor.id].name
-    assert len(backend.char_agent.state.messages) == 0
+    assert len(backend.char_agent.characters) == 0
 
 
 @pytest.mark.asyncio
@@ -346,13 +319,6 @@ async def test_resume_character_creation_from_snapshot(config: AgentConfig, mock
     # Setup backend with partial character creation
     backend1 = GameBackend(state, Config(agent=config))
     backend1.phase = GamePhase.CHARACTER_CREATION
-    backend1.char_agent.state = CharacterCreationState(
-        messages=[
-            {"role": "assistant", "content": "What's your character's name?"},
-            {"role": "user", "content": "Aragorn"},
-        ],
-        done=False,
-    )
 
     # Create snapshot
     snapshot = backend1.create_snapshot()
