@@ -8,6 +8,7 @@ from agent.character.stats import StatType
 from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
+from agent.models.constants import EventType
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
@@ -96,7 +97,7 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
 
 def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
     actor.hide()
-    actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide"))
+    actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide", event_type=EventType.MODIFIER))
     action = make_attack_action()
     action.execute(actor, target, ctx=CombatContext())
     action.finalize(actor)

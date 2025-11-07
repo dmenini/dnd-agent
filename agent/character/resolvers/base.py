@@ -7,12 +7,13 @@ from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.attributes import Attributes
+from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy
 from agent.character.stats import StatType
-from agent.effects.base import Trait, TraitEffect, normalize_id
+from agent.effects.base import Trait, normalize_id
 from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor
-from agent.logs.log_event import Icon, LogEvent, LogLevel
+from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.constants import EventType
@@ -32,6 +33,7 @@ class CharacterBase(BaseModel):
     experience: int = 0
     pos: Position = Position(x=0, y=0)
     attributes: Attributes = Attributes()
+    narrative: NarrativeAttributes = NarrativeAttributes()
     stealth_value: int = 0
 
     spells: list[AttackSpellAction | SupportSpellAction] = []
@@ -42,7 +44,7 @@ class CharacterBase(BaseModel):
     action_economy: ActionEconomy
     armor: Armor | None = None
 
-    _event_listeners: dict[str, list[TraitEffect]] = PrivateAttr(default_factory=lambda: defaultdict(list))
+    _event_listeners: dict[str, list[Trait]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -97,66 +99,50 @@ class CharacterBase(BaseModel):
         return damage
 
     def register_passive(self, trait: Trait) -> None:
-        self.passives.append(trait)
-        effect = trait.get_effect()
-        self.register_listener(effect)
+        """Register a passive trait (idempotent)."""
+        # Add to passives list if not already there
+        if all(trait.id != p.id for p in self.passives):
+            self.passives.append(trait)
+            self.log_event(f"{self.name} gained passive trait {trait.feature_id.value}", log_type=LogLevel.DETAIL)
 
-        if effect.event_type == EventType.MODIFIER:
-            effect.callback(self)
+        # Apply immediately if it's a modifier
+        if trait.event_type == EventType.MODIFIER:
+            trait.apply(self)
 
     def unregister_passive(self, feature_id: FeatureId, source_id: str) -> None:
         source_id = normalize_id(source_id)
         matching_traits = [t for t in self.passives if t.feature_id == feature_id and t.source_id == source_id]
+
         for trait in matching_traits:
-            self.unregister_modifier(trait.id)
-            self.unregister_listeners(trait.id)
+            # Remove modifier if applicable
+            if trait.event_type == EventType.MODIFIER:
+                self.attributes.remove_modifier(trait.id)
+
+            # Remove from passives
             self.passives.remove(trait)
 
-    def unregister_modifier(self, source_id: str) -> None:
-        source_id = normalize_id(source_id)
-        modifier = self.attributes.remove_modifier(source_id)
-        if modifier:
-            self.log_event(
-                f"Removed modifier {modifier.attribute}={modifier.value} from {self.name}",
-                icon=Icon.EFFECT_EXPIRED,
-                log_type=LogLevel.DEBUG,
-            )
-
-    def register_listener(self, event: TraitEffect) -> None:
-        """Register a listener for a given event."""
-        self._event_listeners[event.event_type.value].append(event)
-        self.log_event(
-            f"Added listener {event.source_id} for {event.event_type.value}",
-            icon=Icon.EFFECT_APPLIED,
-            log_type=LogLevel.DEBUG,
-        )
-
-    def unregister_listeners(self, source_id: str) -> None:
-        """Remove all listeners registered by a given source (e.g., a trait)."""
-        for event, listeners in self._event_listeners.items():
-            before = len(listeners)
-            self._event_listeners[event] = [event for event in listeners if event.source_id != source_id]
-            after = len(self._event_listeners[event])
-            if before != after:
-                self.log_event(
-                    f"Removed {before - after} listeners from event '{event}'",
-                    icon=Icon.EFFECT_EXPIRED,
-                    log_type=LogLevel.DEBUG,
-                )
+            self.log_event(f"{self.name} lost passive trait {trait.feature_id}", log_type=LogLevel.DETAIL)
 
     def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
         """Trigger all listeners for the given event type in priority order."""
-        events = self._event_listeners.get(event.value, [])
-        events.sort(key=lambda e: e.priority)
-        for e in list(events):
-            e.callback(*args, **kwargs)
+        listeners = [trait for trait in self.passives if trait.event_type == event]
+        listeners.sort(key=lambda t: t.priority)
+
+        for trait in list(listeners):
+            trait.apply(*args, **kwargs)
 
     def notify_state_change(self, field_name: str) -> None:
         """Called whenever an internal property changes."""
-        for trait in self.passives:
-            effect = trait.get_effect()
-            if effect.condition_depends_on(field_name):
-                self.trigger_event(EventType.MODIFIER, target=self)
+        # Find all traits that depend on this field
+        dependent_traits = [
+            trait
+            for trait in self.passives
+            if trait.event_type == EventType.MODIFIER and trait.condition_depends_on(field_name)
+        ]
+
+        # Re-apply them (they'll check their conditions)
+        for trait in dependent_traits:
+            trait.apply(self)
 
     def log_event(
         self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False

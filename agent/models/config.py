@@ -7,16 +7,19 @@ class ToolsConfig(BaseModel):
 
 class LLMConfig(BaseModel):
     name: str
-    temperature: float
+    temperature: float = 0.5
 
 
 class PromptsConfig(BaseModel):
-    system: str
+    npc: str
     map: str
+    dm: str
+    character_builder: str
 
 
 class AgentConfig(BaseModel):
-    retries: int
+    mock_character: bool = False
+    retries: int = 3
     llm: LLMConfig
     prompts: PromptsConfig
     decision_node: dict = {}
@@ -25,3 +28,5 @@ class AgentConfig(BaseModel):
 class Config(BaseModel):
     agent: AgentConfig
     generate_map: bool = False
+    map_size: tuple[int, int] = (12, 8)
+    max_players: int = 2

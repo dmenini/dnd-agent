@@ -1,13 +1,13 @@
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
-from agent.jobs.base import CharacterJob, JobFeature
+from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
 from agent.jobs.spells import AttackSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
 Mage = CharacterJob(
-    name="Mage",
+    type=JobType.MAGE,
     hit_die=6,
     primary_stat=StatType.INT,
     save_proficiencies=[StatType.INT, StatType.WIS],

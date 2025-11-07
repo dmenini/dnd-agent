@@ -5,9 +5,9 @@ from textual.containers import Horizontal, Vertical
 from textual.driver import Driver
 from textual.widgets import Footer, Header, Input, Rule
 
-from agent.ai.backend import GameBackend, GameResult
+from agent.ai.backend import GameBackend
 from agent.models.config import Config
-from agent.models.state import State
+from agent.models.state import GamePhase, GameResult, State
 from agent.ui.character_panel import CharacterPanel
 from agent.ui.log_panel import LogPanel
 from agent.ui.map_panel import MapPanel
@@ -29,6 +29,7 @@ class GameUI(App):
         super().__init__(driver_class, css_path, watch_css, ansi_color)
         self.state = initial_state.model_copy(deep=True)
         self.backend = GameBackend(initial_state, config)
+        self.title = "DnD Agent"
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -66,13 +67,8 @@ class GameUI(App):
         event.input.disabled = True
         event.input.refresh()
 
-        # Handle game reset
-        if self.state.done:
-            self.state = self.backend.reset()
-            self.update_state(self.state)
-
         # Process command in background
-        if not self.backend.started:
+        if self.backend.phase == GamePhase.START:
             self.process_start_game()
         else:
             self.process_command(command)
@@ -80,13 +76,13 @@ class GameUI(App):
     @work(thread=True)
     async def process_start_game(self) -> None:
         """Start the game in a background thread."""
-        result = await self.backend.start_game(self.state)
+        result = await self.backend.start()
         self.call_from_thread(self.handle_game_result, result)
 
     @work(thread=True)
     async def process_command(self, command: str) -> None:
         """Process a user command in a background thread."""
-        result = await self.backend.submit_command(command, self.state)
+        result = await self.backend.submit_command(command)
         self.call_from_thread(self.handle_game_result, result)
 
     def handle_game_result(self, result: GameResult) -> None:

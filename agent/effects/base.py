@@ -1,10 +1,10 @@
-from collections.abc import Callable
+import hashlib
+import json
 from typing import Any, Literal
 
 from anthropic import BaseModel
 
 from agent.character.modifier import Modifier
-from agent.effects.trait_effects.support import apply_modifier
 from agent.models.constants import EventType
 from agent.models.enums import FeatureId
 
@@ -15,25 +15,13 @@ class Priority:
     LOW: int = 100  # Execute last
 
 
-class TraitEffect(BaseModel):
-    """Event listener to register dynamically."""
-
-    event_type: EventType
-    callback: Callable
-    source_id: str
-    priority: int = Priority.MEDIUM
-    dependencies: list[str] = []
-
-    def condition_depends_on(self, field_name: str) -> bool:
-        return field_name in self.dependencies
-
-
 class Trait(BaseModel):
     feature_id: FeatureId
     source_id: str
     name: str = ""
     description: str = ""
     priority: int = Priority.MEDIUM
+    event_type: EventType
 
     def model_post_init(self, _: Any) -> None:
         if not self.name:
@@ -45,18 +33,36 @@ class Trait(BaseModel):
 
     @property
     def id(self) -> str:
-        return f"{self.source_id}-{normalize_id(self.name)}"
+        data = self.model_dump(exclude={"id"}, mode="json")
+        serialized = json.dumps(data, sort_keys=True)
+        hash_part = hashlib.sha256(serialized.encode()).hexdigest()[:8]
+        return f"{self.source_id}-{normalize_id(self.name)}-{hash_part}"
 
-    def get_effect(self) -> TraitEffect:
-        """Return a Modifier or Event effect to apply."""
+    def condition(self, target: Any) -> bool:  # noqa: ARG002
+        """Check if this trait's effect should be applied."""
+        return True
+
+    def apply(self, *args: Any, **kwargs: Any) -> None:
+        """Apply this trait's effect to the target."""
         raise NotImplementedError
 
-    def _make_event_effect(self, event_type: EventType, callback: Callable[..., None]) -> TraitEffect:
-        return TraitEffect(source_id=self.id, event_type=event_type, callback=callback, priority=self.priority)
+    def condition_depends_on(self, field_name: str) -> bool:  # noqa: ARG002
+        """Whether this trait's condition depends on a specific field."""
+        return False
 
-    def _make_modifier(self, attr: str, value: Any, op: Literal["set", "add", "mul"]) -> TraitEffect:
-        mod = Modifier(source_id=self.id, attribute=attr, value=value, operation=op)
-        return self._make_event_effect(event_type=EventType.MODIFIER, callback=lambda t: apply_modifier(t, mod))
+
+class ModifierTrait(Trait):
+    """Trait that modifies a character attribute."""
+
+    event_type: EventType = EventType.MODIFIER
+    attribute: str
+    value: Any
+    operation: Literal["set", "add", "mul"] = "add"
+
+    def apply(self, target: Any) -> None:
+        if self.condition(target):
+            modifier = Modifier(source_id=self.id, attribute=self.attribute, value=self.value, operation=self.operation)
+            target.attributes.add_modifier(modifier)
 
 
 def normalize_id(name: str) -> str:

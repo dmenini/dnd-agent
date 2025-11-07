@@ -4,6 +4,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
+from agent.ai.character_generator import DEFAULT_PARTY_NAME
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.equipment.armor import Armor, ArmorType
@@ -30,7 +31,9 @@ def config() -> AgentConfig:
     """Mocked config with fake LLM setup."""
     return AgentConfig(
         llm=LLMConfig(name="fake", temperature=0),
-        prompts=PromptsConfig(system="You are a decision-making combat AI.", map="Generate the map"),
+        prompts=PromptsConfig(
+            npc="You are a decision-making combat AI.", map="Generate the map", character_builder="", dm=""
+        ),
         retries=1,
     )
 
@@ -54,9 +57,9 @@ def context() -> CombatContext:
 
 @pytest.fixture
 def actor() -> Character:
-    party_players = Party(id="p1", name="Heroes", is_player_party=True)
+    party_players = Party(id="p1", name=DEFAULT_PARTY_NAME, is_player_party=True)
     return Character(
-        id="hero",
+        id="alfred",
         name="Alfred",
         icon="⚔️",
         job=Fighter,
