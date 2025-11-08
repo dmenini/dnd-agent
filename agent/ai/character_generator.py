@@ -150,10 +150,7 @@ class CharacterCreationAgent:
 
         config = RunnableConfig(configurable={"thread_id": self._thread_id})
 
-        if not user_input:
-            messages = [("system", self.greeting_prompt)]
-        else:
-            messages = [("user", user_input)]
+        messages = [("system", self.greeting_prompt)] if not user_input else [("user", user_input)]
 
         response = await self.agent.ainvoke({"messages": messages}, config=config)
         return response["messages"][-1].content

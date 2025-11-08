@@ -34,6 +34,7 @@ class Attributes(Stats):
     base_save_autofail: defaultdict[str, bool] = defaultdict(bool)
     base_resistance: defaultdict[str, float] = defaultdict(float)
     base_vulnerability: defaultdict[str, float] = defaultdict(float)
+    base_ac_mod: defaultdict[str, bool] = defaultdict(bool)
 
     _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
 
@@ -47,6 +48,10 @@ class Attributes(Stats):
         """Compute Armor Class bonus from modifiers."""
         ac = self._recompute_attribute("ac")
         dex_mod = self.stat_modifier(StatType.DEX)
+
+        # Apply CON modifier to AC if the character has that feature
+        if self._recompute_attribute(f"ac_mod.{StatType.CON.name.lower()}"):
+            ac += self.stat_modifier(StatType.CON)
 
         if not armor_type:
             ac += 10 + dex_mod
@@ -66,7 +71,6 @@ class Attributes(Stats):
         return 2 + (level - 1) // 4
 
     def speed(self) -> float:
-        """Base speed, possibly affected by conditions later."""
         return self._recompute_attribute("speed")
 
     def crit_roll(self) -> int:

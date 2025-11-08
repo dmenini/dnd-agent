@@ -1,7 +1,6 @@
-from collections import defaultdict
 from typing import Any
 
-from pydantic import BaseModel, PrivateAttr, computed_field, field_validator
+from pydantic import BaseModel, computed_field, field_validator
 
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
@@ -43,8 +42,6 @@ class CharacterBase(BaseModel):
     # Defined for typing to work
     action_economy: ActionEconomy
     armor: Armor | None = None
-
-    _event_listeners: dict[str, list[Trait]] = PrivateAttr(default_factory=lambda: defaultdict(list))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -175,9 +172,10 @@ class CharacterBase(BaseModel):
 
             # Otherwise, assume it's a dict with an "id"
             elif isinstance(el, dict):
-                id_ = el.pop("id")
+                el_copy = el.copy()
+                id_ = el_copy.pop("id")
                 feature_id = FeatureId(id_)
-                actions.append(ActionRegistry.create(id_=feature_id, **el))
+                actions.append(ActionRegistry.create(id_=feature_id, **el_copy))
 
             else:
                 msg = f"Invalid action payload: {v}"
@@ -200,9 +198,10 @@ class CharacterBase(BaseModel):
 
             # Otherwise, assume it's a dict with an "id"
             elif isinstance(el, dict):
-                id_ = el.pop("feature_id")
+                el_copy = el.copy()
+                id_ = el_copy.pop("feature_id")
                 feature_id = FeatureId(id_)
-                passives.append(TraitRegistry.create(feature_id=feature_id, **el))
+                passives.append(TraitRegistry.create(feature_id=feature_id, **el_copy))
 
             else:
                 msg = f"Invalid trait payload: {v}"

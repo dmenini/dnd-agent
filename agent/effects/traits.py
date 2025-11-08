@@ -147,6 +147,24 @@ class ACBonusWithoutArmor(ACBonus):
         return field_name == "armor"
 
 
+class ACBonusModWithoutArmor(ModifierTrait):
+    """Grant a bonus to Armor Class (AC) while not wearing armor."""
+
+    attribute: str = "ac_mod.{stat}"
+    operation: Literal["set", "add", "mul"] = "set"
+    stat: StatType = StatType.CON
+
+    def model_post_init(self, _: Any) -> None:
+        super().model_post_init(_)
+        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+
+    def condition(self, target: Any) -> bool:
+        return not bool(target.armor)
+
+    def condition_depends_on(self, field_name: str) -> bool:
+        return field_name == "armor"
+
+
 class CriticalRollBonus(ModifierTrait):
     """Add a bonus to the target critical roll (e.g. 1 -> crit on 19 instead of 20)."""
 

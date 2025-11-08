@@ -49,6 +49,7 @@ class FeatureId(str, Enum):
     AC_BONUS = "ac_bonus"
     AC_BONUS_WITH_ARMOR = "ac_bonus_with_armor"
     AC_BONUS_WITHOUT_ARMOR = "ac_bonus_without_armor"
+    UNARMORED_DEFENSE = "ac_bonus_mod_without_armor"
 
     # Combat Behavior
     CRITICAL_ROLL_BONUS = "critical_roll_bonus"
@@ -81,6 +82,7 @@ class FeatureId(str, Enum):
     # Reflection & Retaliation
     REFLECT_MELEE_DAMAGE = "reflect_melee_damage"
     SECOND_WIND = "second_wind"
+    RAGE = "rage"
 
     # Spells
     MAGIC_MISSILE = "magic_missile"

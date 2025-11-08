@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 
 class EffectType(str, Enum):
+    ENRAGED = "enraged"
     STUNNED = "stunned"
     PARALYZED = "paralyzed"
     POISONED = "poisoned"

@@ -9,6 +9,7 @@ from agent.jobs.spells import Spell
 
 
 class JobType(str, Enum):
+    BARBARIAN = "barbarian"
     FIGHTER = "fighter"
     MAGE = "mage"
 
