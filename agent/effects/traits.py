@@ -20,6 +20,7 @@ from agent.effects.trait_effects.turn import (
     extra_actions_effect,
     half_attacks_effect,
 )
+from agent.equipment.armor import ArmorType
 from agent.models.constants import EventType
 from agent.models.damage import DamageType
 
@@ -130,6 +131,19 @@ class ACBonusWithArmor(ACBonus):
 
     def condition(self, target: Any) -> bool:
         return bool(target.armor)
+
+    def condition_depends_on(self, field_name: str) -> bool:
+        return field_name == "armor"
+
+
+class ACBonusWithArmorTypes(ACBonus):
+    """Grant a bonus to Armor Class (AC) while wearing armor of certain types."""
+
+    value: int = 1
+    armor_types: list[ArmorType]
+
+    def condition(self, target: Any) -> bool:
+        return target.armor.armor_type in self.armor_types
 
     def condition_depends_on(self, field_name: str) -> bool:
         return field_name == "armor"
@@ -306,6 +320,28 @@ class HalfAttacks(Trait):
 
     def apply(self, target: Any) -> None:
         half_attacks_effect(target)
+
+
+class BonusOnAttackRoll(Trait):
+    """The target can roll a d4 and add the number rolled to the attack roll."""
+
+    event_type: EventType = EventType.ATTACK_ROLL
+    value: str = "1d4"
+
+    def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
+        result = actor.roll(self.value)
+        ctx.attack_roll.total += result.total
+
+
+class BonusOnSaveThrow(Trait):
+    """The target can roll a d4 and add the number rolled to the save throw."""
+
+    event_type: EventType = EventType.SAVE_THROW
+    value: str = "1d4"
+
+    def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
+        result = actor.roll(self.value)
+        ctx.save_roll.total += result.total
 
 
 class ReflectMeleeDamage(Trait):

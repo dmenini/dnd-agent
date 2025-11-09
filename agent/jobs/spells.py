@@ -5,6 +5,7 @@ from pydantic import Field
 
 from agent.actions.base import ActionCategory
 from agent.character.resources import SpellLevel
+from agent.character.stats import StatType
 from agent.effects.status_effects.base import StatusEffect
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.damage import DamageType
@@ -24,6 +25,7 @@ class SpellBase(JobFeature):
     casting_time: ActionCategory = ActionCategory.STANDARD
     targeting: TargetingType
     range: float
+    stat: StatType | None = None  # Default to spellcaster stat if not specified
 
 
 class AttackSpell(SpellBase):
@@ -37,6 +39,7 @@ class AttackSpell(SpellBase):
 class SupportSpell(SpellBase):
     spell_type: Literal[SpellType.SUPPORT] = Field(default=SpellType.SUPPORT, frozen=True)
     effects: list[StatusEffect] = []
+    hits: int = 1
 
 
 Spell: TypeAlias = Annotated[  # noqa: UP040

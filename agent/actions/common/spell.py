@@ -9,6 +9,7 @@ from agent.character.stats import StatType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import WeaponType
 from agent.logs.log_event import Icon
+from agent.models.constants import EventType
 from agent.models.enums import (
     TargetingType,
 )
@@ -41,9 +42,10 @@ class AttackSpellAction(StandardAction, AttackAction):
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
         roll = target.save_roll(save_stat=actor.attributes.spellcasting_stat, is_spell=True)
+        ctx.save_roll = roll
+        actor.trigger_event(EventType.SAVE_THROW, actor, target, ctx)
 
-        ctx.hit_roll = roll
-        ctx.is_hit = roll.total < dc
+        ctx.is_hit = ctx.save_roll.total < dc
 
         actor.log_event(f"{self.stat.name} save throw {roll.expression}: {roll.total} vs DC {dc}", icon=Icon.ROLL)
 

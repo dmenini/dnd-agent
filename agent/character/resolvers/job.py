@@ -75,11 +75,8 @@ class JobResolver(CharacterBase):
 
     def _apply_spell(self, spell: Spell) -> None:
         if spell.ref_id not in {a.id for a in self.spells}:
-            action = ActionRegistry.create(
-                id_=spell.ref_id,
-                stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
-                **spell.model_dump(exclude={"type"}),
-            )
+            spell.stat = spell.stat or self.attributes.spellcasting_stat
+            action = ActionRegistry.create(id_=spell.ref_id, **spell.model_dump(exclude={"type"}))
             if isinstance(action, (AttackSpellAction, SupportSpellAction)):
                 self.spells.append(action)
                 self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)

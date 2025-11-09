@@ -1,4 +1,3 @@
-
 from agent.actions.common.wait import WaitAction
 from agent.character.character import Character
 from agent.models.decision import DecisionResult

@@ -43,6 +43,11 @@ class RollResolver(CharacterBase):
             return self._dice.roll_twice(expr)
         return self._dice.roll_once(expr)
 
+    def heal_roll(self, expr: str) -> DiceRoll:
+        mod = self.attributes.stat_modifier(self.attributes.spellcasting_stat)
+        expr = f"{expr}+{mod}"
+        return self._dice.roll_with_context(dice_expression=expr)
+
     def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
         if self.attributes.save_autofail(save_stat):
             return DiceRoll(expression=D20, rolls=[1], total=1, raw=1)
@@ -81,3 +86,6 @@ class RollResolver(CharacterBase):
         expr = f"{D20}+{wis_mod}"
 
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def roll(self, expr: str) -> DiceRoll:
+        return self._dice.roll_once(expr)

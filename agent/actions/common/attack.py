@@ -40,8 +40,10 @@ class AttackAction(Action, ABC):
         roll = actor.attack_roll(attack_stat=self.stat, target=target)
         ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
-        ctx.hit_roll = roll
-        ctx.is_hit = ctx.is_critical or roll.total >= target.armor_class
+        ctx.attack_roll = roll
+        actor.trigger_event(EventType.ATTACK_ROLL, actor, target, ctx)
+
+        ctx.is_hit = ctx.is_critical or ctx.attack_roll.total >= target.armor_class
 
         if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
@@ -66,7 +68,7 @@ class AttackAction(Action, ABC):
         actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
 
         # Apply actor status effects
-        target.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
+        actor.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)

@@ -20,7 +20,7 @@ Barbarian = CharacterJob(
             kwargs={"damage_bonus": 2},
         ),
         JobFeature(
-            ref_id=FeatureId.UNARMORED_DEFENSE,
+            ref_id=FeatureId.AC_BONUS_MOD_WITHOUT_ARMOR,
             name="Unarmored Defense",
             description="While not wearing armor, AC = 10 + DEX + CON modifier.",
             level_required=1,

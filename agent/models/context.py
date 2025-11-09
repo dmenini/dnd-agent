@@ -11,8 +11,9 @@ from agent.models.map import GameMap
 class CombatContext(BaseModel):
     enemies: Sequence[CharacterBase] = []
     map: GameMap | None = None
-    hit_roll: DiceRoll | None = None
     damage_roll: DiceRoll | None = None
+    attack_roll: DiceRoll | None = None
+    save_roll: DiceRoll | None = None
     damage: Damage | None = None
     is_critical: bool = False
     is_hit: bool | None = None
