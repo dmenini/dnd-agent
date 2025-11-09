@@ -1,12 +1,12 @@
 from agent.character.character import Character
-from agent.jobs.mage import Mage
+from agent.jobs.wizard import Wizard
 from agent.models.enums import FeatureId
 
 
 def test_mage(actor: Character) -> None:
     # Setup actor as a Mage and apply features
     actor.armor = None
-    actor.change_job(Mage)
+    actor.change_job(Wizard)
 
     abilities = [a.id for a in actor.abilities]
     assert FeatureId.ARCANE_RECOVERY in abilities

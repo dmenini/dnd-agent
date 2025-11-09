@@ -6,7 +6,7 @@ from agent.character.narrative import NarrativeAttributes
 from agent.character.stats import Stats
 from agent.jobs.base import JobType
 from agent.jobs.fighter import Fighter
-from agent.jobs.mage import Mage
+from agent.jobs.wizard import Wizard
 
 
 class CharacterBuilder(BaseModel):
@@ -28,8 +28,8 @@ class CharacterBuilder(BaseModel):
     def to_character(self, party: str) -> Character:
         if self.job == JobType.FIGHTER:
             job = Fighter
-        elif self.job == JobType.MAGE:
-            job = Mage
+        elif self.job == JobType.WIZARD:
+            job = Wizard
         else:
             job = None
 

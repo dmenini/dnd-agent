@@ -141,7 +141,7 @@ class CharacterCreationAgent:
             default_char = CharacterBuilder(
                 name="Alfred",
                 icon="🧝",
-                job=JobType.MAGE,
+                job=JobType.WIZARD,
                 summary="The default Hero of our story.",
             )
             self.characters = [default_char]

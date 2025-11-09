@@ -1,6 +1,6 @@
 from math import ceil
 
-from agent.actions.jobs.mage import ArcaneRecoveryAction
+from agent.actions.jobs.wizard import ArcaneRecoveryAction
 from agent.character.character import Character
 from agent.character.resources import SpellLevel, SpellSlots
 from agent.models.context import CombatContext

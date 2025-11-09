@@ -9,7 +9,7 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.equipment.armor import Armor, ArmorType
 from agent.jobs.fighter import Fighter
-from agent.jobs.mage import Mage
+from agent.jobs.wizard import Wizard
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.decision import DecisionResult
@@ -77,7 +77,7 @@ def target() -> Character:
         id="orc",
         name="Orc",
         icon="👹",
-        job=Mage,
+        job=Wizard,
         pos=Position(x=3, y=2),
         party=party_players,
         armor=Armor(

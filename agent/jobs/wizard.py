@@ -6,8 +6,8 @@ from agent.jobs.spells import AttackSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
-Mage = CharacterJob(
-    type=JobType.MAGE,
+Wizard = CharacterJob(
+    type=JobType.WIZARD,
     hit_die=6,
     primary_stat=StatType.INT,
     save_proficiencies=[StatType.INT, StatType.WIS],
