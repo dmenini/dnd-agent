@@ -1,4 +1,3 @@
-from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.registry import TraitRegistry
@@ -77,9 +76,8 @@ class JobResolver(CharacterBase):
         if spell.ref_id not in {a.id for a in self.spells}:
             spell.stat = spell.stat or self.attributes.spellcasting_stat
             action = ActionRegistry.create(id_=spell.ref_id, **spell.model_dump(exclude={"type"}))
-            if isinstance(action, (AttackSpellAction, SupportSpellAction)):
-                self.spells.append(action)
-                self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)
+            self.spells.append(action)  # type: ignore[arg-type]
+            self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)
 
     def _remove_spell(self, spell: Spell) -> None:
         self.spells = [s for s in self.spells if s.id != spell.ref_id]

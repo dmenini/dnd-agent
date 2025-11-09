@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel, computed_field, field_validator
 
 from agent.actions.base import Action
-from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.attributes import Attributes
 from agent.character.narrative import NarrativeAttributes
@@ -35,7 +35,7 @@ class CharacterBase(BaseModel):
     narrative: NarrativeAttributes = NarrativeAttributes()
     stealth_value: int = 0
 
-    spells: list[AttackSpellAction | SupportSpellAction] = []
+    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction] = []
     abilities: list[Action] = []
     passives: list[Trait] = []
 

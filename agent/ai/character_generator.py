@@ -1,4 +1,5 @@
 import uuid
+from typing import TYPE_CHECKING
 
 from langchain.agents import create_agent
 from langchain_core.runnables import RunnableConfig
@@ -9,6 +10,9 @@ from agent.ai.components import create_llm
 from agent.character.builder import CharacterBuilder
 from agent.jobs.base import JobType
 from agent.models.config import AgentConfig, Config
+
+if TYPE_CHECKING:
+    from langgraph.graph.state import CompiledStateGraph
 
 DEFAULT_PARTY_NAME = "Players"
 
@@ -30,7 +34,7 @@ class CharacterCreationAgent:
 
         tools = self._create_tools()
 
-        self.agent = create_agent(
+        self.agent: CompiledStateGraph = create_agent(
             model=llm,
             tools=tools,
             system_prompt=config.prompts.character_builder.format(dm=config.prompts.dm),

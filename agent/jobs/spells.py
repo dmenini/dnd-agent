@@ -15,6 +15,7 @@ from agent.models.enums import TargetingType
 class SpellType(str, Enum):
     ATTACK = "attack"
     SUPPORT = "support"
+    HEALING = "healing"
 
 
 class SpellBase(JobFeature):
@@ -42,7 +43,12 @@ class SupportSpell(SpellBase):
     hits: int = 1
 
 
+class HealingSpell(SpellBase):
+    spell_type: Literal[SpellType.HEALING] = Field(default=SpellType.HEALING, frozen=True)
+    heal_dice: str
+
+
 Spell: TypeAlias = Annotated[  # noqa: UP040
-    AttackSpell | SupportSpell,
+    AttackSpell | SupportSpell | HealingSpell,
     Field(discriminator="spell_type"),
 ]

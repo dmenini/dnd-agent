@@ -93,3 +93,4 @@ class FeatureId(str, Enum):
     HASTE = "haste"
     SACRED_FLAME = "sacred_flame"
     BLESS = "bless"
+    CURE_WOUNDS = "cure_wounds"

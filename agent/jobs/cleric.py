@@ -4,7 +4,7 @@ from agent.effects.status_effects.blessed import Blessed
 from agent.equipment.armor import ArmorType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
-from agent.jobs.spells import AttackSpell, SupportSpell
+from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
@@ -53,6 +53,17 @@ Cleric = CharacterJob(
             damage_type=DamageType.RADIANT,
             requires_save=True,
             stat=StatType.DEX,
+        ),
+        HealingSpell(
+            ref_id=FeatureId.CURE_WOUNDS,
+            name="Cure Wounds",
+            description="Touch a creature to restore 1d8 + WIS modifier hit points.",
+            level_required=1,
+            type=FeatureType.ACTIVE,
+            level=SpellLevel.LEVEL_1,
+            targeting=TargetingType.SINGLE,
+            range=1,
+            heal_dice="1d8",
         ),
         SupportSpell(
             ref_id=FeatureId.BLESS,

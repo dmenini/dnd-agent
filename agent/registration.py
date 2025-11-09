@@ -1,4 +1,4 @@
-from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
 from agent.actions.jobs.barbarian import RageAction
 from agent.actions.jobs.cleric import DivineRestorationAction
 from agent.actions.jobs.fighter import SecondWindAction
@@ -17,6 +17,7 @@ def register_actions() -> None:
     ActionRegistry.register(FeatureId.RAGE, RageAction)
     ActionRegistry.register(FeatureId.DIVINE_RESTORATION, DivineRestorationAction)
     ActionRegistry.register(FeatureId.BLESS, SupportSpellAction)
+    ActionRegistry.register(FeatureId.CURE_WOUNDS, HealingSpellAction)
 
 
 def register_traits() -> None:

@@ -8,7 +8,7 @@ from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import WeaponType
-from agent.logs.log_event import Icon
+from agent.logs.log_event import Icon, LogLevel
 from agent.models.constants import EventType
 from agent.models.enums import (
     TargetingType,
@@ -107,4 +107,39 @@ class SupportSpellAction(StandardAction):
             f"- {self.id}: {self.name}{level} — {self.description} "
             f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
             f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
+        )
+
+
+class HealingSpellAction(StandardAction):
+    id: str
+    name: str
+    description: str = ""
+    type: ActionType = ActionType.CAST_SPELL
+    level: SpellLevel
+    targeting: TargetingType
+    stat: StatType
+    range: float
+    heal_dice: str
+
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
+        roll = target.heal_roll(expr=self.heal_dice)
+        heal_amount = min(roll.total, target.max_hp - target.attributes.hp)
+        if heal_amount:
+            target.heal(heal_amount)
+            target.log_event(
+                f"{actor.name} heals {target.name} for {heal_amount} HP ({target.attributes.hp}/{target.max_hp}).",
+                log_type=LogLevel.DETAIL,
+            )
+
+    def finalize(self, actor: Character) -> None:
+        """Consume action point and spell slot."""
+        super().finalize(actor)
+        actor.spell_slots.consume(self.level)
+
+    def __str__(self) -> str:
+        level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
+        return (
+            f"- {self.id}: {self.name}{level} — {self.description} "
+            f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"Heal dice: {self.heal_dice}, Range: {self.range} m)"
         )
