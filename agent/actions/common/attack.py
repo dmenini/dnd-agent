@@ -149,6 +149,9 @@ class MainHandAttackAction(StandardAction, AttackAction):
             ability=ability,
             range=weapon.range,
             status_effects=weapon.effects,
+            metadata={
+                "slot": "main_hand",
+            },
         )
 
 
@@ -169,6 +172,9 @@ class OffHandAttackAction(BonusAction, AttackAction):
             ability=weapon.ability,
             range=weapon.range,
             status_effects=weapon.effects,
+            metadata={
+                "slot": "off_hand",
+            },
         )
 
 
@@ -189,4 +195,7 @@ class RangedAttackAction(StandardAction, AttackAction):
             ability=weapon.ability,
             range=weapon.range,
             status_effects=weapon.effects,
+            metadata={
+                "slot": "ranged",
+            },
         )

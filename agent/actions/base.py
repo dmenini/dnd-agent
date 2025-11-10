@@ -69,6 +69,7 @@ class Action(BaseModel, ABC):
     targeting: TargetingType
     hits: int = 1
     range: float = 0.0
+    metadata: dict = {}
 
     @abstractmethod
     def is_available(self, action_economy: ActionEconomy) -> bool:

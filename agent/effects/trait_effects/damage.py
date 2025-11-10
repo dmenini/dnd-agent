@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent.actions.base import ActionType
-from agent.character.abilities import AbilityType
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon
 from agent.logs.log_event import LogLevel
 from agent.models.constants import MELEE_RANGE, TRAIT_LOG_LEVEL
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
@@ -49,10 +48,11 @@ def damage_bonus_effect(actor: CharacterBase, context: CombatContext, value: int
 
 
 def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) -> None:
-    is_finesse_or_ranged = (
-        context.metadata.get("type") in {ActionType.ATTACK, ActionType.OFF_HAND_ATTACK}
-        and context.metadata.get("ability") == AbilityType.DEX
-    )
+    slot = context.metadata.get("metadata", {}).get("slot")
+    is_finesse_or_ranged = False
+    if slot:
+        weapon = actor.equipment_slots.get(slot)
+        is_finesse_or_ranged = isinstance(weapon, RangedWeapon) or (isinstance(weapon, MeleeWeapon) and weapon.finesse)
     is_first_attack = (
         actor.action_economy.last_standard_action is None and actor.action_economy.last_bonus_action is None
     )

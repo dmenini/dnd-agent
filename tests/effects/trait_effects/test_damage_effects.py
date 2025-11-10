@@ -19,6 +19,7 @@ from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageResistance, DamageType, DamageVulnerability
 from agent.models.enums import TargetingType
 from agent.models.position import Position
+from tests.conftest import dagger
 
 MELEE_RANGE = 5
 
@@ -115,6 +116,9 @@ def test_ignore_resistance_no_effect_if_no_resistance(
 
 
 def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None:
+    actor.equip(item=dagger, slot_name="main_hand")
+    actor.equip(item=dagger, slot_name="off_hand")
+
     context = CombatContext(
         attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),
         damage=Damage(components=[DamageComponent(value=10, type=DamageType.PIERCING)]),
@@ -125,6 +129,7 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
             damage_dice="1d10",
             weapon_type=WeaponType.SIMPLE_RANGE,
             ability=AbilityType.DEX,
+            metadata={"slot": "main_hand"},
         ).model_dump(),
     )
     sneak_attack_effect(actor, context, dice="1d6")
@@ -143,6 +148,7 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
             damage_dice="1d5",
             weapon_type=WeaponType.SIMPLE_MELEE,
             ability=AbilityType.DEX,
+            metadata={"slot": "off_hand"},
         ).model_dump(),
     )
     sneak_attack_effect(actor, context, dice="1d6")

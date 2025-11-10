@@ -7,53 +7,15 @@ from agent.character.resources import ActionEconomy
 from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
 from agent.equipment.base import EquipmentType
 from agent.equipment.inventory import Inventory
-from agent.equipment.weapons import MeleeWeapon, RangedWeapon, Weapon, WeaponHandling, WeaponType
+from agent.equipment.weapons import MeleeWeapon, Weapon, WeaponHandling, WeaponType
 from agent.jobs.fighter import Fighter
 from agent.models.damage import DamageType
+from tests.conftest import bow, dagger, greatsword, longsword
 
 
 @pytest.fixture
 def equipment_resolver() -> EquipmentResolver:
     return EquipmentResolver(id="", name="", icon="", action_economy=ActionEconomy())
-
-
-dagger = MeleeWeapon(
-    name="Dagger",
-    weapon_type=WeaponType.SIMPLE_MELEE,
-    handling=WeaponHandling.ONE_HANDED,
-    ability=AbilityType.DEX,
-    damage_dice="1d4",
-    damage_type=DamageType.PIERCING,
-    finesse=True,
-    dual_wield=True,
-)
-
-longsword = MeleeWeapon(
-    name="Longsword",
-    weapon_type=WeaponType.MARTIAL_MELEE,
-    handling=WeaponHandling.VERSATILE,
-    ability=AbilityType.STR,
-    damage_dice="1d8",
-    versatile_damage="1d10",
-    damage_type=DamageType.SLASHING,
-)
-
-greatsword = MeleeWeapon(
-    name="Greatsword",
-    weapon_type=WeaponType.MARTIAL_MELEE,
-    handling=WeaponHandling.TWO_HANDED,
-    ability=AbilityType.STR,
-    damage_dice="2d6",
-    damage_type=DamageType.SLASHING,
-)
-
-bow = RangedWeapon(
-    name="Bow",
-    weapon_type=WeaponType.SIMPLE_RANGE,
-    damage_type=DamageType.PIERCING,
-    damage_dice="1d20",
-    handling=WeaponHandling.ONE_HANDED,
-)
 
 
 def test_equip_weapon_assigns_to_main_hand(actor: EquipmentResolver) -> None:
