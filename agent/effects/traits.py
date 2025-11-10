@@ -12,6 +12,7 @@ from agent.effects.trait_effects.damage import (
     damage_over_time_effect,
     ignore_resistance_effect,
     reflect_melee_damage_effect,
+    sneak_attack_effect,
 )
 from agent.effects.trait_effects.support import life_steal_effect, regeneration_effect
 from agent.effects.trait_effects.turn import (
@@ -326,10 +327,10 @@ class BonusOnAttackRoll(Trait):
     """The target can roll a d4 and add the number rolled to the attack roll."""
 
     event_type: EventType = EventType.ATTACK_ROLL
-    value: str = "1d4"
+    dice_expr: str = "1d4"
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
-        result = actor.roll(self.value)
+        result = actor.roll(expr=self.dice_expr)
         ctx.attack_roll.total += result.total
 
 
@@ -337,10 +338,10 @@ class BonusOnSaveThrow(Trait):
     """The target can roll a d4 and add the number rolled to the save throw."""
 
     event_type: EventType = EventType.SAVE_THROW
-    value: str = "1d4"
+    dice_expr: str = "1d4"
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
-        result = actor.roll(self.value)
+        result = actor.roll(expr=self.dice_expr)
         ctx.save_roll.total += result.total
 
 
@@ -353,7 +354,7 @@ class ReflectMeleeDamage(Trait):
     priority: int = Priority.LOW
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:
-        reflect_melee_damage_effect(actor, target, ctx, self.ratio, self.damage_type)
+        reflect_melee_damage_effect(actor, target, ctx, ratio=self.ratio, damage_type=self.damage_type)
 
 
 class LifeSteal(Trait):
@@ -364,7 +365,7 @@ class LifeSteal(Trait):
     priority: int = Priority.LOW
 
     def apply(self, actor: Any, ctx: Any) -> None:
-        life_steal_effect(actor, ctx, self.ratio)
+        life_steal_effect(actor, ctx, ratio=self.ratio)
 
 
 class DamageBonus(Trait):
@@ -375,7 +376,17 @@ class DamageBonus(Trait):
     damage_type: DamageType
 
     def apply(self, target: Any, ctx: Any) -> None:
-        damage_bonus_effect(target, ctx, self.value, self.damage_type)
+        damage_bonus_effect(target, ctx, value=self.value, damage_type=self.damage_type)
+
+
+class DamageBonusWithAdvantage(Trait):
+    """Add bonus damage roll in case of attack with advantage with finesse or ranged weapons (once per turn)."""
+
+    event_type: EventType = EventType.APPLY_DAMAGE
+    dice_expr: str
+
+    def apply(self, target: Any, ctx: Any) -> None:
+        sneak_attack_effect(target, ctx, dice=self.dice_expr)
 
 
 class DamageMultiplier(Trait):
@@ -386,7 +397,7 @@ class DamageMultiplier(Trait):
     damage_type: DamageType
 
     def apply(self, target: Any, ctx: Any) -> None:
-        damage_multiplier_effect(target, ctx, self.value, self.damage_type)
+        damage_multiplier_effect(target, ctx, value=self.value, damage_type=self.damage_type)
 
 
 class IgnoreResistance(Trait):
@@ -396,7 +407,7 @@ class IgnoreResistance(Trait):
     damage_type: DamageType
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:
-        ignore_resistance_effect(actor, target, ctx, self.damage_type)
+        ignore_resistance_effect(actor, target, ctx, damage_type=self.damage_type)
 
 
 class Regeneration(Trait):
@@ -406,4 +417,4 @@ class Regeneration(Trait):
     value: int
 
     def apply(self, target: Any) -> None:
-        regeneration_effect(target, self.value)
+        regeneration_effect(target, value=self.value)

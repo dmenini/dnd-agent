@@ -11,6 +11,6 @@ class Blessed(StatusEffect):
     type: EffectType = EffectType.BLESSED
     save_dc: int = 0  # Skip save throw as it's cast on a willing creature
     features: list[StatusEffectFeature] = [
-        StatusEffectFeature(ref_id=FeatureId.ATTACK_ROLL_BONUS, kwargs={"value": "1d4"}),
-        StatusEffectFeature(ref_id=FeatureId.SAVE_ROLL_BONUS, kwargs={"value": "1d4"}),
+        StatusEffectFeature(ref_id=FeatureId.ATTACK_ROLL_BONUS, kwargs={"dice_expr": "1d4"}),
+        StatusEffectFeature(ref_id=FeatureId.SAVE_ROLL_BONUS, kwargs={"dice_expr": "1d4"}),
     ]

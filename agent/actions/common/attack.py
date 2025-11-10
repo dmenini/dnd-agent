@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
 from agent.character.stats import Stats, StatType
@@ -62,10 +62,9 @@ class AttackAction(Action, ABC):
         # Damage roll
         mod = self._attack_modifier(actor)
         expr = f"{self.damage_dice}+{mod}"
-        droll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
-        ctx.damage_roll = droll
-        ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
-        actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
+        ctx.damage_roll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
+        ctx.damage = Damage(components=[DamageComponent(value=ctx.damage_roll.total, type=self.damage_type)])
+        actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)
 
         # Apply actor status effects
         actor.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
@@ -156,7 +155,7 @@ class OffHandAttackAction(BonusAction, AttackAction):
     type: ActionType = ActionType.OFF_HAND_ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: MeleeWeapon, **kwargs: Any) -> Self:  # noqa: ARG003
+    def from_weapon(cls, weapon: MeleeWeapon) -> Self:
         return cls(
             description=f"Bonus Attack with off hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
@@ -176,7 +175,7 @@ class RangedAttackAction(StandardAction, AttackAction):
     type: ActionType = ActionType.ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: RangedWeapon, **kwargs: Any) -> Self:  # noqa: ARG003
+    def from_weapon(cls, weapon: RangedWeapon) -> Self:
         return cls(
             description=f"Ranged Attack with {weapon.name}",
             weapon_type=weapon.weapon_type,

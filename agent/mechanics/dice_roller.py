@@ -11,6 +11,7 @@ class DiceRoll(BaseModel):
     rolls: list[int]
     total: int
     raw: int
+    advantage: bool | None = None
 
 
 class DiceRoller:
@@ -54,18 +55,18 @@ class DiceRoller:
 
     def roll_with_context(self, *, dice_expression: str, advantage: bool | None = None) -> DiceRoll:
         # Normal roll
-        roll1 = self.roll_once(dice_expression)
-
         if advantage is None:
-            return roll1
+            return self.roll_once(dice_expression)
 
         # Advantage/disadvantage: roll twice
-        roll2 = self.roll_once(dice_expression)
+        roll = self.roll_twice(dice_expression)
+        chosen = max(roll.rolls) if advantage else min(roll.rolls)
+        mod = roll.total - roll.raw
 
-        chosen = (
-            roll1
-            if (advantage and roll1.total >= roll2.total) or (not advantage and roll1.total <= roll2.total)
-            else roll2
+        return DiceRoll(
+            expression=dice_expression + " (adv)" if advantage else " (dis)",
+            rolls=roll.rolls,
+            raw=roll.raw,
+            total=chosen + mod,
+            advantage=advantage,
         )
-        chosen.expression += " (adv)" if advantage else " (dis)"
-        return chosen

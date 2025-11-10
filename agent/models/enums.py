@@ -65,6 +65,7 @@ class FeatureId(str, Enum):
     DAMAGE_BONUS = "damage_bonus"
     DAMAGE_MULTIPLIER = "damage_multiplier"
     DAMAGE_OVER_TIME = "damage_over_time"
+    DAMAGE_BONUS_WITH_ADVANTAGE = "damage_bonus_with_advantage"
 
     # Resistances & Vulnerabilities
     RESISTANCE = "resistance"

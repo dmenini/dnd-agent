@@ -12,6 +12,7 @@ class JobType(str, Enum):
     BARBARIAN = "barbarian"
     CLERIC = "cleric"
     FIGHTER = "fighter"
+    ROGUE = "rogue"
     WIZARD = "wizard"
 
 
