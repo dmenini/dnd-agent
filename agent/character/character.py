@@ -131,7 +131,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
             f"Class: {self.job.type.value} | Level: {self.level} | Party: {self.party.name}\n\n"
             f"HP: {self.attributes.hp}/{self.max_hp} | AC: {self.armor_class}\n\n"
             f"Position: ({self.pos.x}, {self.pos.y}) | Facing: {self.pos.direction} | "
-            f"Movement Remaining: {self.current_speed}/{self.speed} m | Hidden: {self.is_hidden}\n\n"
+            f"Movement Remaining: {self.current_speed}/{self.speed} steps | Hidden: {self.is_hidden}\n\n"
             f"Status Effects: {', '.join(str(eff) for eff in self.status_effects) or 'None'}\n\n"
             f"Passives: {', '.join(eff.name for eff in self.passives) or 'None'}\n\n"
             f"Spell Slots: {self.spell_slots}\n\n"

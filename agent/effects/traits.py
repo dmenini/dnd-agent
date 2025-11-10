@@ -164,9 +164,10 @@ class ACBonusWithoutArmor(ACBonus):
 
 
 class ACBonusModWithoutArmor(ModifierTrait):
-    """Grant a bonus to Armor Class (AC) while not wearing armor."""
+    """Gain a bonus ability modifier to Armor Class (AC) while not wearing armor."""
 
     attribute: str = "ac_mod.{ability}"
+    value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
     ability: AbilityType = AbilityType.CON
 

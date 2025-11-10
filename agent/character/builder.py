@@ -8,6 +8,7 @@ from agent.jobs.barbarian import Barbarian
 from agent.jobs.base import JobType
 from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
+from agent.jobs.rogue import Rogue
 from agent.jobs.wizard import Wizard
 
 job_map = {
@@ -15,6 +16,7 @@ job_map = {
     JobType.WIZARD: Wizard,
     JobType.CLERIC: Cleric,
     JobType.BARBARIAN: Barbarian,
+    JobType.ROGUE: Rogue,
 }
 
 

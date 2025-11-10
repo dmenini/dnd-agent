@@ -62,5 +62,6 @@ class CharacterSheet(Static):
             f"Status Effects: {', '.join(str(eff) for eff in char.status_effects) or 'None'}\n\n"
             f"Passives: {', '.join(eff.name for eff in char.passives) or 'None'}\n\n"
             f"Spell Slots: {char.spell_slots}\n\n"
-            f"Abilities: {char.attributes}"
+            f"Abilities: {char.attributes}\n\n"
+            f"Proficiencies: {', '.join(str(prof) for prof in char.attributes.proficiencies) or 'None'}"
         )

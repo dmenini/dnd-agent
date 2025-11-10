@@ -11,6 +11,8 @@ Rogue = CharacterJob(
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.DEX),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),
+        Proficiency(type=ProficiencyType.SKILL, target=SkillType.STEALTH),
+        Proficiency(type=ProficiencyType.SKILL, target=SkillType.PERCEPTION),
     ],
     features=[
         JobFeature(
@@ -22,7 +24,7 @@ Rogue = CharacterJob(
             kwargs={"dice_expr": "1d6"},
         ),
         JobFeature(
-            ref_id=FeatureId.EXPERTISE,
+            ref_id=FeatureId.EXPERTISE,  # TODO: Should be chosen by player
             name="Stealth Expertise",
             description="Double proficiency bonus for stealth skill checks.",
             level_required=1,
@@ -30,7 +32,7 @@ Rogue = CharacterJob(
             kwargs={"proficiency": SkillType.STEALTH},
         ),
         JobFeature(
-            ref_id=FeatureId.EXPERTISE,
+            ref_id=FeatureId.EXPERTISE,  # TODO: Should be chosen by player
             name="Perception Expertise",
             description="Double proficiency bonus for perception skill checks.",
             level_required=1,

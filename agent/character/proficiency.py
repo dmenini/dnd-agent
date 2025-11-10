@@ -21,3 +21,6 @@ type ProficiencyTarget = AbilityType | WeaponType | ArmorType | SkillType
 class Proficiency(BaseModel):
     type: ProficiencyType
     target: ProficiencyTarget
+
+    def __str__(self) -> str:
+        return f"{self.target.title()} ({self.type.title()})"
