@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from agent.character.abilities import Abilities
 from agent.character.attributes import Attributes
@@ -10,6 +10,7 @@ from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
 from agent.jobs.rogue import Rogue
 from agent.jobs.wizard import Wizard
+from agent.models.constants import MAX_SCORES_TOTAL
 
 job_map = {
     JobType.FIGHTER: Fighter,
@@ -22,12 +23,13 @@ job_map = {
 
 class CharacterBuilder(BaseModel):
     name: str = Field(description="Character name")
-    icon: str = Field(description="Icon on the map (emojy)")
+    icon: str = Field(description="Icon on the map (emoji)")
     job: JobType = Field(description="Character class/job")
     abilities: Abilities = Field(
         default=Abilities(),
         description=(
-            "Abilities derived from the character background. Free assignment, but total points must be below 72."
+            f"Abilities derived from the character background. "
+            f"Free assignment, but total scores must be below {MAX_SCORES_TOTAL}."
         ),
     )
     race: str = Field(default="human", description="Race")
@@ -35,6 +37,14 @@ class CharacterBuilder(BaseModel):
     personality: str = Field(default="", description="Personality traits.")
     alignment: str = Field(default="", description="Categorization of the ethical and moral perspective.")
     summary: str = Field(default="", description="Short summary of the character profile.")
+
+    @field_validator("abilities", mode="after")
+    def total_value(self, v: Abilities) -> Abilities:
+        tot = v.strength + v.wisdom + v.intelligence + v.charisma + v.dexterity + v.constitution
+        if tot > MAX_SCORES_TOTAL:
+            msg = f"The total scores must be lower than {MAX_SCORES_TOTAL} to maintain game balance"
+            raise ValueError(msg)
+        return v
 
     def to_character(self, party: str) -> Character:
         return Character(

@@ -12,13 +12,15 @@ if TYPE_CHECKING:
 
 
 def bonus_attack_roll_effect(actor: Character, context: CombatContext, *, expr: str) -> None:
-    result = actor.roll(expr=expr)
-    context.attack_roll.total += result.total
+    if context.attack_roll:
+        result = actor.roll(expr=expr)
+        context.attack_roll.total += result.total
 
 
 def bonus_save_roll_effect(actor: Character, context: CombatContext, *, expr: str) -> None:
-    result = actor.roll(expr=expr)
-    context.save_roll.total += result.total
+    if context.save_roll:
+        result = actor.roll(expr=expr)
+        context.save_roll.total += result.total
 
 
 def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float) -> None:

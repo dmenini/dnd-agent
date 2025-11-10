@@ -5,8 +5,7 @@ from typing import Any, Literal
 from anthropic import BaseModel
 
 from agent.character.modifier import Modifier
-from agent.models.constants import EventType
-from agent.models.enums import FeatureId
+from agent.models.enums import EventType, FeatureId
 
 
 class Priority:

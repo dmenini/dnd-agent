@@ -9,10 +9,9 @@ from agent.character.resolvers.roll import D20
 from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
-from agent.models.constants import EventType
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
-from agent.models.enums import FeatureId, TargetingType
+from agent.models.enums import EventType, FeatureId, TargetingType
 
 
 def make_attack_action() -> AttackAction:

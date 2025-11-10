@@ -16,9 +16,8 @@ from agent.equipment.armor import Armor
 from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
-from agent.models.constants import EventType
 from agent.models.damage import Damage
-from agent.models.enums import FeatureId
+from agent.models.enums import EventType, FeatureId
 from agent.models.position import Position
 
 registry = get_log_registry()

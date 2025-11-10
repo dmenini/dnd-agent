@@ -127,7 +127,7 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
             range=3,
             damage_type=DamageType.PIERCING,
             damage_dice="1d10",
-            weapon_type=WeaponType.SIMPLE_RANGE,
+            weapon_type=WeaponType.SIMPLE_RANGED,
             ability=AbilityType.DEX,
             metadata={"slot": "main_hand"},
         ).model_dump(),

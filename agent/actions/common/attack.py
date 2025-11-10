@@ -9,8 +9,8 @@ from agent.character.abilities import Abilities, AbilityType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.logs.log_event import Icon
-from agent.models.constants import EventType
 from agent.models.damage import Damage, DamageComponent, DamageType
+from agent.models.enums import EventType
 
 if TYPE_CHECKING:
     from agent.character.character import Character

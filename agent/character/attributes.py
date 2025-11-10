@@ -8,6 +8,15 @@ from agent.character.abilities import Abilities, AbilityType
 from agent.character.modifier import Modifier, ModifierRegistry
 from agent.character.proficiency import Proficiency
 from agent.equipment.armor import ArmorType
+from agent.models.constants import (
+    DEFAULT_CRIT_ROLL,
+    DEFAULT_PERCEPTION,
+    DEFAULT_PROFICIENCY_BONUS,
+    DEFAULT_SPEED,
+    DEFAULT_SPELL_SAVE_DIFFICULTY_CLASS,
+    DEFAULT_VISION_FOV,
+    DEFAULT_VISION_RANGE,
+)
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 
 
@@ -20,12 +29,12 @@ class Attributes(Abilities):
     # Base attributes on which modifiers are applied (do not change directly)
     base_hp: int = 0
     base_ac: int = 0
-    base_speed: float = 6.0
+    base_speed: float = DEFAULT_SPEED
     base_crit_roll_bonus: int = 0
-    base_vision_range: float = 10.0
-    base_vision_fov: float = 120.0
-    base_perception: int = 10
-    base_spell_save_dc: int = 8
+    base_vision_range: float = DEFAULT_VISION_RANGE
+    base_vision_fov: float = DEFAULT_VISION_FOV
+    base_perception: int = DEFAULT_PERCEPTION
+    base_spell_save_dc: int = DEFAULT_SPELL_SAVE_DIFFICULTY_CLASS
     base_expertise: bool = False
     base_advantage: bool = False
     base_disadvantage: bool = False
@@ -71,7 +80,7 @@ class Attributes(Abilities):
         return self.ability_modifier(AbilityType.DEX)
 
     def proficiency_bonus(self, level: int) -> int:
-        return 2 + (level - 1) // 4
+        return DEFAULT_PROFICIENCY_BONUS + (level - 1) // 4
 
     def has_proficiency(self, reference: Enum) -> bool:
         return any(prof.target == reference for prof in self.proficiencies)
@@ -83,7 +92,7 @@ class Attributes(Abilities):
         return self._recompute_attribute("speed")
 
     def crit_roll(self) -> int:
-        crit_roll = 20
+        crit_roll = DEFAULT_CRIT_ROLL
         return crit_roll - self._recompute_attribute("crit_roll_bonus")
 
     def passive_perception(self) -> int:

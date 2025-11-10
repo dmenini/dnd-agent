@@ -15,8 +15,8 @@ from agent.models.enums import TargetingType
 class WeaponType(str, Enum):
     SIMPLE_MELEE = "simple_melee"
     MARTIAL_MELEE = "martial_melee"
-    SIMPLE_RANGE = "simple_range"
-    MARTIAL_RANGE = "martial_range"
+    SIMPLE_RANGED = "simple_range"
+    MARTIAL_RANGED = "martial_range"
     MAGIC = "magic"
 
 

@@ -10,15 +10,6 @@ class Advantage(int, Enum):
     DISADVANTAGE = -1
 
 
-class TurnPhase(str, Enum):
-    DECIDE = "decide"
-    VERIFY = "verify"
-    ROLL = "roll"
-    EXECUTE = "execute"
-    START = "start"
-    END = "end"
-
-
 class TargetingType(str, Enum):
     SINGLE = "single"
     AREA = "area"
@@ -96,3 +87,15 @@ class FeatureId(str, Enum):
     SACRED_FLAME = "sacred_flame"
     BLESS = "bless"
     CURE_WOUNDS = "cure_wounds"
+
+
+class EventType(str, Enum):
+    MODIFIER = "modifier"  # Execute immediately
+    TURN_START = "turn_start"
+    TURN_END = "turn_end"
+    COMBAT_START = "combat_start"
+    COMBAT_END = "combat_end"
+    APPLY_DAMAGE = "apply_damage"
+    RECEIVE_DAMAGE = "receive_damage"
+    ATTACK_ROLL = "attack_roll"
+    SAVE_THROW = "save_throw"

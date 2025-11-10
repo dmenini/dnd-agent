@@ -2,11 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from agent.models.constants import ADVANTAGE_THRESHOLD, DEFAULT_ABILITY_SCORE, DISADVANTAGE_THRESHOLD
 from agent.models.enums import Advantage
-
-DEFAULT_ABILITY_SCORE = 10
-ADVANTAGE_THRESHOLD = 16
-DISADVANTAGE_THRESHOLD = 8
 
 
 class AbilityType(str, Enum):

@@ -1,23 +1,21 @@
-from enum import Enum
-
 from agent.logs.log_event import LogLevel
 
+MAX_SCORES_TOTAL = 72
 
-class EventType(str, Enum):
-    MODIFIER = "modifier"  # Execute immediately
-    TURN_START = "turn_start"
-    TURN_END = "turn_end"
-    COMBAT_START = "combat_start"
-    COMBAT_END = "combat_end"
-    APPLY_DAMAGE = "apply_damage"
-    RECEIVE_DAMAGE = "receive_damage"
-    ATTACK_ROLL = "attack_roll"
-    SAVE_THROW = "save_throw"
+DEFAULT_ABILITY_SCORE = 10
+DEFAULT_VISION_FOV = 120.0
+DEFAULT_VISION_RANGE = 10
+DEFAULT_PERCEPTION = 10
+DEFAULT_SPELL_SAVE_DIFFICULTY_CLASS = 8
+DEFAULT_SPEED = 6.0
+DEFAULT_CRIT_ROLL = 20
+DEFAULT_PROFICIENCY_BONUS = 2
 
 
-# Traditionally is 5, but in our map it looks weird to be able to attack a target 5 tiles away
-MELEE_RANGE = 2
+MELEE_RANGE = 2  # Traditionally is 5, but in our map it looks weird to be able to attack a target 5 tiles away
 
 BONUS_AC_FROM_SHIELDS = 2
+ADVANTAGE_THRESHOLD = 16
+DISADVANTAGE_THRESHOLD = 8
 
 TRAIT_LOG_LEVEL = LogLevel.DEBUG

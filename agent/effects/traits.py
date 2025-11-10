@@ -28,8 +28,8 @@ from agent.effects.trait_effects.turn import (
     half_attacks_effect,
 )
 from agent.equipment.armor import ArmorType
-from agent.models.constants import EventType
 from agent.models.damage import DamageType
+from agent.models.enums import EventType
 
 # ============================================================================
 # MODIFIER TRAITS - Direct attribute modifications

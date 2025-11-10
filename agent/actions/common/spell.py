@@ -9,8 +9,8 @@ from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import WeaponType
 from agent.logs.log_event import Icon, LogLevel
-from agent.models.constants import EventType
 from agent.models.enums import (
+    EventType,
     TargetingType,
 )
 

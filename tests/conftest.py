@@ -61,7 +61,7 @@ greatsword = MeleeWeapon(
 
 bow = RangedWeapon(
     name="Bow",
-    weapon_type=WeaponType.SIMPLE_RANGE,
+    weapon_type=WeaponType.SIMPLE_RANGED,
     damage_type=DamageType.PIERCING,
     damage_dice="1d20",
     handling=WeaponHandling.ONE_HANDED,
