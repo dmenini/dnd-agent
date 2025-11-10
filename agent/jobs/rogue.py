@@ -1,3 +1,4 @@
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
@@ -7,8 +8,10 @@ Rogue = CharacterJob(
     type=JobType.ROGUE,
     hit_die=8,
     primary_stat=StatType.DEX,
-    save_proficiencies=[StatType.DEX, StatType.INT],
-    weapon_proficiencies=[],
+    proficiencies=[
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.DEX),
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.INT),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.DAMAGE_BONUS_WITH_ADVANTAGE,

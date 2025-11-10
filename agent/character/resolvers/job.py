@@ -31,8 +31,7 @@ class JobResolver(CharacterBase):
         """Register class features based on current level."""
         # TODO: The primary stat should depend on the type of class (fighter should not use STR)
         self.attributes.spellcasting_stat = self.job.primary_stat
-        self.attributes.save_proficiencies = self.job.save_proficiencies
-        self.attributes.weapon_proficiencies = self.job.weapon_proficiencies
+        self.attributes.proficiencies = self.job.proficiencies
 
         for feature in self.job.get_features_for_level(self.level):
             self._apply_job_feature(feature)

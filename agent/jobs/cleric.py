@@ -1,3 +1,4 @@
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.effects.status_effects.blessed import Blessed
@@ -12,8 +13,10 @@ Cleric = CharacterJob(
     type=JobType.CLERIC,
     hit_die=8,
     primary_stat=StatType.WIS,
-    save_proficiencies=[StatType.WIS, StatType.CHA],
-    weapon_proficiencies=[],
+    proficiencies=[
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.WIS),
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.CHA),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.SPELL_SAVE_ADVANTAGE,

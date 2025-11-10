@@ -18,11 +18,6 @@ class RollResolver(CharacterBase):
     def initiative_modifier(self) -> int:
         return self.attributes.initiative()
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def proficiency_bonus(self) -> int:
-        return self.attributes.proficiency_bonus(level=self.level)
-
     def initiative_roll(self) -> DiceRoll:
         expr = f"{D20}+{self.initiative_modifier}"
         return self._dice.roll_with_context(dice_expression=expr)
@@ -63,7 +58,7 @@ class RollResolver(CharacterBase):
 
         # Roll the d20 (with advantage/disadvantage if applicable)
         ability_mod = self.attributes.stat_modifier(save_stat)
-        prof_bonus = self.proficiency_bonus if save_stat in self.attributes.save_proficiencies else 0
+        prof_bonus = self.proficiency_bonus if self.has_proficiency(save_stat) else 0
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)

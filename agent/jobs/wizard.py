@@ -1,3 +1,4 @@
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
@@ -10,8 +11,10 @@ Wizard = CharacterJob(
     type=JobType.WIZARD,
     hit_die=6,
     primary_stat=StatType.INT,
-    save_proficiencies=[StatType.INT, StatType.WIS],
-    weapon_proficiencies=[],
+    proficiencies=[
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.INT),
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.WIS),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.SPELL_SAVE_ADVANTAGE,

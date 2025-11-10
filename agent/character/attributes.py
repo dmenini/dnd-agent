@@ -4,17 +4,16 @@ from typing import Any, Literal
 from pydantic import ConfigDict, PrivateAttr
 
 from agent.character.modifier import Modifier, ModifierRegistry
+from agent.character.proficiency import Proficiency
 from agent.character.stats import Stats, StatType
 from agent.equipment.armor import ArmorType
-from agent.equipment.weapons import WeaponType
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 
 
 class Attributes(Stats):
     hp: int = 15
     spellcasting_stat: StatType = StatType.INT
-    save_proficiencies: list[StatType] = []
-    weapon_proficiencies: list[WeaponType] = []
+    proficiencies: list[Proficiency] = []
 
     # Base scalar attributes
     base_hp: int = 15
@@ -25,6 +24,7 @@ class Attributes(Stats):
     base_vision_fov: float = 120.0
     base_spell_save_dc: int = 8
     base_perception: int = 10
+    base_proficiency_bonus: int = 2
 
     # Base nested attributes
     base_advantage: defaultdict[str, bool] = defaultdict(bool)
@@ -68,7 +68,8 @@ class Attributes(Stats):
         return self.stat_modifier(StatType.DEX)
 
     def proficiency_bonus(self, level: int) -> int:
-        return 2 + (level - 1) // 4
+        bonus = self._recompute_attribute("proficiency_bonus")
+        return bonus + (level - 1) // 4
 
     def speed(self) -> float:
         return self._recompute_attribute("speed")

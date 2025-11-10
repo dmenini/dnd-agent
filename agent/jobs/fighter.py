@@ -1,3 +1,4 @@
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
@@ -7,8 +8,10 @@ Fighter = CharacterJob(
     type=JobType.FIGHTER,
     hit_die=10,
     primary_stat=StatType.STR,
-    save_proficiencies=[StatType.STR, StatType.CON],
-    weapon_proficiencies=[],
+    proficiencies=[
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.STR),
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.CON),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.AC_BONUS_WITH_ARMOR,

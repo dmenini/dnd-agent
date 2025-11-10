@@ -2,6 +2,7 @@ from pytest_mock import MockerFixture
 
 from agent.actions.common.spell import AttackSpellAction
 from agent.character.character import Character
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resolvers.roll import D20
 from agent.character.resources import SpellLevel
 from agent.character.stats import StatType
@@ -56,7 +57,7 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
 
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
     actor.attributes.spellcasting_stat = StatType.INT
-    target.attributes.save_proficiencies = [StatType.INT]  # Save modifier +2
+    target.attributes.proficiencies = [Proficiency(type=ProficiencyType.SAVE, value=StatType.INT)]  # Save modifier +2
     action = make_attack_spell_action()
 
     actor._dice = mocker.MagicMock()

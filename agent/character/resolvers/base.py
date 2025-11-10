@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, computed_field, field_validator
@@ -52,6 +53,9 @@ class CharacterBase(BaseModel):
     @property
     def proficiency_bonus(self) -> int:
         return self.attributes.proficiency_bonus(level=self.level)
+
+    def has_proficiency(self, value: Enum) -> bool:
+        return any(prof.value == value for prof in self.attributes.proficiencies)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

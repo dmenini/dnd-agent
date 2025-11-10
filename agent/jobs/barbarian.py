@@ -1,3 +1,4 @@
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
@@ -7,8 +8,10 @@ Barbarian = CharacterJob(
     type=JobType.BARBARIAN,
     hit_die=12,
     primary_stat=StatType.STR,
-    save_proficiencies=[StatType.STR, StatType.CON],
-    weapon_proficiencies=[],
+    proficiencies=[
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.CON),
+        Proficiency(type=ProficiencyType.SAVE, value=StatType.STR),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.RAGE,
