@@ -75,7 +75,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
 
     def end_combat(self) -> None:
         # TODO: This should be done on rest
-        for ability in self.abilities:
+        for ability in self.special_abilities:
             if hasattr(ability, "rest"):
                 ability.rest()
 
@@ -121,7 +121,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
 
         # Special abilities (can have their own categories)
-        all_actions += self.abilities
+        all_actions += self.special_abilities
 
         return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 

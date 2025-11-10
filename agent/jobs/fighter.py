@@ -9,8 +9,8 @@ Fighter = CharacterJob(
     hit_die=10,
     primary_ability=AbilityType.STR,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.STR),
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.CON),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.STR),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CON),
     ],
     features=[
         JobFeature(

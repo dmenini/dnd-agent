@@ -14,8 +14,8 @@ Cleric = CharacterJob(
     hit_die=8,
     primary_ability=AbilityType.WIS,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.WIS),
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.CHA),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CHA),
     ],
     features=[
         JobFeature(

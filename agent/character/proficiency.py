@@ -15,6 +15,9 @@ class ProficiencyType(str, Enum):
     SAVE = "save"
 
 
+type ProficiencyTarget = AbilityType | WeaponType | ArmorType | SkillType
+
+
 class Proficiency(BaseModel):
     type: ProficiencyType
-    value: AbilityType | WeaponType | ArmorType | SkillType
+    target: ProficiencyTarget

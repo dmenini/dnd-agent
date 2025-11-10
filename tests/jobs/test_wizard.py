@@ -8,7 +8,7 @@ def test_mage(actor: Character) -> None:
     actor.armor = None
     actor.change_job(Wizard)
 
-    abilities = [a.id for a in actor.abilities]
+    abilities = [a.id for a in actor.special_abilities]
     assert FeatureId.ARCANE_RECOVERY in abilities
 
     spells = [a.id for a in actor.spells]

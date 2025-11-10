@@ -9,7 +9,7 @@ def test_fighter(actor: Character) -> None:
     actor.change_job(Fighter)
 
     # Verify active action is available
-    assert any(a.id == FeatureId.SECOND_WIND for a in actor.abilities)
+    assert any(a.id == FeatureId.SECOND_WIND for a in actor.special_abilities)
 
     assert any(t.feature_id == FeatureId.AC_BONUS_WITH_ARMOR for t in actor.passives)
     assert actor.attributes.get_modifiers("ac")[0].value == 1

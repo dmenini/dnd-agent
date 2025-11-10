@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import ConfigDict, PrivateAttr
@@ -23,7 +24,7 @@ class Attributes(Abilities):
     base_vision_fov: float = 120.0
     base_perception: int = 10
     base_spell_save_dc: int = 8
-    base_proficiency_bonus: int = 2
+    base_expertise: bool = False
     base_advantage: bool = False
     base_disadvantage: bool = False
     base_save_advantage: bool = False
@@ -31,9 +32,9 @@ class Attributes(Abilities):
     base_save_autofail: bool = False
     base_resistance: float = 0.0
     base_vulnerability: float = 0.0
-    base_ac_mod: bool = False  # Extra AC ability modifier
+    base_ac_mod: bool = False  # Whether there is an extra AC ability modifier (in addition to DEX)
 
-    _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
+    _registry: ModifierRegistry = PrivateAttr(default=ModifierRegistry())
 
     model_config = ConfigDict(extra="allow")  # To mock during tests
 
@@ -65,8 +66,13 @@ class Attributes(Abilities):
         return self.ability_modifier(AbilityType.DEX)
 
     def proficiency_bonus(self, level: int) -> int:
-        bonus = self._recompute_attribute("proficiency_bonus")
-        return bonus + (level - 1) // 4
+        return 2 + (level - 1) // 4
+
+    def has_proficiency(self, reference: Enum) -> bool:
+        return any(prof.target == reference for prof in self.proficiencies)
+
+    def has_expertise(self, reference: Enum) -> bool:
+        return self._recompute_attribute(f"expertise.{reference.value}")
 
     def speed(self) -> float:
         return self._recompute_attribute("speed")

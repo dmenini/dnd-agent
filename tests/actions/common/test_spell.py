@@ -58,7 +58,7 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
     actor.attributes.spellcasting_ability = AbilityType.INT
     target.attributes.proficiencies = [
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.INT)
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT)
     ]  # Save modifier +2
     action = make_attack_spell_action()
 

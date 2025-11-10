@@ -52,9 +52,11 @@ def register_traits() -> None:
     TraitRegistry.register(FeatureId.CANNOT_ACT, traits.CannotAct)
     TraitRegistry.register(FeatureId.ATTACK_ROLL_BONUS, traits.BonusOnAttackRoll)
     TraitRegistry.register(FeatureId.SAVE_ROLL_BONUS, traits.BonusOnSaveThrow)
+    TraitRegistry.register(FeatureId.EXPERTISE, traits.Expertise)
 
     # Damage modifications
     TraitRegistry.register(FeatureId.DAMAGE_BONUS, traits.DamageBonus)
+    TraitRegistry.register(FeatureId.DAMAGE_BONUS_WITH_ADVANTAGE, traits.DamageBonusWithAdvantage)
     TraitRegistry.register(FeatureId.DAMAGE_MULTIPLIER, traits.DamageMultiplier)
     TraitRegistry.register(FeatureId.DAMAGE_OVER_TIME, traits.DamageOverTime)
 

@@ -9,8 +9,8 @@ Barbarian = CharacterJob(
     hit_die=12,
     primary_ability=AbilityType.STR,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.CON),
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.STR),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CON),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.STR),
     ],
     features=[
         JobFeature(

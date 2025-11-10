@@ -34,7 +34,7 @@ def make_attack_action() -> AttackAction:
 
 def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
     actor.attributes.strength = 16  # +3 modifier
-    actor.attributes.proficiencies = [Proficiency(type=ProficiencyType.WEAPON, value=WeaponType.SIMPLE_MELEE)]
+    actor.attributes.proficiencies = [Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE)]
     roll1 = target.armor_class + 1  # Attacker rolls high enough to hit target
     roll2 = 10
     action = make_attack_action()

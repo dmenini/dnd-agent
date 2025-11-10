@@ -12,8 +12,8 @@ Wizard = CharacterJob(
     hit_die=6,
     primary_ability=AbilityType.INT,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.INT),
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.WIS),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),
     ],
     features=[
         JobFeature(

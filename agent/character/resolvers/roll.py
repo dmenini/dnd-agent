@@ -58,7 +58,7 @@ class RollResolver(CharacterBase):
 
         # Roll the d20 (with advantage/disadvantage if applicable)
         ability_mod = self.attributes.ability_modifier(ability)
-        prof_bonus = self.proficiency_bonus if self.has_proficiency(ability) else 0
+        prof_bonus = self.proficiency_bonus(ability)
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
@@ -70,7 +70,7 @@ class RollResolver(CharacterBase):
         advantage = resolve_advantage(sources)
 
         ability_mod = self.attributes.ability_modifier(ability)
-        prof_bonus = self.proficiency_bonus if self.has_proficiency(skill) else 0
+        prof_bonus = self.proficiency_bonus(skill)
         mod = ability_mod + prof_bonus
         return self._dice.roll_with_context(dice_expression=f"{D20}+{mod}", advantage=advantage)
 

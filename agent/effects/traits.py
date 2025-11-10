@@ -3,6 +3,7 @@ from typing import Any, Literal
 from pydantic import Field
 
 from agent.character.abilities import AbilityType
+from agent.character.proficiency import ProficiencyTarget
 from agent.character.resources import ActionExtension
 from agent.effects.base import ModifierTrait, Priority, Trait
 from agent.effects.trait_effects.damage import (
@@ -257,6 +258,19 @@ class StealthDisadvantage(ModifierTrait):
     attribute: str = "disadvantage.stealth"
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
+
+
+class Expertise(ModifierTrait):
+    """Give expertise with a certain skill, weapon, armor or save ability."""
+
+    proficiency: ProficiencyTarget
+    attribute: str = "disadvantage.{proficiency}"
+    value: bool = True
+    operation: Literal["set", "add", "mul"] = "set"
+
+    def model_post_init(self, _: Any) -> None:
+        super().model_post_init(_)
+        self.attribute = self.attribute.format(proficiency=self.proficiency.value)
 
 
 # ============================================================================

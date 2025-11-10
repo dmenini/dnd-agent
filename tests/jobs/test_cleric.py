@@ -9,7 +9,7 @@ def test_cleric(actor: Character) -> None:
     actor.armor = Armor(name="Glass", armor_type=ArmorType.LIGHT, base_ac=2)
     actor.change_job(Cleric)
 
-    abilities = [a.id for a in actor.abilities]
+    abilities = [a.id for a in actor.special_abilities]
     assert FeatureId.DIVINE_RESTORATION in abilities
 
     spells = [a.id for a in actor.spells]

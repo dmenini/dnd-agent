@@ -37,7 +37,7 @@ class CharacterBase(BaseModel):
     stealth_value: int = 0
 
     spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction] = []
-    abilities: list[Action] = []
+    special_abilities: list[Action] = []
     passives: list[Trait] = []
 
     # Defined for typing to work
@@ -49,13 +49,15 @@ class CharacterBase(BaseModel):
     def max_hp(self) -> int:
         return self.attributes.max_hp(level=self.level)
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def proficiency_bonus(self) -> int:
-        return self.attributes.proficiency_bonus(level=self.level)
+    def proficiency_bonus(self, reference: Enum) -> int:
+        if not self.attributes.has_proficiency(reference):
+            return 0
 
-    def has_proficiency(self, value: Enum) -> bool:
-        return any(prof.value == value for prof in self.attributes.proficiencies)
+        bonus = self.attributes.proficiency_bonus(level=self.level)
+        if self.attributes.has_expertise(reference):
+            bonus *= 2
+
+        return bonus
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -161,7 +163,7 @@ class CharacterBase(BaseModel):
         )
         registry.append(event)
 
-    @field_validator("spells", "abilities", mode="before")
+    @field_validator("spells", "special_abilities", mode="before")
     @classmethod
     def deserialize_action(cls, v: Any) -> list[Action]:
         if not isinstance(v, list):

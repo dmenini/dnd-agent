@@ -41,7 +41,7 @@ class JobResolver(CharacterBase):
 
     def _apply_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
-            if feature.ref_id not in {a.id for a in self.abilities}:
+            if feature.ref_id not in {a.id for a in self.special_abilities}:
                 action = ActionRegistry.create(
                     id_=feature.ref_id,
                     name=feature.name,
@@ -49,7 +49,7 @@ class JobResolver(CharacterBase):
                     uses_per_rest=feature.uses_per_rest,
                     **feature.kwargs,
                 )
-                self.abilities.append(action)
+                self.special_abilities.append(action)
                 self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
@@ -64,7 +64,7 @@ class JobResolver(CharacterBase):
 
     def _remove_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
-            self.abilities = [ability for ability in self.abilities if ability.id != feature.ref_id]
+            self.special_abilities = [ability for ability in self.special_abilities if ability.id != feature.ref_id]
             self.log_event(f"{self.name} lost ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:

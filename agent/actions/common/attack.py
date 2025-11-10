@@ -100,7 +100,7 @@ class AttackAction(Action, ABC):
         else:
             base_mod = 0
 
-        prof_bonus = actor.proficiency_bonus if actor.has_proficiency(self.weapon_type) else 0
+        prof_bonus = actor.proficiency_bonus(self.weapon_type)
         mod = actor.attributes.ability_modifier(self.ability)
         return base_mod + mod + prof_bonus
 

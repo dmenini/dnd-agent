@@ -9,8 +9,8 @@ Rogue = CharacterJob(
     hit_die=8,
     primary_ability=AbilityType.DEX,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.DEX),
-        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.INT),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.DEX),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),
     ],
     features=[
         JobFeature(
@@ -27,7 +27,7 @@ Rogue = CharacterJob(
             description="Double proficiency bonus for stealth skill checks.",
             level_required=1,
             type=FeatureType.PASSIVE,
-            kwargs={"skill": SkillType.STEALTH},
+            kwargs={"proficiency": SkillType.STEALTH},
         ),
         JobFeature(
             ref_id=FeatureId.EXPERTISE,
@@ -35,7 +35,7 @@ Rogue = CharacterJob(
             description="Double proficiency bonus for perception skill checks.",
             level_required=1,
             type=FeatureType.PASSIVE,
-            kwargs={"skills": SkillType.PERCEPTION},
+            kwargs={"proficiency": SkillType.PERCEPTION},
         ),
     ],
 )
