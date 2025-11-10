@@ -6,10 +6,10 @@ from agent.actions.base import ActionCategory, ActionType
 
 
 class SpellLevel(Enum):
-    CANTRIP = 0
-    LEVEL_1 = 1
-    LEVEL_2 = 2
-    LEVEL_3 = 3
+    CANTRIP = "0"
+    LEVEL_1 = "1"
+    LEVEL_2 = "2"
+    LEVEL_3 = "3"
 
 
 class ActionExtension(BaseModel):

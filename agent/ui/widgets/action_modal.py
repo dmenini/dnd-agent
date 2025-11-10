@@ -59,7 +59,7 @@ def render_action(action: Action, max_width: int = 50) -> Panel:
     damage_type = getattr(action, "damage_type", None)
     table.add_row("Damage", f"{damage} {damage_type.value}" if damage and damage_type else "-")
 
-    stat = getattr(action, "stat", None)
+    stat = getattr(action, "ability", None)
     table.add_row("Stat", stat.value if stat else "-")
 
     effects = ", ".join([e.type.value for e in getattr(action, "status_effects", [])]) or "-"

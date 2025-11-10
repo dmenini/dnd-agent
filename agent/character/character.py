@@ -9,12 +9,12 @@ from agent.actions.common.dodge import DodgeAction
 from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
+from agent.character.abilities import Abilities
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.character.stats import Stats
 from agent.effects.traits import TargetAdvantageOnAttackRoll
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import Icon
@@ -38,6 +38,10 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def model_post_init(self, _: Any, /) -> None:
         self.equip_all()
         self.apply_job_features()
+
+        # Reset HP if first init
+        if self.attributes.hp == -1:
+            self.attributes.hp = self.max_hp
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -75,7 +79,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
 
     def end_combat(self) -> None:
         # TODO: This should be done on rest
-        for ability in self.abilities:
+        for ability in self.special_abilities:
             if hasattr(ability, "rest"):
                 ability.rest()
 
@@ -107,7 +111,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         # Equipment-based actions
         if self.main_hand:
             main_action = MainHandAttackAction.from_weapon(
-                weapon=self.main_hand, is_two_handed=self.two_handed_active, stats=self.attributes
+                weapon=self.main_hand, is_two_handed=self.two_handed_active, abilities=self.attributes
             )
             all_actions.append(main_action)
         if self.off_hand and isinstance(self.off_hand.type, MeleeWeapon):
@@ -121,7 +125,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
 
         # Special abilities (can have their own categories)
-        all_actions += self.abilities
+        all_actions += self.special_abilities
 
         return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 
@@ -131,9 +135,9 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
             f"Class: {self.job.type.value} | Level: {self.level} | Party: {self.party.name}\n\n"
             f"HP: {self.attributes.hp}/{self.max_hp} | AC: {self.armor_class}\n\n"
             f"Position: ({self.pos.x}, {self.pos.y}) | Facing: {self.pos.direction} | "
-            f"Movement Remaining: {self.current_speed}/{self.speed} m | Hidden: {self.is_hidden}\n\n"
+            f"Movement Remaining: {self.current_speed}/{self.speed} steps | Hidden: {self.is_hidden}\n\n"
             f"Status Effects: {', '.join(str(eff) for eff in self.status_effects) or 'None'}\n\n"
             f"Passives: {', '.join(eff.name for eff in self.passives) or 'None'}\n\n"
             f"Spell Slots: {self.spell_slots}\n\n"
-            f"Stats: {Stats.model_validate(self.attributes.model_dump())}"
+            f"Abilities: {Abilities.model_validate(self.attributes.model_dump())}"
         )

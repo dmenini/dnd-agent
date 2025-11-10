@@ -2,9 +2,10 @@ from pytest_mock import MockerFixture
 
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.common.attack import AttackAction, MainHandAttackAction
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resolvers.roll import D20
-from agent.character.stats import StatType
 from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
@@ -24,7 +25,7 @@ def make_attack_action() -> AttackAction:
         damage_dice="1d8",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.SIMPLE_MELEE,
-        stat=StatType.STR,
+        ability=AbilityType.STR,
         range=1.5,
         type=ActionType.ATTACK,
         category=ActionCategory.STANDARD,
@@ -33,7 +34,7 @@ def make_attack_action() -> AttackAction:
 
 def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
     actor.attributes.strength = 16  # +3 modifier
-    actor.attributes.weapon_proficiencies = [WeaponType.SIMPLE_MELEE]
+    actor.attributes.proficiencies = [Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE)]
     roll1 = target.armor_class + 1  # Attacker rolls high enough to hit target
     roll2 = 10
     action = make_attack_action()

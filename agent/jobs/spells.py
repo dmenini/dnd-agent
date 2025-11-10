@@ -4,6 +4,7 @@ from typing import Annotated, Literal, TypeAlias
 from pydantic import Field
 
 from agent.actions.base import ActionCategory
+from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import StatusEffect
 from agent.jobs.feature import FeatureType, JobFeature
@@ -14,6 +15,7 @@ from agent.models.enums import TargetingType
 class SpellType(str, Enum):
     ATTACK = "attack"
     SUPPORT = "support"
+    HEALING = "healing"
 
 
 class SpellBase(JobFeature):
@@ -24,6 +26,7 @@ class SpellBase(JobFeature):
     casting_time: ActionCategory = ActionCategory.STANDARD
     targeting: TargetingType
     range: float
+    ability: AbilityType | None = None  # Default to spellcaster ability if not specified
 
 
 class AttackSpell(SpellBase):
@@ -37,9 +40,15 @@ class AttackSpell(SpellBase):
 class SupportSpell(SpellBase):
     spell_type: Literal[SpellType.SUPPORT] = Field(default=SpellType.SUPPORT, frozen=True)
     effects: list[StatusEffect] = []
+    hits: int = 1
+
+
+class HealingSpell(SpellBase):
+    spell_type: Literal[SpellType.HEALING] = Field(default=SpellType.HEALING, frozen=True)
+    heal_dice: str
 
 
 Spell: TypeAlias = Annotated[  # noqa: UP040
-    AttackSpell | SupportSpell,
+    AttackSpell | SupportSpell | HealingSpell,
     Field(discriminator="spell_type"),
 ]

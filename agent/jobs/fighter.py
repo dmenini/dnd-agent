@@ -1,4 +1,5 @@
-from agent.character.stats import StatType
+from agent.character.abilities import AbilityType
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
 from agent.models.enums import FeatureId
@@ -6,9 +7,11 @@ from agent.models.enums import FeatureId
 Fighter = CharacterJob(
     type=JobType.FIGHTER,
     hit_die=10,
-    primary_stat=StatType.STR,
-    save_proficiencies=[StatType.STR, StatType.CON],
-    weapon_proficiencies=[],
+    primary_ability=AbilityType.STR,
+    proficiencies=[
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.STR),
+        Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CON),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.AC_BONUS_WITH_ARMOR,

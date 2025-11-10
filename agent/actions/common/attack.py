@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import re
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
-from agent.character.stats import Stats, StatType
+from agent.character.abilities import Abilities, AbilityType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.logs.log_event import Icon
@@ -22,7 +22,7 @@ class AttackAction(Action, ABC):
     damage_dice: str
     damage_type: DamageType
     weapon_type: WeaponType
-    stat: StatType
+    ability: AbilityType
     range: float
     status_effects: list[StatusEffect] = []
 
@@ -37,11 +37,13 @@ class AttackAction(Action, ABC):
         self._fire_end_events(actor, target, ctx)
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
-        roll = actor.attack_roll(attack_stat=self.stat, target=target)
+        roll = actor.attack_roll(ability=self.ability, target=target)
         ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
-        ctx.hit_roll = roll
-        ctx.is_hit = ctx.is_critical or roll.total >= target.armor_class
+        ctx.attack_roll = roll
+        actor.trigger_event(EventType.ATTACK_ROLL, actor, target, ctx)
+
+        ctx.is_hit = ctx.is_critical or ctx.attack_roll.total >= target.armor_class
 
         if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
@@ -60,13 +62,12 @@ class AttackAction(Action, ABC):
         # Damage roll
         mod = self._attack_modifier(actor)
         expr = f"{self.damage_dice}+{mod}"
-        droll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
-        ctx.damage_roll = droll
-        ctx.damage = Damage(components=[DamageComponent(value=droll.total, type=self.damage_type)])
-        actor.log_event(f"Damage roll: {droll.total}", icon=Icon.ROLL)
+        ctx.damage_roll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
+        ctx.damage = Damage(components=[DamageComponent(value=ctx.damage_roll.total, type=self.damage_type)])
+        actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)
 
         # Apply actor status effects
-        target.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
+        actor.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)
@@ -99,8 +100,8 @@ class AttackAction(Action, ABC):
         else:
             base_mod = 0
 
-        prof_bonus = actor.proficiency_bonus if self.weapon_type in actor.attributes.weapon_proficiencies else 0
-        mod = actor.attributes.stat_modifier(self.stat)
+        prof_bonus = actor.proficiency_bonus(self.weapon_type)
+        mod = actor.attributes.ability_modifier(self.ability)
         return base_mod + mod + prof_bonus
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
@@ -116,7 +117,7 @@ class AttackAction(Action, ABC):
         return (
             f"- {self.id}: {self.name} — {self.description} "
             f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
-            f"Stat: {self.stat.value}, Damage: {self.damage_dice} {self.damage_type.value}, "
+            f"Ability: {self.ability.value}, Damage: {self.damage_dice} {self.damage_type.value}, "
             f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
         )
 
@@ -128,12 +129,16 @@ class MainHandAttackAction(StandardAction, AttackAction):
     type: ActionType = ActionType.ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: MeleeWeapon, *, is_two_handed: bool = False, stats: Stats) -> Self:
+    def from_weapon(cls, weapon: MeleeWeapon, *, is_two_handed: bool = False, abilities: Abilities) -> Self:
         versatile_enabled = weapon.handling == WeaponHandling.VERSATILE and is_two_handed
         damage_dice = weapon.versatile_damage if versatile_enabled else None
         damage_dice = damage_dice or weapon.damage_dice
 
-        stat = (StatType.STR if stats.strength >= stats.dexterity else StatType.DEX) if weapon.finesse else weapon.stat
+        ability = (
+            (AbilityType.STR if abilities.strength >= abilities.dexterity else AbilityType.DEX)
+            if weapon.finesse
+            else weapon.ability
+        )
 
         return cls(
             description=f"Base Attack with main hand weapon {weapon.name}",
@@ -141,9 +146,12 @@ class MainHandAttackAction(StandardAction, AttackAction):
             targeting=weapon.targeting,
             damage_dice=damage_dice,
             damage_type=weapon.damage_type,
-            stat=stat,
+            ability=ability,
             range=weapon.range,
             status_effects=weapon.effects,
+            metadata={
+                "slot": "main_hand",
+            },
         )
 
 
@@ -154,16 +162,19 @@ class OffHandAttackAction(BonusAction, AttackAction):
     type: ActionType = ActionType.OFF_HAND_ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: MeleeWeapon, **kwargs: Any) -> Self:  # noqa: ARG003
+    def from_weapon(cls, weapon: MeleeWeapon) -> Self:
         return cls(
             description=f"Bonus Attack with off hand weapon {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
-            stat=weapon.stat,
+            ability=weapon.ability,
             range=weapon.range,
             status_effects=weapon.effects,
+            metadata={
+                "slot": "off_hand",
+            },
         )
 
 
@@ -174,14 +185,17 @@ class RangedAttackAction(StandardAction, AttackAction):
     type: ActionType = ActionType.ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: RangedWeapon, **kwargs: Any) -> Self:  # noqa: ARG003
+    def from_weapon(cls, weapon: RangedWeapon) -> Self:
         return cls(
             description=f"Ranged Attack with {weapon.name}",
             weapon_type=weapon.weapon_type,
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
-            stat=weapon.stat,
+            ability=weapon.ability,
             range=weapon.range,
             status_effects=weapon.effects,
+            metadata={
+                "slot": "ranged",
+            },
         )

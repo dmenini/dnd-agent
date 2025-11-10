@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel
 
-from agent.character.stats import StatType
+from agent.character.abilities import AbilityType
 from agent.effects.registry import TraitRegistry
 from agent.models.enums import FeatureId
 
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class EffectType(str, Enum):
+    BLESSED = "blessed"
+    ENRAGED = "enraged"
     STUNNED = "stunned"
     PARALYZED = "paralyzed"
     POISONED = "poisoned"
@@ -32,7 +34,7 @@ class StatusEffectFeature(BaseModel):
 class StatusEffect(BaseModel):
     type: EffectType
     duration: int
-    save_stat: StatType = StatType.CON
+    save_ability: AbilityType = AbilityType.CON
     save_dc: int = 12  # Difficulty class
     save_mode: Literal["none", "start", "end"] = "none"
     followup: StatusEffect | None = None

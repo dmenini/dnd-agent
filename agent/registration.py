@@ -1,6 +1,8 @@
-from agent.actions.common.spell import AttackSpellAction
+from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
+from agent.actions.jobs.barbarian import RageAction
+from agent.actions.jobs.cleric import DivineRestorationAction
 from agent.actions.jobs.fighter import SecondWindAction
-from agent.actions.jobs.mage import ArcaneRecoveryAction
+from agent.actions.jobs.wizard import ArcaneRecoveryAction
 from agent.actions.registry import ActionRegistry
 from agent.effects import traits
 from agent.effects.registry import TraitRegistry
@@ -11,6 +13,11 @@ def register_actions() -> None:
     ActionRegistry.register(FeatureId.SECOND_WIND, SecondWindAction)
     ActionRegistry.register(FeatureId.MAGIC_MISSILE, AttackSpellAction)
     ActionRegistry.register(FeatureId.ARCANE_RECOVERY, ArcaneRecoveryAction)
+    ActionRegistry.register(FeatureId.SACRED_FLAME, AttackSpellAction)
+    ActionRegistry.register(FeatureId.RAGE, RageAction)
+    ActionRegistry.register(FeatureId.DIVINE_RESTORATION, DivineRestorationAction)
+    ActionRegistry.register(FeatureId.BLESS, SupportSpellAction)
+    ActionRegistry.register(FeatureId.CURE_WOUNDS, HealingSpellAction)
 
 
 def register_traits() -> None:
@@ -34,6 +41,8 @@ def register_traits() -> None:
     TraitRegistry.register(FeatureId.AC_BONUS, traits.ACBonus)
     TraitRegistry.register(FeatureId.AC_BONUS_WITH_ARMOR, traits.ACBonusWithArmor)
     TraitRegistry.register(FeatureId.AC_BONUS_WITHOUT_ARMOR, traits.ACBonusWithoutArmor)
+    TraitRegistry.register(FeatureId.AC_BONUS_MOD_WITHOUT_ARMOR, traits.ACBonusModWithoutArmor)
+    TraitRegistry.register(FeatureId.AC_BONUS_WITH_ARMOR_TYPES, traits.ACBonusWithArmorTypes)
 
     # Combat and attack behavior
     TraitRegistry.register(FeatureId.CRITICAL_ROLL_BONUS, traits.CriticalRollBonus)
@@ -41,9 +50,13 @@ def register_traits() -> None:
     TraitRegistry.register(FeatureId.HALF_ATTACKS, traits.HalfAttacks)
     TraitRegistry.register(FeatureId.EXTRA_ACTIONS, traits.ExtraActions)
     TraitRegistry.register(FeatureId.CANNOT_ACT, traits.CannotAct)
+    TraitRegistry.register(FeatureId.ATTACK_ROLL_BONUS, traits.BonusOnAttackRoll)
+    TraitRegistry.register(FeatureId.SAVE_ROLL_BONUS, traits.BonusOnSaveThrow)
+    TraitRegistry.register(FeatureId.EXPERTISE, traits.Expertise)
 
     # Damage modifications
     TraitRegistry.register(FeatureId.DAMAGE_BONUS, traits.DamageBonus)
+    TraitRegistry.register(FeatureId.DAMAGE_BONUS_WITH_ADVANTAGE, traits.DamageBonusWithAdvantage)
     TraitRegistry.register(FeatureId.DAMAGE_MULTIPLIER, traits.DamageMultiplier)
     TraitRegistry.register(FeatureId.DAMAGE_OVER_TIME, traits.DamageOverTime)
 

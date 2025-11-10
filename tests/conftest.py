@@ -5,13 +5,16 @@ from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
 from agent.ai.character_generator import DEFAULT_PARTY_NAME
+from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.equipment.armor import Armor, ArmorType
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.jobs.fighter import Fighter
-from agent.jobs.mage import Mage
+from agent.jobs.wizard import Wizard
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
+from agent.models.damage import DamageType
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.position import Position
@@ -24,6 +27,45 @@ from agent.registration import register_actions, register_traits
 
 register_actions()
 register_traits()
+
+
+dagger = MeleeWeapon(
+    name="Dagger",
+    weapon_type=WeaponType.SIMPLE_MELEE,
+    handling=WeaponHandling.ONE_HANDED,
+    ability=AbilityType.DEX,
+    damage_dice="1d4",
+    damage_type=DamageType.PIERCING,
+    finesse=True,
+    dual_wield=True,
+)
+
+longsword = MeleeWeapon(
+    name="Longsword",
+    weapon_type=WeaponType.MARTIAL_MELEE,
+    handling=WeaponHandling.VERSATILE,
+    ability=AbilityType.STR,
+    damage_dice="1d8",
+    versatile_damage="1d10",
+    damage_type=DamageType.SLASHING,
+)
+
+greatsword = MeleeWeapon(
+    name="Greatsword",
+    weapon_type=WeaponType.MARTIAL_MELEE,
+    handling=WeaponHandling.TWO_HANDED,
+    ability=AbilityType.STR,
+    damage_dice="2d6",
+    damage_type=DamageType.SLASHING,
+)
+
+bow = RangedWeapon(
+    name="Bow",
+    weapon_type=WeaponType.SIMPLE_RANGE,
+    damage_type=DamageType.PIERCING,
+    damage_dice="1d20",
+    handling=WeaponHandling.ONE_HANDED,
+)
 
 
 @pytest.fixture
@@ -63,8 +105,9 @@ def actor() -> Character:
         name="Alfred",
         icon="⚔️",
         job=Fighter,
+        level=3,
         pos=Position(x=2, y=2),
-        attributes=Attributes(strength=20),
+        attributes=Attributes(strength=20, hp=15),
         is_player=True,
         party=party_players,
     )
@@ -77,9 +120,11 @@ def target() -> Character:
         id="orc",
         name="Orc",
         icon="👹",
-        job=Mage,
+        job=Wizard,
+        level=3,
         pos=Position(x=3, y=2),
         party=party_players,
+        attributes=Attributes(hp=15),
         armor=Armor(
             name="Armor",
             description="",

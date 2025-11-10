@@ -1,15 +1,15 @@
-from collections import defaultdict
+from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, PrivateAttr, computed_field, field_validator
+from pydantic import BaseModel, computed_field, field_serializer, field_validator
 
 from agent.actions.base import Action
-from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
+from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy
-from agent.character.stats import StatType
 from agent.effects.base import Trait, normalize_id
 from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor
@@ -36,25 +36,28 @@ class CharacterBase(BaseModel):
     narrative: NarrativeAttributes = NarrativeAttributes()
     stealth_value: int = 0
 
-    spells: list[AttackSpellAction | SupportSpellAction] = []
-    abilities: list[Action] = []
+    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction] = []
+    special_abilities: list[Action] = []
     passives: list[Trait] = []
 
     # Defined for typing to work
     action_economy: ActionEconomy
     armor: Armor | None = None
 
-    _event_listeners: dict[str, list[Trait]] = PrivateAttr(default_factory=lambda: defaultdict(list))
-
     @computed_field  # type: ignore[prop-decorator]
     @property
     def max_hp(self) -> int:
         return self.attributes.max_hp(level=self.level)
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def proficiency_bonus(self) -> int:
-        return self.attributes.proficiency_bonus(level=self.level)
+    def proficiency_bonus(self, reference: Enum) -> int:
+        if not self.attributes.has_proficiency(reference):
+            return 0
+
+        bonus = self.attributes.proficiency_bonus(level=self.level)
+        if self.attributes.has_expertise(reference):
+            bonus *= 2
+
+        return bonus
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -76,7 +79,7 @@ class CharacterBase(BaseModel):
     def is_hidden(self) -> bool:
         return self.stealth_value > 0
 
-    def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
+    def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError
 
     def los_distance(self, target: Position) -> float:
@@ -103,9 +106,9 @@ class CharacterBase(BaseModel):
         # Add to passives list if not already there
         if all(trait.id != p.id for p in self.passives):
             self.passives.append(trait)
-            self.log_event(f"{self.name} gained passive trait {trait.feature_id.value}", log_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} gained passive trait {trait.name}", log_type=LogLevel.DETAIL)
 
-        # Apply immediately if it's a modifier
+        # Apply immediately if it's a modifier (even if passive exists, as serialization loses modifiers)
         if trait.event_type == EventType.MODIFIER:
             trait.apply(self)
 
@@ -121,7 +124,7 @@ class CharacterBase(BaseModel):
             # Remove from passives
             self.passives.remove(trait)
 
-            self.log_event(f"{self.name} lost passive trait {trait.feature_id}", log_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} lost passive trait {trait.name}", log_type=LogLevel.DETAIL)
 
     def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
         """Trigger all listeners for the given event type in priority order."""
@@ -160,7 +163,11 @@ class CharacterBase(BaseModel):
         )
         registry.append(event)
 
-    @field_validator("spells", "abilities", mode="before")
+    @field_serializer("spells", "special_abilities")
+    def serialize_actions(self, actions: list[Action]) -> list[dict]:
+        return [a.model_dump(mode="json") for a in actions]
+
+    @field_validator("spells", "special_abilities", mode="before")
     @classmethod
     def deserialize_action(cls, v: Any) -> list[Action]:
         if not isinstance(v, list):
@@ -175,15 +182,20 @@ class CharacterBase(BaseModel):
 
             # Otherwise, assume it's a dict with an "id"
             elif isinstance(el, dict):
-                id_ = el.pop("id")
+                el_copy = el.copy()
+                id_ = el_copy.pop("id")
                 feature_id = FeatureId(id_)
-                actions.append(ActionRegistry.create(id_=feature_id, **el))
+                actions.append(ActionRegistry.create(id_=feature_id, **el_copy))
 
             else:
                 msg = f"Invalid action payload: {v}"
                 raise TypeError(msg)
 
         return actions
+
+    @field_serializer("passives")
+    def serialize_passives(self, traits: list[Trait]) -> list[dict]:
+        return [t.model_dump(mode="json") for t in traits]
 
     @field_validator("passives", mode="before")
     @classmethod
@@ -200,9 +212,10 @@ class CharacterBase(BaseModel):
 
             # Otherwise, assume it's a dict with an "id"
             elif isinstance(el, dict):
-                id_ = el.pop("feature_id")
+                el_copy = el.copy()
+                id_ = el_copy.pop("feature_id")
                 feature_id = FeatureId(id_)
-                passives.append(TraitRegistry.create(feature_id=feature_id, **el))
+                passives.append(TraitRegistry.create(feature_id=feature_id, **el_copy))
 
             else:
                 msg = f"Invalid trait payload: {v}"

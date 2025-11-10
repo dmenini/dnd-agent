@@ -11,6 +11,8 @@ class EventType(str, Enum):
     COMBAT_END = "combat_end"
     APPLY_DAMAGE = "apply_damage"
     RECEIVE_DAMAGE = "receive_damage"
+    ATTACK_ROLL = "attack_roll"
+    SAVE_THROW = "save_throw"
 
 
 # Traditionally is 5, but in our map it looks weird to be able to attack a target 5 tiles away

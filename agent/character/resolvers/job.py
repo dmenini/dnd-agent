@@ -1,4 +1,3 @@
-from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.registry import TraitRegistry
@@ -23,6 +22,10 @@ class JobResolver(CharacterBase):
         for spell in old_job.get_spells_for_level(self.level):
             self._remove_spell(spell)
 
+        # Remove proficiencies
+        for prof in self.job.proficiencies:
+            self.attributes.proficiencies.remove(prof)
+
         self.job = job
         self.apply_job_features()
 
@@ -30,10 +33,13 @@ class JobResolver(CharacterBase):
 
     def apply_job_features(self) -> None:
         """Register class features based on current level."""
-        # TODO: The primary stat should depend on the type of class (fighter should not use STR)
-        self.attributes.spellcasting_stat = self.job.primary_stat
-        self.attributes.save_proficiencies = self.job.save_proficiencies
-        self.attributes.weapon_proficiencies = self.job.weapon_proficiencies
+        # TODO: The primary ability should depend on the type of class (fighter should not use STR)
+        self.attributes.spellcasting_ability = self.job.primary_ability
+        self.attributes.hit_die = self.job.hit_die
+
+        for prof in self.job.proficiencies:
+            if not self.attributes.has_proficiency(prof.target):
+                self.attributes.proficiencies.append(prof)
 
         for feature in self.job.get_features_for_level(self.level):
             self._apply_job_feature(feature)
@@ -43,7 +49,7 @@ class JobResolver(CharacterBase):
 
     def _apply_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
-            if feature.ref_id not in {a.id for a in self.abilities}:
+            if feature.ref_id not in {a.id for a in self.special_abilities}:
                 action = ActionRegistry.create(
                     id_=feature.ref_id,
                     name=feature.name,
@@ -51,7 +57,7 @@ class JobResolver(CharacterBase):
                     uses_per_rest=feature.uses_per_rest,
                     **feature.kwargs,
                 )
-                self.abilities.append(action)
+                self.special_abilities.append(action)
                 self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
@@ -66,7 +72,7 @@ class JobResolver(CharacterBase):
 
     def _remove_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
-            self.abilities = [ability for ability in self.abilities if ability.id != feature.ref_id]
+            self.special_abilities = [ability for ability in self.special_abilities if ability.id != feature.ref_id]
             self.log_event(f"{self.name} lost ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
@@ -75,14 +81,10 @@ class JobResolver(CharacterBase):
 
     def _apply_spell(self, spell: Spell) -> None:
         if spell.ref_id not in {a.id for a in self.spells}:
-            action = ActionRegistry.create(
-                id_=spell.ref_id,
-                stat=self.attributes.spellcasting_stat,  # NB: stat is not required for spells
-                **spell.model_dump(exclude={"type"}),
-            )
-            if isinstance(action, (AttackSpellAction, SupportSpellAction)):
-                self.spells.append(action)
-                self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)
+            spell.ability = spell.ability or self.attributes.spellcasting_ability
+            action = ActionRegistry.create(id_=spell.ref_id, **spell.model_dump(exclude={"type"}))
+            self.spells.append(action)  # type: ignore[arg-type]
+            self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)
 
     def _remove_spell(self, spell: Spell) -> None:
         self.spells = [s for s in self.spells if s.id != spell.ref_id]

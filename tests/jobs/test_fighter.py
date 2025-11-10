@@ -9,7 +9,20 @@ def test_fighter(actor: Character) -> None:
     actor.change_job(Fighter)
 
     # Verify active action is available
-    assert any(a.id == FeatureId.SECOND_WIND for a in actor.abilities)
+    assert any(a.id == FeatureId.SECOND_WIND for a in actor.special_abilities)
 
     assert any(t.feature_id == FeatureId.AC_BONUS_WITH_ARMOR for t in actor.passives)
     assert actor.attributes.get_modifiers("ac")[0].value == 1
+
+
+def test_fighter_serialization(actor: Character) -> None:
+    actor.change_job(Fighter)
+
+    actor_dict = actor.model_dump()
+    actor2 = Character.model_validate(actor_dict)
+    assert actor2.model_dump() == actor_dict
+
+    assert actor2.passives == actor.passives
+    assert actor2.special_abilities == actor.special_abilities
+    assert actor2.attributes == actor.attributes
+    assert actor2.spells == actor.spells

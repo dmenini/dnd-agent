@@ -137,7 +137,7 @@ async def test_action_resources_are_used(
     actor.pos = Position(x=1, y=1)
     target.pos = Position(x=2, y=1)
     num_passives = len(actor.passives)
-    num_abilities = len(actor.abilities)
+    num_abilities = len(actor.special_abilities)
 
     async with ui.run_test() as pilot:
         input_widget = pilot.app.query_one("#user-input", Input)
@@ -210,5 +210,5 @@ async def test_action_resources_are_used(
         assert ui.state.current_actor.name == target.name
 
         # No changes due to serialization
-        assert len(ui.state.characters[actor.id].abilities) == num_abilities
+        assert len(ui.state.characters[actor.id].special_abilities) == num_abilities
         assert len(ui.state.characters[actor.id].passives) == num_passives

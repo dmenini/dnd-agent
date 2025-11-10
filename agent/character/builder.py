@@ -1,22 +1,33 @@
 from pydantic import BaseModel, Field
 
+from agent.character.abilities import Abilities
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.narrative import NarrativeAttributes
-from agent.character.stats import Stats
+from agent.jobs.barbarian import Barbarian
 from agent.jobs.base import JobType
+from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
-from agent.jobs.mage import Mage
+from agent.jobs.rogue import Rogue
+from agent.jobs.wizard import Wizard
+
+job_map = {
+    JobType.FIGHTER: Fighter,
+    JobType.WIZARD: Wizard,
+    JobType.CLERIC: Cleric,
+    JobType.BARBARIAN: Barbarian,
+    JobType.ROGUE: Rogue,
+}
 
 
 class CharacterBuilder(BaseModel):
     name: str = Field(description="Character name")
     icon: str = Field(description="Icon on the map (emojy)")
     job: JobType = Field(description="Character class/job")
-    stats: Stats = Field(
-        default=Stats(),
+    abilities: Abilities = Field(
+        default=Abilities(),
         description=(
-            "Attributes derived from the character background. Free assignment, but total points must be below 72."
+            "Abilities derived from the character background. Free assignment, but total points must be below 72."
         ),
     )
     race: str = Field(default="human", description="Race")
@@ -26,13 +37,6 @@ class CharacterBuilder(BaseModel):
     summary: str = Field(default="", description="Short summary of the character profile.")
 
     def to_character(self, party: str) -> Character:
-        if self.job == JobType.FIGHTER:
-            job = Fighter
-        elif self.job == JobType.MAGE:
-            job = Mage
-        else:
-            job = None
-
         return Character(
             id=self.name.lower().replace(" ", "-"),
             name=self.name,
@@ -40,8 +44,8 @@ class CharacterBuilder(BaseModel):
             is_player=True,
             level=1,
             experience=0,
-            attributes=Attributes.model_validate(self.stats.model_dump()),
-            job=job,
+            attributes=Attributes.model_validate(self.abilities.model_dump()),
+            job=job_map[self.job],
             party=Party(id="players", name=party, is_player_party=True),
             narrative=NarrativeAttributes(
                 race=self.race,

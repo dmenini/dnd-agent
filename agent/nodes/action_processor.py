@@ -36,7 +36,7 @@ class ActionProcessorNode:
                     continue
 
                 for i in range(hit_count):
-                    context = CombatContext(map=state.map.model_copy(), enemies=enemies)
+                    context = CombatContext(map=state.map.model_copy(), enemies=enemies, metadata=action.model_dump())
                     actor.log_event(f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}.")
                     action.execute(actor=actor, target=target, ctx=context)
 
@@ -44,12 +44,12 @@ class ActionProcessorNode:
                         break
 
         elif decision.target_position:
-            context = CombatContext(map=state.map.model_copy(), enemies=enemies)
+            context = CombatContext(map=state.map.model_copy(), enemies=enemies, metadata=action.model_dump())
             actor.log_event(f"{actor.name} performs {action.name} to position {decision.target_position}.")
             action.execute(actor=actor, target=decision.target_position, ctx=context)
 
         else:
-            context = CombatContext(map=state.map.model_copy(), enemies=enemies)
+            context = CombatContext(map=state.map.model_copy(), enemies=enemies, metadata=action.model_dump())
             actor.log_event(f"{actor.name} performs {action.name} on self.")
             action.execute(actor=actor, target=actor, ctx=context)
 

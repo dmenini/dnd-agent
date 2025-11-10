@@ -1,5 +1,8 @@
 from pytest_mock import MockerFixture
 
+from agent.actions.base import ActionType
+from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.effects.trait_effects.damage import (
     auto_crit_if_melee_effect,
@@ -8,10 +11,15 @@ from agent.effects.trait_effects.damage import (
     damage_over_time_effect,
     ignore_resistance_effect,
     reflect_melee_damage_effect,
+    sneak_attack_effect,
 )
+from agent.equipment.weapons import WeaponType
+from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageResistance, DamageType, DamageVulnerability
+from agent.models.enums import TargetingType
 from agent.models.position import Position
+from tests.conftest import dagger
 
 MELEE_RANGE = 5
 
@@ -105,3 +113,44 @@ def test_ignore_resistance_no_effect_if_no_resistance(
     target.attributes.damage_resistance = mocker.MagicMock(return_value=None)
     context = CombatContext(damage=Damage(components=[]))
     ignore_resistance_effect(actor, target, context, DamageType.FIRE)
+
+
+def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None:
+    actor.equip(item=dagger, slot_name="main_hand")
+    actor.equip(item=dagger, slot_name="off_hand")
+
+    context = CombatContext(
+        attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),
+        damage=Damage(components=[DamageComponent(value=10, type=DamageType.PIERCING)]),
+        metadata=MainHandAttackAction(
+            targeting=TargetingType.SINGLE,
+            range=3,
+            damage_type=DamageType.PIERCING,
+            damage_dice="1d10",
+            weapon_type=WeaponType.SIMPLE_RANGE,
+            ability=AbilityType.DEX,
+            metadata={"slot": "main_hand"},
+        ).model_dump(),
+    )
+    sneak_attack_effect(actor, context, dice="1d6")
+
+    assert len(context.damage.components) == 2  # type: ignore[union-attr]
+
+    # Second attack in the same turn
+    actor.action_economy.last_standard_action = ActionType.ATTACK
+    context = CombatContext(
+        attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),
+        damage=Damage(components=[DamageComponent(value=10, type=DamageType.PIERCING)]),
+        metadata=OffHandAttackAction(
+            targeting=TargetingType.SINGLE,
+            range=3,
+            damage_type=DamageType.PIERCING,
+            damage_dice="1d5",
+            weapon_type=WeaponType.SIMPLE_MELEE,
+            ability=AbilityType.DEX,
+            metadata={"slot": "off_hand"},
+        ).model_dump(),
+    )
+    sneak_attack_effect(actor, context, dice="1d6")
+
+    assert len(context.damage.components) == 1  # type: ignore[union-attr]

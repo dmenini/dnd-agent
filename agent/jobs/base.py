@@ -2,25 +2,27 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from agent.character.stats import StatType
-from agent.equipment.weapons import WeaponType
+from agent.character.abilities import AbilityType
+from agent.character.attributes import Proficiency
 from agent.jobs.feature import JobFeature
 from agent.jobs.spells import Spell
 
 
 class JobType(str, Enum):
+    BARBARIAN = "barbarian"
+    CLERIC = "cleric"
     FIGHTER = "fighter"
-    MAGE = "mage"
+    ROGUE = "rogue"
+    WIZARD = "wizard"
 
 
 class CharacterJob(BaseModel):
-    """Base model for a character's archetype (Fighter, Mage, etc.)."""
+    """Base model for a character's archetype (Fighter, Wizard, etc.)."""
 
     type: JobType
     hit_die: int
-    primary_stat: StatType
-    save_proficiencies: list[StatType]
-    weapon_proficiencies: list[WeaponType]
+    primary_ability: AbilityType
+    proficiencies: list[Proficiency]
     features: list[JobFeature] = []
     spells: list[Spell] = []
 

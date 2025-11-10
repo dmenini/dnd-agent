@@ -49,6 +49,8 @@ class FeatureId(str, Enum):
     AC_BONUS = "ac_bonus"
     AC_BONUS_WITH_ARMOR = "ac_bonus_with_armor"
     AC_BONUS_WITHOUT_ARMOR = "ac_bonus_without_armor"
+    AC_BONUS_MOD_WITHOUT_ARMOR = "ac_bonus_mod_without_armor"
+    AC_BONUS_WITH_ARMOR_TYPES = "ac_bonus_with_armor_type"
 
     # Combat Behavior
     CRITICAL_ROLL_BONUS = "critical_roll_bonus"
@@ -56,11 +58,15 @@ class FeatureId(str, Enum):
     HALF_ATTACKS = "half_attacks"
     EXTRA_ACTIONS = "extra_actions"
     CANNOT_ACT = "cannot_act"
+    ATTACK_ROLL_BONUS = "attack_roll_bonus"
+    SAVE_ROLL_BONUS = "save_roll_bonus"
+    EXPERTISE = "expertise"
 
     # Damage Modifiers
     DAMAGE_BONUS = "damage_bonus"
     DAMAGE_MULTIPLIER = "damage_multiplier"
     DAMAGE_OVER_TIME = "damage_over_time"
+    DAMAGE_BONUS_WITH_ADVANTAGE = "damage_bonus_with_advantage"
 
     # Resistances & Vulnerabilities
     RESISTANCE = "resistance"
@@ -77,11 +83,16 @@ class FeatureId(str, Enum):
     REGENERATION = "regeneration"
     LIFE_STEAL = "life_steal"
     ARCANE_RECOVERY = "arcane_recovery"
+    DIVINE_RESTORATION = "divine_restoration"
 
     # Reflection & Retaliation
     REFLECT_MELEE_DAMAGE = "reflect_melee_damage"
     SECOND_WIND = "second_wind"
+    RAGE = "rage"
 
     # Spells
     MAGIC_MISSILE = "magic_missile"
     HASTE = "haste"
+    SACRED_FLAME = "sacred_flame"
+    BLESS = "bless"
+    CURE_WOUNDS = "cure_wounds"

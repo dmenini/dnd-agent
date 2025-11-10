@@ -1,52 +1,60 @@
-from collections import defaultdict
+import math
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import ConfigDict, PrivateAttr
 
+from agent.character.abilities import Abilities, AbilityType
 from agent.character.modifier import Modifier, ModifierRegistry
-from agent.character.stats import Stats, StatType
+from agent.character.proficiency import Proficiency
 from agent.equipment.armor import ArmorType
-from agent.equipment.weapons import WeaponType
 from agent.models.damage import DamageResistance, DamageType, DamageVulnerability
 
 
-class Attributes(Stats):
-    hp: int = 15
-    spellcasting_stat: StatType = StatType.INT
-    save_proficiencies: list[StatType] = []
-    weapon_proficiencies: list[WeaponType] = []
+class Attributes(Abilities):
+    hp: int = -1
+    spellcasting_ability: AbilityType = AbilityType.INT
+    proficiencies: list[Proficiency] = []
+    hit_die: int = 0
 
-    # Base scalar attributes
-    base_hp: int = 15
+    # Base attributes on which modifiers are applied (do not change directly)
+    base_hp: int = 0
     base_ac: int = 0
     base_speed: float = 6.0
     base_crit_roll_bonus: int = 0
     base_vision_range: float = 10.0
     base_vision_fov: float = 120.0
-    base_spell_save_dc: int = 8
     base_perception: int = 10
+    base_spell_save_dc: int = 8
+    base_expertise: bool = False
+    base_advantage: bool = False
+    base_disadvantage: bool = False
+    base_save_advantage: bool = False
+    base_save_disadvantage: bool = False
+    base_save_autofail: bool = False
+    base_resistance: float = 0.0
+    base_vulnerability: float = 0.0
+    base_ac_mod: bool = False  # Whether there is an extra AC ability modifier (in addition to DEX)
 
-    # Base nested attributes
-    base_advantage: defaultdict[str, bool] = defaultdict(bool)
-    base_disadvantage: defaultdict[str, bool] = defaultdict(bool)
-    base_save_advantage: defaultdict[str, bool] = defaultdict(bool)
-    base_save_disadvantage: defaultdict[str, bool] = defaultdict(bool)
-    base_save_autofail: defaultdict[str, bool] = defaultdict(bool)
-    base_resistance: defaultdict[str, float] = defaultdict(float)
-    base_vulnerability: defaultdict[str, float] = defaultdict(float)
-
-    _registry: ModifierRegistry = PrivateAttr(default_factory=ModifierRegistry)
+    _registry: ModifierRegistry = PrivateAttr(default=ModifierRegistry())
 
     model_config = ConfigDict(extra="allow")  # To mock during tests
 
     def max_hp(self, level: int) -> int:
         """HP grows with level and Constitution modifier."""
-        return self.base_hp + (level - 1) * (5 + self.stat_modifier(StatType.CON))
+        bonus_hp = self._recompute_attribute("hp")
+        level1_hp = self.hit_die + self.ability_modifier(AbilityType.CON)
+        per_level_increase = math.ceil(self.hit_die / 2) + 1 + self.ability_modifier(AbilityType.CON)
+        return level1_hp + (level - 1) * per_level_increase + bonus_hp
 
     def ac_bonus(self, armor_type: ArmorType | None, max_dex_bonus: int | None = 2) -> int:
         """Compute Armor Class bonus from modifiers."""
         ac = self._recompute_attribute("ac")
-        dex_mod = self.stat_modifier(StatType.DEX)
+        dex_mod = self.ability_modifier(AbilityType.DEX)
+
+        # Apply CON modifier to AC if the character has that feature
+        if self._recompute_attribute(f"ac_mod.{AbilityType.CON}"):
+            ac += self.ability_modifier(AbilityType.CON)
 
         if not armor_type:
             ac += 10 + dex_mod
@@ -60,13 +68,18 @@ class Attributes(Stats):
 
     def initiative(self) -> int:
         """Derived initiative bonus."""
-        return self.stat_modifier(StatType.DEX)
+        return self.ability_modifier(AbilityType.DEX)
 
     def proficiency_bonus(self, level: int) -> int:
         return 2 + (level - 1) // 4
 
+    def has_proficiency(self, reference: Enum) -> bool:
+        return any(prof.target == reference for prof in self.proficiencies)
+
+    def has_expertise(self, reference: Enum) -> bool:
+        return self._recompute_attribute(f"expertise.{reference.value}")
+
     def speed(self) -> float:
-        """Base speed, possibly affected by conditions later."""
         return self._recompute_attribute("speed")
 
     def crit_roll(self) -> int:
@@ -74,7 +87,7 @@ class Attributes(Stats):
         return crit_roll - self._recompute_attribute("crit_roll_bonus")
 
     def passive_perception(self) -> int:
-        wis_mod = self.stat_modifier(StatType.WIS)
+        wis_mod = self.ability_modifier(AbilityType.WIS)
         return self._recompute_attribute("perception") + wis_mod
 
     def vision_range(self) -> float:
@@ -87,7 +100,7 @@ class Attributes(Stats):
 
     def spell_save_dc(self, level: int) -> int:
         dc = self._recompute_attribute("spell_save_dc")
-        spell_mod = self.stat_modifier(self.spellcasting_stat)
+        spell_mod = self.ability_modifier(self.spellcasting_ability)
         prof = self.proficiency_bonus(level=level)
         return dc + prof + spell_mod
 
@@ -96,13 +109,13 @@ class Attributes(Stats):
         dis = self._recompute_attribute("save_disadvantage.spell")
         return int(adv) - int(dis)
 
-    def stat_save_advantage(self, stat: StatType) -> int:
-        adv = self._recompute_attribute(f"save_advantage.{stat.name.lower()}")
-        dis = self._recompute_attribute(f"save_disadvantage.{stat.name.lower()}")
+    def ability_save_advantage(self, ability: AbilityType) -> int:
+        adv = self._recompute_attribute(f"save_advantage.{ability.value}")
+        dis = self._recompute_attribute(f"save_disadvantage.{ability.value}")
         return int(adv) - int(dis)
 
-    def save_autofail(self, stat: StatType) -> bool:
-        return self._recompute_attribute(f"save_autofail.{stat.name.lower()}")
+    def save_autofail(self, ability: AbilityType) -> bool:
+        return self._recompute_attribute(f"save_autofail.{ability.value}")
 
     def damage_resistance(self, dtype: DamageType) -> DamageResistance | None:
         value = self._recompute_attribute(f"resistance.{dtype.value}")
@@ -132,9 +145,8 @@ class Attributes(Stats):
         Priority: Additive factors -> Multiplicative factors -> Override with last.
         """
         if "." in attr:
-            base_name, key = attr.split(".", 1)
-            base_dict = getattr(self, f"base_{base_name}")
-            base_value = base_dict[key]
+            base_name, _ = attr.split(".", 1)
+            base_value = getattr(self, f"base_{base_name}")
         else:
             base_value = getattr(self, f"base_{attr}")
 

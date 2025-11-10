@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import Field, computed_field
 
-from agent.character.stats import StatType
+from agent.character.abilities import AbilityType
 from agent.equipment.base import EquipmentBase, EquipmentType
 from agent.models.constants import MELEE_RANGE
 from agent.models.damage import DamageType
@@ -31,14 +31,14 @@ class Weapon(EquipmentBase):
     weapon_type: WeaponType
     targeting: TargetingType = TargetingType.SINGLE
     handling: WeaponHandling = WeaponHandling.ONE_HANDED
-    stat: StatType
+    ability: AbilityType
     damage_dice: str
     damage_type: DamageType
 
 
 class MeleeWeapon(Weapon):
     type: Literal[EquipmentType.WEAPON_MELEE] = Field(default=EquipmentType.WEAPON_MELEE, frozen=True)
-    stat: StatType = StatType.STR
+    ability: AbilityType = AbilityType.STR
     reach: int = 0
     versatile_damage: str | None = None
     finesse: bool = False
@@ -52,7 +52,7 @@ class MeleeWeapon(Weapon):
 
 class RangedWeapon(Weapon):
     type: Literal[EquipmentType.WEAPON_RANGED] = Field(default=EquipmentType.WEAPON_RANGED, frozen=True)
-    stat: StatType = StatType.DEX
+    ability: AbilityType = AbilityType.DEX
     range: float = 50
     max_range: float = 100
 

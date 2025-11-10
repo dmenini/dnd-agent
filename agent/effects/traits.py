@@ -2,8 +2,9 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from agent.character.abilities import AbilityType
+from agent.character.proficiency import ProficiencyTarget
 from agent.character.resources import ActionExtension
-from agent.character.stats import StatType
 from agent.effects.base import ModifierTrait, Priority, Trait
 from agent.effects.trait_effects.damage import (
     auto_crit_if_melee_effect,
@@ -12,14 +13,21 @@ from agent.effects.trait_effects.damage import (
     damage_over_time_effect,
     ignore_resistance_effect,
     reflect_melee_damage_effect,
+    sneak_attack_effect,
 )
-from agent.effects.trait_effects.support import life_steal_effect, regeneration_effect
+from agent.effects.trait_effects.support import (
+    bonus_attack_roll_effect,
+    bonus_save_roll_effect,
+    life_steal_effect,
+    regeneration_effect,
+)
 from agent.effects.trait_effects.turn import (
     cannot_act_effect,
     cannot_move_effect,
     extra_actions_effect,
     half_attacks_effect,
 )
+from agent.equipment.armor import ArmorType
 from agent.models.constants import EventType
 from agent.models.damage import DamageType
 
@@ -63,40 +71,40 @@ class TargetAdvantageOnAttackRoll(ModifierTrait):
 class DisadvantageOnSavingThrow(ModifierTrait):
     """Give disadvantage on saving throw to target."""
 
-    attribute: str = "save_disadvantage.{stat}"
-    stat: StatType
+    attribute: str = "save_disadvantage.{ability}"
+    ability: AbilityType
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
 
 class AdvantageOnSavingThrow(ModifierTrait):
     """Give advantage on saving throw to target."""
 
-    attribute: str = "save_advantage.{stat}"
-    stat: StatType
+    attribute: str = "save_advantage.{ability}"
+    ability: AbilityType
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
 
 class FailOnSavingThrow(ModifierTrait):
     """Give automatic fail on saving throw to target."""
 
-    attribute: str = "save_autofail.{stat}"
-    stat: StatType
+    attribute: str = "save_autofail.{ability}"
+    ability: AbilityType
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
 
 class SpeedMultiplier(ModifierTrait):
@@ -135,10 +143,42 @@ class ACBonusWithArmor(ACBonus):
         return field_name == "armor"
 
 
+class ACBonusWithArmorTypes(ACBonus):
+    """Grant a bonus to Armor Class (AC) while wearing armor of certain types."""
+
+    value: int = 1
+    armor_types: list[ArmorType]
+
+    def condition(self, target: Any) -> bool:
+        return target.armor and target.armor.armor_type in self.armor_types
+
+    def condition_depends_on(self, field_name: str) -> bool:
+        return field_name == "armor"
+
+
 class ACBonusWithoutArmor(ACBonus):
     """Grant a bonus to Armor Class (AC) while not wearing armor."""
 
     value: int = 3
+
+    def condition(self, target: Any) -> bool:
+        return not bool(target.armor)
+
+    def condition_depends_on(self, field_name: str) -> bool:
+        return field_name == "armor"
+
+
+class ACBonusModWithoutArmor(ModifierTrait):
+    """Gain a bonus ability modifier to Armor Class (AC) while not wearing armor."""
+
+    attribute: str = "ac_mod.{ability}"
+    value: bool = True
+    operation: Literal["set", "add", "mul"] = "set"
+    ability: AbilityType = AbilityType.CON
+
+    def model_post_init(self, _: Any) -> None:
+        super().model_post_init(_)
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
     def condition(self, target: Any) -> bool:
         return not bool(target.armor)
@@ -226,6 +266,19 @@ class StealthDisadvantage(ModifierTrait):
     operation: Literal["set", "add", "mul"] = "set"
 
 
+class Expertise(ModifierTrait):
+    """Give expertise with a certain skill, weapon, armor or save ability."""
+
+    proficiency: ProficiencyTarget
+    attribute: str = "disadvantage.{proficiency}"
+    value: bool = True
+    operation: Literal["set", "add", "mul"] = "set"
+
+    def model_post_init(self, _: Any) -> None:
+        super().model_post_init(_)
+        self.attribute = self.attribute.format(proficiency=self.proficiency.value)
+
+
 # ============================================================================
 # EVENT TRAITS - Callback-based effects
 # ============================================================================
@@ -290,6 +343,26 @@ class HalfAttacks(Trait):
         half_attacks_effect(target)
 
 
+class BonusOnAttackRoll(Trait):
+    """The target can roll a d4 and add the number rolled to the attack roll."""
+
+    event_type: EventType = EventType.ATTACK_ROLL
+    dice_expr: str = "1d4"
+
+    def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
+        bonus_attack_roll_effect(actor, ctx, expr=self.dice_expr)
+
+
+class BonusOnSaveThrow(Trait):
+    """The target can roll a d4 and add the number rolled to the save throw."""
+
+    event_type: EventType = EventType.SAVE_THROW
+    dice_expr: str = "1d4"
+
+    def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
+        bonus_save_roll_effect(actor, ctx, expr=self.dice_expr)
+
+
 class ReflectMeleeDamage(Trait):
     """Reflect a portion of melee damage received back to the attacker."""
 
@@ -299,7 +372,7 @@ class ReflectMeleeDamage(Trait):
     priority: int = Priority.LOW
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:
-        reflect_melee_damage_effect(actor, target, ctx, self.ratio, self.damage_type)
+        reflect_melee_damage_effect(actor, target, ctx, ratio=self.ratio, damage_type=self.damage_type)
 
 
 class LifeSteal(Trait):
@@ -310,7 +383,7 @@ class LifeSteal(Trait):
     priority: int = Priority.LOW
 
     def apply(self, actor: Any, ctx: Any) -> None:
-        life_steal_effect(actor, ctx, self.ratio)
+        life_steal_effect(actor, ctx, ratio=self.ratio)
 
 
 class DamageBonus(Trait):
@@ -321,7 +394,17 @@ class DamageBonus(Trait):
     damage_type: DamageType
 
     def apply(self, target: Any, ctx: Any) -> None:
-        damage_bonus_effect(target, ctx, self.value, self.damage_type)
+        damage_bonus_effect(target, ctx, value=self.value, damage_type=self.damage_type)
+
+
+class DamageBonusWithAdvantage(Trait):
+    """Add bonus damage roll in case of attack with advantage with finesse or ranged weapons (once per turn)."""
+
+    event_type: EventType = EventType.APPLY_DAMAGE
+    dice_expr: str
+
+    def apply(self, target: Any, ctx: Any) -> None:
+        sneak_attack_effect(target, ctx, dice=self.dice_expr)
 
 
 class DamageMultiplier(Trait):
@@ -332,7 +415,7 @@ class DamageMultiplier(Trait):
     damage_type: DamageType
 
     def apply(self, target: Any, ctx: Any) -> None:
-        damage_multiplier_effect(target, ctx, self.value, self.damage_type)
+        damage_multiplier_effect(target, ctx, value=self.value, damage_type=self.damage_type)
 
 
 class IgnoreResistance(Trait):
@@ -342,7 +425,7 @@ class IgnoreResistance(Trait):
     damage_type: DamageType
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:
-        ignore_resistance_effect(actor, target, ctx, self.damage_type)
+        ignore_resistance_effect(actor, target, ctx, damage_type=self.damage_type)
 
 
 class Regeneration(Trait):
@@ -352,4 +435,4 @@ class Regeneration(Trait):
     value: int
 
     def apply(self, target: Any) -> None:
-        regeneration_effect(target, self.value)
+        regeneration_effect(target, value=self.value)
