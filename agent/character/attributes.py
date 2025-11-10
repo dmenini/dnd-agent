@@ -53,7 +53,7 @@ class Attributes(Abilities):
         dex_mod = self.ability_modifier(AbilityType.DEX)
 
         # Apply CON modifier to AC if the character has that feature
-        if self._recompute_attribute(f"ac_mod.{AbilityType.CON.name.lower()}"):
+        if self._recompute_attribute(f"ac_mod.{AbilityType.CON}"):
             ac += self.ability_modifier(AbilityType.CON)
 
         if not armor_type:
@@ -110,12 +110,12 @@ class Attributes(Abilities):
         return int(adv) - int(dis)
 
     def ability_save_advantage(self, ability: AbilityType) -> int:
-        adv = self._recompute_attribute(f"save_advantage.{ability.name.lower()}")
-        dis = self._recompute_attribute(f"save_disadvantage.{ability.name.lower()}")
+        adv = self._recompute_attribute(f"save_advantage.{ability.value}")
+        dis = self._recompute_attribute(f"save_disadvantage.{ability.value}")
         return int(adv) - int(dis)
 
-    def save_autofail(self, stat: AbilityType) -> bool:
-        return self._recompute_attribute(f"save_autofail.{stat.name.lower()}")
+    def save_autofail(self, ability: AbilityType) -> bool:
+        return self._recompute_attribute(f"save_autofail.{ability.value}")
 
     def damage_resistance(self, dtype: DamageType) -> DamageResistance | None:
         value = self._recompute_attribute(f"resistance.{dtype.value}")

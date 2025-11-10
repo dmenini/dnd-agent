@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, computed_field, field_validator
+from pydantic import BaseModel, computed_field, field_serializer, field_validator
 
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
@@ -106,7 +106,7 @@ class CharacterBase(BaseModel):
         # Add to passives list if not already there
         if all(trait.id != p.id for p in self.passives):
             self.passives.append(trait)
-            self.log_event(f"{self.name} gained passive trait {trait.feature_id.value}", log_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} gained passive trait {trait.name}", log_type=LogLevel.DETAIL)
 
         # Apply immediately if it's a modifier (even if passive exists, as serialization loses modifiers)
         if trait.event_type == EventType.MODIFIER:
@@ -124,7 +124,7 @@ class CharacterBase(BaseModel):
             # Remove from passives
             self.passives.remove(trait)
 
-            self.log_event(f"{self.name} lost passive trait {trait.feature_id}", log_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} lost passive trait {trait.name}", log_type=LogLevel.DETAIL)
 
     def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
         """Trigger all listeners for the given event type in priority order."""
@@ -163,6 +163,10 @@ class CharacterBase(BaseModel):
         )
         registry.append(event)
 
+    @field_serializer("spells", "special_abilities")
+    def serialize_actions(self, actions: list[Action]) -> list[dict]:
+        return [a.model_dump(mode="json") for a in actions]
+
     @field_validator("spells", "special_abilities", mode="before")
     @classmethod
     def deserialize_action(cls, v: Any) -> list[Action]:
@@ -188,6 +192,10 @@ class CharacterBase(BaseModel):
                 raise TypeError(msg)
 
         return actions
+
+    @field_serializer("passives")
+    def serialize_passives(self, traits: list[Trait]) -> list[dict]:
+        return [t.model_dump(mode="json") for t in traits]
 
     @field_validator("passives", mode="before")
     @classmethod

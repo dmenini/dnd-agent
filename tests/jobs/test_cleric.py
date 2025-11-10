@@ -20,3 +20,16 @@ def test_cleric(actor: Character) -> None:
     assert any(t.feature_id == FeatureId.AC_BONUS_WITH_ARMOR_TYPES for t in actor.passives)
     assert actor.attributes.get_modifiers("save_advantage.spell")[0].value is True
     assert actor.attributes.get_modifiers("ac")[0].value == 1
+
+
+def test_cleric_serialization(actor: Character) -> None:
+    actor.change_job(Cleric)
+
+    actor_dict = actor.model_dump()
+    actor2 = Character.model_validate(actor_dict)
+    assert actor2.model_dump() == actor_dict
+
+    assert actor2.passives == actor.passives
+    assert actor2.special_abilities == actor.special_abilities
+    assert actor2.attributes == actor.attributes
+    assert actor2.spells == actor.spells

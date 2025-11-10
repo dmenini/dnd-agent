@@ -18,3 +18,16 @@ def test_mage(actor: Character) -> None:
     assert any(t.feature_id == FeatureId.AC_BONUS_WITHOUT_ARMOR for t in actor.passives)
     assert actor.attributes.get_modifiers("save_advantage.spell")[0].value is True
     assert actor.attributes.get_modifiers("ac")[0].value == 3
+
+
+def test_wizard_serialization(actor: Character) -> None:
+    actor.change_job(Wizard)
+
+    actor_dict = actor.model_dump()
+    actor2 = Character.model_validate(actor_dict)
+    assert actor2.model_dump() == actor_dict
+
+    assert actor2.passives == actor.passives
+    assert actor2.special_abilities == actor.special_abilities
+    assert actor2.attributes == actor.attributes
+    assert actor2.spells == actor.spells

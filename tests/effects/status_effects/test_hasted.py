@@ -50,7 +50,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("ac")[0].value == 2
     assert hero.attributes.get_modifiers("speed")[0].value == 2
-    assert hero.attributes.get_modifiers("save_advantage.dex")[0].value is True
+    assert hero.attributes.get_modifiers("save_advantage.dexterity")[0].value is True
 
     assert hero.armor_class == 12
     assert hero.current_speed == 12.0
@@ -80,7 +80,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     assert hero.status_effects[0].type == EffectType.LETHARGIC
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("speed")[0].value == 0.5
-    assert hero.attributes.get_modifiers("save_disadvantage.wis")[0].value is True
+    assert hero.attributes.get_modifiers("save_disadvantage.wisdom")[0].value is True
 
     assert hero.current_speed == 0.0
     assert hero.attributes.ability_save_advantage(AbilityType.WIS) == -1

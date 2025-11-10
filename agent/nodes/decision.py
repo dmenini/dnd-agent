@@ -98,7 +98,7 @@ class DecisionNode:
 
         # Option 1: Exact match
         for action in actions:
-            if player_input.strip().lower() in (action.id.lower(), action.name.lower()):
+            if player_input.strip().lower() in (action.id.lower(), action.name):
                 return DecisionResult(action_id=action.id, description=f"{actor.name} chooses to {action.name}.")
 
         # Option 2: Raw decision (for testing purpose)

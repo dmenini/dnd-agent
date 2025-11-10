@@ -58,7 +58,7 @@ async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Charact
     assert orc.status_effects[0].duration == 2
     assert orc.attributes.get_modifiers("advantage.defense")[0].value is True
     assert orc.attributes.get_modifiers("disadvantage.attack")[0].value is True
-    assert orc.attributes.get_modifiers("save_disadvantage.dex")[0].value is True
+    assert orc.attributes.get_modifiers("save_disadvantage.dexterity")[0].value is True
     assert orc.attributes.advantage("defense") == 1
     assert orc.attributes.advantage("attack") == -1
     assert orc.attributes.ability_save_advantage(AbilityType.DEX) == -1

@@ -78,7 +78,7 @@ class DisadvantageOnSavingThrow(ModifierTrait):
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(ability=self.ability.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
 
 class AdvantageOnSavingThrow(ModifierTrait):
@@ -91,7 +91,7 @@ class AdvantageOnSavingThrow(ModifierTrait):
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(ability=self.ability.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
 
 class FailOnSavingThrow(ModifierTrait):
@@ -104,7 +104,7 @@ class FailOnSavingThrow(ModifierTrait):
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(ability=self.ability.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
 
 class SpeedMultiplier(ModifierTrait):
@@ -150,7 +150,7 @@ class ACBonusWithArmorTypes(ACBonus):
     armor_types: list[ArmorType]
 
     def condition(self, target: Any) -> bool:
-        return target.armor.armor_type in self.armor_types
+        return target.armor and target.armor.armor_type in self.armor_types
 
     def condition_depends_on(self, field_name: str) -> bool:
         return field_name == "armor"
@@ -178,7 +178,7 @@ class ACBonusModWithoutArmor(ModifierTrait):
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(ability=self.ability.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.value)
 
     def condition(self, target: Any) -> bool:
         return not bool(target.armor)
