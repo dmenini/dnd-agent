@@ -6,6 +6,7 @@ from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, Ring, Shield
 from agent.equipment.base import EquipmentBase, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
+from agent.logs.log_event import Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
 
 registry = get_log_registry()
@@ -99,6 +100,13 @@ class EquipmentResolver(CharacterBase):
             return
 
         # Standard slots (armor, shield, accessories)
+        if isinstance(item, Armor) and not self.attributes.has_proficiency(item.armor_type):
+            self.log_event(
+                f"{self.name} is not proficient with {item.armor_type} armor and will receive some penalties.",
+                log_type=LogLevel.DETAIL,
+                icon=Icon.WARNING,
+            )
+
         current: EquipmentBase = getattr(self, slot_name)
         if current:
             current.on_unequip(self)

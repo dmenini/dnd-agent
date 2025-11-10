@@ -121,8 +121,9 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
             ranged_action = RangedAttackAction.from_weapon(weapon=self.ranged)
             all_actions.append(ranged_action)
 
-        # Spells (only if slot available)
-        all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
+        # Spells (only if slot available and armor proficiency)
+        if not self.armor or self.attributes.has_proficiency(self.armor.armor_type):
+            all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
 
         # Special abilities (can have their own categories)
         all_actions += self.special_abilities

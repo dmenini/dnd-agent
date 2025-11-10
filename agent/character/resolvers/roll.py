@@ -6,6 +6,7 @@ from agent.character.abilities import AbilityType, SkillType
 from agent.character.resolvers.base import CharacterBase
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
+from agent.models.enums import Advantage
 
 D20 = "1d20"
 
@@ -22,12 +23,21 @@ class RollResolver(CharacterBase):
         expr = f"{D20}+{self.initiative_modifier}"
         return self._dice.roll_with_context(dice_expression=expr)
 
+    def _armor_advantage(self, ability: AbilityType) -> int:
+        penalty = (
+            self.armor is not None
+            and ability in {AbilityType.DEX, AbilityType.STR}
+            and not self.attributes.has_proficiency(self.armor.armor_type)
+        )
+        return Advantage.DISADVANTAGE if penalty else Advantage.NEUTRAL
+
     def attack_roll(self, ability: AbilityType, target: Self) -> DiceRoll:
         # Compute advantage from multiple sources
         sources = [
             self.attributes.ability_advantage(ability),
             self.attributes.advantage("attack"),
             target.attributes.advantage("defense"),
+            self._armor_advantage(ability),
         ]
         advantage = resolve_advantage(sources)
 
@@ -51,6 +61,7 @@ class RollResolver(CharacterBase):
         sources = [
             self.attributes.ability_advantage(ability),
             self.attributes.ability_save_advantage(ability),
+            self._armor_advantage(ability),
         ]
         if is_spell:
             sources.append(self.attributes.spell_save_advantage())
@@ -66,7 +77,7 @@ class RollResolver(CharacterBase):
     def skill_check(self, skill: SkillType) -> DiceRoll:
         ability = skill.to_ability()
 
-        sources = [self.attributes.advantage(skill.value)]
+        sources = [self.attributes.advantage(skill.value), self._armor_advantage(ability)]
         advantage = resolve_advantage(sources)
 
         ability_mod = self.attributes.ability_modifier(ability)
