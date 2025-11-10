@@ -80,7 +80,7 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
 
     actor._dice = mocker.MagicMock()
     actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[20], total=20, raw=20)
-    actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+0", rolls=[roll2], total=roll2, raw=roll2)
+    actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+2", rolls=[roll2], total=roll2, raw=roll2)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
@@ -88,7 +88,7 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
     # Target takes full critical damage
     assert target.attributes.hp == start_hp - roll2
     actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=None)
-    actor._dice.roll_twice.assert_called_once_with("1d8+0")  # double dice damage
+    actor._dice.roll_twice.assert_called_once_with("1d8+2")  # double dice damage + proficiency
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0

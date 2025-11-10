@@ -64,7 +64,7 @@ class CharacterCreationAgent:
         def create_character(character: CharacterBuilder) -> str:
             """
             Create and save a character with all required information.
-            Call this ONLY when you have all the necessary info collected.
+            Call this ONLY when you have all the necessary info collected AND user confirmation.
 
             Returns:
                 Confirmation message

@@ -1,5 +1,7 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
+from agent.equipment.armor import ArmorType
+from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.enums import FeatureId
@@ -11,6 +13,11 @@ Barbarian = CharacterJob(
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CON),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.STR),
+        Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.LIGHT),
+        Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.MEDIUM),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE),
     ],
     features=[
         JobFeature(

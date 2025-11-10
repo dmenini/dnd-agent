@@ -3,6 +3,7 @@ from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import SpellLevel
 from agent.effects.status_effects.blessed import Blessed
 from agent.equipment.armor import ArmorType
+from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
@@ -16,6 +17,10 @@ Cleric = CharacterJob(
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CHA),
+        Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.LIGHT),
+        Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.MEDIUM),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
     ],
     features=[
         JobFeature(

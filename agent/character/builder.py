@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field, field_validator
 
-from agent.character.abilities import Abilities
+from agent.character.abilities import Abilities, SkillType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.narrative import NarrativeAttributes
+from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.jobs.barbarian import Barbarian
 from agent.jobs.base import JobType
 from agent.jobs.cleric import Cleric
@@ -32,6 +33,11 @@ class CharacterBuilder(BaseModel):
             f"Free assignment, but total scores must be below {MAX_SCORES_TOTAL}."
         ),
     )
+    skill_proficiencies: list[SkillType] = Field(
+        default=[],
+        description="Skill proficiencies derived from the character background.",
+        max_length=2,
+    )
     race: str = Field(default="human", description="Race")
     backstory: str = Field(default="", description="Backstory")
     personality: str = Field(default="", description="Personality traits.")
@@ -39,7 +45,8 @@ class CharacterBuilder(BaseModel):
     summary: str = Field(default="", description="Short summary of the character profile.")
 
     @field_validator("abilities", mode="after")
-    def total_value(self, v: Abilities) -> Abilities:
+    @classmethod
+    def total_value(cls, v: Abilities) -> Abilities:
         tot = v.strength + v.wisdom + v.intelligence + v.charisma + v.dexterity + v.constitution
         if tot > MAX_SCORES_TOTAL:
             msg = f"The total scores must be lower than {MAX_SCORES_TOTAL} to maintain game balance"
@@ -47,6 +54,10 @@ class CharacterBuilder(BaseModel):
         return v
 
     def to_character(self, party: str) -> Character:
+        attrs = Attributes.model_validate(self.abilities.model_dump())
+        attrs.proficiencies = [
+            Proficiency(source="builder", type=ProficiencyType.SKILL, target=prof) for prof in self.skill_proficiencies
+        ]
         return Character(
             id=self.name.lower().replace(" ", "-"),
             name=self.name,
@@ -54,7 +65,7 @@ class CharacterBuilder(BaseModel):
             is_player=True,
             level=1,
             experience=0,
-            attributes=Attributes.model_validate(self.abilities.model_dump()),
+            attributes=attrs,
             job=job_map[self.job],
             party=Party(id="players", name=party, is_player_party=True),
             narrative=NarrativeAttributes(
