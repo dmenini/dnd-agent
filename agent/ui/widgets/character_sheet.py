@@ -55,7 +55,7 @@ class CharacterSheet(Static):
         return (
             f"# Character **{char.name} {char.icon} (ID: {char.id})**\n\n"
             f"{char.narrative.summary}\n\n"
-            f"Class: {char.job.type.value} | Level: {char.level} | Party: {char.party.name}\n\n"
+            f"Class: {char.job.type.value.title()} | Level: {char.level} | Party: {char.party.name}\n\n"
             f"HP: {char.attributes.hp}/{char.max_hp} | AC: {char.armor_class}\n\n"
             f"Position: ({char.pos.x}, {char.pos.y}) | Facing: {char.pos.direction} | "
             f"Movement Remaining: {char.current_speed}/{char.speed} m | Hidden: {char.is_hidden}\n\n"

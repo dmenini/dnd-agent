@@ -22,6 +22,10 @@ class JobResolver(CharacterBase):
         for spell in old_job.get_spells_for_level(self.level):
             self._remove_spell(spell)
 
+        # Remove proficiencies
+        for prof in self.job.proficiencies:
+            self.attributes.proficiencies.remove(prof)
+
         self.job = job
         self.apply_job_features()
 
@@ -31,7 +35,11 @@ class JobResolver(CharacterBase):
         """Register class features based on current level."""
         # TODO: The primary ability should depend on the type of class (fighter should not use STR)
         self.attributes.spellcasting_ability = self.job.primary_ability
-        self.attributes.proficiencies = self.job.proficiencies
+        self.attributes.hit_die = self.job.hit_die
+
+        for prof in self.job.proficiencies:
+            if not self.attributes.has_proficiency(prof.target):
+                self.attributes.proficiencies.append(prof)
 
         for feature in self.job.get_features_for_level(self.level):
             self._apply_job_feature(feature)

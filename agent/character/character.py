@@ -39,6 +39,10 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.equip_all()
         self.apply_job_features()
 
+        # Reset HP if first init
+        if self.attributes.hp == -1:
+            self.attributes.hp = self.max_hp
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def current_speed(self) -> float:

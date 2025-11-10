@@ -108,7 +108,7 @@ class CharacterBase(BaseModel):
             self.passives.append(trait)
             self.log_event(f"{self.name} gained passive trait {trait.feature_id.value}", log_type=LogLevel.DETAIL)
 
-        # Apply immediately if it's a modifier
+        # Apply immediately if it's a modifier (even if passive exists, as serialization loses modifiers)
         if trait.event_type == EventType.MODIFIER:
             trait.apply(self)
 

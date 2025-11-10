@@ -15,7 +15,12 @@ from agent.effects.trait_effects.damage import (
     reflect_melee_damage_effect,
     sneak_attack_effect,
 )
-from agent.effects.trait_effects.support import life_steal_effect, regeneration_effect
+from agent.effects.trait_effects.support import (
+    bonus_attack_roll_effect,
+    bonus_save_roll_effect,
+    life_steal_effect,
+    regeneration_effect,
+)
 from agent.effects.trait_effects.turn import (
     cannot_act_effect,
     cannot_move_effect,
@@ -345,8 +350,7 @@ class BonusOnAttackRoll(Trait):
     dice_expr: str = "1d4"
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
-        result = actor.roll(expr=self.dice_expr)
-        ctx.attack_roll.total += result.total
+        bonus_attack_roll_effect(actor, ctx, expr=self.dice_expr)
 
 
 class BonusOnSaveThrow(Trait):
@@ -356,8 +360,7 @@ class BonusOnSaveThrow(Trait):
     dice_expr: str = "1d4"
 
     def apply(self, actor: Any, target: Any, ctx: Any) -> None:  # noqa: ARG002
-        result = actor.roll(expr=self.dice_expr)
-        ctx.save_roll.total += result.total
+        bonus_save_roll_effect(actor, ctx, expr=self.dice_expr)
 
 
 class ReflectMeleeDamage(Trait):

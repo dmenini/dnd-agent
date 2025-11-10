@@ -1,3 +1,4 @@
+import math
 from enum import Enum
 from typing import Any, Literal
 
@@ -11,12 +12,13 @@ from agent.models.damage import DamageResistance, DamageType, DamageVulnerabilit
 
 
 class Attributes(Abilities):
-    hp: int = 15
+    hp: int = -1
     spellcasting_ability: AbilityType = AbilityType.INT
     proficiencies: list[Proficiency] = []
+    hit_die: int = 0
 
-    # Base attributes
-    base_hp: int = 15
+    # Base attributes on which modifiers are applied (do not change directly)
+    base_hp: int = 0
     base_ac: int = 0
     base_speed: float = 6.0
     base_crit_roll_bonus: int = 0
@@ -40,7 +42,10 @@ class Attributes(Abilities):
 
     def max_hp(self, level: int) -> int:
         """HP grows with level and Constitution modifier."""
-        return self.base_hp + (level - 1) * (5 + self.ability_modifier(AbilityType.CON))
+        bonus_hp = self._recompute_attribute("hp")
+        level1_hp = self.hit_die + self.ability_modifier(AbilityType.CON)
+        per_level_increase = math.ceil(self.hit_die / 2) + 1 + self.ability_modifier(AbilityType.CON)
+        return level1_hp + (level - 1) * per_level_increase + bonus_hp
 
     def ac_bonus(self, armor_type: ArmorType | None, max_dex_bonus: int | None = 2) -> int:
         """Compute Armor Class bonus from modifiers."""

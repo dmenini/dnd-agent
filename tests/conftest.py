@@ -105,8 +105,9 @@ def actor() -> Character:
         name="Alfred",
         icon="⚔️",
         job=Fighter,
+        level=3,
         pos=Position(x=2, y=2),
-        attributes=Attributes(strength=20),
+        attributes=Attributes(strength=20, hp=15),
         is_player=True,
         party=party_players,
     )
@@ -120,8 +121,10 @@ def target() -> Character:
         name="Orc",
         icon="👹",
         job=Wizard,
+        level=3,
         pos=Position(x=3, y=2),
         party=party_players,
+        attributes=Attributes(hp=15),
         armor=Armor(
             name="Armor",
             description="",

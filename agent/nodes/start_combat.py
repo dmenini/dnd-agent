@@ -1,7 +1,6 @@
 import random
 from logging import getLogger
 
-from agent.character.abilities import AbilityType
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
 
@@ -36,11 +35,11 @@ class StartCombatNode:
         for cid, char in state.characters.items():
             # First check roll result
             init_roll = char.initiative_roll()
-            # Include Dexterity modifier as a secondary sort key
-            dex_mod = char.attributes.ability_modifier(AbilityType.DEX)
+            # Include initiative modifier (DEX mod) as a secondary sort key
+            init_mod = char.initiative_modifier
             # Include a random value as a final tie-breaker
             tie_breaker = random.random()  # noqa: S311
-            rolls.append((init_roll.total, dex_mod, tie_breaker, cid))
+            rolls.append((init_roll.total, init_mod, tie_breaker, cid))
 
         # Sort by total roll, then Dex modifier, then random tie-breaker
         state.turn_order = [cid for _, _, _, cid in sorted(rolls, reverse=True)]

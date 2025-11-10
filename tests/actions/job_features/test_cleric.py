@@ -6,13 +6,13 @@ from agent.models.enums import FeatureId
 
 def test_divine_restoration(actor: Character, target: Character) -> None:
     actor.level = 3
-    target.attributes.hp = 10
+    target.attributes.hp = 1
 
     action = DivineRestorationAction(id=FeatureId.DIVINE_RESTORATION.value, description="")
 
     action.execute(actor, target, ctx=CombatContext())
 
-    assert target.attributes.hp > 10
+    assert target.attributes.hp > 1
 
     # Finalize action consumes the bonus use
     action.finalize(actor)
