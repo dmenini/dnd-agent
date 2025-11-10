@@ -1,9 +1,9 @@
 import pytest
 
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resources import ActionEconomy
-from agent.character.stats import StatType
 from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
 from agent.equipment.base import EquipmentType
 from agent.equipment.inventory import Inventory
@@ -21,7 +21,7 @@ dagger = MeleeWeapon(
     name="Dagger",
     weapon_type=WeaponType.SIMPLE_MELEE,
     handling=WeaponHandling.ONE_HANDED,
-    stat=StatType.DEX,
+    ability=AbilityType.DEX,
     damage_dice="1d4",
     damage_type=DamageType.PIERCING,
     finesse=True,
@@ -32,7 +32,7 @@ longsword = MeleeWeapon(
     name="Longsword",
     weapon_type=WeaponType.MARTIAL_MELEE,
     handling=WeaponHandling.VERSATILE,
-    stat=StatType.STR,
+    ability=AbilityType.STR,
     damage_dice="1d8",
     versatile_damage="1d10",
     damage_type=DamageType.SLASHING,
@@ -42,7 +42,7 @@ greatsword = MeleeWeapon(
     name="Greatsword",
     weapon_type=WeaponType.MARTIAL_MELEE,
     handling=WeaponHandling.TWO_HANDED,
-    stat=StatType.STR,
+    ability=AbilityType.STR,
     damage_dice="2d6",
     damage_type=DamageType.SLASHING,
 )
@@ -178,7 +178,7 @@ def test_dual_wield_one_handed(actor: EquipmentResolver) -> None:
         name="Other dagger",
         weapon_type=WeaponType.SIMPLE_MELEE,
         handling=WeaponHandling.ONE_HANDED,
-        stat=StatType.DEX,
+        ability=AbilityType.DEX,
         damage_dice="1d4",
         damage_type=DamageType.PIERCING,
         finesse=True,
@@ -198,7 +198,7 @@ def test_two_handed_weapon_replaces_existing_main_and_off_hand(actor: EquipmentR
         name="Pippo",
         weapon_type=WeaponType.MARTIAL_MELEE,
         handling=WeaponHandling.ONE_HANDED,
-        stat=StatType.DEX,
+        ability=AbilityType.DEX,
         damage_dice="1d4",
         damage_type=DamageType.PIERCING,
         finesse=True,
@@ -220,7 +220,7 @@ def test_equipment_deserialization() -> None:
                 "type": "weapon_melee",
                 "name": "Longsword",
                 "weapon_type": "martial_melee",
-                "stat": "strength",
+                "ability": "strength",
                 "damage_dice": "1d8",
                 "damage_type": "slashing",
             },

@@ -1,11 +1,11 @@
 from pytest_mock import MockerFixture
 
 from agent.actions.common.spell import AttackSpellAction
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resolvers.roll import D20
 from agent.character.resources import SpellLevel
-from agent.character.stats import StatType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
@@ -21,14 +21,14 @@ def make_attack_spell_action() -> AttackSpellAction:
         damage_dice="1d8",
         damage_type=DamageType.FIRE,
         level=SpellLevel.LEVEL_1,
-        stat=StatType.INT,
+        ability=AbilityType.INT,
         range=1.5,
     )
 
 
 def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
     actor.attributes.intelligence = 16  # +3 modifier
-    actor.attributes.spellcasting_stat = StatType.INT
+    actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
 
     target._dice = mocker.MagicMock()
@@ -56,8 +56,10 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
 
 
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    actor.attributes.spellcasting_stat = StatType.INT
-    target.attributes.proficiencies = [Proficiency(type=ProficiencyType.SAVE, value=StatType.INT)]  # Save modifier +2
+    actor.attributes.spellcasting_ability = AbilityType.INT
+    target.attributes.proficiencies = [
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.INT)
+    ]  # Save modifier +2
     action = make_attack_spell_action()
 
     actor._dice = mocker.MagicMock()
@@ -80,7 +82,7 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
 
 
 def test_save_throw_skipped(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    actor.attributes.spellcasting_stat = StatType.INT
+    actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
     action.requires_save = False
 

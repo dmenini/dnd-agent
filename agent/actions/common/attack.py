@@ -5,7 +5,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
-from agent.character.stats import Stats, StatType
+from agent.character.abilities import Abilities, AbilityType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.logs.log_event import Icon
@@ -22,7 +22,7 @@ class AttackAction(Action, ABC):
     damage_dice: str
     damage_type: DamageType
     weapon_type: WeaponType
-    stat: StatType
+    ability: AbilityType
     range: float
     status_effects: list[StatusEffect] = []
 
@@ -37,7 +37,7 @@ class AttackAction(Action, ABC):
         self._fire_end_events(actor, target, ctx)
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
-        roll = actor.attack_roll(attack_stat=self.stat, target=target)
+        roll = actor.attack_roll(ability=self.ability, target=target)
         ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
         ctx.attack_roll = roll
@@ -101,7 +101,7 @@ class AttackAction(Action, ABC):
             base_mod = 0
 
         prof_bonus = actor.proficiency_bonus if actor.has_proficiency(self.weapon_type) else 0
-        mod = actor.attributes.stat_modifier(self.stat)
+        mod = actor.attributes.ability_modifier(self.ability)
         return base_mod + mod + prof_bonus
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
@@ -117,7 +117,7 @@ class AttackAction(Action, ABC):
         return (
             f"- {self.id}: {self.name} — {self.description} "
             f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
-            f"Stat: {self.stat.value}, Damage: {self.damage_dice} {self.damage_type.value}, "
+            f"Ability: {self.ability.value}, Damage: {self.damage_dice} {self.damage_type.value}, "
             f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
         )
 
@@ -129,12 +129,16 @@ class MainHandAttackAction(StandardAction, AttackAction):
     type: ActionType = ActionType.ATTACK
 
     @classmethod
-    def from_weapon(cls, weapon: MeleeWeapon, *, is_two_handed: bool = False, stats: Stats) -> Self:
+    def from_weapon(cls, weapon: MeleeWeapon, *, is_two_handed: bool = False, abilities: Abilities) -> Self:
         versatile_enabled = weapon.handling == WeaponHandling.VERSATILE and is_two_handed
         damage_dice = weapon.versatile_damage if versatile_enabled else None
         damage_dice = damage_dice or weapon.damage_dice
 
-        stat = (StatType.STR if stats.strength >= stats.dexterity else StatType.DEX) if weapon.finesse else weapon.stat
+        ability = (
+            (AbilityType.STR if abilities.strength >= abilities.dexterity else AbilityType.DEX)
+            if weapon.finesse
+            else weapon.ability
+        )
 
         return cls(
             description=f"Base Attack with main hand weapon {weapon.name}",
@@ -142,7 +146,7 @@ class MainHandAttackAction(StandardAction, AttackAction):
             targeting=weapon.targeting,
             damage_dice=damage_dice,
             damage_type=weapon.damage_type,
-            stat=stat,
+            ability=ability,
             range=weapon.range,
             status_effects=weapon.effects,
         )
@@ -162,7 +166,7 @@ class OffHandAttackAction(BonusAction, AttackAction):
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
-            stat=weapon.stat,
+            ability=weapon.ability,
             range=weapon.range,
             status_effects=weapon.effects,
         )
@@ -182,7 +186,7 @@ class RangedAttackAction(StandardAction, AttackAction):
             targeting=weapon.targeting,
             damage_dice=weapon.damage_dice,
             damage_type=weapon.damage_type,
-            stat=weapon.stat,
+            ability=weapon.ability,
             range=weapon.range,
             status_effects=weapon.effects,
         )

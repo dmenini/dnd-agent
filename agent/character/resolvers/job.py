@@ -29,8 +29,8 @@ class JobResolver(CharacterBase):
 
     def apply_job_features(self) -> None:
         """Register class features based on current level."""
-        # TODO: The primary stat should depend on the type of class (fighter should not use STR)
-        self.attributes.spellcasting_stat = self.job.primary_stat
+        # TODO: The primary ability should depend on the type of class (fighter should not use STR)
+        self.attributes.spellcasting_ability = self.job.primary_ability
         self.attributes.proficiencies = self.job.proficiencies
 
         for feature in self.job.get_features_for_level(self.level):
@@ -73,7 +73,7 @@ class JobResolver(CharacterBase):
 
     def _apply_spell(self, spell: Spell) -> None:
         if spell.ref_id not in {a.id for a in self.spells}:
-            spell.stat = spell.stat or self.attributes.spellcasting_stat
+            spell.ability = spell.ability or self.attributes.spellcasting_ability
             action = ActionRegistry.create(id_=spell.ref_id, **spell.model_dump(exclude={"type"}))
             self.spells.append(action)  # type: ignore[arg-type]
             self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)

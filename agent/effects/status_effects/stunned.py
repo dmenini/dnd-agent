@@ -1,4 +1,4 @@
-from agent.character.stats import StatType
+from agent.character.abilities import AbilityType
 from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
 from agent.models.enums import FeatureId
 
@@ -17,6 +17,6 @@ class Stunned(StatusEffect):
         StatusEffectFeature(ref_id=FeatureId.CANNOT_ACT),
         StatusEffectFeature(ref_id=FeatureId.CANNOT_MOVE),
         StatusEffectFeature(ref_id=FeatureId.ATTACKER_ADVANTAGE),
-        StatusEffectFeature(ref_id=FeatureId.SAVE_FAIL, kwargs={"stat": StatType.STR}),
-        StatusEffectFeature(ref_id=FeatureId.SAVE_FAIL, kwargs={"stat": StatType.DEX}),
+        StatusEffectFeature(ref_id=FeatureId.SAVE_FAIL, kwargs={"ability": AbilityType.STR}),
+        StatusEffectFeature(ref_id=FeatureId.SAVE_FAIL, kwargs={"ability": AbilityType.DEX}),
     ]

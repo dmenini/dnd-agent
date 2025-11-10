@@ -2,10 +2,10 @@ from pytest_mock import MockerFixture
 
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.common.attack import AttackAction, MainHandAttackAction
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resolvers.roll import D20
-from agent.character.stats import StatType
 from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
@@ -25,7 +25,7 @@ def make_attack_action() -> AttackAction:
         damage_dice="1d8",
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.SIMPLE_MELEE,
-        stat=StatType.STR,
+        ability=AbilityType.STR,
         range=1.5,
         type=ActionType.ATTACK,
         category=ActionCategory.STANDARD,

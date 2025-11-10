@@ -1,6 +1,6 @@
+from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import SpellLevel
-from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
 from agent.jobs.spells import AttackSpell
@@ -10,10 +10,10 @@ from agent.models.enums import FeatureId, TargetingType
 Wizard = CharacterJob(
     type=JobType.WIZARD,
     hit_die=6,
-    primary_stat=StatType.INT,
+    primary_ability=AbilityType.INT,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.INT),
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.WIS),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.INT),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.WIS),
     ],
     features=[
         JobFeature(
@@ -22,7 +22,7 @@ Wizard = CharacterJob(
             description="Gain ability to cast spells using INT.",
             level_required=1,
             type=FeatureType.PASSIVE,
-            kwargs={"stat": StatType.INT},
+            kwargs={"ability": AbilityType.INT},
         ),
         JobFeature(
             ref_id=FeatureId.ARCANE_RECOVERY,

@@ -2,8 +2,8 @@ from typing import Self
 
 from pydantic import computed_field
 
+from agent.character.abilities import AbilityType, SkillType
 from agent.character.resolvers.base import CharacterBase
-from agent.character.stats import StatType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 
@@ -22,10 +22,10 @@ class RollResolver(CharacterBase):
         expr = f"{D20}+{self.initiative_modifier}"
         return self._dice.roll_with_context(dice_expression=expr)
 
-    def attack_roll(self, attack_stat: StatType, target: Self) -> DiceRoll:
+    def attack_roll(self, ability: AbilityType, target: Self) -> DiceRoll:
         # Compute advantage from multiple sources
         sources = [
-            self.attributes.stat_advantage(attack_stat),
+            self.attributes.ability_advantage(ability),
             self.attributes.advantage("attack"),
             target.attributes.advantage("defense"),
         ]
@@ -39,48 +39,46 @@ class RollResolver(CharacterBase):
         return self._dice.roll_once(expr)
 
     def heal_roll(self, expr: str) -> DiceRoll:
-        mod = self.attributes.stat_modifier(self.attributes.spellcasting_stat)
+        mod = self.attributes.ability_modifier(self.attributes.spellcasting_ability)
         expr = f"{expr}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr)
 
-    def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
-        if self.attributes.save_autofail(save_stat):
+    def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
+        if self.attributes.save_autofail(ability):
             return DiceRoll(expression=D20, rolls=[1], total=1, raw=1)
 
         # Compute advantage from multiple sources
         sources = [
-            self.attributes.stat_advantage(save_stat),
-            self.attributes.stat_save_advantage(save_stat),
+            self.attributes.ability_advantage(ability),
+            self.attributes.ability_save_advantage(ability),
         ]
         if is_spell:
             sources.append(self.attributes.spell_save_advantage())
         advantage = resolve_advantage(sources)
 
         # Roll the d20 (with advantage/disadvantage if applicable)
-        ability_mod = self.attributes.stat_modifier(save_stat)
-        prof_bonus = self.proficiency_bonus if self.has_proficiency(save_stat) else 0
+        ability_mod = self.attributes.ability_modifier(ability)
+        prof_bonus = self.proficiency_bonus if self.has_proficiency(ability) else 0
         mod = ability_mod + prof_bonus
         expr = f"{D20}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
 
-    def stealth_roll(self) -> DiceRoll:
-        sources = [
-            self.attributes.advantage("stealth"),
-        ]
+    def skill_check(self, skill: SkillType) -> DiceRoll:
+        ability = skill.to_ability()
+
+        sources = [self.attributes.advantage(skill.value)]
         advantage = resolve_advantage(sources)
 
-        dex_mod = self.attributes.stat_modifier(StatType.DEX)
-        expr = f"{D20}+{dex_mod}"
-        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+        ability_mod = self.attributes.ability_modifier(ability)
+        prof_bonus = self.proficiency_bonus if self.has_proficiency(skill) else 0
+        mod = ability_mod + prof_bonus
+        return self._dice.roll_with_context(dice_expression=f"{D20}+{mod}", advantage=advantage)
+
+    def stealth_roll(self) -> DiceRoll:
+        return self.skill_check(skill=SkillType.STEALTH)
 
     def perception_roll(self) -> DiceRoll:
-        sources = [self.attributes.advantage("perception")]
-        advantage = resolve_advantage(sources)
-
-        wis_mod = self.attributes.stat_modifier(StatType.WIS)
-        expr = f"{D20}+{wis_mod}"
-
-        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+        return self.skill_check(skill=SkillType.PERCEPTION)
 
     def roll(self, expr: str) -> DiceRoll:
         return self._dice.roll_once(expr)

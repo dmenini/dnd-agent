@@ -2,8 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from agent.character.abilities import AbilityType
 from agent.character.attributes import Proficiency
-from agent.character.stats import StatType
 from agent.jobs.feature import JobFeature
 from agent.jobs.spells import Spell
 
@@ -21,7 +21,7 @@ class CharacterJob(BaseModel):
 
     type: JobType
     hit_die: int
-    primary_stat: StatType
+    primary_ability: AbilityType
     proficiencies: list[Proficiency]
     features: list[JobFeature] = []
     spells: list[Spell] = []

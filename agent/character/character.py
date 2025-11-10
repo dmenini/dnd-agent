@@ -9,12 +9,12 @@ from agent.actions.common.dodge import DodgeAction
 from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
+from agent.character.abilities import Abilities
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.character.stats import Stats
 from agent.effects.traits import TargetAdvantageOnAttackRoll
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import Icon
@@ -107,7 +107,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         # Equipment-based actions
         if self.main_hand:
             main_action = MainHandAttackAction.from_weapon(
-                weapon=self.main_hand, is_two_handed=self.two_handed_active, stats=self.attributes
+                weapon=self.main_hand, is_two_handed=self.two_handed_active, abilities=self.attributes
             )
             all_actions.append(main_action)
         if self.off_hand and isinstance(self.off_hand.type, MeleeWeapon):
@@ -135,5 +135,5 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
             f"Status Effects: {', '.join(str(eff) for eff in self.status_effects) or 'None'}\n\n"
             f"Passives: {', '.join(eff.name for eff in self.passives) or 'None'}\n\n"
             f"Spell Slots: {self.spell_slots}\n\n"
-            f"Stats: {Stats.model_validate(self.attributes.model_dump())}"
+            f"Abilities: {Abilities.model_validate(self.attributes.model_dump())}"
         )

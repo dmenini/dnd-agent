@@ -1,6 +1,6 @@
 from agent.actions.base import ActionCategory, ActionType
+from agent.character.abilities import AbilityType
 from agent.character.resources import ActionExtension
-from agent.character.stats import StatType
 from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
 from agent.effects.status_effects.lethargic import Lethargic
 from agent.models.enums import FeatureId
@@ -36,5 +36,5 @@ class Hasted(StatusEffect):
         StatusEffectFeature(ref_id=FeatureId.EXTRA_ACTIONS, kwargs={"extensions": [StandardActionExtension]}),
         StatusEffectFeature(ref_id=FeatureId.SPEED_MULTIPLIER, kwargs={"value": 2}),
         StatusEffectFeature(ref_id=FeatureId.AC_BONUS, kwargs={"value": 2}),
-        StatusEffectFeature(ref_id=FeatureId.SAVE_ADVANTAGE, kwargs={"stat": StatType.DEX}),
+        StatusEffectFeature(ref_id=FeatureId.SAVE_ADVANTAGE, kwargs={"ability": AbilityType.DEX}),
     ]

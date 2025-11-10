@@ -6,10 +6,10 @@ from pydantic import BaseModel, computed_field, field_validator
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
 from agent.actions.registry import ActionRegistry
+from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy
-from agent.character.stats import StatType
 from agent.effects.base import Trait, normalize_id
 from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor
@@ -77,7 +77,7 @@ class CharacterBase(BaseModel):
     def is_hidden(self) -> bool:
         return self.stealth_value > 0
 
-    def save_roll(self, save_stat: StatType, *, is_spell: bool = False) -> DiceRoll:
+    def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError
 
     def los_distance(self, target: Position) -> float:

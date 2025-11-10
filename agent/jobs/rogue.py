@@ -1,5 +1,5 @@
+from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.enums import FeatureId
@@ -7,10 +7,10 @@ from agent.models.enums import FeatureId
 Rogue = CharacterJob(
     type=JobType.ROGUE,
     hit_die=8,
-    primary_stat=StatType.DEX,
+    primary_ability=AbilityType.DEX,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.DEX),
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.INT),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.DEX),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.INT),
     ],
     features=[
         JobFeature(
@@ -20,6 +20,22 @@ Rogue = CharacterJob(
             level_required=1,
             type=FeatureType.PASSIVE,
             kwargs={"dice_expr": "1d6"},
+        ),
+        JobFeature(
+            ref_id=FeatureId.EXPERTISE,
+            name="Stealth Expertise",
+            description="Double proficiency bonus for stealth skill checks.",
+            level_required=1,
+            type=FeatureType.PASSIVE,
+            kwargs={"skill": SkillType.STEALTH},
+        ),
+        JobFeature(
+            ref_id=FeatureId.EXPERTISE,
+            name="Perception Expertise",
+            description="Double proficiency bonus for perception skill checks.",
+            level_required=1,
+            type=FeatureType.PASSIVE,
+            kwargs={"skills": SkillType.PERCEPTION},
         ),
     ],
 )

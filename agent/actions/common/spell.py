@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from agent.actions.base import ActionType, StandardAction
 from agent.actions.common.attack import AttackAction
+from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
-from agent.character.stats import StatType
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.weapons import WeaponType
 from agent.logs.log_event import Icon, LogLevel
@@ -41,13 +41,13 @@ class AttackSpellAction(StandardAction, AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        roll = target.save_roll(save_stat=actor.attributes.spellcasting_stat, is_spell=True)
+        roll = target.save_roll(ability=self.ability, is_spell=True)
         ctx.save_roll = roll
         actor.trigger_event(EventType.SAVE_THROW, actor, target, ctx)
 
         ctx.is_hit = ctx.save_roll.total < dc
 
-        actor.log_event(f"{self.stat.name} save throw {roll.expression}: {roll.total} vs DC {dc}", icon=Icon.ROLL)
+        actor.log_event(f"{self.ability.name} save throw {roll.expression}: {roll.total} vs DC {dc}", icon=Icon.ROLL)
 
         if ctx.is_hit:
             actor.log_event(f"Save roll passed → Target resists {self.name}!", icon=Icon.DEFENSE, show_ai=True)
@@ -79,7 +79,7 @@ class SupportSpellAction(StandardAction):
     type: ActionType = ActionType.CAST_SPELL
     level: SpellLevel
     targeting: TargetingType
-    stat: StatType
+    ability: AbilityType
     range: float
     status_effects: list[StatusEffect] = []
 
@@ -117,7 +117,7 @@ class HealingSpellAction(StandardAction):
     type: ActionType = ActionType.CAST_SPELL
     level: SpellLevel
     targeting: TargetingType
-    stat: StatType
+    ability: AbilityType
     range: float
     heal_dice: str
 

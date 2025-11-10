@@ -2,8 +2,8 @@ from pytest_mock import MockerFixture
 
 from agent.actions.base import ActionType
 from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
-from agent.character.stats import StatType
 from agent.effects.trait_effects.damage import (
     auto_crit_if_melee_effect,
     damage_bonus_effect,
@@ -124,7 +124,7 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
             damage_type=DamageType.PIERCING,
             damage_dice="1d10",
             weapon_type=WeaponType.SIMPLE_RANGE,
-            stat=StatType.DEX,
+            ability=AbilityType.DEX,
         ).model_dump(),
     )
     sneak_attack_effect(actor, context, dice="1d6")
@@ -142,7 +142,7 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
             damage_type=DamageType.PIERCING,
             damage_dice="1d5",
             weapon_type=WeaponType.SIMPLE_MELEE,
-            stat=StatType.DEX,
+            ability=AbilityType.DEX,
         ).model_dump(),
     )
     sneak_attack_effect(actor, context, dice="1d6")

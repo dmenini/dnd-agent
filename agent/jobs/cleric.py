@@ -1,6 +1,6 @@
+from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import SpellLevel
-from agent.character.stats import StatType
 from agent.effects.status_effects.blessed import Blessed
 from agent.equipment.armor import ArmorType
 from agent.jobs.base import CharacterJob, JobType
@@ -12,10 +12,10 @@ from agent.models.enums import FeatureId, TargetingType
 Cleric = CharacterJob(
     type=JobType.CLERIC,
     hit_die=8,
-    primary_stat=StatType.WIS,
+    primary_ability=AbilityType.WIS,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.WIS),
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.CHA),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.WIS),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.CHA),
     ],
     features=[
         JobFeature(
@@ -55,7 +55,7 @@ Cleric = CharacterJob(
             damage_dice="1d8",
             damage_type=DamageType.RADIANT,
             requires_save=True,
-            stat=StatType.DEX,
+            ability=AbilityType.DEX,
         ),
         HealingSpell(
             ref_id=FeatureId.CURE_WOUNDS,

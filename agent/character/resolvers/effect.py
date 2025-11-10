@@ -20,8 +20,10 @@ class EffectResolver(CharacterBase):
 
         # Saving throw
         if effect.save_dc:
-            roll = self.save_roll(save_stat=effect.save_stat)
-            self.log_event(f"{effect.save_stat.name} save throw: {roll.total} vs DC {effect.save_dc}", icon=Icon.ROLL)
+            roll = self.save_roll(ability=effect.save_ability)
+            self.log_event(
+                f"{effect.save_ability.name} save throw: {roll.total} vs DC {effect.save_dc}", icon=Icon.ROLL
+            )
 
             if roll.total >= effect.save_dc:
                 # Negate effect
@@ -73,6 +75,6 @@ class EffectResolver(CharacterBase):
         self.status_effects = [e for e in self.status_effects if not e.is_expired()]
 
     def _try_break_free(self, effect: StatusEffect) -> None:
-        roll = self.save_roll(save_stat=effect.save_stat)
+        roll = self.save_roll(ability=effect.save_ability)
         if roll.total >= effect.save_dc:
             effect.duration = 0

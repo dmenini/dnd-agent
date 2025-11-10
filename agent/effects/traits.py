@@ -2,8 +2,8 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from agent.character.abilities import AbilityType
 from agent.character.resources import ActionExtension
-from agent.character.stats import StatType
 from agent.effects.base import ModifierTrait, Priority, Trait
 from agent.effects.trait_effects.damage import (
     auto_crit_if_melee_effect,
@@ -65,40 +65,40 @@ class TargetAdvantageOnAttackRoll(ModifierTrait):
 class DisadvantageOnSavingThrow(ModifierTrait):
     """Give disadvantage on saving throw to target."""
 
-    attribute: str = "save_disadvantage.{stat}"
-    stat: StatType
+    attribute: str = "save_disadvantage.{ability}"
+    ability: AbilityType
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.name.lower())
 
 
 class AdvantageOnSavingThrow(ModifierTrait):
     """Give advantage on saving throw to target."""
 
-    attribute: str = "save_advantage.{stat}"
-    stat: StatType
+    attribute: str = "save_advantage.{ability}"
+    ability: AbilityType
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.name.lower())
 
 
 class FailOnSavingThrow(ModifierTrait):
     """Give automatic fail on saving throw to target."""
 
-    attribute: str = "save_autofail.{stat}"
-    stat: StatType
+    attribute: str = "save_autofail.{ability}"
+    ability: AbilityType
     value: bool = True
     operation: Literal["set", "add", "mul"] = "set"
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.name.lower())
 
 
 class SpeedMultiplier(ModifierTrait):
@@ -165,13 +165,13 @@ class ACBonusWithoutArmor(ACBonus):
 class ACBonusModWithoutArmor(ModifierTrait):
     """Grant a bonus to Armor Class (AC) while not wearing armor."""
 
-    attribute: str = "ac_mod.{stat}"
+    attribute: str = "ac_mod.{ability}"
     operation: Literal["set", "add", "mul"] = "set"
-    stat: StatType = StatType.CON
+    ability: AbilityType = AbilityType.CON
 
     def model_post_init(self, _: Any) -> None:
         super().model_post_init(_)
-        self.attribute = self.attribute.format(stat=self.stat.name.lower())
+        self.attribute = self.attribute.format(ability=self.ability.name.lower())
 
     def condition(self, target: Any) -> bool:
         return not bool(target.armor)

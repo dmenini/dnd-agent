@@ -1,5 +1,5 @@
+from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.stats import StatType
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.enums import FeatureId
@@ -7,10 +7,10 @@ from agent.models.enums import FeatureId
 Barbarian = CharacterJob(
     type=JobType.BARBARIAN,
     hit_die=12,
-    primary_stat=StatType.STR,
+    primary_ability=AbilityType.STR,
     proficiencies=[
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.CON),
-        Proficiency(type=ProficiencyType.SAVE, value=StatType.STR),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.CON),
+        Proficiency(type=ProficiencyType.SAVE, value=AbilityType.STR),
     ],
     features=[
         JobFeature(

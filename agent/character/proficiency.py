@@ -2,7 +2,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from agent.character.stats import StatType
+from agent.character.abilities import AbilityType, SkillType
+from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
 
 
@@ -16,4 +17,4 @@ class ProficiencyType(str, Enum):
 
 class Proficiency(BaseModel):
     type: ProficiencyType
-    value: StatType | WeaponType
+    value: AbilityType | WeaponType | ArmorType | SkillType

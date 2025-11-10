@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from agent.character.abilities import AbilityType
 from agent.character.character import Character
-from agent.character.stats import StatType
 from agent.effects.status_effects.base import EffectType
 from agent.effects.status_effects.restrained import Restrained
 from agent.equipment.weapons import MeleeWeapon, WeaponType
@@ -61,7 +61,7 @@ async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Charact
     assert orc.attributes.get_modifiers("save_disadvantage.dex")[0].value is True
     assert orc.attributes.advantage("defense") == 1
     assert orc.attributes.advantage("attack") == -1
-    assert orc.attributes.stat_save_advantage(StatType.DEX) == -1
+    assert orc.attributes.ability_save_advantage(AbilityType.DEX) == -1
 
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 

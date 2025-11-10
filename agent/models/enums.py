@@ -60,6 +60,7 @@ class FeatureId(str, Enum):
     CANNOT_ACT = "cannot_act"
     ATTACK_ROLL_BONUS = "attack_roll_bonus"
     SAVE_ROLL_BONUS = "save_roll_bonus"
+    EXPERTISE = "expertise"
 
     # Damage Modifiers
     DAMAGE_BONUS = "damage_bonus"
