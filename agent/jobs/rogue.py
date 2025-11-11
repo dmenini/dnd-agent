@@ -1,5 +1,6 @@
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
+from agent.character.resources import CasterProgression
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobType
@@ -10,6 +11,7 @@ Rogue = CharacterJob(
     type=JobType.ROGUE,
     hit_die=8,
     primary_ability=AbilityType.DEX,
+    spell_progression=CasterProgression.NONE,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.DEX),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),

@@ -1,6 +1,6 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resources import SpellLevel
+from agent.character.resources import CasterProgression, SpellLevel
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
@@ -13,6 +13,7 @@ Wizard = CharacterJob(
     type=JobType.WIZARD,
     hit_die=6,
     primary_ability=AbilityType.INT,
+    spell_progression=CasterProgression.FULL,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),

@@ -14,7 +14,6 @@ from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
-from agent.character.resources import ActionEconomy, SpellSlots
 from agent.effects.traits import TargetAdvantageOnAttackRoll
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
@@ -32,17 +31,18 @@ class Party(BaseModel):
 
 class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     party: Party
-
-    spell_slots: SpellSlots = SpellSlots()
-    action_economy: ActionEconomy = ActionEconomy()
     turn_done: bool = True
 
     def model_post_init(self, _: Any, /) -> None:
-        self.equip_all()
-        self.apply_job_features()
+        """Hook running after every initialization (also after deserialization)."""
+        # Make sure that passives are synced
+        for passive in self.passives:
+            self.register_passive(passive)
 
-        # Reset HP if first init
+        # HP set to -1 means that it's the first initialization
         if self.attributes.hp == -1:
+            self.equip_all()
+            self.apply_job_features()
             self.attributes.hp = self.max_hp
 
     @computed_field  # type: ignore[prop-decorator]

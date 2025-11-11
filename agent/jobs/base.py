@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Proficiency
+from agent.character.resources import CasterProgression
 from agent.jobs.feature import JobFeature
 from agent.jobs.spells import Spell
 
@@ -25,6 +26,7 @@ class CharacterJob(BaseModel):
     proficiencies: list[Proficiency]
     features: list[JobFeature] = []
     spells: list[Spell] = []
+    spell_progression: CasterProgression
 
     def get_features_for_level(self, level: int) -> list[JobFeature]:
         """Return unlocked features up to the given level."""

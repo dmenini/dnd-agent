@@ -1,6 +1,6 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resources import SpellLevel
+from agent.character.resources import CasterProgression, SpellLevel
 from agent.effects.status_effects.blessed import Blessed
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
@@ -14,6 +14,7 @@ Cleric = CharacterJob(
     type=JobType.CLERIC,
     hit_die=8,
     primary_ability=AbilityType.WIS,
+    spell_progression=CasterProgression.FULL,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CHA),

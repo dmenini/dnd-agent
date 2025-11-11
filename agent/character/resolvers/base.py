@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, computed_field, field_serializer, field_validator
+from pydantic import BaseModel, Field, computed_field, field_serializer, field_validator
 
 from agent.actions.base import Action
 from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
@@ -9,7 +9,7 @@ from agent.actions.registry import ActionRegistry
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.narrative import NarrativeAttributes
-from agent.character.resources import ActionEconomy
+from agent.character.resources import ActionEconomy, SpellSlots
 from agent.effects.base import Trait, normalize_id
 from agent.effects.registry import TraitRegistry
 from agent.equipment.armor import Armor, Shield
@@ -32,16 +32,17 @@ class CharacterBase(BaseModel):
     level: int = 1
     experience: int = 0
     pos: Position = Position(x=0, y=0)
-    attributes: Attributes = Attributes()
-    narrative: NarrativeAttributes = NarrativeAttributes()
+    attributes: Attributes = Field(default_factory=Attributes)
+    narrative: NarrativeAttributes = Field(default_factory=NarrativeAttributes)
     stealth_value: int = 0
 
     spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction] = []
     special_abilities: list[Action] = []
     passives: list[Trait] = []
 
-    # Defined for typing to work
-    action_economy: ActionEconomy
+    spell_slots: SpellSlots = Field(default_factory=SpellSlots)
+    action_economy: ActionEconomy = Field(default_factory=ActionEconomy)
+
     armor: Armor | None = None
     off_hand: MeleeWeapon | Shield | None = None
 
@@ -200,7 +201,7 @@ class CharacterBase(BaseModel):
 
     @field_validator("passives", mode="before")
     @classmethod
-    def deserialize_traits(cls, v: Any) -> list[Trait]:
+    def deserialize_passives(cls, v: Any) -> list[Trait]:
         if not isinstance(v, list):
             msg = f"Invalid trait payload: {v}"
             raise TypeError(msg)

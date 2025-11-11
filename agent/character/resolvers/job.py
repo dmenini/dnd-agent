@@ -47,6 +47,9 @@ class JobResolver(CharacterBase):
         for spell in self.job.get_spells_for_level(self.level):
             self._apply_spell(spell)
 
+        self.spell_slots.progression = self.job.spell_progression
+        self.spell_slots.recompute(self.level)
+
     def _apply_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
             if feature.ref_id not in {a.id for a in self.special_abilities}:

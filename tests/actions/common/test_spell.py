@@ -6,6 +6,7 @@ from agent.character.character import Character
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resolvers.roll import D20
 from agent.character.resources import SpellLevel
+from agent.jobs.wizard import Wizard
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
@@ -27,6 +28,7 @@ def make_attack_spell_action() -> AttackSpellAction:
 
 
 def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
+    actor.change_job(Wizard)
     actor.attributes.intelligence = 16  # +3 modifier
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
@@ -56,6 +58,7 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
 
 
 def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
+    actor.change_job(Wizard)
     actor.attributes.spellcasting_ability = AbilityType.INT
     target.attributes.proficiencies = [
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT)
@@ -82,6 +85,7 @@ def test_attack_misses(actor: Character, target: Character, mocker: MockerFixtur
 
 
 def test_save_throw_skipped(actor: Character, target: Character, mocker: MockerFixture) -> None:
+    actor.change_job(Wizard)
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
     action.requires_save = False
