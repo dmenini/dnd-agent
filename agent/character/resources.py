@@ -1,3 +1,4 @@
+import math
 from enum import Enum
 
 from pydantic import BaseModel
@@ -225,31 +226,23 @@ class SpellSlots(BaseModel):
     def recompute(self, level: int) -> None:
         """Recalculate slots based on class progression and level."""
         if self.progression == CasterProgression.NONE:
-            self.slots = {}
-            self.max_slots = {}
-            return
+            table = {}
 
-        if self.progression == CasterProgression.PACT:
-            # TODO: Implement pact magic progression (different table)
-            self.slots = {}
-            self.max_slots = {}
-            return
+        elif self.progression == CasterProgression.PACT:
+            table = {lvl: self.get_pact_spell_slots(level, lvl) for lvl in SpellLevel if lvl != SpellLevel.CANTRIP}
 
-        # Compute effective caster level (rounded down)
-        effective_level = max(1, int(level * float(self.progression.value)))
+        else:
+            # Compute effective caster level (rounded down)
+            effective_level = max(1, math.floor(level * self.progression.value))
 
-        table = {lvl: self.get_spell_slots(effective_level, lvl) for lvl in SpellLevel if lvl != SpellLevel.CANTRIP}
+            table = {lvl: self.get_spell_slots(effective_level, lvl) for lvl in SpellLevel if lvl != SpellLevel.CANTRIP}
+
         table = {lvl: slot for lvl, slot in table.items() if slot > 0}
-
         self.max_slots = table.copy()  # type: ignore[assignment]
         self.slots = table.copy()  # type: ignore[assignment]
 
     def get_spell_slots(self, char_lvl: int, spell_lvl: SpellLevel) -> int:
-        unlock = 2 * spell_lvl.value - 1
-        if char_lvl < unlock:
-            return 0
-
-        # Hardcoded progression
+        # Spell slots recover on long rest.
         progression = {
             SpellLevel.LEVEL_1: [2, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
             SpellLevel.LEVEL_2: [0, 0, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
@@ -261,4 +254,19 @@ class SpellSlots(BaseModel):
             SpellLevel.LEVEL_8: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
             SpellLevel.LEVEL_9: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
         }
+        return progression[spell_lvl][char_lvl - 1]
+
+    def get_pact_spell_slots(self, char_lvl: int, spell_lvl: SpellLevel) -> int:
+        # A Warlock (Pact magic) always has a small number of slots, and all of them are the same level.
+        # When the Warlock levels up and their slot level increases, their old lower-level slots are replaced.
+        # Spell slots recover on short rest.
+        progression = {
+            SpellLevel.LEVEL_1: [1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            SpellLevel.LEVEL_2: [0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            SpellLevel.LEVEL_3: [0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            SpellLevel.LEVEL_4: [0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            SpellLevel.LEVEL_5: [0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4],
+        }
+        if spell_lvl not in progression:
+            return 0
         return progression[spell_lvl][char_lvl - 1]

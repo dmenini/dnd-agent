@@ -78,13 +78,25 @@ def test_recompute_none_progression() -> None:
     assert spell_slots.max_slots == {}
 
 
-def test_recompute_pact_progression() -> None:
-    """Test that PACT progression is handled (currently returns empty)."""
+@pytest.mark.parametrize(
+    ("level", "expected"),
+    [
+        (1, {SpellLevel.LEVEL_1: 1}),
+        (3, {SpellLevel.LEVEL_2: 2}),
+        (5, {SpellLevel.LEVEL_3: 2}),
+        (7, {SpellLevel.LEVEL_4: 2}),
+        (9, {SpellLevel.LEVEL_5: 2}),
+        (11, {SpellLevel.LEVEL_5: 3}),
+        (17, {SpellLevel.LEVEL_5: 4}),
+    ],
+)
+def test_recompute_pact_progression(level: int, expected: dict) -> None:
+    """Test that PACT progression is handled."""
     spell_slots = SpellSlots(progression=CasterProgression.PACT)
-    spell_slots.recompute(5)
+    spell_slots.recompute(level)
 
-    assert spell_slots.slots == {}
-    assert spell_slots.max_slots == {}
+    assert spell_slots.slots == expected
+    assert spell_slots.max_slots == expected
 
 
 def test_recompute_full_caster_level_1() -> None:
