@@ -4,6 +4,8 @@ from pydantic import computed_field
 
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.resolvers.base import CharacterBase
+from agent.equipment.armor import ArmorType
+from agent.equipment.base import EquipmentType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.enums import Advantage
@@ -24,10 +26,13 @@ class RollResolver(CharacterBase):
         return self._dice.roll_with_context(dice_expression=expr)
 
     def _armor_advantage(self, ability: AbilityType) -> int:
-        penalty = (
-            self.armor is not None
-            and ability in {AbilityType.DEX, AbilityType.STR}
-            and not self.attributes.has_proficiency(self.armor.armor_type)
+        penalty = ability in {AbilityType.DEX, AbilityType.STR} and (
+            (self.armor is not None and not self.attributes.has_proficiency(self.armor.armor_type))
+            or (
+                self.off_hand is not None
+                and self.off_hand.type == EquipmentType.SHIELD
+                and not self.attributes.has_proficiency(ArmorType.SHIELD)
+            )
         )
         return Advantage.DISADVANTAGE if penalty else Advantage.NEUTRAL
 

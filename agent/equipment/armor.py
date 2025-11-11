@@ -9,6 +9,7 @@ from agent.equipment.base import EquipmentBase, EquipmentType
 
 
 class ArmorType(str, Enum):
+    SHIELD = "shield"
     LIGHT = "light"
     MEDIUM = "medium"
     HEAVY = "heavy"

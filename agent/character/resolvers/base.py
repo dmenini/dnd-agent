@@ -12,7 +12,8 @@ from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy
 from agent.effects.base import Trait, normalize_id
 from agent.effects.registry import TraitRegistry
-from agent.equipment.armor import Armor
+from agent.equipment.armor import Armor, Shield
+from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll
@@ -42,6 +43,7 @@ class CharacterBase(BaseModel):
     # Defined for typing to work
     action_economy: ActionEconomy
     armor: Armor | None = None
+    off_hand: MeleeWeapon | Shield | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property

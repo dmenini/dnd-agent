@@ -15,6 +15,7 @@ Barbarian = CharacterJob(
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.STR),
         Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.LIGHT),
         Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.MEDIUM),
+        Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.SHIELD),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE),

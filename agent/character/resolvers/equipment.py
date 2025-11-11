@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
-from agent.equipment.armor import Amulet, Armor, Ring, Shield
+from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
 from agent.equipment.base import EquipmentBase, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_event import Icon, LogLevel
@@ -103,6 +103,12 @@ class EquipmentResolver(CharacterBase):
         if isinstance(item, Armor) and not self.attributes.has_proficiency(item.armor_type):
             self.log_event(
                 f"{self.name} is not proficient with {item.armor_type} armor and will receive some penalties.",
+                log_type=LogLevel.DETAIL,
+                icon=Icon.WARNING,
+            )
+        elif isinstance(item, Shield) and not self.attributes.has_proficiency(ArmorType.SHIELD):
+            self.log_event(
+                f"{self.name} is not proficient with shields and will receive some penalties.",
                 log_type=LogLevel.DETAIL,
                 icon=Icon.WARNING,
             )

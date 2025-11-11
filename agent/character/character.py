@@ -16,6 +16,8 @@ from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.effects.traits import TargetAdvantageOnAttackRoll
+from agent.equipment.armor import ArmorType
+from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import Icon
 from agent.models.enums import FeatureId
@@ -90,7 +92,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         has_movement = self.action_economy.can_move(self.current_speed)
         return has_main or has_bonus or has_movement
 
-    def detect_target(self: Self, target: Self, *, use_passive: bool = False) -> bool:
+    def detect_target(self, target: Self, *, use_passive: bool = False) -> bool:
         if not target.is_hidden:
             return True  # Always visible if not hidden
 
@@ -98,6 +100,14 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
 
         return perception_value >= (target.stealth_value or 0)
+
+    def _can_use_spells(self) -> bool:
+        # Can use spells if they are either wearing no armor or armor they are proficient with,
+        # or if their off-hand is empty or holding a shield they are proficient with.
+        return (not self.armor or self.attributes.has_proficiency(self.armor.armor_type)) or (
+            not self.off_hand
+            or (self.off_hand.type == EquipmentType.SHIELD and self.attributes.has_proficiency(ArmorType.SHIELD))
+        )
 
     def get_available_actions(self) -> dict[str, Action]:
         all_actions: list[Action] = [
@@ -122,7 +132,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
             all_actions.append(ranged_action)
 
         # Spells (only if slot available and armor proficiency)
-        if not self.armor or self.attributes.has_proficiency(self.armor.armor_type):
+        if self._can_use_spells():
             all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
 
         # Special abilities (can have their own categories)
