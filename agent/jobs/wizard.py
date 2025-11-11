@@ -13,6 +13,7 @@ Wizard = CharacterJob(
     type=JobType.WIZARD,
     hit_die=6,
     primary_ability=AbilityType.INT,
+    spellcasting_ability=AbilityType.INT,
     spell_progression=CasterProgression.FULL,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),

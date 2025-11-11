@@ -107,7 +107,7 @@ def actor() -> Character:
         job=Fighter,
         level=3,
         pos=Position(x=2, y=2),
-        attributes=Attributes(strength=20),
+        attributes=Attributes(strength=20, primary_ability=AbilityType.STR),
         is_player=True,
         party=party_players,
     )

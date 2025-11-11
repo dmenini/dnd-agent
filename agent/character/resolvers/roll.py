@@ -54,6 +54,10 @@ class RollResolver(CharacterBase):
         return self._dice.roll_once(expr)
 
     def heal_roll(self, expr: str) -> DiceRoll:
+        if self.attributes.spellcasting_ability is None:
+            msg = f"{self.name} cannot perform healing rolls without a spellcasting ability."
+            raise ValueError(msg)
+
         mod = self.attributes.ability_modifier(self.attributes.spellcasting_ability)
         expr = f"{expr}+{mod}"
         return self._dice.roll_with_context(dice_expression=expr)

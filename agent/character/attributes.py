@@ -22,7 +22,8 @@ from agent.models.damage import DamageResistance, DamageType, DamageVulnerabilit
 
 class Attributes(Abilities):
     hp: int = -1
-    spellcasting_ability: AbilityType = AbilityType.INT
+    primary_ability: AbilityType = AbilityType.STR
+    spellcasting_ability: AbilityType | None = None  # Only for spellcasters
     proficiencies: list[Proficiency] = []
     hit_die: int = 0
 
@@ -108,6 +109,8 @@ class Attributes(Abilities):
         return int(adv) - int(dis)
 
     def spell_save_dc(self, level: int) -> int:
+        if self.spellcasting_ability is None:
+            return 0
         dc = self._recompute_attribute("spell_save_dc")
         spell_mod = self.ability_modifier(self.spellcasting_ability)
         prof = self.proficiency_bonus(level=level)

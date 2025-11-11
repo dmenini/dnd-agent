@@ -23,6 +23,7 @@ class CharacterJob(BaseModel):
     type: JobType
     hit_die: int
     primary_ability: AbilityType
+    spellcasting_ability: AbilityType | None = None
     proficiencies: list[Proficiency]
     features: list[JobFeature] = []
     spells: list[Spell] = []

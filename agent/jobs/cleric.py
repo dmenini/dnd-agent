@@ -14,6 +14,7 @@ Cleric = CharacterJob(
     type=JobType.CLERIC,
     hit_die=8,
     primary_ability=AbilityType.WIS,
+    spellcasting_ability=AbilityType.WIS,
     spell_progression=CasterProgression.FULL,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),

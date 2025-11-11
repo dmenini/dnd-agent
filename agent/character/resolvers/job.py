@@ -33,8 +33,7 @@ class JobResolver(CharacterBase):
 
     def apply_job_features(self) -> None:
         """Register class features based on current level."""
-        # TODO: The primary ability should depend on the type of class (fighter should not use STR)
-        self.attributes.spellcasting_ability = self.job.primary_ability
+        self.attributes.spellcasting_ability = self.job.spellcasting_ability
         self.attributes.hit_die = self.job.hit_die
 
         for prof in self.job.proficiencies:
@@ -61,7 +60,7 @@ class JobResolver(CharacterBase):
                     **feature.kwargs,
                 )
                 self.special_abilities.append(action)
-                self.log_event(f"{self.name} gained ability {feature.name}", log_type=LogLevel.DETAIL)
+                self.log_event(f"{self.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
             trait = TraitRegistry.create(
@@ -76,19 +75,23 @@ class JobResolver(CharacterBase):
     def _remove_job_feature(self, feature: JobFeature) -> None:
         if feature.type == FeatureType.ACTIVE:
             self.special_abilities = [ability for ability in self.special_abilities if ability.id != feature.ref_id]
-            self.log_event(f"{self.name} lost ability {feature.name}", log_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} forgot ability {feature.name}", log_type=LogLevel.DETAIL)
 
         elif feature.type == FeatureType.PASSIVE:
             self.unregister_passive(feature_id=feature.ref_id, source_id=feature.name)
             self.log_event(f"{self.name} lost passive trait {feature.name}", log_type=LogLevel.DETAIL)
 
     def _apply_spell(self, spell: Spell) -> None:
+        if self.attributes.spellcasting_ability is None:
+            msg = "Character is not a caster and cannot learn spells"
+            raise ValueError(msg)
+
         if spell.ref_id not in {a.id for a in self.spells}:
             spell.ability = spell.ability or self.attributes.spellcasting_ability
             action = ActionRegistry.create(id_=spell.ref_id, **spell.model_dump(exclude={"type"}))
             self.spells.append(action)  # type: ignore[arg-type]
-            self.log_event(f"{self.name} gained spell {action.name}", log_type=LogLevel.DETAIL)
+            self.log_event(f"{self.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
 
     def _remove_spell(self, spell: Spell) -> None:
         self.spells = [s for s in self.spells if s.id != spell.ref_id]
-        self.log_event(f"{self.name} lost spell {spell.ref_id}", log_type=LogLevel.DETAIL)
+        self.log_event(f"{self.name} forgot spell {spell.ref_id}", log_type=LogLevel.DETAIL)
