@@ -31,6 +31,7 @@ class AttackSpellAction(StandardAction, AttackAction):
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         self._fire_start_events(actor, target, ctx)
+        # TODO: Some spells require an attack roll, using the spellcaster ability as modifier
         is_hit = not self.requires_save or self._resolve_saving_throw(actor, target, ctx)
 
         # Apply damage if any

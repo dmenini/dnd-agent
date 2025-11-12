@@ -23,6 +23,7 @@ Barbarian = CharacterJob(
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_RANGED),
     ],
     features=[
         JobFeature(

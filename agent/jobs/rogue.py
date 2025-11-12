@@ -7,6 +7,8 @@ from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.enums import FeatureId
 
+# https://roll20.net/compendium/dnd5e/Classes:Rogue#content
+
 Rogue = CharacterJob(
     type=JobType.ROGUE,
     hit_die=8,

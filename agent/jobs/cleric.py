@@ -10,6 +10,8 @@ from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
+# https://roll20.net/compendium/dnd5e/Classes:Cleric#content
+
 Cleric = CharacterJob(
     type=JobType.CLERIC,
     hit_die=8,
