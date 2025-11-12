@@ -1,16 +1,62 @@
-from agent.character.abilities import AbilityType
+from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression, SpellLevel
 from agent.effects.status_effects.blessed import Blessed
 from agent.equipment.armor import ArmorType
+from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
-from agent.jobs.base import CharacterJob, JobType
-from agent.jobs.feature import FeatureType, JobFeature
+from agent.jobs.base import CharacterJob, JobOptions, JobType
+from agent.jobs.feature import EquipmentChoice, FeatureChoice, FeatureType, JobFeature
 from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
 # https://roll20.net/compendium/dnd5e/Classes:Cleric#content
+
+ClericOptions = JobOptions(
+    job_type=JobType.CLERIC,
+    skill_choices=[
+        SkillType.HISTORY,
+        SkillType.INSIGHT,
+        SkillType.MEDICINE,
+        SkillType.PERSUASION,
+        SkillType.RELIGION,
+    ],
+    skill_count=2,
+    equipment_choices=[
+        EquipmentChoice(
+            slot=EquipmentSlot.MAIN_HAND,
+            options=["Mace", "Warhammer (if proficient)"],
+            description="Choose your primary weapon",
+        ),
+        EquipmentChoice(
+            slot=EquipmentSlot.ARMOR,
+            options=["Scale Mail", "Leather Armor", "Chain Mail (if proficient)"],
+            description="Choose your armor",
+        ),
+        EquipmentChoice(
+            slot=EquipmentSlot.RANGED,
+            options=["Light Crossbow and 20 bolts", "Any simple weapon"],
+            description="Choose your secondary weapon",
+        ),
+    ],
+    feature_choices=[
+        FeatureChoice(
+            feature_name="Divine Domain",
+            options=[
+                "Life Domain - Focus on healing and vitality",
+                "War Domain - Divine warrior with combat prowess",
+                "Tempest Domain - Channel the power of storms",
+                "Knowledge Domain - Keeper of lore and secrets",
+                "Trickery Domain - Master of deception and stealth",
+                "Nature Domain - Protector of the wilderness",
+                "Light Domain - Bearer of radiant flame",
+            ],
+            description="Your divine domain represents the aspect of your deity's portfolio you embody",
+            level_required=1,
+        ),
+    ],
+)
 
 Cleric = CharacterJob(
     type=JobType.CLERIC,

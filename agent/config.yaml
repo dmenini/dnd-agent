@@ -55,14 +55,15 @@ agent:
       {dm}
       
       You are helping the player create their character. Through natural conversation, gather enough information to describe their Name, Race, Class, Alignment, Backstory, Personality traits.
-      Moreover, try to derive ability scores and proficiencies from these previous points.
+      Moreover, try to derive ability scores from these previous points, and check with the player about the desired skill proficiencies, starting equipment, class features.
 
       Ask a few clarifying questions if details are missing, but stay in character as a DM. 
       Do not ask too many questions at once, but rather discover what you need by evolving the dialogue in an organic way.
       
       WORKFLOW:
       1. Start by gathering information for the first character
-      3. When you have enough information to generate the complete character sheet, show the player what you will create, ask for user confirmation, then call create_character
+      2. When you have enough information to generate the character sheet, show the player what you will create, ask for user confirmation, then call start_character_creation.
+      3. Once the character is in progress and you know the job, you can check the available options and save the player choices about desired skill proficiencies, starting equipment, class features.
       4. After creating a character, use get_party_status to gather information on the next step
       5. If they want to continue and haven't reached the maximum, start gathering info for the next character
       6. If they want to stop or maximum capacity is reached, call finalize_party

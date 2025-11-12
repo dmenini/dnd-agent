@@ -5,9 +5,10 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.narrative import NarrativeAttributes
 from agent.character.proficiency import Proficiency, ProficiencyType
+from agent.equipment.base import EquipmentSlot
 from agent.jobs.barbarian import Barbarian
-from agent.jobs.base import JobType
-from agent.jobs.cleric import Cleric
+from agent.jobs.base import CharacterJob, JobType
+from agent.jobs.cleric import Cleric, ClericOptions
 from agent.jobs.fighter import Fighter
 from agent.jobs.rogue import Rogue
 from agent.jobs.wizard import Wizard
@@ -21,6 +22,18 @@ job_map = {
     JobType.ROGUE: Rogue,
 }
 
+options_map = {
+    JobType.CLERIC: ClericOptions,
+}
+
+
+class CharacterSelections(BaseModel):
+    """Stores player's choices during character creation."""
+
+    skill_proficiencies: list[SkillType] = Field(default=[], description="Selected skill proficiencies")
+    equipment: dict[EquipmentSlot, str] = Field(default={}, description="Equipment selections by slot")
+    features: dict[str, str] = Field(default={}, description="Class feature selections")
+
 
 class CharacterBuilder(BaseModel):
     name: str = Field(description="Character name")
@@ -33,10 +46,8 @@ class CharacterBuilder(BaseModel):
             f"Free assignment, but total scores must be below {MAX_SCORES_TOTAL}."
         ),
     )
-    skill_proficiencies: list[SkillType] = Field(
-        default=[],
-        description="Skill proficiencies derived from the character background.",
-        max_length=2,
+    selections: CharacterSelections = Field(
+        default=CharacterSelections(), description="Player's choices for skills, equipment, and features"
     )
     race: str = Field(default="human", description="Race")
     backstory: str = Field(default="", description="Backstory")
@@ -54,11 +65,19 @@ class CharacterBuilder(BaseModel):
         return v
 
     def to_character(self, party: str) -> Character:
+        """Convert builder to full Character, applying selections."""
         attrs = Attributes.model_validate(self.abilities.model_dump())
+
+        # Add skill proficiencies from selections
         attrs.proficiencies = [
-            Proficiency(source="builder", type=ProficiencyType.SKILL, target=prof) for prof in self.skill_proficiencies
+            Proficiency(source="builder", type=ProficiencyType.SKILL, target=prof)
+            for prof in self.selections.skill_proficiencies
         ]
-        return Character(
+
+        base_job = job_map[self.job]
+        modified_job = self._apply_feature_selections(base_job)
+
+        character = Character(
             id=self.name.lower().replace(" ", "-"),
             name=self.name,
             icon=self.icon,
@@ -66,7 +85,7 @@ class CharacterBuilder(BaseModel):
             level=1,
             experience=0,
             attributes=attrs,
-            job=job_map[self.job],
+            job=modified_job,
             party=Party(id="players", name=party, is_player_party=True),
             narrative=NarrativeAttributes(
                 race=self.race,
@@ -76,3 +95,25 @@ class CharacterBuilder(BaseModel):
                 summary=self.summary,
             ),
         )
+
+        # Apply equipment selections
+        self._apply_equipment(character)
+
+        return character
+
+    def _apply_feature_selections(self, base_job: CharacterJob) -> CharacterJob:
+        """Modify job based on feature selections ."""
+        # Example: If Life Domain selected, add domain-specific features
+        domain = self.selections.features.get("Divine Domain")
+        if domain and "Life Domain" in domain:
+            # Add Life Domain features to the job
+            # This could involve modifying the features list
+            pass
+
+        return base_job
+
+    def _apply_equipment(self, character: Character) -> None:
+        """Apply selected equipment to character."""
+        for _slot, _choice in self.selections.equipment.items():
+            # Define equipment registry to load a piece from an ID
+            pass

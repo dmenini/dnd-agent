@@ -7,7 +7,9 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 
 from agent.ai.components import create_llm
-from agent.character.builder import CharacterBuilder
+from agent.character.abilities import SkillType
+from agent.character.builder import CharacterBuilder, CharacterSelections, options_map
+from agent.equipment.base import EquipmentSlot
 from agent.jobs.base import JobType
 from agent.models.config import AgentConfig, Config
 
@@ -18,7 +20,7 @@ DEFAULT_PARTY_NAME = "Players"
 
 
 class CharacterCreationAgent:
-    """Handles natural dialogue flow for creating multiple characters."""
+    """Handles natural dialogue flow for creating multiple characters with detailed selections."""
 
     def __init__(self, config: AgentConfig, max_players: int = 2) -> None:
         llm = create_llm(config.llm)
@@ -31,6 +33,9 @@ class CharacterCreationAgent:
         self._thread_id = str(uuid.uuid4())
         self._done = False
         self._started = False
+
+        # Track current character being built
+        self._current_builder: CharacterBuilder | None = None
 
         tools = self._create_tools()
 
@@ -61,18 +66,207 @@ class CharacterCreationAgent:
         """Create the tools for the agent."""
 
         @tool
-        def create_character(character: CharacterBuilder) -> str:
+        def get_class_options_tool(job_type: JobType) -> str:
             """
-            Create and save a character with all required information.
-            Call this ONLY when you have all the necessary info collected AND user confirmation.
+            Get available options for a character class.
+            Use this to show players what choices they have for skills, equipment, and features.
+
+            Returns:
+                Formatted string describing all available options
+            """
+            options = options_map.get(job_type)
+            if not options:
+                return f"No detailed options found for {job_type.value}"
+
+            result = f"Options for {job_type.value}:\n\n"
+
+            # Skills
+            result += f"**Skills** (choose {options.skill_count}):\n"
+            for skill in options.skill_choices:
+                result += f"  - {skill.value}\n"
+
+            # Equipment
+            if options.equipment_choices:
+                result += "\n**Equipment Choices**:\n"
+                for eq_choice in options.equipment_choices:
+                    result += f"  {eq_choice.slot.value} - {eq_choice.description}:\n"
+                    for opt in eq_choice.options:
+                        result += f"    - {opt}\n"
+
+            # Features
+            if options.feature_choices:
+                result += "\n**Class Features**:\n"
+                for feat_choice in options.feature_choices:
+                    result += f"  {feat_choice.feature_name} - {feat_choice.description}:\n"
+                    for opt in feat_choice.options:
+                        result += f"    - {opt}\n"
+
+            return result
+
+        @tool
+        def start_character_creation(character: CharacterBuilder) -> str:
+            """
+            Begin creating a new character with basic information.
+            This initializes the character builder. After this, guide the player
+            through selecting skills, equipment, and features.
+
+            Returns:
+                Next steps message
+            """
+            self._current_builder = character
+
+            return (
+                f"Started creating {character.name}, the {character.job.value}! "
+                f"Now let's choose their skills, equipment, and features. "
+                f"Use get_class_options_tool to see what's available."
+            )
+
+        @tool
+        def set_skill_proficiencies(skills: list[SkillType]) -> str:
+            """
+            Set the skill proficiencies for the character being created.
+            Only call this after the player has selected from the valid options.
+
+            Args:
+                skills: List of skill names chosen by the player
 
             Returns:
                 Confirmation message
             """
-            self.characters.append(character)
+            if not self._current_builder:
+                return "No character is currently being created. Use start_character_creation first."
+
+            options = options_map.get(self._current_builder.job)
+            if not options:
+                return "Cannot set skills - no options available for this class."
+
+            # Validate selections
+            invalid = [s for s in skills if s not in options.skill_choices]
+
+            if invalid:
+                return f"Invalid skill choices: {invalid}. Valid options: {options.skill_choices}"
+
+            if len(skills) > options.skill_count:
+                return f"Must choose exactly {options.skill_count} skills. You chose {len(skills)}."
+
+            # Convert to SkillType enums and store
+            skill_enums = [SkillType(s) for s in skills]
+            self._current_builder.selections.skill_proficiencies = skill_enums
+
+            return "Success: skills set!"
+
+        @tool
+        def set_equipment_choice(slot: EquipmentSlot, choice: str) -> str:
+            """
+            Set an equipment choice for the character.
+
+            Args:
+                slot: Equipment slot identifier
+                choice: The selected equipment option
+
+            Returns:
+                Confirmation message
+            """
+            if not self._current_builder:
+                return "No character is currently being created. Use start_character_creation first."
+
+            options = options_map.get(self._current_builder.job)
+            if not options:
+                return "No equipment options for this class."
+
+            # Find the equipment choice
+            eq_choice = next((e for e in options.equipment_choices if e.slot == slot), None)
+            if not eq_choice:
+                return f"Invalid equipment slot: {slot}"
+
+            if choice not in eq_choice.options:
+                return f"Invalid choice '{choice}' for {slot}. Options: {eq_choice.options}"
+
+            self._current_builder.selections.equipment[slot] = choice
+            return f"Success: slot {slot.value} set to {choice}"
+
+        @tool
+        def set_feature_choice(feature_name: str, choice: str) -> str:
+            """
+            Set a class feature choice.
+
+            Args:
+                feature_name: Name of the feature
+                choice: The selected option
+
+            Returns:
+                Confirmation message
+            """
+            if not self._current_builder:
+                return "No character is currently being created. Use start_character_creation first."
+
+            options = options_map.get(self._current_builder.job)
+            if not options:
+                return "No feature options for this class."
+
+            feat_choice = next((f for f in options.feature_choices if f.feature_name == feature_name), None)
+            if not feat_choice:
+                return f"Invalid feature: {feature_name}"
+
+            # Check if choice matches any option (allow partial matching)
+            matching_option = None
+            for opt in feat_choice.options:
+                if choice.lower() in opt.lower() or opt.lower().startswith(choice.lower()):
+                    matching_option = opt
+                    break
+
+            if not matching_option:
+                return f"Invalid choice for {feature_name}. Options: {feat_choice.options}"
+
+            self._current_builder.selections.features[feature_name] = matching_option
+            return f"Success: feature {feature_name} set to {matching_option}"
+
+        @tool
+        def finalize_character() -> str:
+            """
+            Call this after all mechanical choices (skills, equipment, features) are made.
+
+            Returns:
+                Confirmation message
+            """
+            if not self._current_builder:
+                return "No character is currently being created."
+
+            # Validate all required choices are made
+            options = options_map.get(self._current_builder.job)
+            if options:
+                # Check skills
+                if len(self._current_builder.selections.skill_proficiencies) != options.skill_count:
+                    return f"Must choose {options.skill_count} skills before finalizing."
+
+                # Check equipment
+                missing_equipment = [
+                    e.slot
+                    for e in options.equipment_choices
+                    if e.slot not in self._current_builder.selections.equipment
+                ]
+                if missing_equipment:
+                    return f"Missing equipment choices: {missing_equipment}"
+
+                # Check features
+                missing_features = [
+                    f.feature_name
+                    for f in options.feature_choices
+                    if f.feature_name not in self._current_builder.selections.features
+                ]
+                if missing_features:
+                    return f"Missing feature choices: {missing_features}"
+
+            # Save character
+            self.characters.append(self._current_builder)
+            msg = f"Character creation complete: {self._current_builder.name}"
+
+            self._current_builder = None
+
             if len(self.characters) == self.max_players:
                 self._done = True
-            return f"Character {character} created!"
+
+            return msg
 
         @tool
         def get_party_status() -> str:
@@ -88,7 +282,12 @@ class CharacterCreationAgent:
                 context = f"Players have created {len(self.characters)}/{self.max_players} character(s)"
                 for char in self.characters:
                     context += f"\n- {char.name}: {char.summary}"
-                context += f"\n\nThey can create {remaining} more."
+
+                if self._current_builder:
+                    context += f"\n\nCurrently creating: {self._current_builder.name}"
+                else:
+                    context += f"\n\nThey can create {remaining} more."
+
                 return context
 
             return f"Players have created the maximum of {self.max_players} characters! Party is complete."
@@ -104,19 +303,25 @@ class CharacterCreationAgent:
             """
             self._done = True
 
-            context = f"Players have created {len(self.characters)}/{self.max_players} character(s)"
+            context = f"Party complete with {len(self.characters)}/{self.max_players} character(s):\n"
             for char in self.characters:
                 context += f"\n- {char.name}: {char.summary}"
             return context
 
         return [
-            create_character,
+            get_class_options_tool,
+            start_character_creation,
+            set_skill_proficiencies,
+            set_equipment_choice,
+            set_feature_choice,
+            finalize_character,
             get_party_status,
             finalize_party,
         ]
 
     def reset(self) -> None:
         self.characters = []
+        self._current_builder = None
         self._thread_id = str(uuid.uuid4())
         self._done = False
         self._started = False
@@ -125,6 +330,7 @@ class CharacterCreationAgent:
         """Create a complete snapshot of the current state."""
         return {
             "characters": self.characters,
+            "current_builder": self._current_builder,
             "thread_id": self._thread_id,
             "done": self._done,
             "started": self._started,
@@ -133,6 +339,7 @@ class CharacterCreationAgent:
     def load_snapshot(self, snapshot: dict) -> None:
         """Load a snapshot, restoring state."""
         self.characters = snapshot["characters"]
+        self._current_builder = snapshot["current_builder"]
         self._thread_id = snapshot["thread_id"]
         self._done = snapshot["done"]
         self._started = snapshot["started"]
@@ -147,6 +354,7 @@ class CharacterCreationAgent:
                 icon="🧝",
                 job=JobType.WIZARD,
                 summary="The default Hero of our story.",
+                selections=CharacterSelections(skill_proficiencies=[SkillType.ARCANA, SkillType.HISTORY]),
             )
             self.characters = [default_char]
             self._done = True

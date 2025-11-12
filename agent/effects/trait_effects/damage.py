@@ -72,9 +72,7 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
         actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
-def damage_multiplier_effect(
-    actor: Character, context: CombatContext, value: float, damage_type: DamageType
-) -> None:
+def damage_multiplier_effect(actor: Character, context: CombatContext, value: float, damage_type: DamageType) -> None:
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="mul"))
         actor.log_event(f"{actor.name}'s {damage_type.value} damage multiplied by {value}.", log_type=TRAIT_LOG_LEVEL)
