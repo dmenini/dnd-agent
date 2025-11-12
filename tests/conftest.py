@@ -100,23 +100,25 @@ def context() -> CombatContext:
 @pytest.fixture
 def actor() -> Character:
     party_players = Party(id="p1", name=DEFAULT_PARTY_NAME, is_player_party=True)
-    return Character(
+    char = Character(
         id="alfred",
         name="Alfred",
         icon="⚔️",
         job=Fighter,
         level=3,
         pos=Position(x=2, y=2),
-        attributes=Attributes(strength=20, hp=15),
+        attributes=Attributes(strength=20, primary_ability=AbilityType.STR),
         is_player=True,
         party=party_players,
     )
+    char.attributes.hp = 15
+    return char
 
 
 @pytest.fixture
 def target() -> Character:
     party_players = Party(id="p2", name="Monsters", is_player_party=True)
-    return Character(
+    char = Character(
         id="orc",
         name="Orc",
         icon="👹",
@@ -124,7 +126,6 @@ def target() -> Character:
         level=3,
         pos=Position(x=3, y=2),
         party=party_players,
-        attributes=Attributes(hp=15),
         armor=Armor(
             name="Armor",
             description="",
@@ -132,6 +133,8 @@ def target() -> Character:
             base_ac=0,
         ),
     )
+    char.attributes.hp = 15
+    return char
 
 
 @pytest.fixture

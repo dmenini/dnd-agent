@@ -1,10 +1,12 @@
 from agent.actions.jobs.cleric import DivineRestorationAction
 from agent.character.character import Character
+from agent.jobs.cleric import Cleric
 from agent.models.context import CombatContext
 from agent.models.enums import FeatureId
 
 
 def test_divine_restoration(actor: Character, target: Character) -> None:
+    actor.change_job(Cleric)
     actor.level = 3
     target.attributes.hp = 1
 

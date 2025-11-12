@@ -37,7 +37,8 @@ class ArcaneRecoveryAction(LimitedBonusAction):
                 recovered += slots_to_recover
 
                 actor.log_event(
-                    f"{actor.name} recovers {slots_to_recover} level {level.value} spell slot(s).",
+                    f"{actor.name} focuses their mind, drawing on latent arcane power to recover "
+                    f"{slots_to_recover} level {level.value} spell slot(s).",
                     log_type=LogLevel.DETAIL,
                 )
 

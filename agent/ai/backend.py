@@ -1,4 +1,6 @@
+import random
 import uuid
+from typing import get_args
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
@@ -14,7 +16,7 @@ from agent.models.config import Config
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 from agent.models.map import GameMap
-from agent.models.position import Position
+from agent.models.position import Direction, Position
 from agent.models.state import GamePhase, GameResult, GameSnapshot, State
 
 
@@ -290,17 +292,26 @@ class GameBackend:
                 "#####.######",
             ]
 
-        # Position player character
-        # TODO: Placement on the combat map should be random
-        player_char = self._get_first_player_character()
-        if player_char:
-            player_char.pos = Position(x=1, y=1, direction="SE")
+        # Extract all walkable positions and walls
+        walls, walkable = [], []
+        for y, row in enumerate(map_layout):
+            for x, char in enumerate(row):
+                pos = Position(x=x, y=y)
+                walls.append(pos) if char == "#" else walkable.append(pos)
 
-        # Collect all characters
+        directions = get_args(Direction)
+
+        # Shuffle the walkable positions for random placement
+        random.shuffle(walkable)
+
+        # Assign a random position and direction to each character
         all_characters = list(self.state.characters.values()) + encounter
-
-        # Extract walls from map
-        walls = [Position(x=x, y=y) for y, row in enumerate(map_layout) for x, char in enumerate(row) if char == "#"]
+        for character in all_characters:
+            if walkable:
+                character.pos = walkable.pop()
+                character.pos.direction = random.choice(directions)  # noqa: S311
+            else:
+                raise ValueError("Not enough free space on the map for all characters!")
 
         # Create map
         self.state.map = GameMap(

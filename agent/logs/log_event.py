@@ -1,4 +1,3 @@
-import re
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
@@ -57,10 +56,6 @@ class LogEvent(BaseModel):
             return "magenta"
         return "white"
 
-    def _highlight_numbers(self, text: str) -> str:
-        """Highlight numbers in bold yellow for readability."""
-        return re.sub(r"(\d+)", r"[bold yellow]\1[/bold yellow]", text)
-
     def __str__(self) -> str:
         # Event formatting based on type
         result = self.message
@@ -80,12 +75,12 @@ class LogEvent(BaseModel):
 
     def __rich__(self) -> Text | Markdown | None:
         color = self._color_for_actor()
-        msg = self._highlight_numbers(str(self))
+        msg = str(self)
         result: Text | Markdown
 
         # Event formatting based on type
         if self.type == LogLevel.HEADER:
-            result = Markdown(str(self), justify="center", style=color)
+            result = Markdown(msg, justify="center", style=color)
 
         elif self.type == LogLevel.MAIN:
             result = Text.from_markup(f"[bold {color}]{msg}[/bold {color}]")
@@ -94,7 +89,7 @@ class LogEvent(BaseModel):
             result = Text.from_markup(f"    [dim]{msg}[/dim]")
 
         elif self.type == LogLevel.MAP:
-            result = Text(str(self), style=color, justify="center")
+            result = Text(msg, style=color, justify="center")
 
         else:
             result = Text(msg)

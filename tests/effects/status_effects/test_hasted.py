@@ -8,6 +8,7 @@ from agent.character.character import Character
 from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import EffectType
 from agent.effects.status_effects.hasted import Hasted
+from agent.jobs.wizard import Wizard
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
@@ -19,6 +20,7 @@ from tests.conftest import advance_turn
 
 @pytest.mark.asyncio
 async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+    actor.change_job(Wizard)
     hero_id = actor.id
     orc_id = target.id
 
@@ -48,11 +50,16 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == EffectType.HASTED
     assert hero.status_effects[0].duration == 1
-    assert hero.attributes.get_modifiers("ac")[0].value == 2
+
+    ac_mods = hero.attributes.get_modifiers("ac")
+    assert len(ac_mods) == 2
+    assert ac_mods[0].value == 3
+    assert ac_mods[1].value == 2
+
     assert hero.attributes.get_modifiers("speed")[0].value == 2
     assert hero.attributes.get_modifiers("save_advantage.dexterity")[0].value is True
 
-    assert hero.armor_class == 12
+    assert hero.armor_class == 15
     assert hero.current_speed == 12.0
     assert hero.attributes.ability_save_advantage(AbilityType.DEX) == 1
 

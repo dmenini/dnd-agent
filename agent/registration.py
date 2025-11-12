@@ -56,6 +56,7 @@ def register_traits() -> None:
 
     # Damage modifications
     TraitRegistry.register(FeatureId.DAMAGE_BONUS, traits.DamageBonus)
+    TraitRegistry.register(FeatureId.DAMAGE_BONUS_WITH_MELEE_WEAPON, traits.DamageBonusIfMelee)
     TraitRegistry.register(FeatureId.DAMAGE_BONUS_WITH_ADVANTAGE, traits.DamageBonusWithAdvantage)
     TraitRegistry.register(FeatureId.DAMAGE_MULTIPLIER, traits.DamageMultiplier)
     TraitRegistry.register(FeatureId.DAMAGE_OVER_TIME, traits.DamageOverTime)

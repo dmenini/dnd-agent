@@ -1,7 +1,6 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resources import SpellLevel
-from agent.equipment.armor import ArmorType
+from agent.character.resources import CasterProgression, SpellLevel
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
@@ -9,14 +8,17 @@ from agent.jobs.spells import AttackSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
+# https://roll20.net/compendium/dnd5e/Classes:Wizard#content
+
 Wizard = CharacterJob(
     type=JobType.WIZARD,
     hit_die=6,
     primary_ability=AbilityType.INT,
+    spellcasting_ability=AbilityType.INT,
+    spell_progression=CasterProgression.FULL,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.WIS),
-        Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.LIGHT),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
     ],

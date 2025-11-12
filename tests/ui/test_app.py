@@ -32,7 +32,23 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
         job=actor.job.type,
     )
     ui.backend.char_agent = fake_char_agent
+
+    actor.pos = Position(x=0, y=0, direction="E")
+    target.pos = Position(x=1, y=0)
     ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])
+
+    def fake_initialize_map(encounter: list[Character], map_layout: list[str] | None = None) -> None:
+        ui.backend.state.characters[actor.id].pos = actor.pos
+        game_map = GameMap(
+            map="..\n..",
+            width=2,
+            height=2,
+            characters={actor.id: actor.pos, target.id: target.pos},
+            icons={actor.id: actor.icon, target.id: target.icon},
+        )
+        ui.backend.state.map = game_map
+
+    ui.backend._initialize_combat_map = fake_initialize_map
     return ui
 
 
@@ -45,7 +61,6 @@ async def test_app(  # noqa: PLR0915
     game_map: GameMap,
 ) -> None:
     target.attributes.hp = 1
-    target.pos = Position(x=2, y=1)
 
     async with ui.run_test() as pilot:
         log_panel = pilot.app.query_one("#logs", LogPanel)
@@ -134,8 +149,6 @@ async def test_action_resources_are_used(
     target: Character,
     game_map: GameMap,
 ) -> None:
-    actor.pos = Position(x=1, y=1)
-    target.pos = Position(x=2, y=1)
     num_passives = len(actor.passives)
     num_abilities = len(actor.special_abilities)
 

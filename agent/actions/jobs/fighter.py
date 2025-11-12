@@ -15,6 +15,9 @@ class SecondWindAction(LimitedBonusAction):
     targeting: TargetingType = TargetingType.SELF
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
-        heal_amount = actor.damage_roll(expr="1d10").total + actor.level
+        heal_amount = actor.roll(expr="1d10").total + actor.level
         actor.heal(heal_amount)
-        actor.log_event(f"{actor.name} heals {heal_amount} HP.", log_type=LogLevel.DETAIL)
+        actor.log_event(
+            f"{actor.name} catches their breath and recovers {heal_amount} HP ({actor.attributes.hp}/{actor.max_hp}).",
+            log_type=LogLevel.DETAIL,
+        )

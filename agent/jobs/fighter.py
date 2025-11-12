@@ -1,15 +1,19 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
+from agent.character.resources import CasterProgression
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import FeatureType
 from agent.models.enums import FeatureId
 
+# https://roll20.net/compendium/dnd5e/Classes:Fighter#content
+
 Fighter = CharacterJob(
     type=JobType.FIGHTER,
     hit_die=10,
     primary_ability=AbilityType.STR,
+    spell_progression=CasterProgression.NONE,
     proficiencies=[
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.STR),
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.CON),

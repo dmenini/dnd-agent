@@ -21,7 +21,7 @@ class DivineRestorationAction(LimitedBonusAction):
         heal_amount = min(heal_amount, target.max_hp - target.attributes.hp)
         target.heal(heal_amount)
         actor.log_event(
-            f"{actor.name} channels divine energy to heal {target.name} "
+            f"{actor.name} channels divine light to heal {target.name} "
             f"for {heal_amount} HP ({target.attributes.hp}/{target.max_hp}).",
             log_type=LogLevel.DETAIL,
         )
