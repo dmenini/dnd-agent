@@ -5,7 +5,7 @@ from typing import get_args
 from langchain_core.runnables import RunnableConfig
 from langgraph.types import Command
 
-from agent.ai.character_generator import CharacterCreationAgent
+from agent.ai.character_creation.agent import CharacterCreationAgent
 from agent.ai.combat_graph import build_combat_graph
 from agent.character.character import Character, Party
 from agent.equipment.base import EquipmentSlot

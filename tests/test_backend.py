@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture, MockType
 
 from agent.ai.backend import GameBackend
-from agent.ai.character_generator import DEFAULT_PARTY_NAME
+from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
 from agent.exceptions import InvalidPhaseError

@@ -2,7 +2,7 @@ import pytest
 from pytest_mock import MockerFixture
 from textual.widgets import Input
 
-from agent.ai.character_generator import DEFAULT_PARTY_NAME
+from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
 from agent.models.config import AgentConfig, Config
