@@ -13,6 +13,7 @@ from agent.effects.trait_effects.damage import (
     reflect_melee_damage_effect,
     sneak_attack_effect,
 )
+from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
@@ -116,8 +117,8 @@ def test_ignore_resistance_no_effect_if_no_resistance(
 
 
 def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None:
-    actor.equip(item=dagger, slot_name="main_hand")
-    actor.equip(item=dagger, slot_name="off_hand")
+    actor.equip(item=dagger, slot_name=EquipmentSlot.MAIN_HAND)
+    actor.equip(item=dagger, slot_name=EquipmentSlot.OFF_HAND)
 
     context = CombatContext(
         attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),

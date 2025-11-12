@@ -8,6 +8,7 @@ from langgraph.types import Command
 from agent.ai.character_generator import CharacterCreationAgent
 from agent.ai.combat_graph import build_combat_graph
 from agent.character.character import Character, Party
+from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.exceptions import CharacterCreationError, InvalidPhaseError
 from agent.jobs.fighter import Fighter
@@ -343,7 +344,7 @@ class GameBackend:
 
         player_char = self._get_first_player_character()
         if player_char:
-            player_char.equip_melee_weapon(sword, "main_hand")
+            player_char.equip_melee_weapon(sword, EquipmentSlot.MAIN_HAND)
 
     def _get_first_player_character(self) -> Character | None:
         """Get the first player character from state."""

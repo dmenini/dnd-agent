@@ -4,7 +4,7 @@ from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
-from agent.equipment.base import EquipmentBase, EquipmentType
+from agent.equipment.base import EquipmentBase, EquipmentSlot, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_event import Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
@@ -40,52 +40,52 @@ class EquipmentResolver(CharacterBase):
         return ac
 
     @property
-    def equipment_slots(self) -> Mapping[str, EquipmentBase | None]:
+    def equipment_slots(self) -> Mapping[EquipmentSlot, EquipmentBase | None]:
         """Mapping of slot names to currently equipped items."""
         return {
-            "armor": self.armor,
-            "amulet": self.amulet,
-            "ring_left": self.ring_left,
-            "ring_right": self.ring_right,
-            "main_hand": self.main_hand,
-            "off_hand": self.off_hand,
-            "ranged": self.ranged,
+            EquipmentSlot.ARMOR: self.armor,
+            EquipmentSlot.AMULET: self.amulet,
+            EquipmentSlot.RING_LEFT: self.ring_left,
+            EquipmentSlot.RING_RIGHT: self.ring_right,
+            EquipmentSlot.MAIN_HAND: self.main_hand,
+            EquipmentSlot.OFF_HAND: self.off_hand,
+            EquipmentSlot.RANGED: self.ranged,
         }
 
     @property
     def two_handed_active(self) -> bool:
         return self._two_handed_active
 
-    def _resolve_slot_for(self, item: EquipmentBase) -> str | None:  # noqa: C901
+    def _resolve_slot_for(self, item: EquipmentBase) -> EquipmentSlot | None:  # noqa: C901
         """Automatically determine which slot an equipment item should occupy."""
-        slot: str | None = None
+        slot: EquipmentSlot | None = None
         match item.type:
             case EquipmentType.ARMOR:
-                slot = "armor"
+                slot = EquipmentSlot.ARMOR
             case EquipmentType.SHIELD:
-                slot = "off_hand"
+                slot = EquipmentSlot.OFF_HAND
             case EquipmentType.AMULET:
-                slot = "amulet"
+                slot = EquipmentSlot.AMULET
             case EquipmentType.RING:
                 # Prioritize empty ring slots
                 if self.ring_left is None:
-                    slot = "ring_left"
+                    slot = EquipmentSlot.RING_LEFT
                 elif self.ring_right is None:
-                    slot = "ring_right"
+                    slot = EquipmentSlot.RING_RIGHT
                 else:
                     # Both full → rotate replacement
                     self._ring_rotation_toggle = not self._ring_rotation_toggle
-                    slot = "ring_left" if self._ring_rotation_toggle else "ring_right"
+                    slot = EquipmentSlot.RING_LEFT if self._ring_rotation_toggle else EquipmentSlot.RING_RIGHT
             case EquipmentType.WEAPON_MELEE:
                 if self.main_hand is None or self.main_hand == UNARMED:
-                    slot = "main_hand"
+                    slot = EquipmentSlot.MAIN_HAND
                 elif self.off_hand is None:
-                    slot = "off_hand"
+                    slot = EquipmentSlot.OFF_HAND
             case EquipmentType.WEAPON_RANGED:
-                slot = "ranged"
+                slot = EquipmentSlot.RANGED
         return slot
 
-    def equip(self, item: EquipmentBase, slot_name: str | None = None) -> None:
+    def equip(self, item: EquipmentBase, slot_name: EquipmentSlot | None = None) -> None:
         """Equip an item to a specific slot."""
         if slot_name is None:
             slot_name = self._resolve_slot_for(item)
@@ -121,17 +121,17 @@ class EquipmentResolver(CharacterBase):
         item.on_equip(self)
         self.notify_state_change(slot_name)
 
-    def equip_melee_weapon(self, weapon: MeleeWeapon, slot_name: str) -> None:
+    def equip_melee_weapon(self, weapon: MeleeWeapon, slot_name: EquipmentSlot) -> None:
         """
         Equip a weapon in a specific slot.
         Handles two-handed or versatile weapons with a private flag.
         """
         # Unequip existing weapon in the target slot
-        current = getattr(self, slot_name)
+        current = getattr(self, slot_name.value)
         if current:
             current.on_unequip(self)
-            setattr(self, slot_name, None)
-            self.notify_state_change(slot_name)
+            setattr(self, slot_name.value, None)
+            self.notify_state_change(slot_name.value)
 
         # Reset two-handed flag if equipping a new weapon
         self._two_handed_active = False
@@ -139,7 +139,7 @@ class EquipmentResolver(CharacterBase):
         # Handle two-handed weapons
         if weapon.handling == WeaponHandling.TWO_HANDED:
             # Only occupy main hand, leave off-hand None
-            if slot_name != "main_hand":
+            if slot_name != EquipmentSlot.MAIN_HAND:
                 raise ValueError("Two-handed weapons must be equipped in main hand")
             self._two_handed_active = True
             self.off_hand = None
@@ -148,20 +148,20 @@ class EquipmentResolver(CharacterBase):
         # Handle versatile weapons
         if weapon.handling == WeaponHandling.VERSATILE:
             # Decide if we can use two hands
-            if slot_name == "main_hand" and self.off_hand is None:
+            if slot_name == EquipmentSlot.MAIN_HAND and self.off_hand is None:
                 self._two_handed_active = True
             else:
                 self._two_handed_active = False
 
         # Equip in the requested slot
-        setattr(self, slot_name, weapon)
+        setattr(self, slot_name.value, weapon)
         weapon.on_equip(self)
-        self.notify_state_change(slot_name)
+        self.notify_state_change(slot_name.value)
 
-    def unequip(self, slot_name: str) -> None:
+    def unequip(self, slot_name: EquipmentSlot) -> None:
         """Unequip an item from a specific slot."""
         if slot_name not in self.equipment_slots:
-            msg = f"Invalid equipment slot: {slot_name}"
+            msg = f"Invalid equipment slot: {slot_name.value}"
             raise ValueError(msg)
 
         item = getattr(self, slot_name)
@@ -178,4 +178,4 @@ class EquipmentResolver(CharacterBase):
             if not item:
                 continue
             item.on_equip(self)
-            self.notify_state_change(slot_name)
+            self.notify_state_change(slot_name.value)

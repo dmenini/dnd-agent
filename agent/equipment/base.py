@@ -13,6 +13,17 @@ if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
 
 
+class EquipmentSlot(str, Enum):
+    AMULET = "amulet"
+    ARMOR = "armor"
+    RING_RIGHT = "ring_right"
+    RING_LEFT = "ring_left"
+    SHIELD = "shield"
+    MAIN_HAND = "main_hand"
+    OFF_HAND = "off_hand"
+    RANGED = "ranged"
+
+
 class Rarity(str, Enum):
     COMMON = "common"
     UNCOMMON = "uncommon"
