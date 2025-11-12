@@ -7,6 +7,8 @@ from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.feature import FeatureType, JobFeature
 from agent.models.enums import FeatureId
 
+# https://roll20.net/compendium/dnd5e/Classes:Barbarian#content
+
 Barbarian = CharacterJob(
     type=JobType.BARBARIAN,
     hit_die=12,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from agent.character.abilities import AbilityType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon
 from agent.logs.log_event import LogLevel
 from agent.models.constants import MELEE_RANGE, TRAIT_LOG_LEVEL
@@ -45,6 +46,14 @@ def damage_bonus_effect(actor: CharacterBase, context: CombatContext, value: int
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="add"))
         actor.log_event(f"{actor.name}'s attack gains {value} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
+
+
+def melee_damage_bonus_effect(actor: CharacterBase, context: CombatContext, value: int) -> None:
+    slot = context.metadata.get("metadata", {}).get("slot")
+    weapon = actor.equipment_slots.get(slot)
+    is_melee = isinstance(weapon, MeleeWeapon) and weapon.ability == AbilityType.STR
+    if is_melee:
+        damage_bonus_effect(actor, context, value=value, damage_type=context.metadata["damage_type"])
 
 
 def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) -> None:

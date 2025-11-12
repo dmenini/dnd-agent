@@ -12,6 +12,7 @@ from agent.effects.trait_effects.damage import (
     damage_multiplier_effect,
     damage_over_time_effect,
     ignore_resistance_effect,
+    melee_damage_bonus_effect,
     reflect_melee_damage_effect,
     sneak_attack_effect,
 )
@@ -199,7 +200,7 @@ class Resistance(ModifierTrait):
     """Give resistance to a given damage type."""
 
     attribute: str = "resistance.{damage_type}"
-    value: float = Field(ge=0, le=1)
+    value: float = Field(default=0.5, ge=0, le=1)
     damage_type: DamageType
     operation: Literal["set", "add", "mul"] = "add"
 
@@ -225,7 +226,7 @@ class Vulnerability(ModifierTrait):
     """Give vulnerability to a given damage type."""
 
     attribute: str = "vulnerability.{damage_type}"
-    value: float = Field(ge=0, le=1)
+    value: float = Field(default=0.5, ge=0, le=1)
     damage_type: DamageType
     operation: Literal["set", "add", "mul"] = "add"
 
@@ -395,6 +396,16 @@ class DamageBonus(Trait):
 
     def apply(self, target: Any, ctx: Any) -> None:
         damage_bonus_effect(target, ctx, value=self.value, damage_type=self.damage_type)
+
+
+class DamageBonusIfMelee(Trait):
+    """Add bonus damage in case of melee weapon attack using Strength."""
+
+    event_type: EventType = EventType.APPLY_DAMAGE
+    value: int
+
+    def apply(self, actor: Any, ctx: Any) -> None:
+        melee_damage_bonus_effect(actor, ctx, value=self.value)
 
 
 class DamageBonusWithAdvantage(Trait):
