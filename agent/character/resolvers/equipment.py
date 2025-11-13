@@ -4,7 +4,7 @@ from pydantic import PrivateAttr, computed_field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
-from agent.equipment.base import EquipmentBase, EquipmentSlot, EquipmentType
+from agent.equipment.base import EQUIPMENT_TYPES_PER_SLOT, EquipmentBase, EquipmentSlot, EquipmentType
 from agent.equipment.weapons import UNARMED, MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.logs.log_event import Icon, LogLevel
 from agent.logs.log_registry import get_log_registry
@@ -90,8 +90,8 @@ class EquipmentResolver(CharacterBase):
         if slot_name is None:
             slot_name = self._resolve_slot_for(item)
 
-        if not slot_name or slot_name not in self.equipment_slots:
-            msg = f"Invalid equipment slot: {slot_name}"
+        if not slot_name or item.type not in EQUIPMENT_TYPES_PER_SLOT[slot_name]:
+            msg = f"Invalid equipment slot for {item.type.value}: {slot_name}"
             raise ValueError(msg)
 
         # Special case for weapons

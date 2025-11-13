@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Literal
+from typing import Literal, TYPE_CHECKING
 
 from pydantic import BaseModel
 
@@ -18,7 +18,6 @@ class EquipmentSlot(str, Enum):
     ARMOR = "armor"
     RING_RIGHT = "ring_right"
     RING_LEFT = "ring_left"
-    SHIELD = "shield"
     MAIN_HAND = "main_hand"
     OFF_HAND = "off_hand"
     RANGED = "ranged"
@@ -43,7 +42,19 @@ class EquipmentType(str, Enum):
     WEAPON_RANGED = "weapon_ranged"
 
 
+EQUIPMENT_TYPES_PER_SLOT = {
+    EquipmentSlot.AMULET: [EquipmentType.AMULET],
+    EquipmentSlot.ARMOR: [EquipmentType.ARMOR],
+    EquipmentSlot.RING_RIGHT: [EquipmentType.RING],
+    EquipmentSlot.RING_LEFT: [EquipmentType.RING],
+    EquipmentSlot.MAIN_HAND: [EquipmentType.WEAPON_MELEE],
+    EquipmentSlot.OFF_HAND: [EquipmentType.WEAPON_MELEE, EquipmentType.SHIELD],
+    EquipmentSlot.RANGED: [EquipmentType.WEAPON_RANGED],
+}
+
+
 class EquipmentFeature(BaseModel):
+    # TODO: Make ref_id a str and validate the enum afterwards to not overwhelm the LLM with too many values
     ref_id: FeatureId
     kwargs: dict = {}
 
