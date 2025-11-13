@@ -48,7 +48,6 @@ class CharacterSelections(BaseModel):
             msg = f"Must choose exactly {max_count} skills. You chose {len(self.skill_proficiencies)}."
             raise ValueError(msg)
 
-
     def validate_equipment_choices(self, options: list[EquipmentChoice]) -> None:
         for slot, choice in self.equipment.items():
             # Find the equipment option
@@ -114,6 +113,9 @@ class CharacterBuilder(BaseModel):
             msg = f"The total scores must be lower than {MAX_SCORES_TOTAL} to maintain game balance"
             raise ValueError(msg)
         return v
+
+    def __str__(self) -> str:
+        return f"{self.icon} {self.name} - {self.race.title()} {self.job.value.title()}"
 
     def to_character(self, party: str) -> Character:
         """Convert builder to full Character, applying selections."""

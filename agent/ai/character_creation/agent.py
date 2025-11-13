@@ -98,9 +98,9 @@ class CharacterCreationAgent:
         @tool
         def save_player_selections_tool(selections: CharacterSelections) -> str:
             """
-            Never call this tool without player confirmation!
+            Call this every time the player makes a selection.
 
-            Persist skills, equipment, and features that the player chose. Behaves like a PUT.
+            Persist skills, equipment, and/or features that the player chose. Behaves like a PATCH.
             Requires the character builder previously initialized for this character.
 
             Returns:

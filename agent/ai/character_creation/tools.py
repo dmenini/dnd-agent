@@ -14,36 +14,14 @@ def get_class_options(job_type: JobType) -> str:
     if not options:
         return f"No detailed options found for {job_type.value}"
 
-    result = f"Options for {job_type.value}:\n\n"
-
-    # Features
-    if options.feature_options:
-        result += "\n**Class Features**:\n"
-        for feat_choice in options.feature_options:
-            result += f"  {feat_choice.feature_name} - {feat_choice.description}:\n"
-            for opt in feat_choice.options:
-                result += f"    - {opt}\n"
-
-    # Skills
-    result += f"\n**Skills** (choose {options.skill_count}):\n"
-    for skill in options.skill_options:
-        result += f"  - {skill.value}\n"
-
-    # Equipment
-    if options.equipment_options:
-        result += "\n**Equipment Choices**:\n"
-        for eq_choice in options.equipment_options:
-            result += f"  {eq_choice.slot.value} - {eq_choice.description}:\n"
-            for opt in eq_choice.options:
-                result += f"    - {opt}\n"
-
-    return result
+    return options.model_dump_json()
 
 
 def save_base_character(context: CharacterCreationAgent, character: CharacterBuilder) -> str:
     context.current_builder = character
     return (
-        f"Started creating {character.name}, the {character.job.value}! "
+        f"Started creating {character.name}!\n\n"
+        f"{character.model_dump_json(exclude={'selections'})}\n\n"
         f"As a next step, the player must choose their skills, equipment, and features. "
         f"Use get_class_options_tool to see what's available."
     )
@@ -57,15 +35,41 @@ def save_player_selections(context: CharacterCreationAgent, selections: Characte
     if not options:
         return "Cannot set player selections - no options available for this class."
 
+    errors = []
+
     try:
         selections.validate_skills(options.skill_options, options.skill_count)
+    except ValueError as e:
+        errors.append(str(e))
+
+    try:
         selections.validate_equipment_choices(options.equipment_options)
+    except ValueError as e:
+        errors.append(str(e))
+
+    try:
         selections.validate_feature_choices(options.feature_options)
     except ValueError as e:
-        return str(e)
+        errors.append(str(e))
 
-    context.current_builder.selections = selections
-    return f"Player's selections set! Character {context.current_builder.name} can now be finalized."
+    errors = [res for res in errors if res]
+
+    if errors:
+        return "\n".join(errors)
+
+    context.current_builder.selections.skill_proficiencies = selections.skill_proficiencies
+
+    for slot, eq in selections.equipment.items():
+        context.current_builder.selections.equipment[slot] = eq
+
+    for feature, choice in selections.features.items():
+        context.current_builder.selections.features[feature] = choice
+
+    return (
+        f"Player's selections set!\n\n"
+        f"{context.current_builder.model_dump_json()}\n\n"
+        f"Character {context.current_builder.name} can now be finalized."
+    )
 
 
 def finalize_character(context: CharacterCreationAgent) -> str:
