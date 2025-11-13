@@ -44,11 +44,11 @@ class JobOptions(BaseModel):
     """All selectable options for a character class."""
 
     job_type: JobType
-    skill_choices: list[SkillType] = Field(description="Available skill proficiencies to choose from")
+    skill_options: list[SkillType] = Field(description="Available skill proficiencies to choose from")
     skill_count: int = Field(default=2, description="Number of skills the player can select")
-    equipment_choices: list[EquipmentChoice] = Field(
+    equipment_options: list[EquipmentChoice] = Field(
         default=[], description="Equipment selections available at character creation"
     )
-    feature_choices: list[FeatureChoice] = Field(
+    feature_options: list[FeatureChoice] = Field(
         default=[], description="Class-specific feature choices (e.g., domains, fighting styles)"
     )

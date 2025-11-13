@@ -1,14 +1,17 @@
 from pydantic import BaseModel, Field, field_validator
+from pydantic.json_schema import SkipJsonSchema
 
 from agent.character.abilities import Abilities, SkillType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.narrative import NarrativeAttributes
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.equipment.base import EquipmentSlot
+from agent.equipment.base import EQUIPMENT_TYPES_PER_SLOT, EquipmentSlot
+from agent.equipment.inventory import EquipmentPiece
 from agent.jobs.barbarian import Barbarian
 from agent.jobs.base import CharacterJob, JobType
 from agent.jobs.cleric import Cleric, ClericOptions
+from agent.jobs.feature import EquipmentChoice, FeatureChoice
 from agent.jobs.fighter import Fighter
 from agent.jobs.rogue import Rogue
 from agent.jobs.wizard import Wizard
@@ -30,15 +33,66 @@ options_map = {
 class CharacterSelections(BaseModel):
     """Stores player's choices during character creation."""
 
-    skill_proficiencies: list[SkillType] = Field(default=[], description="Selected skill proficiencies")
-    equipment: dict[EquipmentSlot, str] = Field(default={}, description="Equipment selections by slot")
-    features: dict[str, str] = Field(default={}, description="Class feature selections")
+    skill_proficiencies: list[SkillType] = Field(default=[], description="Selected skill proficiencies.")
+    equipment: dict[EquipmentSlot, EquipmentPiece] = Field(default={}, description="Equipment selections by slot.")
+    features: dict[str, str] = Field(default={}, description="Class feature selections.")
+
+    def validate_skills(self, options: list[SkillType], max_count: int) -> None:
+        invalid = [s for s in self.skill_proficiencies if s not in options]
+
+        if invalid:
+            msg = f"Invalid skill choices: {invalid}. Valid options: {options}"
+            raise ValueError(msg)
+
+        if len(self.skill_proficiencies) != max_count:
+            msg = f"Must choose exactly {max_count} skills. You chose {len(self.skill_proficiencies)}."
+            raise ValueError(msg)
+
+
+    def validate_equipment_choices(self, options: list[EquipmentChoice]) -> None:
+        for slot, choice in self.equipment.items():
+            # Find the equipment option
+            option = next((option for option in options if option.slot == slot), None)
+            if not option:
+                msg = f"Invalid equipment slot: {slot}"
+                raise ValueError(msg)
+
+            if choice.name not in option.options:
+                msg = f"Invalid choice '{choice.name}' for {slot}. Options: {option.options}"
+                raise ValueError(msg)
+
+            if choice.type not in EQUIPMENT_TYPES_PER_SLOT[slot]:
+                msg = f"Invalid equipment slot for equipment type {choice.type.value}: {slot.value}"
+                raise ValueError(msg)
+
+    def validate_feature_choices(self, options: list[FeatureChoice]) -> None:
+        for name, choice in self.features.items():
+            feat_choice = next((f for f in options if f.feature_name == name), None)
+            if not feat_choice:
+                msg = f"Invalid feature: {name}"
+                raise ValueError(msg)
+
+            # Check if choice matches any option (allow partial matching)
+            matching_option = None
+            for opt in feat_choice.options:
+                if choice.lower() in opt.lower() or opt.lower().startswith(choice.lower()):
+                    matching_option = opt
+                    break
+
+            if not matching_option:
+                msg = f"Invalid choice for {name}. Options: {feat_choice.options}"
+                raise ValueError(msg)
 
 
 class CharacterBuilder(BaseModel):
     name: str = Field(description="Character name")
     icon: str = Field(description="Icon on the map (emoji)")
     job: JobType = Field(description="Character class/job")
+    race: str = Field(default="human", description="Race")
+    backstory: str = Field(default="", description="Comprehensive backstory")
+    personality: str = Field(default="", description="Personality traits.")
+    alignment: str = Field(default="", description="Categorization of the ethical and moral perspective.")
+    summary: str = Field(default="", description="Summary of the character profile.")
     abilities: Abilities = Field(
         default=Abilities(),
         description=(
@@ -46,14 +100,11 @@ class CharacterBuilder(BaseModel):
             f"Free assignment, but total scores must be below {MAX_SCORES_TOTAL}."
         ),
     )
-    selections: CharacterSelections = Field(
+
+    # Hide selections so that LLM doesn't try to assign them at the very beginning
+    selections: SkipJsonSchema[CharacterSelections] = Field(
         default=CharacterSelections(), description="Player's choices for skills, equipment, and features"
     )
-    race: str = Field(default="human", description="Race")
-    backstory: str = Field(default="", description="Backstory")
-    personality: str = Field(default="", description="Personality traits.")
-    alignment: str = Field(default="", description="Categorization of the ethical and moral perspective.")
-    summary: str = Field(default="", description="Short summary of the character profile.")
 
     @field_validator("abilities", mode="after")
     @classmethod
@@ -71,7 +122,7 @@ class CharacterBuilder(BaseModel):
         # Add skill proficiencies from selections
         attrs.proficiencies = [
             Proficiency(source="builder", type=ProficiencyType.SKILL, target=prof)
-            for prof in self.selections.skill_proficiencies
+            for prof in self.selections.skill_proficiencies or []
         ]
 
         base_job = job_map[self.job]
@@ -104,7 +155,8 @@ class CharacterBuilder(BaseModel):
     def _apply_feature_selections(self, base_job: CharacterJob) -> CharacterJob:
         """Modify job based on feature selections ."""
         # Example: If Life Domain selected, add domain-specific features
-        domain = self.selections.features.get("Divine Domain")
+        features = self.selections.features or {}
+        domain = features.get("Divine Domain")
         if domain and "Life Domain" in domain:
             # Add Life Domain features to the job
             # This could involve modifying the features list
@@ -114,6 +166,6 @@ class CharacterBuilder(BaseModel):
 
     def _apply_equipment(self, character: Character) -> None:
         """Apply selected equipment to character."""
-        for _slot, _choice in self.selections.equipment.items():
-            # Define equipment registry to load a piece from an ID
-            pass
+        equipment = self.selections.equipment or {}
+        for slot, choice in equipment.items():
+            character.equip(item=choice, slot_name=slot)

@@ -15,7 +15,7 @@ from agent.models.enums import FeatureId, TargetingType
 
 ClericOptions = JobOptions(
     job_type=JobType.CLERIC,
-    skill_choices=[
+    skill_options=[
         SkillType.HISTORY,
         SkillType.INSIGHT,
         SkillType.MEDICINE,
@@ -23,7 +23,7 @@ ClericOptions = JobOptions(
         SkillType.RELIGION,
     ],
     skill_count=2,
-    equipment_choices=[
+    equipment_options=[
         EquipmentChoice(
             slot=EquipmentSlot.MAIN_HAND,
             options=["Mace", "Warhammer (if proficient)"],
@@ -40,7 +40,7 @@ ClericOptions = JobOptions(
             description="Choose your secondary weapon",
         ),
     ],
-    feature_choices=[
+    feature_options=[
         FeatureChoice(
             feature_name="Divine Domain",
             options=[
