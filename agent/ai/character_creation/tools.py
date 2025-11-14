@@ -14,7 +14,7 @@ from agent.jobs.base import JobType
 @tool
 def get_class_options(job_type: JobType) -> str:
     """
-    Get available options for a character class (skills, equipment, and features).
+    Get available options for a character class (subclass, skills, equipment).
 
     Returns:
         Formatted string describing all available options.
@@ -32,17 +32,17 @@ def save_base_character(character: CharacterBuilder, runtime: ToolRuntime) -> Co
     Never call this tool without player confirmation!
 
     Persist the base character information. Behaves like a PUT.
-    After this, guide the player through selecting skills, equipment, and features.
+    After this, guide the player through selecting subclass, skills, equipment.
 
     Returns:
         Next steps message.
     """
-    builder = runtime.state["current_builder"]
+    builder = runtime.state.get("current_builder")
     if not builder:
         msg = (
             f"Character saved!\n\n"
             f"{character.model_dump_json(exclude={'selections'})}\n\n"
-            f"As a next step, the player must choose their skills, equipment, and features. "
+            f"As a next step, the player must choose their subclass, skills, equipment. "
             f"Use get_class_options to see what's available."
         )
     else:
@@ -90,9 +90,9 @@ def save_skills(selections: CharacterSelections, runtime: ToolRuntime) -> Comman
 
 
 @tool
-def save_class_features(selections: CharacterSelections, runtime: ToolRuntime) -> Command:
+def save_subclass(selections: CharacterSelections, runtime: ToolRuntime) -> Command:
     """
-    Call this every time the player chooses class features to persist them.
+    Call this every time the player chooses a subclass to persist it.
     Requires the character builder previously initialized for this character.
 
     Returns:
@@ -107,17 +107,11 @@ def save_class_features(selections: CharacterSelections, runtime: ToolRuntime) -
         msg = "Cannot set player selections - no options available for this class."
         return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
 
-    try:
-        selections.validate_feature_choices(options.feature_options)
-    except ValueError as e:
-        return _format_tool_response(message=str(e), tool_call_id=runtime.tool_call_id)
-
     builder = runtime.state["current_builder"].model_copy(deep=True)
 
-    for feature, choice in selections.features.items():
-        builder.selections.features[feature] = choice
+    builder.selections.subclass = selections.subclass
 
-    msg = f"Class features set!\n\n{builder.model_dump_json()}"
+    msg = f"Subclass set!\n\n{builder.model_dump_json()}"
     return _format_tool_response(
         current_builder=builder,
         message=msg,
@@ -164,51 +158,46 @@ def save_starting_equipment(selections: CharacterSelections, runtime: ToolRuntim
 @tool
 def finalize_character(runtime: ToolRuntime) -> Command:
     """
-    Call this after all narrative and mechanical choices (skills, equipment, features) are made
+    Call this after all narrative and mechanical choices (skills, equipment, subclass) are made
     to finalize the creation of the current character.
 
     Returns:
         Confirmation message
     """
-    if not runtime.state["current_builder"]:
+    builder = runtime.state["current_builder"]
+    if not builder:
         msg = "No character is currently being created."
         return _format_tool_response(msg, runtime.tool_call_id)
 
     # Validate all required choices are made
-    options = options_map.get(runtime.state["current_builder"].job)
+    options = options_map.get(builder.job)
     if options:
         # Check skills
-        if len(runtime.state["current_builder"].selections.skill_proficiencies) != options.skill_count:
+        if options.skill_options and len(builder.selections.skill_proficiencies) != options.skill_count:
             msg = f"Must choose {options.skill_count} skills before finalizing."
             return _format_tool_response(msg, runtime.tool_call_id)
 
         # Check equipment
-        missing_equipment = [
-            e.slot
-            for e in options.equipment_options
-            if e.slot not in runtime.state["current_builder"].selections.equipment
-        ]
-        if missing_equipment:
-            msg = f"Missing equipment choices: {missing_equipment}"
-            return _format_tool_response(msg, runtime.tool_call_id)
+        if options.equipment_options:
+            missing_equipment = [
+                e.slot for e in options.equipment_options if e.slot not in builder.selections.equipment
+            ]
+            if missing_equipment:
+                msg = f"Missing equipment choices: {missing_equipment}"
+                return _format_tool_response(msg, runtime.tool_call_id)
 
-        # Check features
-        missing_features = [
-            f.feature_name
-            for f in options.feature_options
-            if f.feature_name not in runtime.state["current_builder"].selections.features
-        ]
-        if missing_features:
-            msg = f"Missing feature choices: {missing_features}"
+        # Check subclass
+        if options.subclass_options.level_required == 1 and not builder.selections.subclass:
+            msg = "Missing subclass"
             return _format_tool_response(msg, runtime.tool_call_id)
 
     # Save character
-    msg = f"Character creation complete: {runtime.state['current_builder'].name}"
+    msg = "Character creation complete"
 
     return _format_tool_response(
         current_builder=None,
         done=len(runtime.state["party"]) + 1 == runtime.state["max_players"],
-        party=[runtime.state["current_builder"]],
+        party=[builder],
         message=msg,
         tool_call_id=runtime.tool_call_id,
     )

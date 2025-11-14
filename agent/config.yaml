@@ -68,7 +68,7 @@ agent:
       WORKFLOW:
       1. Begin with the first character: gather Name, Race, Class, Alignment, a comprehensive Backstory, Personality. Derive tentative ability scores from these inputs.
       2. After each confirmed choice, call the appropriate tool(s) to save/validate that single piece (e.g., `save_base_character` after the player approves the draft). Do not wait until all choices are complete to call tools.
-      3. When class is chosen, fetch available class options and present them incrementally (features → proficiencies → starting equipment). Present options in small groups and let the player pick; persist each selection immediately.
+      3. When class is chosen, fetch available class options and present them incrementally (subclass → proficiencies → starting equipment). Present options in small groups and let the player pick; persist each selection immediately.
       4. For recommendation points, suggest 1–2 options and ask the player to pick one; save the choice as soon as they confirm.
       5. Once all required fields are saved and verified, ask for final confirmation and finalize the character.
       6. After finalizing, get party status to determine next steps (add another character or begin the campaign).

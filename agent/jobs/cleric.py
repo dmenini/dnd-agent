@@ -1,3 +1,5 @@
+from enum import Enum
+
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression, SpellLevel
@@ -6,12 +8,23 @@ from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobOptions, JobType
-from agent.jobs.feature import EquipmentChoice, FeatureChoice, FeatureType, JobFeature
+from agent.jobs.feature import EquipmentChoice, FeatureType, JobFeature, OptionItem, SubclassChoice
 from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
 # https://roll20.net/compendium/dnd5e/Classes:Cleric#content
+
+
+class DivineDomain(str, Enum):
+    KNOWLEDGE = "knowledge_domain"
+    LIFE = "life_domain"
+    LIGHT = "light_domain"
+    NATURE = "nature_domain"
+    TEMPEST = "tempest_domain"
+    TRICKERY = "trickery_domain"
+    WAR = "war_domain"
+
 
 ClericOptions = JobOptions(
     job_type=JobType.CLERIC,
@@ -26,36 +39,48 @@ ClericOptions = JobOptions(
     equipment_options=[
         EquipmentChoice(
             slot=EquipmentSlot.MAIN_HAND,
-            options=["Mace", "Warhammer (if proficient)"],
-            description="Choose your primary weapon",
+            options=[
+                OptionItem(id="mace", name="Mace", description=""),
+                OptionItem(id="warhammer", name="Warhammer", description="Requires martial proficiency"),
+            ],
+            description="Choose your main weapon",
         ),
         EquipmentChoice(
             slot=EquipmentSlot.ARMOR,
-            options=["Scale Mail", "Leather Armor", "Chain Mail (if proficient)"],
+            options=[
+                OptionItem(id="scale_mail", name="Scale Mail"),
+                OptionItem(id="leather_armor", name="Leather Armor"),
+                OptionItem(id="chain_mail", name="Chain Mail", description="Requires heavy armor proficiency"),
+            ],
             description="Choose your armor",
         ),
         EquipmentChoice(
             slot=EquipmentSlot.RANGED,
-            options=["Light Crossbow and 20 bolts", "Any simple weapon"],
-            description="Choose your secondary weapon",
-        ),
-    ],
-    feature_options=[
-        FeatureChoice(
-            feature_name="Divine Domain",
             options=[
-                "Life Domain - Focus on healing and vitality",
-                "War Domain - Divine warrior with combat prowess",
-                "Tempest Domain - Channel the power of storms",
-                "Knowledge Domain - Keeper of lore and secrets",
-                "Trickery Domain - Master of deception and stealth",
-                "Nature Domain - Protector of the wilderness",
-                "Light Domain - Bearer of radiant flame",
+                OptionItem(id="light_crossbow", name="Light Crossbow"),
+                OptionItem(id="light_bow", name="Light Bow"),
             ],
-            description="Your divine domain represents the aspect of your deity's portfolio you embody",
-            level_required=1,
+            description="Choose your ranged weapon",
         ),
     ],
+    subclass_options=SubclassChoice(
+        feature_name="Divine Domain",
+        description="Your divine domain represents the aspect of your deity's portfolio you embody.",
+        options=[
+            OptionItem(id=DivineDomain.LIFE.value, name="Life Domain", description="Focus on healing and vitality"),
+            OptionItem(id=DivineDomain.WAR.value, name="War Domain", description="Divine warrior with combat prowess"),
+            OptionItem(id=DivineDomain.TEMPEST.value, name="Tempest Domain", description="Channel the power of storms"),
+            OptionItem(
+                id=DivineDomain.KNOWLEDGE.value, name="Knowledge Domain", description="Keeper of lore and secrets"
+            ),
+            OptionItem(
+                id=DivineDomain.TRICKERY.value, name="Trickery Domain", description="Master of deception and stealth"
+            ),
+            OptionItem(id=DivineDomain.NATURE.value, name="Nature Domain", description="Protector of the wilderness"),
+            OptionItem(id=DivineDomain.LIGHT.value, name="Light Domain", description="Bearer of radiant flame"),
+        ],
+        level_required=1,
+    ),
 )
 
 Cleric = CharacterJob(

@@ -24,18 +24,24 @@ class JobFeature(BaseModel):
     kwargs: dict = {}
 
 
+class OptionItem(BaseModel):
+    id: str
+    name: str
+    description: str = ""
+
+
 class EquipmentChoice(BaseModel):
     """Choice between equipment options."""
 
     slot: EquipmentSlot = Field(description="Equipment slot identifier")
-    options: list[str] = Field(description="List of valid equipment choices")
+    options: list[OptionItem] = Field(description="List of valid equipment choices")
     description: str = Field(description="Description of the choice")
 
 
-class FeatureChoice(BaseModel):
+class SubclassChoice(BaseModel):
     """Choice for a class feature (e.g., Divine Domain)."""
 
-    feature_name: str = Field(description="Name of the feature being chosen")
-    options: list[str] = Field(description="Valid options for this feature")
-    description: str = Field(description="What this feature represents")
+    feature_name: str = Field(description="Subclass name")
+    options: list[OptionItem] = Field(description="Valid subclass options")
+    description: str = Field(description="Description of the subclass")
     level_required: int = Field(default=1, description="Level when this choice is made")

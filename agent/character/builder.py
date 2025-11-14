@@ -9,9 +9,9 @@ from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.equipment.base import EQUIPMENT_TYPES_PER_SLOT, EquipmentSlot
 from agent.equipment.inventory import EquipmentPiece
 from agent.jobs.barbarian import Barbarian
-from agent.jobs.base import CharacterJob, JobType
+from agent.jobs.base import JobType
 from agent.jobs.cleric import Cleric, ClericOptions
-from agent.jobs.feature import EquipmentChoice, FeatureChoice
+from agent.jobs.feature import EquipmentChoice, SubclassChoice
 from agent.jobs.fighter import Fighter
 from agent.jobs.rogue import Rogue
 from agent.jobs.wizard import Wizard
@@ -33,9 +33,9 @@ options_map = {
 class CharacterSelections(BaseModel):
     """Stores player's choices during character creation."""
 
-    skill_proficiencies: list[SkillType] = Field(default=[], description="Selected skill proficiencies.")
-    equipment: dict[EquipmentSlot, EquipmentPiece] = Field(default={}, description="Equipment selections by slot.")
-    features: dict[str, str] = Field(default={}, description="Class feature selections.")
+    skill_proficiencies: list[SkillType] = Field(default=[], description="Chosen skill proficiencies.")
+    equipment: dict[EquipmentSlot, EquipmentPiece] = Field(default={}, description="Chosen equipment by slot.")
+    subclass: str | None = Field(default=None, description="Chosen subclass ID.")
 
     def validate_skills(self, options: list[SkillType], max_count: int) -> None:
         invalid = [s for s in self.skill_proficiencies if s not in options]
@@ -49,38 +49,27 @@ class CharacterSelections(BaseModel):
             raise ValueError(msg)
 
     def validate_equipment_choices(self, options: list[EquipmentChoice]) -> None:
-        for slot, choice in self.equipment.items():
+        for slot, piece in self.equipment.items():
             # Find the equipment option
             option = next((option for option in options if option.slot == slot), None)
             if not option:
                 msg = f"Invalid equipment slot: {slot}"
                 raise ValueError(msg)
 
-            if choice.name not in option.options:
-                msg = f"Invalid choice '{choice.name}' for {slot}. Options: {option.options}"
+            if piece.type not in EQUIPMENT_TYPES_PER_SLOT[slot]:
+                msg = f"Invalid equipment slot for equipment type {piece.type.value}: {slot.value}"
                 raise ValueError(msg)
 
-            if choice.type not in EQUIPMENT_TYPES_PER_SLOT[slot]:
-                msg = f"Invalid equipment slot for equipment type {choice.type.value}: {slot.value}"
-                raise ValueError(msg)
-
-    def validate_feature_choices(self, options: list[FeatureChoice]) -> None:
-        for name, choice in self.features.items():
-            feat_choice = next((f for f in options if f.feature_name == name), None)
-            if not feat_choice:
-                msg = f"Invalid feature: {name}"
-                raise ValueError(msg)
-
-            # Check if choice matches any option (allow partial matching)
-            matching_option = None
-            for opt in feat_choice.options:
-                if choice.lower() in opt.lower() or opt.lower().startswith(choice.lower()):
-                    matching_option = opt
-                    break
-
+            matching_option = next((opt for opt in option.options if piece.name in {opt.name, opt.id}), None)
             if not matching_option:
-                msg = f"Invalid choice for {name}. Options: {feat_choice.options}"
+                msg = f"Invalid choice '{piece.name}' for {slot}. Options: {option.options}"
                 raise ValueError(msg)
+
+    def validate_subclass_choice(self, options: SubclassChoice) -> None:
+        choice = next((opt for opt in options.options if self.subclass in {opt.name, opt.id}), None)
+        if not choice:
+            msg = f"Invalid subclass: {self.subclass}"
+            raise ValueError(msg)
 
 
 class CharacterBuilder(BaseModel):
@@ -131,7 +120,7 @@ class CharacterBuilder(BaseModel):
         ]
 
         base_job = job_map[self.job]
-        modified_job = self._apply_feature_selections(base_job)
+        modified_job = base_job
 
         character = Character(
             id=self.name.lower().replace(" ", "-"),
@@ -156,18 +145,6 @@ class CharacterBuilder(BaseModel):
         self._apply_equipment(character)
 
         return character
-
-    def _apply_feature_selections(self, base_job: CharacterJob) -> CharacterJob:
-        """Modify job based on feature selections ."""
-        # Example: If Life Domain selected, add domain-specific features
-        features = self.selections.features or {}
-        domain = features.get("Divine Domain")
-        if domain and "Life Domain" in domain:
-            # Add Life Domain features to the job
-            # This could involve modifying the features list
-            pass
-
-        return base_job
 
     def _apply_equipment(self, character: Character) -> None:
         """Apply selected equipment to character."""

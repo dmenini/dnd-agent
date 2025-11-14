@@ -13,9 +13,9 @@ from agent.ai.character_creation.tools import (
     get_class_options,
     get_party_status,
     save_base_character,
-    save_class_features,
     save_skills,
     save_starting_equipment,
+    save_subclass,
 )
 from agent.ai.components import create_llm
 from agent.character.abilities import SkillType
@@ -54,7 +54,7 @@ class CharacterCreationAgent:
         tools = [
             get_class_options,
             save_base_character,
-            save_class_features,
+            save_subclass,
             save_starting_equipment,
             save_skills,
             finalize_character,
@@ -144,6 +144,7 @@ class CharacterCreationAgent:
 
         # Start the conversation
         input_ = {
+            "current_builder": None,
             "messages": [SystemMessage(content=self.greeting_prompt)],
             "max_players": self.max_players,
         }
@@ -156,6 +157,7 @@ class CharacterCreationAgent:
         while not self.done:
             user_input = input("\nYou: ").strip()
             input_ = {
+                "current_builder": None,
                 "messages": [HumanMessage(content=user_input)],
                 "max_players": self.max_players,
             }

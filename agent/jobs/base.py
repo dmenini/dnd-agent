@@ -6,7 +6,7 @@ from agent.character.abilities import AbilityType, SkillType
 from agent.character.attributes import Proficiency
 from agent.character.resources import CasterProgression
 from agent.equipment.inventory import EquipmentPiece
-from agent.jobs.feature import EquipmentChoice, FeatureChoice, JobFeature
+from agent.jobs.feature import EquipmentChoice, JobFeature, SubclassChoice
 from agent.jobs.spells import Spell
 
 
@@ -47,8 +47,6 @@ class JobOptions(BaseModel):
     skill_options: list[SkillType] = Field(description="Available skill proficiencies to choose from")
     skill_count: int = Field(default=2, description="Number of skills the player can select")
     equipment_options: list[EquipmentChoice] = Field(
-        default=[], description="Equipment selections available at character creation"
+        default=[], description="Equipment options available at character creation"
     )
-    feature_options: list[FeatureChoice] = Field(
-        default=[], description="Class-specific feature choices (e.g., domains, fighting styles)"
-    )
+    subclass_options: SubclassChoice = Field(description="Subclass options available for the chosen class")
