@@ -207,7 +207,7 @@ class GameBackend:
 
         # Detect completion of a character
         if self.char_agent.current_character:
-            character = self.char_agent.current_character.to_character(party=self.char_agent.party)
+            character = self.char_agent.current_character.to_character(party=self.char_agent.party_name)
             if character.id not in self.state.characters:
                 self._register_character(character)
                 interrupt = f"Character {character.name} created!"

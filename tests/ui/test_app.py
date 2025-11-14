@@ -25,7 +25,7 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
     fake_char_agent.respond = mocker.AsyncMock()
     fake_char_agent.respond.return_value = "Here is your character!"
     fake_char_agent.is_done = True
-    fake_char_agent.party = DEFAULT_PARTY_NAME
+    fake_char_agent.party_name = DEFAULT_PARTY_NAME
     fake_char_agent.current_character = CharacterBuilder(
         name=actor.name,
         icon=actor.icon,
@@ -38,7 +38,7 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
     ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])
 
     def fake_initialize_map(encounter: list[Character], map_layout: list[str] | None = None) -> None:
-        ui.backend.state.characters[actor.id].pos = actor.pos
+        ui.backend.state.party[actor.id].pos = actor.pos
         game_map = GameMap(
             map="..\n..",
             width=2,
@@ -78,7 +78,7 @@ async def test_app(  # noqa: PLR0915
         await pilot.click(input_widget)
         await pilot.press("enter")
         await pilot.pause()
-        assert len(ui.state.characters) == 1
+        assert len(ui.state.party) == 1
         assert ui.backend.phase == GamePhase.STORY
 
         ui.state.turn_order = [actor.id, target.id]
@@ -165,7 +165,7 @@ async def test_action_resources_are_used(
         await pilot.click(input_widget)
         await pilot.press("enter")
         await pilot.pause()
-        assert len(ui.state.characters) == 1
+        assert len(ui.state.party) == 1
         ui.state.turn_order = [actor.id, target.id]
 
         # Combat starts and interrupt stops execution at player's decision time
@@ -223,5 +223,5 @@ async def test_action_resources_are_used(
         assert ui.state.current_actor.name == target.name
 
         # No changes due to serialization
-        assert len(ui.state.characters[actor.id].special_abilities) == num_abilities
-        assert len(ui.state.characters[actor.id].passives) == num_passives
+        assert len(ui.state.party[actor.id].special_abilities) == num_abilities
+        assert len(ui.state.party[actor.id].passives) == num_passives

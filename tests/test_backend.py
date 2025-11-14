@@ -76,7 +76,7 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     fake_char_agent.respond = mocker.AsyncMock()
     fake_char_agent.respond.side_effect = ["Welcome to your adventure!", "Here is your character!"]
     fake_char_agent.has_started = False
-    fake_char_agent.party = DEFAULT_PARTY_NAME
+    fake_char_agent.party_name = DEFAULT_PARTY_NAME
 
     backend = GameBackend(state, Config(agent=config))
     backend.char_agent = fake_char_agent
@@ -216,8 +216,8 @@ async def test_start_combat_from_any_phase(backend: GameBackend, actor: Characte
     state_arg = call_args[0][0]
 
     assert state_arg.map is not None
-    assert actor.id in state_arg.map.characters
-    assert target.id in state_arg.map.characters
+    assert actor.id in state_arg.map.party
+    assert target.id in state_arg.map.party
 
 
 @pytest.mark.asyncio
@@ -250,8 +250,8 @@ async def test_start_combat_map_initialization(
     assert state_arg.map.map == "\n".join(custom_map)
 
     # Verify both characters are in the map
-    assert actor.id in state_arg.map.characters
-    assert target.id in state_arg.map.characters
+    assert actor.id in state_arg.map.party
+    assert target.id in state_arg.map.party
 
     # Verify walls were extracted correctly (corners and edges)
     assert len(state_arg.map.walls) == 12  # All '#' characters in 4x4 border
@@ -297,7 +297,7 @@ def test_load_snapshot(config: AgentConfig, actor: Character) -> None:
 def test_reset(backend: GameBackend, actor: Character) -> None:
     """Test resetting the game backend."""
     backend.state.characters[actor.id] = actor
-    backend.initial_state.characters[actor.id] = actor
+    backend.initial_state.party[actor.id] = actor
     backend.phase = GamePhase.COMBAT
     original_thread_id = backend.thread_id
     backend.state.characters[actor.id].name = "Modified Name"
@@ -306,9 +306,9 @@ def test_reset(backend: GameBackend, actor: Character) -> None:
 
     assert backend.phase == GamePhase.START
     assert backend.thread_id != original_thread_id
-    assert len(backend.state.characters) == len(backend.initial_state.characters)
-    assert backend.state.characters[actor.id].name == backend.initial_state.characters[actor.id].name
-    assert len(backend.char_agent.characters) == 0
+    assert len(backend.state.characters) == len(backend.initial_state.party)
+    assert backend.state.characters[actor.id].name == backend.initial_state.party[actor.id].name
+    assert len(backend.char_agent.party) == 0
 
 
 @pytest.mark.asyncio
