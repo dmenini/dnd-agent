@@ -1,5 +1,3 @@
-from enum import Enum
-
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression, SpellLevel
@@ -7,23 +5,13 @@ from agent.effects.status_effects.blessed import Blessed
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
-from agent.jobs.base import CharacterJob, JobOptions, JobType
+from agent.jobs.base import CharacterJob, JobOptions, JobSpecialization, JobType
 from agent.jobs.feature import EquipmentChoice, FeatureType, JobFeature, OptionItem, SubclassChoice
 from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
 # https://roll20.net/compendium/dnd5e/Classes:Cleric#content
-
-
-class DivineDomain(str, Enum):
-    KNOWLEDGE = "knowledge_domain"
-    LIFE = "life_domain"
-    LIGHT = "light_domain"
-    NATURE = "nature_domain"
-    TEMPEST = "tempest_domain"
-    TRICKERY = "trickery_domain"
-    WAR = "war_domain"
 
 
 ClericOptions = JobOptions(
@@ -67,17 +55,13 @@ ClericOptions = JobOptions(
         feature_name="Divine Domain",
         description="Your divine domain represents the aspect of your deity's portfolio you embody.",
         options=[
-            OptionItem(id=DivineDomain.LIFE.value, name="Life Domain", description="Focus on healing and vitality"),
-            OptionItem(id=DivineDomain.WAR.value, name="War Domain", description="Divine warrior with combat prowess"),
-            OptionItem(id=DivineDomain.TEMPEST.value, name="Tempest Domain", description="Channel the power of storms"),
-            OptionItem(
-                id=DivineDomain.KNOWLEDGE.value, name="Knowledge Domain", description="Keeper of lore and secrets"
-            ),
-            OptionItem(
-                id=DivineDomain.TRICKERY.value, name="Trickery Domain", description="Master of deception and stealth"
-            ),
-            OptionItem(id=DivineDomain.NATURE.value, name="Nature Domain", description="Protector of the wilderness"),
-            OptionItem(id=DivineDomain.LIGHT.value, name="Light Domain", description="Bearer of radiant flame"),
+            OptionItem(id="life_domain", name="Life Domain", description="Focus on healing and vitality"),
+            OptionItem(id="war_domain", name="War Domain", description="Divine warrior with combat prowess"),
+            OptionItem(id="tempest_domain", name="Tempest Domain", description="Channel the power of storms"),
+            OptionItem(id="knowledge_domain", name="Knowledge Domain", description="Keeper of lore and secrets"),
+            OptionItem(id="trickery_domain", name="Trickery Domain", description="Master of deception and stealth"),
+            OptionItem(id="nature_domain", name="Nature Domain", description="Protector of the wilderness"),
+            OptionItem(id="light_domain", name="Light Domain", description="Bearer of radiant flame"),
         ],
         level_required=1,
     ),
@@ -156,10 +140,50 @@ Cleric = CharacterJob(
             level_required=1,
             type=FeatureType.ACTIVE,
             level=SpellLevel.LEVEL_1,
-            targeting=TargetingType.MULTI,
+            targeting=TargetingType.ALLIES,
             range=9,
             hits=3,
             effects=[Blessed(duration=1)],
         ),
     ],
 )
+
+LifeDomain = JobSpecialization(
+    name="Life Domain",
+)
+
+WarDomain = JobSpecialization(
+    name="War Domain",
+    proficiencies=[Proficiency(source="war_domain", type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE)],
+)
+
+TempestDomain = JobSpecialization(
+    name="Tempest Domain",
+    proficiencies=[Proficiency(source="tempest_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
+)
+
+KnowledgeDomain = JobSpecialization(
+    name="Knowledge Domain",
+)
+
+TrickeryDomain = JobSpecialization(
+    name="Trickery Domain",
+)
+
+NatureDomain = JobSpecialization(
+    name="Nature Domain",
+)
+
+LightDomain = JobSpecialization(
+    name="Light Domain",
+)
+
+cleric_specs = {
+    "life_domain": LifeDomain,
+    "war_domain": WarDomain,
+    "tempest_domain": TempestDomain,
+    "knowledge_domain": KnowledgeDomain,
+    "trickery_domain": TrickeryDomain,
+    "nature_domain": NatureDomain,
+    "light_domain": LightDomain,
+}

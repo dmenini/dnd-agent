@@ -15,6 +15,7 @@ class TargetingType(str, Enum):
     AREA = "area"
     SELF = "self"
     MULTI = "multi"
+    ALLIES = "allies"
 
 
 class FeatureId(str, Enum):

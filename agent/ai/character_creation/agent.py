@@ -158,7 +158,7 @@ class CharacterCreationAgent:
             user_input = input("\nYou: ").strip()
             input_ = {
                 "current_builder": None,
-                "messages": [HumanMessage(content=user_input)],
+                "messages": [HumanMessage(content=user_input)],  # type: ignore[list-item]
                 "max_players": self.max_players,
             }
             for event in self.agent.stream(input_, config=config, stream_mode="values"):

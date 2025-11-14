@@ -10,7 +10,7 @@ from agent.equipment.base import EQUIPMENT_TYPES_PER_SLOT, EquipmentSlot
 from agent.equipment.inventory import EquipmentPiece
 from agent.jobs.barbarian import Barbarian
 from agent.jobs.base import JobType
-from agent.jobs.cleric import Cleric, ClericOptions
+from agent.jobs.cleric import Cleric, ClericOptions, cleric_specs
 from agent.jobs.feature import EquipmentChoice, SubclassChoice
 from agent.jobs.fighter import Fighter
 from agent.jobs.rogue import Rogue
@@ -28,6 +28,8 @@ job_map = {
 options_map = {
     JobType.CLERIC: ClericOptions,
 }
+
+subclass_map = {JobType.CLERIC: cleric_specs}
 
 
 class CharacterSelections(BaseModel):
@@ -119,8 +121,10 @@ class CharacterBuilder(BaseModel):
             for prof in self.selections.skill_proficiencies or []
         ]
 
-        base_job = job_map[self.job]
-        modified_job = base_job
+        job = job_map[self.job]
+        if self.selections.subclass:
+            subclass = subclass_map[self.job][self.selections.subclass]
+            job = job.apply_specialization(subclass)
 
         character = Character(
             id=self.name.lower().replace(" ", "-"),
@@ -130,7 +134,7 @@ class CharacterBuilder(BaseModel):
             level=1,
             experience=0,
             attributes=attrs,
-            job=modified_job,
+            job=job,
             party=Party(id="players", name=party, is_player_party=True),
             narrative=NarrativeAttributes(
                 race=self.race,

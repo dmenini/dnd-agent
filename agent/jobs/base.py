@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Self
 
 from pydantic import BaseModel, Field
 
@@ -18,10 +19,18 @@ class JobType(str, Enum):
     WIZARD = "wizard"
 
 
+class JobSpecialization(BaseModel):
+    name: str
+    features: list[JobFeature] = []
+    spells: list[Spell] = []
+    proficiencies: list[Proficiency] = []
+
+
 class CharacterJob(BaseModel):
     """Base model for a character's archetype (Fighter, Wizard, etc.)."""
 
     type: JobType
+    specialization: str | None = None
     hit_die: int
     primary_ability: AbilityType
     spellcasting_ability: AbilityType | None = None
@@ -38,6 +47,15 @@ class CharacterJob(BaseModel):
     def get_spells_for_level(self, level: int) -> list[Spell]:
         """Return unlocked spells up to the given level."""
         return [f for f in self.spells if f.level_required <= level]
+
+    def apply_specialization(self, subclass: JobSpecialization) -> Self:
+        """Modify this job by incorporating subclass features, spells, and proficiencies."""
+        updated = self.model_copy(deep=True)
+        updated.specialization = subclass.name
+        updated.features += subclass.features
+        updated.spells += subclass.spells
+        updated.proficiencies += subclass.proficiencies
+        return updated
 
 
 class JobOptions(BaseModel):
