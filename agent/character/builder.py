@@ -110,7 +110,10 @@ class CharacterBuilder(BaseModel):
     def total_value(cls, v: Abilities) -> Abilities:
         tot = v.strength + v.wisdom + v.intelligence + v.charisma + v.dexterity + v.constitution
         if tot > MAX_SCORES_TOTAL:
-            msg = f"The total scores must be lower than {MAX_SCORES_TOTAL} to maintain game balance"
+            msg = (
+                f"The total scores must be lower than {MAX_SCORES_TOTAL} to maintain game balance. "
+                f"Please, revise the scores."
+            )
             raise ValueError(msg)
         return v
 
@@ -133,7 +136,7 @@ class CharacterBuilder(BaseModel):
         character = Character(
             id=self.name.lower().replace(" ", "-"),
             name=self.name,
-            icon=self.icon,
+            icon=self.icon.strip(),
             is_player=True,
             level=1,
             experience=0,

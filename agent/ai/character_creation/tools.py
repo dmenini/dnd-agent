@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
+from langgraph.prebuilt import ToolRuntime  # noqa: TC002
 from langgraph.types import Command
 
 from agent.character.builder import CharacterBuilder, CharacterSelections, options_map
 from agent.jobs.base import JobType
-
-if TYPE_CHECKING:
-    from langgraph.prebuilt import ToolRuntime
 
 
 @tool
@@ -39,70 +37,123 @@ def save_base_character(character: CharacterBuilder, runtime: ToolRuntime) -> Co
     Returns:
         Next steps message.
     """
-    msg = (
-        f"Started creating {character.name}!\n\n"
-        f"{character.model_dump_json(exclude={'selections'})}\n\n"
-        f"As a next step, the player must choose their skills, equipment, and features. "
-        f"Use get_class_options_tool to see what's available."
-    )
+    builder = runtime.state["current_builder"]
+    if not builder:
+        msg = (
+            f"Character saved!\n\n"
+            f"{character.model_dump_json(exclude={'selections'})}\n\n"
+            f"As a next step, the player must choose their skills, equipment, and features. "
+            f"Use get_class_options to see what's available."
+        )
+    else:
+        # The tool can also be used to update existing fields, but not selections
+        existing = CharacterBuilder.model_validate(builder)
+        character.selections = existing.selections
+        msg = f"Character saved!\n\n{character.model_dump_json(exclude={'selections'})}"
+
     return _format_tool_response(current_builder=character, message=msg, tool_call_id=runtime.tool_call_id)
 
 
 @tool
-def save_player_selections(selections: CharacterSelections, runtime: ToolRuntime) -> Command:  # noqa: C901
+def save_skills(selections: CharacterSelections, runtime: ToolRuntime) -> Command:
     """
-    Call this every time the player chooses skills, equipment and/or features.
-
-    Persist skills, equipment, and/or features that the player chose. Behaves like a PATCH.
+    Call this every time the player chooses skill proficiencies to persist them.
     Requires the character builder previously initialized for this character.
 
     Returns:
-        Next steps message
+        Updated character model
     """
     if not runtime.state["current_builder"]:
-        msg = "No character is currently being created. Use start_character_creation first."
-        return _format_tool_response(msg, runtime.tool_call_id)
+        msg = "No character is currently being created. Use save_base_character first."
+        return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
 
     options = options_map.get(runtime.state["current_builder"].job)
     if not options:
         msg = "Cannot set player selections - no options available for this class."
-        return _format_tool_response(msg, runtime.tool_call_id)
-
-    errors = []
+        return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
 
     try:
-        if selections.skill_proficiencies is not None:
-            selections.validate_skills(options.skill_options, options.skill_count)
+        selections.validate_skills(options.skill_options, options.skill_count)
     except ValueError as e:
-        errors.append(str(e))
+        return _format_tool_response(message=str(e), tool_call_id=runtime.tool_call_id)
 
-    try:
-        selections.validate_equipment_choices(options.equipment_options)
-    except ValueError as e:
-        errors.append(str(e))
+    builder = runtime.state["current_builder"].model_copy(deep=True)
+
+    builder.selections.skill_proficiencies = selections.skill_proficiencies
+
+    msg = f"Skills set!\n\n{builder.model_dump_json()}"
+    return _format_tool_response(
+        current_builder=builder,
+        message=msg,
+        tool_call_id=runtime.tool_call_id,
+    )
+
+
+@tool
+def save_class_features(selections: CharacterSelections, runtime: ToolRuntime) -> Command:
+    """
+    Call this every time the player chooses class features to persist them.
+    Requires the character builder previously initialized for this character.
+
+    Returns:
+        Updated character model
+    """
+    if not runtime.state["current_builder"]:
+        msg = "No character is currently being created. Use save_base_character first."
+        return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
+
+    options = options_map.get(runtime.state["current_builder"].job)
+    if not options:
+        msg = "Cannot set player selections - no options available for this class."
+        return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
 
     try:
         selections.validate_feature_choices(options.feature_options)
     except ValueError as e:
-        errors.append(str(e))
-
-    errors = [res for res in errors if res]
-
-    if errors:
-        return _format_tool_response("\n".join(errors), runtime.tool_call_id)
+        return _format_tool_response(message=str(e), tool_call_id=runtime.tool_call_id)
 
     builder = runtime.state["current_builder"].model_copy(deep=True)
-
-    if selections.skill_proficiencies:
-        builder.selections.skill_proficiencies = selections.skill_proficiencies
-
-    for slot, eq in selections.equipment.items():
-        builder.selections.equipment[slot] = eq
 
     for feature, choice in selections.features.items():
         builder.selections.features[feature] = choice
 
-    msg = f"Player's selections set!\n\n{builder.model_dump_json()}"
+    msg = f"Class features set!\n\n{builder.model_dump_json()}"
+    return _format_tool_response(
+        current_builder=builder,
+        message=msg,
+        tool_call_id=runtime.tool_call_id,
+    )
+
+
+@tool
+def save_starting_equipment(selections: CharacterSelections, runtime: ToolRuntime) -> Command:
+    """
+    Call this every time the player chooses equipments to persist them.
+    Requires the character builder previously initialized for this character.
+
+    Returns:
+        Updated character model
+    """
+    if not runtime.state["current_builder"]:
+        msg = "No character is currently being created. Use save_base_character first."
+        return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
+
+    options = options_map.get(runtime.state["current_builder"].job)
+    if not options:
+        msg = "Cannot set player selections - no options available for this class."
+        return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
+
+    try:
+        selections.validate_equipment_choices(options.equipment_options)
+    except ValueError as e:
+        return _format_tool_response(message=str(e), tool_call_id=runtime.tool_call_id)
+
+    builder = runtime.state["current_builder"].model_copy(deep=True)
+
+    for slot, eq in selections.equipment.items():
+        builder.selections.equipment[slot] = eq
+
+    msg = f"Starting equipment set!\n\n{builder.model_dump_json()}"
     return _format_tool_response(
         current_builder=builder,
         message=msg,

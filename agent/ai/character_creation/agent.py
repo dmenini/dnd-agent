@@ -13,7 +13,9 @@ from agent.ai.character_creation.tools import (
     get_class_options,
     get_party_status,
     save_base_character,
-    save_player_selections,
+    save_class_features,
+    save_skills,
+    save_starting_equipment,
 )
 from agent.ai.components import create_llm
 from agent.character.abilities import SkillType
@@ -52,7 +54,9 @@ class CharacterCreationAgent:
         tools = [
             get_class_options,
             save_base_character,
-            save_player_selections,
+            save_class_features,
+            save_starting_equipment,
+            save_skills,
             finalize_character,
             get_party_status,
             finalize_party,
