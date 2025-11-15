@@ -10,17 +10,16 @@ from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulne
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.character.resolvers.base import CharacterBase
     from agent.models.context import CombatContext
 
 
-def auto_crit_if_melee_effect(actor: CharacterBase, target: CharacterBase, context: CombatContext) -> None:
+def auto_crit_if_melee_effect(actor: Character, target: Character, context: CombatContext) -> None:
     if actor.los_distance(target.pos) <= MELEE_RANGE:
         context.is_critical = True
         actor.log_event(f"{actor.name} gains automatic crit against {target.name}!", log_type=TRAIT_LOG_LEVEL)
 
 
-def damage_over_time_effect(target: CharacterBase, value: int, damage_type: DamageType) -> None:
+def damage_over_time_effect(target: Character, value: int, damage_type: DamageType) -> None:
     damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
     damage = target.modify_incoming_damage(damage)
     target.apply_damage(damage.total)
@@ -28,7 +27,7 @@ def damage_over_time_effect(target: CharacterBase, value: int, damage_type: Dama
 
 
 def reflect_melee_damage_effect(
-    actor: CharacterBase, target: CharacterBase, context: CombatContext, ratio: float, damage_type: DamageType
+    actor: Character, target: Character, context: CombatContext, ratio: float, damage_type: DamageType
 ) -> None:
     has_damage = context.damage and any(c.type == damage_type for c in context.damage.components)
     if has_damage and actor.los_distance(target.pos) <= MELEE_RANGE:
@@ -42,13 +41,13 @@ def reflect_melee_damage_effect(
         )
 
 
-def damage_bonus_effect(actor: CharacterBase, context: CombatContext, value: int, damage_type: DamageType) -> None:
+def damage_bonus_effect(actor: Character, context: CombatContext, value: int, damage_type: DamageType) -> None:
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="add"))
         actor.log_event(f"{actor.name}'s attack gains {value} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
-def melee_damage_bonus_effect(actor: CharacterBase, context: CombatContext, value: int) -> None:
+def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: int) -> None:
     slot = context.metadata.get("metadata", {}).get("slot")
     weapon = actor.equipment_slots.get(slot)
     is_melee = isinstance(weapon, MeleeWeapon) and weapon.ability == AbilityType.STR
@@ -73,16 +72,14 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
         actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
-def damage_multiplier_effect(
-    actor: CharacterBase, context: CombatContext, value: float, damage_type: DamageType
-) -> None:
+def damage_multiplier_effect(actor: Character, context: CombatContext, value: float, damage_type: DamageType) -> None:
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="mul"))
         actor.log_event(f"{actor.name}'s {damage_type.value} damage multiplied by {value}.", log_type=TRAIT_LOG_LEVEL)
 
 
 def ignore_resistance_effect(
-    actor: CharacterBase, target: CharacterBase, context: CombatContext, damage_type: DamageType
+    actor: Character, target: Character, context: CombatContext, damage_type: DamageType
 ) -> None:
     if context.damage:
         res = target.attributes.damage_resistance(damage_type)

@@ -4,7 +4,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from pytest_mock import MockerFixture
 
-from agent.ai.character_generator import DEFAULT_PARTY_NAME
+from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party

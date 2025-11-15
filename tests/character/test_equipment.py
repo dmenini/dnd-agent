@@ -5,7 +5,7 @@ from agent.character.character import Character
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resources import ActionEconomy
 from agent.equipment.armor import Amulet, Armor, ArmorType, Ring, Shield
-from agent.equipment.base import EquipmentType
+from agent.equipment.base import EquipmentSlot, EquipmentType
 from agent.equipment.inventory import Inventory
 from agent.equipment.weapons import MeleeWeapon, Weapon, WeaponHandling, WeaponType
 from agent.jobs.fighter import Fighter
@@ -75,12 +75,12 @@ def test_amulet_and_rings_auto_assign(actor: EquipmentResolver) -> None:
 def test_unequip_clears_slot_and_calls_on_unequip(actor: EquipmentResolver) -> None:
     armor = Armor(name="Chainmail", armor_type=ArmorType.MEDIUM, base_ac=10)
     actor.equip(armor)
-    actor.unequip("armor")
+    actor.unequip(EquipmentSlot.ARMOR)
     assert actor.armor is None
 
 
 def test_state_change_recomputes_traits(actor: Character) -> None:
-    actor.unequip("armor")
+    actor.unequip(EquipmentSlot.ARMOR)
     actor.change_job(Fighter)
 
     attrs = actor.attributes
@@ -94,21 +94,21 @@ def test_state_change_recomputes_traits(actor: Character) -> None:
 
 
 def test_equip_one_handed(actor: EquipmentResolver) -> None:
-    actor.equip_melee_weapon(dagger, "main_hand")
+    actor.equip_melee_weapon(dagger, EquipmentSlot.MAIN_HAND)
     assert actor.main_hand == dagger
     assert actor.off_hand is None
     assert not actor.two_handed_active
 
 
 def test_equip_two_handed(actor: EquipmentResolver) -> None:
-    actor.equip_melee_weapon(greatsword, "main_hand")
+    actor.equip_melee_weapon(greatsword, EquipmentSlot.MAIN_HAND)
     assert actor.main_hand == greatsword
     assert actor.off_hand is None
     assert actor.two_handed_active
 
 
 def test_equip_versatile_two_hands_if_free(actor: EquipmentResolver) -> None:
-    actor.equip_melee_weapon(longsword, "main_hand")
+    actor.equip_melee_weapon(longsword, EquipmentSlot.MAIN_HAND)
     # off-hand free → should use two hands
     assert actor.main_hand == longsword
     assert actor.off_hand is None
@@ -117,7 +117,7 @@ def test_equip_versatile_two_hands_if_free(actor: EquipmentResolver) -> None:
 
 def test_equip_versatile_one_hand_if_offhand_occupied(actor: EquipmentResolver) -> None:
     actor.off_hand = dagger
-    actor.equip_melee_weapon(longsword, "main_hand")
+    actor.equip_melee_weapon(longsword, EquipmentSlot.MAIN_HAND)
     # off-hand occupied → one hand only
     assert actor.main_hand == longsword
     assert actor.off_hand == dagger
@@ -125,8 +125,8 @@ def test_equip_versatile_one_hand_if_offhand_occupied(actor: EquipmentResolver) 
 
 
 def test_replace_weapon(actor: EquipmentResolver) -> None:
-    actor.equip_melee_weapon(dagger, "main_hand")
-    actor.equip_melee_weapon(longsword, "main_hand")
+    actor.equip_melee_weapon(dagger, EquipmentSlot.MAIN_HAND)
+    actor.equip_melee_weapon(longsword, EquipmentSlot.MAIN_HAND)
     # dagger should be unequipped
     assert actor.main_hand == longsword
     assert actor.two_handed_active
@@ -134,7 +134,7 @@ def test_replace_weapon(actor: EquipmentResolver) -> None:
 
 def test_dual_wield_one_handed(actor: EquipmentResolver) -> None:
     # Equip dagger in main hand
-    actor.equip_melee_weapon(dagger, "main_hand")
+    actor.equip_melee_weapon(dagger, EquipmentSlot.MAIN_HAND)
     # Equip another light weapon in off-hand
     off_dagger = MeleeWeapon(
         name="Other dagger",
@@ -146,7 +146,7 @@ def test_dual_wield_one_handed(actor: EquipmentResolver) -> None:
         finesse=True,
         dual_wield=True,
     )
-    actor.equip_melee_weapon(off_dagger, "off_hand")
+    actor.equip_melee_weapon(off_dagger, EquipmentSlot.OFF_HAND)
 
     assert actor.main_hand == dagger
     assert actor.off_hand == off_dagger
@@ -155,7 +155,7 @@ def test_dual_wield_one_handed(actor: EquipmentResolver) -> None:
 
 def test_two_handed_weapon_replaces_existing_main_and_off_hand(actor: EquipmentResolver) -> None:
     # Equip dual-wield setup first
-    actor.equip_melee_weapon(dagger, "main_hand")
+    actor.equip_melee_weapon(dagger, EquipmentSlot.MAIN_HAND)
     off_dagger = MeleeWeapon(
         name="Pippo",
         weapon_type=WeaponType.MARTIAL_MELEE,
@@ -166,10 +166,10 @@ def test_two_handed_weapon_replaces_existing_main_and_off_hand(actor: EquipmentR
         finesse=True,
         dual_wield=True,
     )
-    actor.equip_melee_weapon(off_dagger, "off_hand")
+    actor.equip_melee_weapon(off_dagger, EquipmentSlot.OFF_HAND)
 
     # Equip two-handed weapon
-    actor.equip_melee_weapon(greatsword, "main_hand")
+    actor.equip_melee_weapon(greatsword, EquipmentSlot.MAIN_HAND)
     assert actor.main_hand == greatsword
     assert actor.off_hand is None
     assert actor.two_handed_active

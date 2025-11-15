@@ -4,7 +4,7 @@ import pytest
 from pytest_mock import MockerFixture, MockType
 
 from agent.ai.backend import GameBackend
-from agent.ai.character_generator import DEFAULT_PARTY_NAME
+from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.builder import CharacterBuilder
 from agent.character.character import Character
 from agent.exceptions import InvalidPhaseError
@@ -76,7 +76,7 @@ async def test_full_game_flow(config: AgentConfig, mocker: MockerFixture) -> Non
     fake_char_agent.respond = mocker.AsyncMock()
     fake_char_agent.respond.side_effect = ["Welcome to your adventure!", "Here is your character!"]
     fake_char_agent.has_started = False
-    fake_char_agent.party = DEFAULT_PARTY_NAME
+    fake_char_agent.party_name = DEFAULT_PARTY_NAME
 
     backend = GameBackend(state, Config(agent=config))
     backend.char_agent = fake_char_agent
@@ -308,7 +308,7 @@ def test_reset(backend: GameBackend, actor: Character) -> None:
     assert backend.thread_id != original_thread_id
     assert len(backend.state.characters) == len(backend.initial_state.characters)
     assert backend.state.characters[actor.id].name == backend.initial_state.characters[actor.id].name
-    assert len(backend.char_agent.characters) == 0
+    assert len(backend.char_agent.party) == 0
 
 
 @pytest.mark.asyncio
