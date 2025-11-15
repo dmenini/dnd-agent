@@ -216,8 +216,8 @@ async def test_start_combat_from_any_phase(backend: GameBackend, actor: Characte
     state_arg = call_args[0][0]
 
     assert state_arg.map is not None
-    assert actor.id in state_arg.map.party
-    assert target.id in state_arg.map.party
+    assert actor.id in state_arg.map.characters
+    assert target.id in state_arg.map.characters
 
 
 @pytest.mark.asyncio
@@ -250,8 +250,8 @@ async def test_start_combat_map_initialization(
     assert state_arg.map.map == "\n".join(custom_map)
 
     # Verify both characters are in the map
-    assert actor.id in state_arg.map.party
-    assert target.id in state_arg.map.party
+    assert actor.id in state_arg.map.characters
+    assert target.id in state_arg.map.characters
 
     # Verify walls were extracted correctly (corners and edges)
     assert len(state_arg.map.walls) == 12  # All '#' characters in 4x4 border
@@ -306,8 +306,8 @@ def test_reset(backend: GameBackend, actor: Character) -> None:
 
     assert backend.phase == GamePhase.START
     assert backend.thread_id != original_thread_id
-    assert len(backend.state.characters) == len(backend.initial_state.party)
-    assert backend.state.characters[actor.id].name == backend.initial_state.party[actor.id].name
+    assert len(backend.state.characters) == len(backend.initial_state.characters)
+    assert backend.state.characters[actor.id].name == backend.initial_state.characters[actor.id].name
     assert len(backend.char_agent.party) == 0
 
 

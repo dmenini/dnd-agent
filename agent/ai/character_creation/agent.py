@@ -89,7 +89,6 @@ class CharacterCreationAgent:
     def reset(self) -> None:
         self._thread_id = str(uuid.uuid4())
         self.party = []
-        self.current_builder = None
         self.done = False
         self.started = False
 
@@ -135,8 +134,10 @@ class CharacterCreationAgent:
             "max_players": self.max_players,
         }
         response = await self.agent.ainvoke(input_, config=config)
-        self.party = response["party"]
-        self.done = response["done"]
+        if "party" in response:
+            self.party = response["party"]
+        if "done" in response:
+            self.done = response["done"]
         return response["messages"][-1].content
 
     def run(self) -> None:
