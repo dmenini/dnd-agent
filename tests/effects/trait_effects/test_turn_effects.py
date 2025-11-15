@@ -1,6 +1,6 @@
 from agent.actions.base import ActionCategory, ActionType
 from agent.character.character import Character
-from agent.character.resources import ActionExtension
+from agent.character.collection import ActionExtension
 from agent.effects.trait_effects.turn import (
     cannot_act_effect,
     cannot_move_effect,

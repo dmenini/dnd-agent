@@ -7,7 +7,7 @@ from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import EffectType
-from agent.effects.status_effects.hasted import Hasted
+from agent.effects.status_effects.collection import Hasted
 from agent.jobs.wizard import Wizard
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
@@ -30,7 +30,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        status_effects=[Hasted(duration=1)],
+        status_effects=[Hasted.with_duration(1)],
         level=SpellLevel.LEVEL_1,
         ability=AbilityType.WIS,
     )

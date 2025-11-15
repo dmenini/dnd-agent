@@ -5,7 +5,7 @@ import pytest
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.effects.status_effects.base import EffectType
-from agent.effects.status_effects.stunned import Stunned
+from agent.effects.status_effects.collection import Stunned
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
@@ -28,7 +28,7 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.MARTIAL_MELEE,
         targeting=TargetingType.SINGLE,
-        effects=[Stunned(duration=2)],
+        effects=[Stunned.with_duration(duration=2)],
     )
     actor.main_hand = sword
 
