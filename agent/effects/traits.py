@@ -540,7 +540,6 @@ class TraitBuilder:
             effect_type="damage_multiplier",
             effect_params={"value": value, "damage_type": damage_type.value},
             conditions=conditions or [],
-            priority=60,
         )
 
     @staticmethod

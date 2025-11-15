@@ -1,21 +1,10 @@
 import re
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, field_validator
 
 
-class Condition(BaseModel):
-    """Base condition that can be evaluated."""
-
-    def evaluate(self, target: Any) -> bool:
-        raise NotImplementedError
-
-    def depends_on_fields(self) -> set[str]:
-        """Return fields this condition depends on."""
-        return set()
-
-
-class FieldCondition(Condition):
+class FieldCondition(BaseModel):
     """Check a field value, supports nested paths like 'armor.armor_type'."""
 
     field: str  # Can be "armor" or "armor.armor_type" or "stats.strength"
@@ -126,15 +115,15 @@ class FieldCondition(Condition):
         return {self.field.split(".")[0]}
 
 
-class CompositeCondition(Condition):
+class CompositeCondition(BaseModel):
     """Combine multiple conditions with logical operators."""
 
     operator: Literal["and", "or", "not"]
-    conditions: list[Condition]
+    conditions: list[FieldCondition | Self]
 
     @field_validator("conditions")
     @classmethod
-    def validate_conditions(cls, v: list[Condition], info: Any) -> list[Condition]:
+    def validate_conditions(cls, v: list[FieldCondition | Self], info: Any) -> list[FieldCondition | Self]:
         """Validate that conditions list is appropriate for operator."""
         operator = info.data.get("operator")
 
@@ -164,6 +153,9 @@ class CompositeCondition(Condition):
 
     def depends_on_fields(self) -> set[str]:
         return set().union(*(c.depends_on_fields() for c in self.conditions))
+
+
+type Condition = FieldCondition | CompositeCondition
 
 
 class When:
