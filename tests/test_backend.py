@@ -297,7 +297,7 @@ def test_load_snapshot(config: AgentConfig, actor: Character) -> None:
 def test_reset(backend: GameBackend, actor: Character) -> None:
     """Test resetting the game backend."""
     backend.state.characters[actor.id] = actor
-    backend.initial_state.party[actor.id] = actor
+    backend.initial_state.characters[actor.id] = actor
     backend.phase = GamePhase.COMBAT
     original_thread_id = backend.thread_id
     backend.state.characters[actor.id].name = "Modified Name"

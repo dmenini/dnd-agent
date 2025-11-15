@@ -38,7 +38,7 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
     ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])
 
     def fake_initialize_map(encounter: list[Character], map_layout: list[str] | None = None) -> None:
-        ui.backend.state.party[actor.id].pos = actor.pos
+        ui.backend.state.characters[actor.id].pos = actor.pos
         game_map = GameMap(
             map="..\n..",
             width=2,
@@ -53,7 +53,7 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
 
 
 @pytest.mark.asyncio
-async def test_app(  # noqa: PLR0915
+async def test_app(
     ui: GameUI,
     config: AgentConfig,
     actor: Character,
@@ -71,22 +71,17 @@ async def test_app(  # noqa: PLR0915
         # Game starts
         await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
         assert ui.backend.phase == GamePhase.CHARACTER_CREATION
 
         # Character is created
-        await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
-        assert len(ui.state.party) == 1
+        assert len(ui.state.characters) == 1
         assert ui.backend.phase == GamePhase.STORY
 
         ui.state.turn_order = [actor.id, target.id]
 
         # Combat starts and interrupt stops execution at player's decision time
-        await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
         assert ui.backend.phase == GamePhase.COMBAT
 
         # Actor turn -> wait
@@ -96,10 +91,8 @@ async def test_app(  # noqa: PLR0915
         assert log_panel._filtered_logs[-1].message == f"Turn 1.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 1.1 - {actor.name}"
 
-        await pilot.click(input_widget)
         input_widget.value = "wait"
         await pilot.press("enter")
-        await pilot.pause()
 
         # Enemy turn -> waits automatically
         assert "Enemy" in input_widget.placeholder
@@ -107,9 +100,7 @@ async def test_app(  # noqa: PLR0915
         assert ui.state.current_actor.id == target.id
         assert log_panel._filtered_logs[-1].message == f"Turn 1.2 - {target.name}"
         assert ui.state.log.events[-1].message == f"Turn 1.2 - {target.name}"
-        await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
 
         # Actor turn -> Attack enemy and kills
         assert actor.name in input_widget.placeholder
@@ -117,12 +108,10 @@ async def test_app(  # noqa: PLR0915
         assert ui.state.current_actor.id == actor.id
         assert log_panel._filtered_logs[-1].message == f"Turn 2.1 - {actor.name}"
         assert ui.state.log.events[-1].message == f"Turn 2.1 - {actor.name}"
-        await pilot.click(input_widget)
         input_widget.value = DecisionResult(
             action_id="main_hand_attack", target_hits={target.id: 1}, description="Main attack"
         ).model_dump_json()
         await pilot.press("enter")
-        await pilot.pause()
 
         # Enemy turn skipped as it's dead
         assert "Press ENTER to start new game..." in input_widget.placeholder
@@ -136,9 +125,7 @@ async def test_app(  # noqa: PLR0915
         assert ui.backend.phase == GamePhase.STORY
 
         # Game starts again upon ENTER
-        await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
 
 
 @pytest.mark.asyncio
@@ -162,35 +149,27 @@ async def test_action_resources_are_used(
         await pilot.pause()
 
         # Character is created
-        await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
-        assert len(ui.state.party) == 1
+        assert len(ui.state.characters) == 1
         ui.state.turn_order = [actor.id, target.id]
 
         # Combat starts and interrupt stops execution at player's decision time
-        await pilot.click(input_widget)
         await pilot.press("enter")
-        await pilot.pause()
 
         # Actor turn -> attack
         assert actor.name in input_widget.placeholder
-        await pilot.click(input_widget)
         input_widget.value = DecisionResult(
             action_id="main_hand_attack", target_hits={target.id: 1}, description="Main attack"
         ).model_dump_json()
         await pilot.press("enter")
-        await pilot.pause()
 
         assert ui.state.current_actor is not None
         assert "main_hand_attack" not in ui.state.current_actor.get_available_actions()
 
         # Actor turn -> second wind (due to serialization it may be restored)
         assert actor.name in input_widget.placeholder
-        await pilot.click(input_widget)
         input_widget.value = DecisionResult(action_id="second_wind", description="Second wind").model_dump_json()
         await pilot.press("enter")
-        await pilot.pause()
 
         assert ui.state.current_actor is not None
         assert "second_wind" not in ui.state.current_actor.get_available_actions()
@@ -198,12 +177,10 @@ async def test_action_resources_are_used(
         # Actor turn -> turn around is free
         new_pos = Position(x=actor.pos.x, y=actor.pos.y, direction="S")
         assert actor.name in input_widget.placeholder
-        await pilot.click(input_widget)
         input_widget.value = DecisionResult(
             action_id="move", target_position=new_pos, description="Turn around"
         ).model_dump_json()
         await pilot.press("enter")
-        await pilot.pause()
 
         assert ui.state.current_actor is not None
         assert "move" in ui.state.current_actor.get_available_actions()
@@ -211,17 +188,15 @@ async def test_action_resources_are_used(
         # Actor turn -> move
         new_pos = Position(x=actor.pos.x, y=actor.pos.y + 1, direction="S")
         assert actor.name in input_widget.placeholder
-        await pilot.click(input_widget)
         input_widget.value = DecisionResult(
             action_id="move", target_position=new_pos, description="Move"
         ).model_dump_json()
         await pilot.press("enter")
-        await pilot.pause()
 
         # No more resources, turns is automatically passed to next char
         assert ui.state.current_actor is not None
         assert ui.state.current_actor.name == target.name
 
         # No changes due to serialization
-        assert len(ui.state.party[actor.id].special_abilities) == num_abilities
-        assert len(ui.state.party[actor.id].passives) == num_passives
+        assert len(ui.state.characters[actor.id].special_abilities) == num_abilities
+        assert len(ui.state.characters[actor.id].passives) == num_passives

@@ -7,23 +7,26 @@ from langchain_core.tools import tool
 from langgraph.prebuilt import ToolRuntime  # noqa: TC002
 from langgraph.types import Command
 
-from agent.character.builder import CharacterBuilder, CharacterSelections, options_map
+from agent.character.builder import CharacterBuilder, CharacterSelections, job_map, options_map
 from agent.jobs.base import JobType
 
 
 @tool
 def get_class_options(job_type: JobType) -> str:
     """
-    Get available options for a character class (subclass, skills, equipment).
+    Get class definition (proficiencies, features, spells, etc) and available options
+    for the player choice (subclass, skills, equipment).
 
     Returns:
-        Formatted string describing all available options.
+        Class definition and options
     """
-    options = options_map.get(job_type)
-    if not options:
-        return f"No detailed options found for {job_type.value}"
+    job = job_map[job_type]
+    job_str = job.model_dump_json()
 
-    return options.model_dump_json()
+    options = options_map.get(job_type)
+    options_str = options.model_dump_json() if options else f"No choices available for {job_type.value}"
+
+    return f"Class:\n{job_str}\n\nOptions for player choice:\n{options_str}"
 
 
 @tool
