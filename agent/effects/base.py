@@ -1,11 +1,26 @@
 import hashlib
 import json
+from collections.abc import Callable
 from typing import Any, Literal
 
 from anthropic import BaseModel
 
 from agent.character.modifier import Modifier
-from agent.models.enums import EventType, FeatureId
+from agent.effects.condition import CompositeCondition, FieldCondition
+from agent.models.enums import EventType
+
+EFFECT_REGISTRY: dict[str, Callable] = {}
+
+
+def register_effect(name: str | None = None) -> Callable:
+    """Decorator to register an effect function."""
+
+    def decorator(func: Callable) -> Callable:
+        effect_name = name or func.__name__.replace("_effect", "")
+        EFFECT_REGISTRY[effect_name] = func
+        return func
+
+    return decorator
 
 
 class Priority:
@@ -15,18 +30,21 @@ class Priority:
 
 
 class Trait(BaseModel):
-    feature_id: FeatureId
+    feature_id: str
     source_id: str
     name: str = ""
     description: str = ""
     priority: int = Priority.MEDIUM
     event_type: EventType
+    effect_type: str = ""  # Maps to an effect function
+    effect_params: dict[str, Any] = {}  # Parameters passed to the effect
+    conditions: list[FieldCondition | CompositeCondition] = []
 
     def model_post_init(self, _: Any) -> None:
         if not self.name:
-            self.name = self.__class__.__name__
-        if not self.description:
-            self.description = self.__class__.__doc__ or ""
+            self.name = self.feature_id.replace("_", " ").title()
+        if not self.effect_type:
+            self.effect_type = self.feature_id
 
         self.source_id = normalize_id(self.source_id)
 
@@ -37,17 +55,24 @@ class Trait(BaseModel):
         hash_part = hashlib.sha256(serialized.encode()).hexdigest()[:8]
         return f"{self.source_id}-{normalize_id(self.name)}-{hash_part}"
 
-    def condition(self, target: Any) -> bool:  # noqa: ARG002
-        """Check if this trait's effect should be applied."""
-        return True
+    def condition(self, target: Any) -> bool:
+        if not self.conditions:
+            return True
+        return all(c.evaluate(target) for c in self.conditions)
+
+    def condition_depends_on(self, field_name: str) -> bool:
+        return any(field_name in c.depends_on_fields() for c in self.conditions)
 
     def apply(self, *args: Any, **kwargs: Any) -> None:
-        """Apply this trait's effect to the target."""
-        raise NotImplementedError
+        """Apply this trait's effect by calling the registered effect function."""
+        # Get the effect function from the registry
+        effect_func = EFFECT_REGISTRY.get(self.effect_type)
+        if not effect_func:
+            msg = f"Unknown effect type: {self.effect_type}"
+            raise ValueError(msg)
 
-    def condition_depends_on(self, field_name: str) -> bool:  # noqa: ARG002
-        """Whether this trait's condition depends on a specific field."""
-        return False
+        # Call the effect function with stored parameters plus runtime args/kwargs
+        effect_func(*args, **kwargs, **self.effect_params)
 
 
 class ModifierTrait(Trait):

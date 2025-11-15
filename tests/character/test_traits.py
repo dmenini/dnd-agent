@@ -1,7 +1,7 @@
 from agent.character.attributes import Attributes
 from agent.character.character import Character
 from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
-from agent.effects.traits import Resistance, Vulnerability
+from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
 
@@ -61,10 +61,8 @@ def test_same_effects(actor: Character) -> None:
 
 def test_different_traits(actor: Character) -> None:
     value = 0.5
-    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id="ring", value=value, damage_type=DamageType.FIRE)
-    trait2 = Vulnerability(
-        feature_id=FeatureId.VULNERABILITY, source_id="ring", value=value, damage_type=DamageType.FIRE
-    )
+    trait1 = TraitBuilder.resistance(source_id="ring", value=value, damage_type=DamageType.FIRE)
+    trait2 = TraitBuilder.vulnerability(source_id="ring", value=value, damage_type=DamageType.FIRE)
     actor.register_passive(trait=trait1)
     actor.register_passive(trait=trait2)
 
@@ -98,8 +96,8 @@ def test_different_traits(actor: Character) -> None:
 
 def test_same_traits_from_different_sources_stack(actor: Character) -> None:
     value = 0.5
-    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id="ring 0", value=value, damage_type=DamageType.FIRE)
-    trait2 = Resistance(feature_id=FeatureId.RESISTANCE, source_id="ring 1", value=value, damage_type=DamageType.FIRE)
+    trait1 = TraitBuilder.resistance(source_id="ring 0", value=value, damage_type=DamageType.FIRE)
+    trait2 = TraitBuilder.resistance(source_id="ring 1", value=value, damage_type=DamageType.FIRE)
     actor.register_passive(trait=trait1)
     actor.register_passive(trait=trait2)
 
@@ -130,8 +128,8 @@ def test_same_traits_from_different_sources_stack(actor: Character) -> None:
 def test_traits_with_same_feature_id(actor: Character) -> None:
     value = 0.5
     name = "ring"
-    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id=name, value=value, damage_type=DamageType.FIRE)
-    trait2 = Resistance(feature_id=FeatureId.RESISTANCE, source_id=name, value=value, damage_type=DamageType.COLD)
+    trait1 = TraitBuilder.resistance(source_id=name, value=value, damage_type=DamageType.FIRE)
+    trait2 = TraitBuilder.resistance(source_id=name, value=value, damage_type=DamageType.COLD)
     actor.register_passive(trait=trait1)
     actor.register_passive(trait=trait2)
 
@@ -156,7 +154,7 @@ def test_traits_with_same_feature_id(actor: Character) -> None:
 def test_same_traits_same_source_dont_stack(actor: Character) -> None:
     value = 0.5
     name = "ring"
-    trait1 = Resistance(feature_id=FeatureId.RESISTANCE, source_id=name, value=value, damage_type=DamageType.FIRE)
+    trait1 = TraitBuilder.resistance(source_id=name, value=value, damage_type=DamageType.FIRE)
     actor.register_passive(trait=trait1)
 
     attrs = actor.attributes
