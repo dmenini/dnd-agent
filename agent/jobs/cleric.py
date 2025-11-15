@@ -84,13 +84,6 @@ Cleric = CharacterJob(
     ],
     features=[
         JobFeature(
-            ref_id=FeatureId.SPELL_SAVE_ADVANTAGE,
-            name="Spellcasting",
-            description="Gain ability to cast spells using WIS.",
-            level_required=1,
-            type=FeatureType.PASSIVE,
-        ),
-        JobFeature(
             ref_id=FeatureId.DIVINE_RESTORATION,
             name="Channel Divinity - Restore Vitality",
             description="Once per combat, channel divine power to heal allies.",

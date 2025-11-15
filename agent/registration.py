@@ -23,7 +23,7 @@ def register_actions() -> None:
 def register_traits() -> None:
     # Advantage / Disadvantage modifiers
     TraitRegistry.register(FeatureId.ATTACKER_DISADVANTAGE, TraitBuilder.attacker_disadvantage)
-    TraitRegistry.register(FeatureId.ATTACKER_ADVANTAGE, TraitBuilder.attacker_disadvantage)
+    TraitRegistry.register(FeatureId.ATTACKER_ADVANTAGE, TraitBuilder.attacker_advantage)
     TraitRegistry.register(FeatureId.TARGET_DISADVANTAGE, TraitBuilder.target_disadvantage)
     TraitRegistry.register(FeatureId.TARGET_ADVANTAGE, TraitBuilder.target_advantage)
     TraitRegistry.register(FeatureId.SAVE_DISADVANTAGE, TraitBuilder.disadvantage_on_save)

@@ -24,14 +24,6 @@ Wizard = CharacterJob(
     ],
     features=[
         JobFeature(
-            ref_id=FeatureId.SPELL_SAVE_ADVANTAGE,
-            name="Spellcasting",
-            description="Gain ability to cast spells using INT.",
-            level_required=1,
-            type=FeatureType.PASSIVE,
-            kwargs={"ability": AbilityType.INT},
-        ),
-        JobFeature(
             ref_id=FeatureId.ARCANE_RECOVERY,
             name="Arcane Recovery",
             description="Once per combat, you can recover some expended spell slots.",

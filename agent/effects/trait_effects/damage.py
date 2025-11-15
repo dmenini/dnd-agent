@@ -14,14 +14,14 @@ if TYPE_CHECKING:
     from agent.models.context import CombatContext
 
 
-@register_effect
+@register_effect()
 def auto_crit_if_melee_effect(actor: Character, target: Character, context: CombatContext) -> None:
     if actor.los_distance(target.pos) <= MELEE_RANGE:
         context.is_critical = True
         actor.log_event(f"{actor.name} gains automatic crit against {target.name}!", log_type=TRAIT_LOG_LEVEL)
 
 
-@register_effect
+@register_effect()
 def damage_over_time_effect(target: Character, value: int, damage_type: DamageType) -> None:
     damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
     damage = target.modify_incoming_damage(damage)
@@ -29,7 +29,7 @@ def damage_over_time_effect(target: Character, value: int, damage_type: DamageTy
     target.log_event(f"{target.name} suffers {damage.total} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
-@register_effect
+@register_effect()
 def reflect_melee_damage_effect(
     actor: Character, target: Character, context: CombatContext, ratio: float, damage_type: DamageType
 ) -> None:
@@ -45,14 +45,14 @@ def reflect_melee_damage_effect(
         )
 
 
-@register_effect
+@register_effect()
 def damage_bonus_effect(actor: Character, context: CombatContext, value: int, damage_type: DamageType) -> None:
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="add"))
         actor.log_event(f"{actor.name}'s attack gains {value} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
-@register_effect
+@register_effect()
 def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: int) -> None:
     slot = context.metadata.get("metadata", {}).get("slot")
     weapon = actor.equipment_slots.get(slot)
@@ -61,7 +61,7 @@ def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: i
         damage_bonus_effect(actor, context, value=value, damage_type=context.metadata["damage_type"])
 
 
-@register_effect
+@register_effect()
 def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) -> None:
     slot = context.metadata.get("metadata", {}).get("slot")
     is_finesse_or_ranged = False
@@ -79,14 +79,14 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
         actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
-@register_effect
+@register_effect()
 def damage_multiplier_effect(actor: Character, context: CombatContext, value: float, damage_type: DamageType) -> None:
     if context.damage:
         context.damage.components.append(DamageComponent(value=value, type=damage_type, operation="mul"))
         actor.log_event(f"{actor.name}'s {damage_type.value} damage multiplied by {value}.", log_type=TRAIT_LOG_LEVEL)
 
 
-@register_effect
+@register_effect()
 def ignore_resistance_effect(
     actor: Character, target: Character, context: CombatContext, damage_type: DamageType
 ) -> None:

@@ -7,7 +7,7 @@ from anthropic import BaseModel
 
 from agent.character.modifier import Modifier
 from agent.effects.condition import CompositeCondition, FieldCondition
-from agent.models.enums import EventType
+from agent.models.enums import EventType, FeatureId
 
 EFFECT_REGISTRY: dict[str, Callable] = {}
 
@@ -30,7 +30,7 @@ class Priority:
 
 
 class Trait(BaseModel):
-    feature_id: str
+    feature_id: FeatureId
     source_id: str
     name: str = ""
     description: str = ""
@@ -42,9 +42,9 @@ class Trait(BaseModel):
 
     def model_post_init(self, _: Any) -> None:
         if not self.name:
-            self.name = self.feature_id.replace("_", " ").title()
+            self.name = self.feature_id.value.replace("_", " ").title()
         if not self.effect_type:
-            self.effect_type = self.feature_id
+            self.effect_type = self.feature_id.value
 
         self.source_id = normalize_id(self.source_id)
 

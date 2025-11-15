@@ -18,9 +18,9 @@ def test_rage(actor: Character, target: Character) -> None:
     assert actor.status_effects[0].duration == 1
 
     trait = next(p for p in actor.passives if p.feature_id == FeatureId.DAMAGE_BONUS_WITH_MELEE_WEAPON)
-    assert trait.value == 4
+    assert trait.effect_params == {"value": 4}
 
-    assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]) == 3
+    assert len([p for p in actor.passives if p.feature_id.startswith("resistance")]) == 3
 
     # Finalize action consumes the bonus use
     action.finalize(actor)
