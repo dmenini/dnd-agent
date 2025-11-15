@@ -52,16 +52,21 @@ class CharacterSheet(Static):
         self.char = char  # This automatically triggers watch_char
 
     def get_content(self, char: Character) -> str:
+        job = char.job.type.value.title()
+        spec = (char.job.specialization or "No spec").title()
+        status = ", ".join(str(eff) for eff in char.status_effects) or "None"
+        passives = ", ".join(eff.name for eff in char.passives) or "None"
+        proficiencies = ", ".join(str(prof) for prof in char.attributes.proficiencies) or "None"
         return (
             f"# Character **{char.name} {char.icon} (ID: {char.id})**\n\n"
             f"{char.narrative.summary}\n\n"
-            f"Class: {char.job.type.value.title()} | Level: {char.level} | Party: {char.party.name}\n\n"
+            f"Class: {job} - {spec} | Level: {char.level} | Party: {char.party.name}\n\n"
             f"HP: {char.attributes.hp}/{char.max_hp} | AC: {char.armor_class}\n\n"
             f"Position: ({char.pos.x}, {char.pos.y}) | Facing: {char.pos.direction} | "
             f"Movement Remaining: {char.current_speed}/{char.speed} m | Hidden: {char.is_hidden}\n\n"
-            f"Status Effects: {', '.join(str(eff) for eff in char.status_effects) or 'None'}\n\n"
-            f"Passives: {', '.join(eff.name for eff in char.passives) or 'None'}\n\n"
+            f"Status Effects: {status}\n\n"
+            f"Passives: {passives}\n\n"
             f"Spell Slots: {char.spell_slots}\n\n"
             f"Abilities: {char.attributes}\n\n"
-            f"Proficiencies: {', '.join(str(prof) for prof in char.attributes.proficiencies) or 'None'}"
+            f"Proficiencies: {proficiencies}"
         )
