@@ -57,6 +57,14 @@ class CharacterSheet(Static):
         status = ", ".join(str(eff) for eff in char.status_effects) or "None"
         passives = ", ".join(eff.name for eff in char.passives) or "None"
         proficiencies = ", ".join(str(prof) for prof in char.attributes.proficiencies) or "None"
+
+        equipments = []
+        for slot, eq in char.equipment_slots:
+            if eq is not None:
+                slot_str = slot.value.title().replace("_", " ")
+                equipments.append(f"{eq.name} ({slot_str})")
+        equipment = ", ".join(equipments)
+
         return (
             f"# Character **{char.name} {char.icon} (ID: {char.id})**\n\n"
             f"{char.narrative.summary}\n\n"
@@ -68,5 +76,6 @@ class CharacterSheet(Static):
             f"Passives: {passives}\n\n"
             f"Spell Slots: {char.spell_slots}\n\n"
             f"Abilities: {char.attributes}\n\n"
-            f"Proficiencies: {proficiencies}"
+            f"Proficiencies: {proficiencies}\n\n"
+            f"Equipment: {equipment}"
         )
