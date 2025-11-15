@@ -1,6 +1,6 @@
 from agent.character.abilities import AbilityType
+from agent.character.collection import ActionExtension
 from agent.character.proficiency import ProficiencyTarget
-from agent.character.resources import ActionExtension
 from agent.effects.base import ModifierTrait, Priority, Trait
 from agent.effects.condition import Condition, When
 from agent.equipment.armor import ArmorType

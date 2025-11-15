@@ -1,18 +1,18 @@
 from agent.character.attributes import Attributes
 from agent.character.character import Character
-from agent.effects.status_effects.base import EffectType, StatusEffect, StatusEffectFeature
+from agent.effects.status_effects.base import EffectType, StatusEffect
 from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
 
-
-class CustomEffect(StatusEffect):
-    type: EffectType = EffectType.CUSTOM
-    duration: int = 2
-    features: list[StatusEffectFeature] = [
-        StatusEffectFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": 0.25, "damage_type": DamageType.FIRE}),
-        StatusEffectFeature(ref_id=FeatureId.RESISTANCE, kwargs={"value": 0.25, "damage_type": DamageType.COLD}),
-    ]
+custom_effect = StatusEffect(
+    type=EffectType.CUSTOM,
+    duration=2,
+    traits=[
+        TraitBuilder.resistance(source_id="test", damage_type=DamageType.FIRE, value=0.25),
+        TraitBuilder.resistance(source_id="test", damage_type=DamageType.COLD, value=0.25),
+    ],
+)
 
 
 def assert_modifier(attrs: Attributes, attr_name: str, value: float, source_id: str) -> None:
@@ -31,8 +31,8 @@ def assert_passive(actor: Character, feature_id: FeatureId, source_id: str, coun
 def test_same_effects(actor: Character) -> None:
     actor.start_turn()
 
-    effect1 = CustomEffect()
-    effect2 = CustomEffect()
+    effect1 = custom_effect.model_copy(deep=True)
+    effect2 = custom_effect.model_copy(deep=True)
 
     actor.apply_effect(effect1)
 

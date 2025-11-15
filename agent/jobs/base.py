@@ -7,7 +7,7 @@ from agent.character.abilities import AbilityType, SkillType
 from agent.character.attributes import Proficiency
 from agent.character.resources import CasterProgression
 from agent.equipment.inventory import EquipmentPiece
-from agent.jobs.feature import EquipmentChoice, JobFeature, SubclassChoice
+from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, SubclassChoice
 from agent.jobs.spells import Spell
 
 
@@ -22,6 +22,7 @@ class JobType(str, Enum):
 class JobSpecialization(BaseModel):
     name: str
     features: list[JobFeature] = []
+    passives: list[JobPassive] = []
     spells: list[Spell] = []
     proficiencies: list[Proficiency] = []
 
@@ -35,6 +36,7 @@ class CharacterJob(BaseModel):
     primary_ability: AbilityType
     spellcasting_ability: AbilityType | None = None
     proficiencies: list[Proficiency]
+    passives: list[JobPassive] = []
     features: list[JobFeature] = []
     spells: list[Spell] = []
     spell_progression: CasterProgression
@@ -47,6 +49,10 @@ class CharacterJob(BaseModel):
     def get_spells_for_level(self, level: int) -> list[Spell]:
         """Return unlocked spells up to the given level."""
         return [f for f in self.spells if f.level_required <= level]
+
+    def get_passives_for_level(self, level: int) -> list[JobPassive]:
+        """Return unlocked passives up to the given level."""
+        return [f for f in self.passives if f.level_required <= level]
 
     def apply_specialization(self, subclass: JobSpecialization) -> Self:
         """Modify this job by incorporating subclass features, spells, and proficiencies."""

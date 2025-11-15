@@ -1,9 +1,10 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression, SpellLevel
+from agent.effects.traits import TraitBuilder
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
-from agent.jobs.feature import FeatureType
+from agent.jobs.feature import JobPassive
 from agent.jobs.spells import AttackSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
@@ -22,23 +23,25 @@ Wizard = CharacterJob(
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
     ],
+    passives=[
+        JobPassive(
+            trait=TraitBuilder.ac_bonus_without_armor(
+                source_id=JobType.WIZARD.value,
+                name="Mage Armor",
+                description="+3 to AC while not wearing armor.",
+                value=3,
+            ),
+            level_required=1,
+        ),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.ARCANE_RECOVERY,
             name="Arcane Recovery",
             description="Once per combat, you can recover some expended spell slots.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             uses_per_rest=1,
-        ),
-        JobFeature(
-            ref_id=FeatureId.AC_BONUS_WITHOUT_ARMOR,
-            name="Mage Armor",
-            description="+3 to AC while not wearing armor.",
-            level_required=1,
-            type=FeatureType.PASSIVE,
-            kwargs={"value": 3},
-        ),
+        )
     ],
     spells=[
         AttackSpell(
@@ -46,7 +49,6 @@ Wizard = CharacterJob(
             name="Magic Missile",
             description="Automatically hits and deals 1d4+1 force damage per missile.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             is_aoe=False,
             level=SpellLevel.LEVEL_1,
             targeting=TargetingType.MULTI,

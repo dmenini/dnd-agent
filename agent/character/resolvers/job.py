@@ -1,8 +1,7 @@
 from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
-from agent.effects.registry import TraitRegistry
 from agent.jobs.base import CharacterJob, JobFeature
-from agent.jobs.feature import FeatureType
+from agent.jobs.feature import JobPassive
 from agent.jobs.fighter import Fighter
 from agent.jobs.spells import Spell
 from agent.logs.log_event import LogLevel
@@ -43,6 +42,9 @@ class JobResolver(CharacterBase):
         for feature in self.job.get_features_for_level(self.level):
             self._apply_job_feature(feature)
 
+        for passive in self.job.get_passives_for_level(self.level):
+            self._apply_job_passive(passive)
+
         for spell in self.job.get_spells_for_level(self.level):
             self._apply_spell(spell)
 
@@ -50,36 +52,27 @@ class JobResolver(CharacterBase):
         self.spell_slots.recompute(self.level)
 
     def _apply_job_feature(self, feature: JobFeature) -> None:
-        if feature.type == FeatureType.ACTIVE:
-            if feature.ref_id not in {a.id for a in self.special_abilities}:
-                action = ActionRegistry.create(
-                    id_=feature.ref_id,
-                    name=feature.name,
-                    description=feature.description,
-                    uses_per_rest=feature.uses_per_rest,
-                    **feature.kwargs,
-                )
-                self.special_abilities.append(action)
-                self.log_event(f"{self.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
-
-        elif feature.type == FeatureType.PASSIVE:
-            trait = TraitRegistry.create(
-                feature_id=feature.ref_id,
-                source_id=feature.name,
+        if feature.ref_id not in {a.id for a in self.special_abilities}:
+            action = ActionRegistry.create(
+                id_=feature.ref_id,
                 name=feature.name,
                 description=feature.description,
+                uses_per_rest=feature.uses_per_rest,
                 **feature.kwargs,
             )
-            self.register_passive(trait)
+            self.special_abilities.append(action)
+            self.log_event(f"{self.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
 
     def _remove_job_feature(self, feature: JobFeature) -> None:
-        if feature.type == FeatureType.ACTIVE:
-            self.special_abilities = [ability for ability in self.special_abilities if ability.id != feature.ref_id]
-            self.log_event(f"{self.name} forgot ability {feature.name}", log_type=LogLevel.DETAIL)
+        self.special_abilities = [ability for ability in self.special_abilities if ability.id != feature.ref_id]
+        self.log_event(f"{self.name} forgot ability {feature.name}", log_type=LogLevel.DETAIL)
 
-        elif feature.type == FeatureType.PASSIVE:
-            self.unregister_passive(feature_id=feature.ref_id, source_id=feature.name)
-            self.log_event(f"{self.name} lost passive trait {feature.name}", log_type=LogLevel.DETAIL)
+    def _apply_job_passive(self, passive: JobPassive) -> None:
+        passive.trait.source_id = self.job.type.value
+        self.register_passive(passive.trait)
+
+    def _remove_job_passive(self, passive: JobPassive) -> None:
+        self.unregister_passive(feature_id=passive.trait.ref_id, source_id=self.job.type.value)
 
     def _apply_spell(self, spell: Spell) -> None:
         if self.attributes.spellcasting_ability is None:

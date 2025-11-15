@@ -1,10 +1,11 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression
+from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobType
-from agent.jobs.feature import FeatureType, JobFeature
+from agent.jobs.feature import JobFeature, JobPassive
 from agent.models.enums import FeatureId
 
 # https://roll20.net/compendium/dnd5e/Classes:Barbarian#content
@@ -25,22 +26,25 @@ Barbarian = CharacterJob(
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_RANGED),
     ],
+    passives=[
+        JobPassive(
+            trait=TraitBuilder.ac_mod_bonus_without_armor(
+                source_id=JobType.BARBARIAN.value,
+                name="Mage Armor",
+                description="+3 to AC while not wearing armor.",
+                ability=AbilityType.CON,
+            ),
+            level_required=1,
+        ),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.RAGE,
             name="Rage",
             description="Enter a rage as a bonus action to gain advantage on STR checks and bonus melee damage.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             uses_per_rest=2,
             kwargs={"damage_bonus": 2},
-        ),
-        JobFeature(
-            ref_id=FeatureId.AC_BONUS_MOD_WITHOUT_ARMOR,
-            name="Unarmored Defense",
-            description="While not wearing armor, AC = 10 + DEX + CON modifier.",
-            level_required=1,
-            type=FeatureType.PASSIVE,
         ),
     ],
 )

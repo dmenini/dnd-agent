@@ -1,10 +1,11 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression
+from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
-from agent.jobs.feature import FeatureType
+from agent.jobs.feature import JobPassive
 from agent.models.enums import FeatureId
 
 # https://roll20.net/compendium/dnd5e/Classes:Fighter#content
@@ -26,21 +27,22 @@ Fighter = CharacterJob(
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_RANGED),
     ],
-    features=[
-        JobFeature(
-            ref_id=FeatureId.AC_BONUS_WITH_ARMOR,
-            name="Fighting Style - Defense",
-            description="+1 to AC while wearing armor.",
+    passives=[
+        JobPassive(
+            trait=TraitBuilder.ac_bonus_with_armor(
+                source_id=JobType.FIGHTER.value,
+                name="Fighting Style - Defense",
+                value=1,
+            ),
             level_required=1,
-            type=FeatureType.PASSIVE,
-            kwargs={"value": 1},
-        ),
+        )
+    ],
+    features=[
         JobFeature(
             ref_id=FeatureId.SECOND_WIND,
             name="Second Wind",
             description="Regain 1d10 + level HP as a bonus action once per combat.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             uses_per_rest=1,
         ),
     ],
