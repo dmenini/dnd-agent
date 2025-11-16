@@ -95,15 +95,7 @@ Cleric = CharacterJob(
             level_required=1,
         ),
     ],
-    features=[
-        JobFeature(
-            ref_id=FeatureId.DIVINE_RESTORATION,
-            name="Channel Divinity - Restore Vitality",
-            description="Once per combat, channel divine power to heal allies.",
-            level_required=1,
-            uses_per_rest=1,
-        ),
-    ],
+    features=[],
     spells=[
         AttackSpell(
             ref_id=FeatureId.SACRED_FLAME,
@@ -137,6 +129,18 @@ LifeDomain = JobSpecialization(
             level_required=1,
         ),
     ],
+    features=[
+        JobFeature(
+            ref_id=FeatureId.DIVINE_RESTORATION,
+            name="Channel Divinity - Preserve Life",
+            description=(
+                "Once per combat, restore a number of hit points equal to five times your cleric level, "
+                "divided among the target creatures."
+            ),
+            level_required=2,
+            uses_per_rest=1,
+        ),
+    ],
     spells=[
         HealingSpell(
             ref_id=FeatureId.CURE_WOUNDS,
@@ -160,7 +164,7 @@ LifeDomain = JobSpecialization(
             effects=[Blessed.with_duration(1)],
         ),
     ],
-    proficiencies=[Proficiency(source="tempest_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
+    proficiencies=[Proficiency(source="life_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
 )
 
 WarDomain = JobSpecialization(

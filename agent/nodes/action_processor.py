@@ -27,6 +27,7 @@ class ActionProcessorNode:
             return state
 
         enemies = [c for c in state.characters.values() if c.id != actor.id and c.party.id != actor.party.id]
+        allies = [c for c in state.characters.values() if c.id != actor.id and c.party.id == actor.party.id]
 
         # Assuming decision is validated
         if decision.target_hits:
@@ -36,12 +37,16 @@ class ActionProcessorNode:
                     continue
 
                 for i in range(hit_count):
-                    context = CombatContext(map=state.map.model_copy(), enemies=enemies, metadata=action.model_dump())
+                    context = CombatContext(
+                        map=state.map.model_copy(),
+                        enemies=enemies,
+                        allies=allies,
+                        hits=decision.target_hits,
+                        metadata=action.model_dump(),
+                    )
                     actor.log_event(f"{actor.name} performs {action.name} (hit {i + 1}/{hit_count}) on {target.name}.")
-                    action.execute(actor=actor, target=target, ctx=context)
-
-                    if not target.is_alive:
-                        break
+                    if target.is_alive:
+                        action.execute(actor=actor, target=target, ctx=context)
 
         elif decision.target_position:
             context = CombatContext(map=state.map.model_copy(), enemies=enemies, metadata=action.model_dump())

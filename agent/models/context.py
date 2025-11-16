@@ -10,6 +10,8 @@ from agent.models.map import GameMap
 
 class CombatContext(BaseModel):
     enemies: Sequence[CharacterBase] = []
+    allies: Sequence[CharacterBase] = []
+    hits: dict[str, int] = {}
     map: GameMap | None = None
     damage_roll: DiceRoll | None = None
     attack_roll: DiceRoll | None = None

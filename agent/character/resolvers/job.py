@@ -72,7 +72,7 @@ class JobResolver(CharacterBase):
         self.register_passive(passive.trait)
 
     def _remove_job_passive(self, passive: JobPassive) -> None:
-        self.unregister_passive(feature_id=passive.trait.ref_id, source_id=self.job.type.value)
+        self.unregister_passive(feature_id=passive.trait.feature_id, source_id=self.job.type.value)
 
     def _apply_spell(self, spell: Spell) -> None:
         if self.attributes.spellcasting_ability is None:
