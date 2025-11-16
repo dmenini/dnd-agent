@@ -599,3 +599,15 @@ class TraitBuilder:
             conditions=conditions or [],
             priority=Priority.HIGH,
         )
+
+    @staticmethod
+    def healing_bonus(source_id: str, value: int, name: str = "", description: str = "") -> Trait:
+        return Trait(
+            source_id=source_id,
+            feature_id=FeatureId.HEALING_BONUS,
+            name=name or "Healing Bonus",
+            description=description or f"Spell level and +{value} bonus to heal.",
+            event_type=EventType.HEAL,
+            effect_type="healing_bonus",
+            effect_params={"value": value},
+        )

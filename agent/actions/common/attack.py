@@ -66,11 +66,11 @@ class AttackAction(Action, ABC):
         ctx.damage = Damage(components=[DamageComponent(value=ctx.damage_roll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)
 
-        # Apply actor status effects
-        actor.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
-
         # Apply target resistances and vulnerabilities
         ctx.damage = target.modify_incoming_damage(ctx.damage)
+
+        # Apply actor status effects
+        actor.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target status effects
         target.trigger_event(EventType.RECEIVE_DAMAGE, actor, target, ctx)

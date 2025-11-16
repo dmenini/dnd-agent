@@ -59,6 +59,7 @@ class CharacterJob(BaseModel):
         updated = self.model_copy(deep=True)
         updated.specialization = subclass.name
         updated.features += subclass.features
+        updated.passives += subclass.passives
         updated.spells += subclass.spells
         updated.proficiencies += subclass.proficiencies
         return updated

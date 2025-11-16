@@ -60,6 +60,7 @@ class FeatureId(str, Enum):
     DAMAGE_OVER_TIME = "damage_over_time"
     DAMAGE_BONUS_WITH_ADVANTAGE = "damage_bonus_with_advantage"
     DAMAGE_BONUS_WITH_MELEE_WEAPON = "melee_damage_bonus"
+    HEALING_BONUS = "healing_bonus"
 
     # Resistances & Vulnerabilities
     RESISTANCE = "resistance"
@@ -99,5 +100,6 @@ class EventType(str, Enum):
     COMBAT_END = "combat_end"
     APPLY_DAMAGE = "apply_damage"
     RECEIVE_DAMAGE = "receive_damage"
+    HEAL = "heal"
     ATTACK_ROLL = "attack_roll"
     SAVE_THROW = "save_throw"

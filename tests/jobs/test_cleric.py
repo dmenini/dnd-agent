@@ -1,13 +1,16 @@
 from agent.character.character import Character
 from agent.equipment.armor import Armor, ArmorType
-from agent.jobs.cleric import Cleric
+from agent.jobs.cleric import Cleric, LifeDomain
 from agent.models.enums import FeatureId
 
 
 def test_cleric(actor: Character) -> None:
     # Setup actor as a Cleric and apply features
     actor.armor = Armor(name="Glass", armor_type=ArmorType.LIGHT, base_ac=2)
-    actor.change_job(Cleric)
+
+    job = Cleric
+    job = job.apply_specialization(LifeDomain)
+    actor.change_job(job)
 
     abilities = [a.id for a in actor.special_abilities]
     assert FeatureId.DIVINE_RESTORATION in abilities
@@ -18,6 +21,8 @@ def test_cleric(actor: Character) -> None:
 
     assert any(t.feature_id == FeatureId.AC_BONUS_WITH_ARMOR_TYPES for t in actor.passives)
     assert actor.attributes.get_modifiers("ac")[0].value == 1
+
+    assert any(t.feature_id == FeatureId.HEALING_BONUS for t in actor.passives)
 
 
 def test_cleric_serialization(actor: Character) -> None:

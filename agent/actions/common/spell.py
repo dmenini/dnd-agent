@@ -122,9 +122,11 @@ class HealingSpellAction(StandardAction):
     range: float
     heal_dice: str
 
-    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
-        roll = actor.heal_roll(expr=self.heal_dice)
-        heal_amount = min(roll.total, target.max_hp - target.attributes.hp)
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        ctx.heal_roll = actor.heal_roll(expr=self.heal_dice)
+        actor.trigger_event(EventType.HEAL, actor, ctx)
+
+        heal_amount = min(ctx.heal_roll.total, target.max_hp - target.attributes.hp)
         if heal_amount:
             target.heal(heal_amount)
             target.log_event(

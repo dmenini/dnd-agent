@@ -38,3 +38,9 @@ def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float
 def regeneration_effect(actor: CharacterBase, value: int) -> None:
     actor.heal(value)
     actor.log_event(f"{actor.name} heals {value} HP.", log_type=TRAIT_LOG_LEVEL)
+
+
+@register_effect()
+def healing_bonus(_: CharacterBase, context: CombatContext, value: int) -> None:
+    spell_level = context.metadata.get("level", 1)
+    context.heal_roll.total = spell_level + value

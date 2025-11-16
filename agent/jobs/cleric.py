@@ -123,6 +123,20 @@ Cleric = CharacterJob(
 
 LifeDomain = JobSpecialization(
     name="Life Domain",
+    passives=[
+        JobPassive(
+            trait=TraitBuilder.healing_bonus(
+                source_id=JobType.CLERIC.value,
+                name="Disciple of Life",
+                description=(
+                    "Whenever you use a healing spell on a creature, the creature "
+                    "regains additional hit points equal to 2 + the spell's level"
+                ),
+                value=2,
+            ),
+            level_required=1,
+        ),
+    ],
     spells=[
         HealingSpell(
             ref_id=FeatureId.CURE_WOUNDS,

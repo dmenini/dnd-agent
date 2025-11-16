@@ -14,6 +14,7 @@ class CombatContext(BaseModel):
     damage_roll: DiceRoll | None = None
     attack_roll: DiceRoll | None = None
     save_roll: DiceRoll | None = None
+    heal_roll: DiceRoll | None = None
     damage: Damage | None = None
     is_critical: bool = False
     is_hit: bool | None = None
