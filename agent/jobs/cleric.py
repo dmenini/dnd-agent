@@ -86,7 +86,7 @@ Cleric = CharacterJob(
     passives=[
         JobPassive(
             trait=TraitBuilder.ac_bonus_with_armor_types(
-                source_id=JobType.BARBARIAN.value,
+                source_id=JobType.CLERIC.value,
                 name="Blessed Armor",
                 description="+1 to AC while wearing light or medium armor.",
                 value=1,
@@ -118,6 +118,12 @@ Cleric = CharacterJob(
             requires_save=True,
             ability=AbilityType.DEX,
         ),
+    ],
+)
+
+LifeDomain = JobSpecialization(
+    name="Life Domain",
+    spells=[
         HealingSpell(
             ref_id=FeatureId.CURE_WOUNDS,
             name="Cure Wounds",
@@ -140,10 +146,7 @@ Cleric = CharacterJob(
             effects=[Blessed.with_duration(1)],
         ),
     ],
-)
-
-LifeDomain = JobSpecialization(
-    name="Life Domain",
+    proficiencies=[Proficiency(source="tempest_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
 )
 
 WarDomain = JobSpecialization(
