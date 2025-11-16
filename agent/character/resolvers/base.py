@@ -10,8 +10,7 @@ from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy, SpellSlots
-from agent.effects.base import Trait, normalize_id
-from agent.effects.registry import TraitRegistry
+from agent.effects.base import ModifierTrait, Trait, normalize_id
 from agent.equipment.armor import Armor, Shield
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import LogEvent, LogLevel
@@ -38,7 +37,7 @@ class CharacterBase(BaseModel):
 
     spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction] = []
     special_abilities: list[Action] = []
-    passives: list[Trait] = []
+    passives: list[Trait | ModifierTrait] = []
 
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
     action_economy: ActionEconomy = Field(default_factory=ActionEconomy)
@@ -194,33 +193,3 @@ class CharacterBase(BaseModel):
                 raise TypeError(msg)
 
         return actions
-
-    @field_serializer("passives")
-    def serialize_passives(self, traits: list[Trait]) -> list[dict]:
-        return [t.model_dump(mode="json") for t in traits]
-
-    @field_validator("passives", mode="before")
-    @classmethod
-    def deserialize_passives(cls, v: Any) -> list[Trait]:
-        if not isinstance(v, list):
-            msg = f"Invalid trait payload: {v}"
-            raise TypeError(msg)
-
-        passives = []
-        for el in v:
-            # If it's already a Trait instance, return as-is
-            if isinstance(el, Trait):
-                passives.append(el)
-
-            # Otherwise, assume it's a dict with an "id"
-            elif isinstance(el, dict):
-                el_copy = el.copy()
-                id_ = el_copy.pop("feature_id")
-                feature_id = FeatureId(id_)
-                passives.append(TraitRegistry.create(feature_id=feature_id, **el_copy))
-
-            else:
-                msg = f"Invalid trait payload: {v}"
-                raise TypeError(msg)
-
-        return passives

@@ -23,10 +23,9 @@ from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
 from agent.nodes.start_combat import StartCombatNode
-from agent.registration import register_actions, register_traits
+from agent.registration import register_actions
 
 register_actions()
-register_traits()
 
 
 dagger = MeleeWeapon(

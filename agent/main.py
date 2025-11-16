@@ -7,7 +7,7 @@ import yaml  # type: ignore[import-untyped]
 
 from agent.models.config import Config
 from agent.models.state import State
-from agent.registration import register_actions, register_traits
+from agent.registration import register_actions
 from agent.ui.game_ui import GameUI
 
 MAP_SIZE = (12, 8)
@@ -19,7 +19,6 @@ getLogger("botocore").setLevel(logging.INFO)
 getLogger("langchain_aws").setLevel(logging.WARNING)
 
 register_actions()
-register_traits()
 
 
 async def main() -> None:

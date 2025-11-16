@@ -1,12 +1,13 @@
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression, SpellLevel
-from agent.effects.status_effects.blessed import Blessed
+from agent.effects.status_effects.collection import Blessed
+from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobOptions, JobSpecialization, JobType
-from agent.jobs.feature import EquipmentChoice, FeatureType, JobFeature, OptionItem, SubclassChoice
+from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, OptionItem, SubclassChoice
 from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
@@ -82,29 +83,25 @@ Cleric = CharacterJob(
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
     ],
-    features=[
-        JobFeature(
-            ref_id=FeatureId.SPELL_SAVE_ADVANTAGE,
-            name="Spellcasting",
-            description="Gain ability to cast spells using WIS.",
+    passives=[
+        JobPassive(
+            trait=TraitBuilder.ac_bonus_with_armor_types(
+                source_id=JobType.BARBARIAN.value,
+                name="Blessed Armor",
+                description="+1 to AC while wearing light or medium armor.",
+                value=1,
+                armor_types=[ArmorType.LIGHT, ArmorType.MEDIUM],
+            ),
             level_required=1,
-            type=FeatureType.PASSIVE,
         ),
+    ],
+    features=[
         JobFeature(
             ref_id=FeatureId.DIVINE_RESTORATION,
             name="Channel Divinity - Restore Vitality",
             description="Once per combat, channel divine power to heal allies.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             uses_per_rest=1,
-        ),
-        JobFeature(
-            ref_id=FeatureId.AC_BONUS_WITH_ARMOR_TYPES,
-            name="Blessed Armor",
-            description="+1 to AC while wearing light or medium armor.",
-            level_required=1,
-            type=FeatureType.PASSIVE,
-            kwargs={"value": 1, "armor_types": [ArmorType.LIGHT, ArmorType.MEDIUM]},
         ),
     ],
     spells=[
@@ -113,7 +110,6 @@ Cleric = CharacterJob(
             name="Sacred Flame",
             description="Call down radiant fire to deal 1d8 radiant damage. Target makes a DEX save for no damage.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             level=SpellLevel.LEVEL_1,
             targeting=TargetingType.SINGLE,
             range=12,
@@ -127,7 +123,6 @@ Cleric = CharacterJob(
             name="Cure Wounds",
             description="Touch a creature to restore 1d8 + WIS modifier hit points.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             level=SpellLevel.LEVEL_1,
             targeting=TargetingType.SINGLE,
             range=1,
@@ -138,12 +133,11 @@ Cleric = CharacterJob(
             name="Bless",
             description="Up to three allies gain +1d4 to attack rolls and saving throws.",
             level_required=1,
-            type=FeatureType.ACTIVE,
             level=SpellLevel.LEVEL_1,
             targeting=TargetingType.ALLIES,
             range=9,
             hits=3,
-            effects=[Blessed(duration=1)],
+            effects=[Blessed.with_duration(1)],
         ),
     ],
 )

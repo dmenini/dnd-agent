@@ -14,7 +14,7 @@ from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
-from agent.effects.traits import TargetAdvantageOnAttackRoll
+from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon
@@ -58,7 +58,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def hide(self) -> None:
         roll = self.stealth_roll()
         self.stealth_value = roll.total
-        trait = TargetAdvantageOnAttackRoll(feature_id=FeatureId.STEALTH, source_id="hide")
+        trait = TraitBuilder.target_advantage(source_id="hide")
         self.register_passive(trait)
         self.log_event(f"{self.name} hides (stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
 

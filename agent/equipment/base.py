@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel
 
-from agent.effects.registry import TraitRegistry
+from agent.effects.base import ModifierTrait, Trait
 from agent.effects.status_effects.base import StatusEffect
 from agent.models.enums import FeatureId
 
@@ -56,7 +56,7 @@ EQUIPMENT_TYPES_PER_SLOT = {
 class EquipmentFeature(BaseModel):
     # TODO: Make ref_id a str and validate the enum afterwards to not overwhelm the LLM with too many values
     ref_id: FeatureId
-    kwargs: dict = {}
+    trait: Trait | ModifierTrait
 
 
 class EquipmentBase(BaseModel):
@@ -69,12 +69,7 @@ class EquipmentBase(BaseModel):
 
     def on_equip(self, actor: CharacterBase) -> None:
         for feature in self.features:
-            trait = TraitRegistry.create(
-                feature_id=feature.ref_id,
-                source_id=self.name,
-                **feature.kwargs,
-            )
-            actor.register_passive(trait=trait)
+            actor.register_passive(feature.trait)
 
     def on_unequip(self, actor: CharacterBase) -> None:
         for feature in self.features:

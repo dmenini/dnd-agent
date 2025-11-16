@@ -5,7 +5,7 @@ import pytest
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.effects.status_effects.base import EffectType
-from agent.effects.status_effects.paralyzed import Paralyzed
+from agent.effects.status_effects.collection import Paralyzed
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
@@ -28,7 +28,7 @@ async def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Characte
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.MARTIAL_MELEE,
         targeting=TargetingType.SINGLE,
-        effects=[Paralyzed(duration=2)],
+        effects=[Paralyzed.with_duration(duration=2)],
     )
     actor.main_hand = sword
 

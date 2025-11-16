@@ -7,7 +7,7 @@ from agent.actions.base import ActionCategory
 from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import StatusEffect
-from agent.jobs.feature import FeatureType, JobFeature
+from agent.jobs.feature import JobFeature
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
@@ -19,7 +19,6 @@ class SpellType(str, Enum):
 
 
 class SpellBase(JobFeature):
-    type: FeatureType = FeatureType.SPELL
     spell_type: SpellType
     is_aoe: bool = False
     level: SpellLevel = SpellLevel.LEVEL_1

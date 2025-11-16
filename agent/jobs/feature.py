@@ -1,27 +1,26 @@
-from enum import Enum
-
 from pydantic import BaseModel, Field
 
+from agent.effects.base import ModifierTrait, Trait
 from agent.equipment.base import EquipmentSlot
 from agent.models.enums import FeatureId
 
 
-class FeatureType(str, Enum):
-    PASSIVE = "passive"  # trait
-    ACTIVE = "active"  # action
-    SPELL = "spell"
-
-
 class JobFeature(BaseModel):
-    """Definition of a class feature that becomes a trait or action."""
+    """Definition of a class feature that becomes an action."""
 
     ref_id: FeatureId
     name: str
     description: str
-    type: FeatureType
     level_required: int = 1
     uses_per_rest: int | None = None
     kwargs: dict = {}
+
+
+class JobPassive(BaseModel):
+    """Definition of a class feature that becomes a trait."""
+
+    trait: Trait | ModifierTrait
+    level_required: int = 1
 
 
 class OptionItem(BaseModel):

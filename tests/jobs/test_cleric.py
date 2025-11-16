@@ -16,9 +16,7 @@ def test_cleric(actor: Character) -> None:
     assert FeatureId.BLESS in spells
     assert FeatureId.SACRED_FLAME in spells
 
-    assert any(t.feature_id == FeatureId.SPELL_SAVE_ADVANTAGE for t in actor.passives)
     assert any(t.feature_id == FeatureId.AC_BONUS_WITH_ARMOR_TYPES for t in actor.passives)
-    assert actor.attributes.get_modifiers("save_advantage.spell")[0].value is True
     assert actor.attributes.get_modifiers("ac")[0].value == 1
 
 

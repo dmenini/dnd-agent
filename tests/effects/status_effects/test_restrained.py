@@ -5,7 +5,7 @@ import pytest
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.effects.status_effects.base import EffectType
-from agent.effects.status_effects.restrained import Restrained
+from agent.effects.status_effects.collection import Restrained
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
@@ -28,7 +28,7 @@ async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Charact
         damage_type=DamageType.SLASHING,
         weapon_type=WeaponType.MARTIAL_MELEE,
         targeting=TargetingType.SINGLE,
-        effects=[Restrained(duration=2)],
+        effects=[Restrained.with_duration(2)],
     )
     actor.main_hand = sword
 
