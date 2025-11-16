@@ -41,7 +41,7 @@ def regeneration_effect(actor: CharacterBase, value: int) -> None:
 
 
 @register_effect()
-def healing_bonus(_: CharacterBase, context: CombatContext, value: int) -> None:
+def healing_bonus_effect(_: CharacterBase, context: CombatContext, value: int) -> None:
     if context.heal_roll:
         spell_level = context.metadata.get("level", 1)
         context.heal_roll.total = spell_level + value

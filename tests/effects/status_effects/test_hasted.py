@@ -6,7 +6,7 @@ from agent.actions.common.spell import SupportSpellAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.resources import SpellLevel
-from agent.effects.status_effects.base import EffectType
+from agent.effects.status_effects.base import StatusType
 from agent.effects.status_effects.collection import Hasted
 from agent.jobs.wizard import Wizard
 from agent.mechanics.dice_roller import DiceRoll
@@ -30,7 +30,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
         description="Gain 1 extra action on the next 2 turns",
         range=1,
         targeting=TargetingType.SELF,
-        status_effects=[Hasted.with_duration(1)],
+        apply_conditions=[Hasted.with_duration(1)],
         level=SpellLevel.LEVEL_1,
         ability=AbilityType.WIS,
     )
@@ -48,7 +48,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
         state, result=DecisionResult(action_id=FeatureId.HASTE.value, target_hits={hero_id: 1}, description="")
     )
     hero = state.characters[hero_id]
-    assert hero.status_effects[0].type == EffectType.HASTED
+    assert hero.status_effects[0].type == StatusType.HASTED
     assert hero.status_effects[0].duration == 1
 
     ac_mods = hero.attributes.get_modifiers("ac")
@@ -70,7 +70,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
 
     # Turn 2.1: Hero double action -> haste expires, lethargy takes place at the end of turn
     assert state.current_actor is not None
-    assert state.current_actor.status_effects[0].type == EffectType.HASTED
+    assert state.current_actor.status_effects[0].type == StatusType.HASTED
     assert state.current_actor.status_effects[0].duration == 1
     state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
@@ -84,7 +84,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
     hero = state.characters[hero_id]
-    assert hero.status_effects[0].type == EffectType.LETHARGIC
+    assert hero.status_effects[0].type == StatusType.LETHARGIC
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("speed")[0].value == 0.5
     assert hero.attributes.get_modifiers("save_disadvantage.wisdom")[0].value is True

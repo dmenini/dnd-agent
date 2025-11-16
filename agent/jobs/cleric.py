@@ -1,14 +1,13 @@
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
 from agent.character.resources import CasterProgression, SpellLevel
-from agent.effects.status_effects.collection import Blessed
 from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobOptions, JobSpecialization, JobType
 from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, OptionItem, SubclassChoice
-from agent.jobs.spells import AttackSpell, HealingSpell, SupportSpell
+from agent.jobs.spells import AttackSpell, SpellBuilder
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
@@ -142,27 +141,9 @@ LifeDomain = JobSpecialization(
         ),
     ],
     spells=[
-        HealingSpell(
-            ref_id=FeatureId.CURE_WOUNDS,
-            name="Cure Wounds",
-            description="Touch a creature to restore 1d8 + WIS modifier hit points.",
-            level_required=1,
-            level=SpellLevel.LEVEL_1,
-            targeting=TargetingType.SINGLE,
-            range=1,
-            heal_dice="1d8",
-        ),
-        SupportSpell(
-            ref_id=FeatureId.BLESS,
-            name="Bless",
-            description="Up to three allies gain +1d4 to attack rolls and saving throws.",
-            level_required=1,
-            level=SpellLevel.LEVEL_1,
-            targeting=TargetingType.ALLIES,
-            range=9,
-            hits=3,
-            effects=[Blessed.with_duration(1)],
-        ),
+        SpellBuilder.cure_wounds(level_required=1),
+        SpellBuilder.bless(level_required=1),
+        SpellBuilder.lesser_restoration(level_required=3),
     ],
     proficiencies=[Proficiency(source="life_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
 )

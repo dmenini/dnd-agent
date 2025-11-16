@@ -6,7 +6,7 @@ from agent.actions.base import ActionType, StandardAction
 from agent.actions.common.attack import AttackAction
 from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
-from agent.effects.status_effects.base import StatusEffect
+from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.equipment.weapons import WeaponType
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.enums import (
@@ -82,7 +82,8 @@ class SupportSpellAction(StandardAction):
     targeting: TargetingType
     ability: AbilityType
     range: float
-    status_effects: list[StatusEffect] = []
+    apply_conditions: list[StatusEffect] = []
+    remove_conditions: list[StatusType] = []
 
     def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
         if self.targeting == TargetingType.SELF:
@@ -93,8 +94,14 @@ class SupportSpellAction(StandardAction):
             self._execute_on_target(target=target)
 
     def _execute_on_target(self, target: Character) -> None:
-        for effect in self.status_effects:
-            target.try_apply_effect(effect)
+        for to_apply in self.apply_conditions:
+            target.try_apply_condition(to_apply)
+
+        # Remove conditions
+        for to_remove in self.remove_conditions:
+            if target.has_condition(to_remove):
+                target.remove_condition(to_remove)
+                break
 
     def finalize(self, actor: Character) -> None:
         """Consume action point and spell slot."""
@@ -102,12 +109,11 @@ class SupportSpellAction(StandardAction):
         actor.spell_slots.consume(self.level)
 
     def __str__(self) -> str:
-        effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"
         level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
         return (
             f"- {self.id}: {self.name}{level} — {self.description} "
             f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
-            f"Range: {self.range} m, Hits: {self.hits}, Status Effects: {effects})"
+            f"Range: {self.range} m, Hits: {self.hits})"
         )
 
 

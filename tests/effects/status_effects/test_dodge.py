@@ -1,7 +1,7 @@
 import pytest
 
 from agent.character.character import Character
-from agent.effects.status_effects.base import EffectType
+from agent.effects.status_effects.base import StatusType
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.models.config import AgentConfig
 from agent.models.damage import DamageType
@@ -38,7 +38,7 @@ async def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, t
         state, result=DecisionResult(action_id="dodge", target_hits={hero_id: 1}, description="")
     )
     hero = state.characters[hero_id]
-    assert hero.status_effects[0].type == EffectType.DODGING
+    assert hero.status_effects[0].type == StatusType.DODGING
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("disadvantage.defense")[0].value is True
 
@@ -51,7 +51,7 @@ async def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, t
 
     # Turn 2.1: Dodge expires
     assert state.current_actor is not None
-    assert state.current_actor.status_effects[0].type == EffectType.DODGING
+    assert state.current_actor.status_effects[0].type == StatusType.DODGING
     assert state.current_actor.status_effects[0].duration == 1
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     assert state.current_actor is not None

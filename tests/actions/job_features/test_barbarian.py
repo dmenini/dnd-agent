@@ -1,6 +1,6 @@
 from agent.actions.jobs.barbarian import RageAction
 from agent.character.character import Character
-from agent.effects.status_effects.base import EffectType
+from agent.effects.status_effects.base import StatusType
 from agent.jobs.barbarian import Barbarian
 from agent.models.context import CombatContext
 from agent.models.enums import FeatureId
@@ -14,7 +14,7 @@ def test_rage(actor: Character, target: Character) -> None:
 
     action.execute(actor, target, ctx=CombatContext())
 
-    assert actor.status_effects[0].type == EffectType.ENRAGED
+    assert actor.status_effects[0].type == StatusType.ENRAGED
     assert actor.status_effects[0].duration == 1
 
     trait = next(p for p in actor.passives if p.feature_id == FeatureId.DAMAGE_BONUS_WITH_MELEE_WEAPON)

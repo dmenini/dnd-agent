@@ -3,7 +3,7 @@ from agent.character.resolvers.base import CharacterBase
 from agent.jobs.base import CharacterJob, JobFeature
 from agent.jobs.feature import JobPassive
 from agent.jobs.fighter import Fighter
-from agent.jobs.spells import Spell
+from agent.jobs.spells import Spell, spell_action_map
 from agent.logs.log_event import LogLevel
 
 
@@ -81,7 +81,7 @@ class JobResolver(CharacterBase):
 
         if spell.ref_id not in {a.id for a in self.spells}:
             spell.ability = spell.ability or self.attributes.spellcasting_ability
-            action = ActionRegistry.create(id_=spell.ref_id, **spell.model_dump(exclude={"type"}))
+            action = spell_action_map[spell.spell_type](id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
             self.spells.append(action)  # type: ignore[arg-type]
             self.log_event(f"{self.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
 

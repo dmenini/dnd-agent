@@ -70,10 +70,10 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     def start_turn(self) -> None:
         self.turn_done = False
         self.action_economy.restore_turn()
-        self.try_expire_effects(is_start=True)
+        self.try_expire_conditions(is_start=True)
 
     def end_turn(self) -> None:
-        self.try_expire_effects(is_start=False)
+        self.try_expire_conditions(is_start=False)
         self.turn_done = True
 
     def end_round(self) -> None:

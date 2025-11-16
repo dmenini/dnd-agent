@@ -13,6 +13,7 @@ DEFAULT_PROFICIENCY_BONUS = 2
 
 
 MELEE_RANGE = 2  # Traditionally is 5, but in our map it looks weird to be able to attack a target 5 tiles away
+TOUCH_RANGE = 2
 
 BONUS_AC_FROM_SHIELDS = 2
 ADVANTAGE_THRESHOLD = 16

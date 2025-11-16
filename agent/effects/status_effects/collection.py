@@ -1,25 +1,25 @@
 from agent.actions.base import ActionCategory, ActionType
 from agent.character.abilities import AbilityType
 from agent.character.collection import ActionExtension
-from agent.effects.status_effects.base import EffectType, StatusEffect
+from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageType
 
 Blessed = StatusEffect(
-    type=EffectType.BLESSED,
+    type=StatusType.BLESSED,
     save_dc=0,  # Skip save throw as it's cast on a willing creature
     traits=[
-        TraitBuilder.bonus_on_attack_roll(source_id=EffectType.BLESSED.value, dice_expr="1d4"),
-        TraitBuilder.bonus_on_save_throw(source_id=EffectType.BLESSED.value, dice_expr="1d4"),
+        TraitBuilder.bonus_on_attack_roll(source_id=StatusType.BLESSED.value, dice_expr="1d4"),
+        TraitBuilder.bonus_on_save_throw(source_id=StatusType.BLESSED.value, dice_expr="1d4"),
     ],
     duration=1,
 )
 
 Dodge = StatusEffect(
-    type=EffectType.DODGING,
+    type=StatusType.DODGING,
     save_dc=0,  # Skip save throw as it's cast on a willing creature
     traits=[
-        TraitBuilder.attacker_disadvantage(source_id=EffectType.DODGING.value),
+        TraitBuilder.attacker_disadvantage(source_id=StatusType.DODGING.value),
     ],
     duration=1,
 )
@@ -39,27 +39,27 @@ StandardActionExtension = ActionExtension(
 )
 
 Hasted = StatusEffect(
-    type=EffectType.HASTED,
+    type=StatusType.HASTED,
     save_dc=0,  # Skip save throw as it's cast on a willing creature
     traits=[
-        TraitBuilder.extra_actions(source_id=EffectType.HASTED.value, extensions=[StandardActionExtension]),
-        TraitBuilder.speed_multiplier(source_id=EffectType.HASTED.value, value=2),
-        TraitBuilder.ac_bonus(source_id=EffectType.HASTED.value, value=2),
-        TraitBuilder.advantage_on_save(source_id=EffectType.HASTED.value, ability=AbilityType.DEX),
+        TraitBuilder.extra_actions(source_id=StatusType.HASTED.value, extensions=[StandardActionExtension]),
+        TraitBuilder.speed_multiplier(source_id=StatusType.HASTED.value, value=2),
+        TraitBuilder.ac_bonus(source_id=StatusType.HASTED.value, value=2),
+        TraitBuilder.advantage_on_save(source_id=StatusType.HASTED.value, ability=AbilityType.DEX),
     ],
     duration=10,
     followup=None,  # Will be resolved after Lethargic is defined
 )
 
 Lethargic = StatusEffect(
-    type=EffectType.LETHARGIC,
+    type=StatusType.LETHARGIC,
     save_dc=10,
     save_ability=AbilityType.WIS,
     save_mode="start",
     traits=[
-        TraitBuilder.speed_multiplier(source_id=EffectType.LETHARGIC.value, value=0.5),
-        TraitBuilder.disadvantage_on_save(source_id=EffectType.LETHARGIC.value, ability=AbilityType.WIS),
-        TraitBuilder.half_attacks(source_id=EffectType.LETHARGIC.value),
+        TraitBuilder.speed_multiplier(source_id=StatusType.LETHARGIC.value, value=0.5),
+        TraitBuilder.disadvantage_on_save(source_id=StatusType.LETHARGIC.value, ability=AbilityType.WIS),
+        TraitBuilder.half_attacks(source_id=StatusType.LETHARGIC.value),
     ],
     duration=1,
 )
@@ -68,50 +68,50 @@ Lethargic = StatusEffect(
 Hasted.followup = Lethargic.with_duration(1)
 
 Paralyzed = StatusEffect(
-    type=EffectType.PARALYZED,
+    type=StatusType.PARALYZED,
     save_dc=10,
     traits=[
-        TraitBuilder.cannot_act(source_id=EffectType.PARALYZED.value),
-        TraitBuilder.cannot_move(source_id=EffectType.PARALYZED.value),
-        TraitBuilder.attacker_advantage(source_id=EffectType.PARALYZED.value),
-        TraitBuilder.auto_crit_if_melee(source_id=EffectType.PARALYZED.value),
-        TraitBuilder.autofail_save(source_id=EffectType.PARALYZED.value, ability=AbilityType.STR),
-        TraitBuilder.autofail_save(source_id=EffectType.PARALYZED.value, ability=AbilityType.DEX),
+        TraitBuilder.cannot_act(source_id=StatusType.PARALYZED.value),
+        TraitBuilder.cannot_move(source_id=StatusType.PARALYZED.value),
+        TraitBuilder.attacker_advantage(source_id=StatusType.PARALYZED.value),
+        TraitBuilder.auto_crit_if_melee(source_id=StatusType.PARALYZED.value),
+        TraitBuilder.autofail_save(source_id=StatusType.PARALYZED.value, ability=AbilityType.STR),
+        TraitBuilder.autofail_save(source_id=StatusType.PARALYZED.value, ability=AbilityType.DEX),
     ],
     duration=1,
 )
 
 Poisoned = StatusEffect(
-    type=EffectType.POISONED,
+    type=StatusType.POISONED,
     save_dc=10,
     traits=[
-        TraitBuilder.target_disadvantage(source_id=EffectType.POISONED.value),
-        TraitBuilder.damage_over_time(source_id=EffectType.POISONED.value, value=1, damage_type=DamageType.POISON),
+        TraitBuilder.target_disadvantage(source_id=StatusType.POISONED.value),
+        TraitBuilder.damage_over_time(source_id=StatusType.POISONED.value, value=1, damage_type=DamageType.POISON),
     ],
     duration=1,
 )
 
 Restrained = StatusEffect(
-    type=EffectType.RESTRAINED,
+    type=StatusType.RESTRAINED,
     save_dc=10,
     traits=[
-        TraitBuilder.cannot_move(source_id=EffectType.RESTRAINED.value),
-        TraitBuilder.disadvantage_on_save(source_id=EffectType.RESTRAINED.value, ability=AbilityType.DEX),
-        TraitBuilder.attacker_advantage(source_id=EffectType.RESTRAINED.value),
-        TraitBuilder.target_disadvantage(source_id=EffectType.RESTRAINED.value),
+        TraitBuilder.cannot_move(source_id=StatusType.RESTRAINED.value),
+        TraitBuilder.disadvantage_on_save(source_id=StatusType.RESTRAINED.value, ability=AbilityType.DEX),
+        TraitBuilder.attacker_advantage(source_id=StatusType.RESTRAINED.value),
+        TraitBuilder.target_disadvantage(source_id=StatusType.RESTRAINED.value),
     ],
     duration=1,
 )
 
 Stunned = StatusEffect(
-    type=EffectType.STUNNED,
+    type=StatusType.STUNNED,
     save_dc=10,
     traits=[
-        TraitBuilder.cannot_act(source_id=EffectType.STUNNED.value),
-        TraitBuilder.cannot_move(source_id=EffectType.STUNNED.value),
-        TraitBuilder.attacker_advantage(source_id=EffectType.STUNNED.value),
-        TraitBuilder.autofail_save(source_id=EffectType.STUNNED.value, ability=AbilityType.STR),
-        TraitBuilder.autofail_save(source_id=EffectType.STUNNED.value, ability=AbilityType.DEX),
+        TraitBuilder.cannot_act(source_id=StatusType.STUNNED.value),
+        TraitBuilder.cannot_move(source_id=StatusType.STUNNED.value),
+        TraitBuilder.attacker_advantage(source_id=StatusType.STUNNED.value),
+        TraitBuilder.autofail_save(source_id=StatusType.STUNNED.value, ability=AbilityType.STR),
+        TraitBuilder.autofail_save(source_id=StatusType.STUNNED.value, ability=AbilityType.DEX),
     ],
     duration=1,
 )
