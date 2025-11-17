@@ -22,8 +22,6 @@ from agent.models.enums import TargetingType
 from agent.models.position import Position
 from tests.conftest import dagger
 
-MELEE_RANGE = 5
-
 
 def test_auto_crit_triggers_within_melee(actor: Character, target: Character, context: CombatContext) -> None:
     auto_crit_if_melee_effect(actor, target, context)

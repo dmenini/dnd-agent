@@ -24,4 +24,4 @@ class DodgeAction(StandardAction):
 
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
         effect = Dodge.with_duration(1)
-        actor.apply_effect(effect)
+        actor.apply_condition(effect)

@@ -10,7 +10,7 @@ class DivineRestorationAction(LimitedBonusAction):
 
     id: str
     description: str
-    name: str = "Second Wind"
+    name: str = "Divine Restoration"
     type: ActionType = ActionType.SPECIAL
     targeting: TargetingType = TargetingType.MULTI
 
@@ -19,6 +19,32 @@ class DivineRestorationAction(LimitedBonusAction):
         heal_roll = actor.heal_roll(expr="1d10")
         heal_amount = heal_roll.total + actor.level // 2
         heal_amount = min(heal_amount, target.max_hp - target.attributes.hp)
+        target.heal(heal_amount)
+        actor.log_event(
+            f"{actor.name} channels divine light to heal {target.name} "
+            f"for {heal_amount} HP ({target.attributes.hp}/{target.max_hp}).",
+            log_type=LogLevel.DETAIL,
+        )
+
+
+class PreserveLifeAction(LimitedBonusAction):
+    """Restore a number of hit points equal to five times your cleric level.
+    Choose any creatures within 30 feet of you, and divide those hit points among them.
+    This feature can restore a creature to no more than half of its hit point maximum.
+    You can't use this feature on an undead or a construct.
+    """
+
+    id: str
+    description: str
+    name: str = "Preserve Life"
+    type: ActionType = ActionType.SPECIAL
+    targeting: TargetingType = TargetingType.ALLIES
+    range: int = 30
+
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        total = actor.level * 5
+        num_targets = len([val for val in ctx.hits.values() if val > 0])
+        heal_amount = min(total // num_targets, target.max_hp // 2, target.max_hp - target.attributes.hp)
         target.heal(heal_amount)
         actor.log_event(
             f"{actor.name} channels divine light to heal {target.name} "

@@ -1,7 +1,7 @@
 from agent.actions.base import ActionType, LimitedBonusAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
-from agent.effects.status_effects.base import EffectType, StatusEffect
+from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.logs.log_event import LogLevel
@@ -36,18 +36,18 @@ class RageAction(LimitedBonusAction):
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         if not actor.armor or actor.armor.armor_type != ArmorType.HEAVY:
             effect = StatusEffect(
-                type=EffectType.ENRAGED,
+                type=StatusType.ENRAGED,
                 save_dc=0,
                 traits=[
-                    TraitBuilder.advantage_on_save(source_id=EffectType.ENRAGED.value, ability=AbilityType.STR),
-                    TraitBuilder.resistance(source_id=EffectType.ENRAGED.value, damage_type=DamageType.BLUDGEONING),
-                    TraitBuilder.resistance(source_id=EffectType.ENRAGED.value, damage_type=DamageType.PIERCING),
-                    TraitBuilder.resistance(source_id=EffectType.ENRAGED.value, damage_type=DamageType.SLASHING),
-                    TraitBuilder.melee_damage_bonus(source_id=EffectType.ENRAGED.value, value=self.damage_bonus),
+                    TraitBuilder.advantage_on_save(source_id=StatusType.ENRAGED.value, ability=AbilityType.STR),
+                    TraitBuilder.resistance(source_id=StatusType.ENRAGED.value, damage_type=DamageType.BLUDGEONING),
+                    TraitBuilder.resistance(source_id=StatusType.ENRAGED.value, damage_type=DamageType.PIERCING),
+                    TraitBuilder.resistance(source_id=StatusType.ENRAGED.value, damage_type=DamageType.SLASHING),
+                    TraitBuilder.melee_damage_bonus(source_id=StatusType.ENRAGED.value, value=self.damage_bonus),
                 ],
                 duration=1,
             )
-            actor.apply_effect(effect)
+            actor.apply_condition(effect)
             actor.log_event(f"{actor.name} enters a furious rage!", log_type=LogLevel.DETAIL)
         else:
             actor.log_event(

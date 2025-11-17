@@ -1,12 +1,12 @@
 from agent.character.attributes import Attributes
 from agent.character.character import Character
-from agent.effects.status_effects.base import EffectType, StatusEffect
+from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
 
 custom_effect = StatusEffect(
-    type=EffectType.CUSTOM,
+    type=StatusType.CUSTOM,
     duration=2,
     traits=[
         TraitBuilder.resistance(source_id="test", damage_type=DamageType.FIRE, value=0.25),
@@ -28,15 +28,15 @@ def assert_passive(actor: Character, feature_id: FeatureId, source_id: str, coun
     assert len(ps) == count
 
 
-def test_same_effects(actor: Character) -> None:
+def test_same_conditions(actor: Character) -> None:
     actor.start_turn()
 
     effect1 = custom_effect.model_copy(deep=True)
     effect2 = custom_effect.model_copy(deep=True)
 
-    actor.apply_effect(effect1)
+    actor.apply_condition(effect1)
 
-    assert actor.status_effects[0].type == EffectType.CUSTOM
+    assert actor.status_effects[0].type == StatusType.CUSTOM
     assert actor.status_effects[0].duration == 2
     assert actor.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert actor.attributes.get_modifiers("resistance.cold")[0].value == 0.25
@@ -44,14 +44,14 @@ def test_same_effects(actor: Character) -> None:
     actor.end_turn()
     actor.start_turn()
 
-    assert actor.status_effects[0].type == EffectType.CUSTOM
+    assert actor.status_effects[0].type == StatusType.CUSTOM
     assert actor.status_effects[0].duration == 1
     assert actor.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert actor.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    actor.apply_effect(effect2)
+    actor.apply_condition(effect2)
 
-    assert actor.status_effects[0].type == EffectType.CUSTOM
+    assert actor.status_effects[0].type == StatusType.CUSTOM
     assert actor.status_effects[0].duration == 2
     assert len(actor.attributes.get_modifiers("resistance.fire")) == 1
     assert len(actor.attributes.get_modifiers("resistance.cold")) == 1

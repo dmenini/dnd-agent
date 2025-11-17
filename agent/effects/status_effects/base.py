@@ -12,21 +12,23 @@ if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
 
 
-class EffectType(str, Enum):
+class StatusType(str, Enum):
     BLESSED = "blessed"
+    BLINDED = "blinded"
+    CUSTOM = "custom"
+    DEAFENED = "deafened"
+    DODGING = "dodging"
     ENRAGED = "enraged"
-    STUNNED = "stunned"
+    HASTED = "hasted"
+    LETHARGIC = "lethargic"
     PARALYZED = "paralyzed"
     POISONED = "poisoned"
-    DODGING = "dodging"
-    HASTED = "hasted"
+    STUNNED = "stunned"
     RESTRAINED = "restrained"
-    LETHARGIC = "lethargic"
-    CUSTOM = "custom"
 
 
 class StatusEffect(BaseModel):
-    type: EffectType
+    type: StatusType
     duration: int
     save_ability: AbilityType = AbilityType.CON
     save_dc: int = 12  # Difficulty class

@@ -4,7 +4,7 @@ import pytest
 
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
-from agent.effects.status_effects.base import EffectType
+from agent.effects.status_effects.base import StatusType
 from agent.effects.status_effects.collection import Stunned
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.mechanics.dice_roller import DiceRoll
@@ -50,7 +50,7 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
     orc = state.characters[orc_id]
-    assert orc.status_effects[0].type == EffectType.STUNNED
+    assert orc.status_effects[0].type == StatusType.STUNNED
     assert orc.status_effects[0].duration == 2
     assert orc.attributes.get_modifiers("advantage.defense")[0].value == 1
     assert orc.attributes.get_modifiers("save_autofail.strength")[0].value is True
@@ -68,7 +68,7 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
     assert state.decision is None
 
     orc = state.characters[orc_id]
-    assert orc.status_effects[0].type == EffectType.STUNNED
+    assert orc.status_effects[0].type == StatusType.STUNNED
     assert orc.status_effects[0].duration == 1
 
     # Turn 2.1: Pass
