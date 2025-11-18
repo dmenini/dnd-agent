@@ -100,7 +100,12 @@ class AttackAction(Action, ABC):
         else:
             base_mod = 0
 
-        prof_bonus = actor.proficiency_bonus(self.weapon_type)
+        if self.weapon_type == WeaponType.MAGIC:
+            # For spell attacks use flat proficiency bonus
+            prof_bonus = actor.attributes.proficiency_bonus(level=actor.level)
+        else:
+            prof_bonus = actor.proficiency_bonus(self.weapon_type)
+
         mod = actor.attributes.ability_modifier(self.ability)
         return base_mod + mod + prof_bonus
 

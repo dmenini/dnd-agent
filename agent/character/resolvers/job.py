@@ -1,4 +1,3 @@
-from agent.actions.registry import ActionRegistry
 from agent.character.resolvers.base import CharacterBase
 from agent.jobs.base import CharacterJob, JobFeature
 from agent.jobs.feature import JobPassive
@@ -53,13 +52,7 @@ class JobResolver(CharacterBase):
 
     def _apply_job_feature(self, feature: JobFeature) -> None:
         if feature.ref_id not in {a.id for a in self.special_abilities}:
-            action = ActionRegistry.create(
-                id_=feature.ref_id,
-                name=feature.name,
-                description=feature.description,
-                uses_per_rest=feature.uses_per_rest,
-                **feature.kwargs,
-            )
+            action = feature.to_action()
             self.special_abilities.append(action)
             self.log_event(f"{self.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
 

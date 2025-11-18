@@ -92,6 +92,8 @@ class FeatureId(str, Enum):
     BLESS = "bless"
     CURE_WOUNDS = "cure_wounds"
     LESSER_RESTORATION = "lesser_restoration"
+    MELEE_SPELL_ATTACK = "melee_spell_attack"
+    SPIRITUAL_SWORD = "spiritual_sword"
 
 
 class EventType(str, Enum):
