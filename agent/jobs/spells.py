@@ -11,8 +11,9 @@ from agent.character.resources import SpellLevel
 from agent.effects.evocations.base import Evocation
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.status_effects.collection import Blessed
+from agent.equipment.weapons import WeaponType
 from agent.jobs.feature import JobFeature
-from agent.models.constants import TOUCH_RANGE
+from agent.models.constants import MELEE_RANGE, TOUCH_RANGE
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
@@ -132,18 +133,34 @@ class SpellBuilder:
         attack = JobFeature(
             ref_id=FeatureId.MELEE_SPELL_ATTACK,
             name="Spiritual Weapon Attack",
-            description="As a bonus action on your turn, you can move the weapon and attack the nearest creature.",
+            description="The spiritual weapon attacks the nearest creature.",
             kwargs={
-                "range": 20,
+                "range": MELEE_RANGE,
                 "damage_dice": "1d8",
                 "damage_type": DamageType.FORCE,
+                "weapon_type": WeaponType.MAGIC,
+                "targeting": TargetingType.SINGLE,
+                "ability": AbilityType.WIS,
+                "casting_time": ActionCategory.BONUS,
+                "breaks_stealth": False,
+            },
+        )
+        move = JobFeature(
+            ref_id=FeatureId.REPOSITION_EVOCATION,
+            name="Spiritual Weapon Movement",
+            description="You can move the weapon to prepare for the next attack.",
+            kwargs={
+                "range": 20,
+                "evocation_name": "Spiritual Sword",
+                "casting_time": ActionCategory.MOVEMENT,
+                "breaks_stealth": False,
             },
         )
         evo = Evocation(
             source_id=FeatureId.SPIRITUAL_SWORD.value,
             name="Spiritual Sword",
             duration=10,
-            features=[attack],
+            features=[attack, move],
             on_cast_use=attack.ref_id,
         )
         return EvocationSpell(
@@ -158,4 +175,5 @@ class SpellBuilder:
             targeting=TargetingType.SINGLE,
             range=20,
             evocation=evo,
+            casting_time=ActionCategory.STANDARD,
         )

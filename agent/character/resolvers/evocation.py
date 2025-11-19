@@ -23,6 +23,7 @@ class EvocationResolver(CharacterBase):
     def expire_evocations(self) -> None:
         for evo in list(self.evocations):
             evo.duration -= 1
+            evo.action_economy.restore_turn()
             if evo.is_expired():
                 self.remove_evocation(evo.source_id)
 

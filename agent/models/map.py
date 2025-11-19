@@ -88,7 +88,7 @@ class GameMap(BaseModel):
 
     def find_nearest(self, origin: Position, max_range: float | None = None) -> list[str]:
         # Compute (char_id, distance) pairs
-        distances = [(char_id, origin.distance(pos)) for char_id, pos in self.characters.items()]
+        distances = [(char_id, origin.manhattan_distance(pos)) for char_id, pos in self.characters.items()]
 
         # If max_range is provided, filter out characters outside the range
         if max_range is not None:

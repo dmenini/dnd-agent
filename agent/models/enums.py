@@ -36,6 +36,9 @@ class FeatureId(str, Enum):
     SPEED_MULTIPLIER = "speed_multiplier"
     SPEED_BONUS = "speed_bonus"
     CANNOT_MOVE = "cannot_move"
+    REPOSITION_EVOCATION = "reposition_evocation"
+    MOVE = "move"
+    DASH = "dash"
 
     # Armor / AC
     AC_BONUS = "ac_bonus"

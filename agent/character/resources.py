@@ -95,6 +95,7 @@ class ActionEconomy(BaseModel):
             return False
 
         base_allowed = [
+            ActionType.ATTACK,
             ActionType.OFF_HAND_ATTACK,
             ActionType.SPECIAL,
         ]
@@ -117,7 +118,7 @@ class ActionEconomy(BaseModel):
         return False
 
     def use_bonus(self, action_type: ActionType | None = None) -> bool:
-        if self.can_use_bonus(action_type):
+        if not self.can_use_bonus(action_type):
             return False
 
         if self.bonus_actions > 0:

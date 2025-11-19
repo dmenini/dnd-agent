@@ -183,6 +183,13 @@ class OffHandAttackAction(BonusAction, AttackAction):
         )
 
 
+class BonusAttackAction(BonusAction, AttackAction):
+    id: str = "bonus_attack"
+    name: str = "Bonus Attack"
+    description: str = ""
+    type: ActionType = ActionType.ATTACK
+
+
 class RangedAttackAction(StandardAction, AttackAction):
     id: str = "ranged_attack"
     name: str = "Ranged Attack"

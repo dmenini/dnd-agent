@@ -6,7 +6,7 @@ from pydantic import PrivateAttr
 
 from agent.actions.base import ActionType, StandardAction
 from agent.character.resources import ActionEconomy
-from agent.models.enums import TargetingType
+from agent.models.enums import FeatureId, TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class DashAction(StandardAction):
-    id: str = "dash"
+    id: str = FeatureId.DASH.value
     name: str = "Dash"
     description: str = "Dash on the map to a new position within double the range."
     type: ActionType = ActionType.DASH
@@ -37,7 +37,7 @@ class DashAction(StandardAction):
             raise ValueError
 
         dist = ctx.map.distance(start=actor.pos, end=target)
-        if dist is None:
+        if dist is None or dist > self.range:
             msg = "Target position cannot be reached"
             raise ValueError(msg)
 
