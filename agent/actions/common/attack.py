@@ -39,7 +39,7 @@ class AttackAction(Action, ABC):
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         roll = actor.attack_roll(ability=self.ability, weapon=self.weapon_type, target=target)
-        ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
+        ctx.is_critical = ctx.is_critical or roll.raw >= actor.attributes.crit_roll()
 
         ctx.attack_roll = roll
         actor.trigger_event(EventType.ATTACK_ROLL, actor, target, ctx)
@@ -48,7 +48,7 @@ class AttackAction(Action, ABC):
 
         if ctx.is_critical:
             # Critical guarantees a hit -> direct damage roll with critical
-            actor.log_event("Rolls a NATURAL 20! Critical hit!", icon=Icon.ROLL)
+            actor.log_event(f"Rolls a NATURAL {roll.raw}! Critical hit!", icon=Icon.ROLL)
         else:
             # Check attack roll result
             actor.log_event(f"Attack roll {roll.expression}: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
