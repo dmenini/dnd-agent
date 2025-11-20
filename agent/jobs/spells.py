@@ -130,6 +130,8 @@ class SpellBuilder:
 
     @staticmethod
     def spiritual_sword(level_required: int) -> EvocationSpell:
+        # TODO: When you cast this spell using a spell slot 3rd level of or higher,
+        #  the damage increases by 1d8 for every two slot levels above the 2nd.
         attack = JobFeature(
             ref_id=FeatureId.MELEE_SPELL_ATTACK,
             name="Spiritual Weapon Attack",
@@ -165,15 +167,16 @@ class SpellBuilder:
         )
         return EvocationSpell(
             ref_id=FeatureId.SPIRITUAL_SWORD,
-            level_required=level_required,
             name="Spiritual Sword",
             description=(
                 "You create a floating, spectral weapon within range that lasts for the duration. "
                 "When you cast the spell, you can make a melee spell attack against a creature within weapon range. "
                 "On a hit, the target takes force damage equal to 1d8 + your spellcasting ability modifier."
             ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_2,
             targeting=TargetingType.SINGLE,
             range=20,
             evocation=evo,
-            casting_time=ActionCategory.STANDARD,
+            casting_time=ActionCategory.BONUS,
         )

@@ -96,6 +96,7 @@ class ActionEconomy(BaseModel):
 
         base_allowed = [
             ActionType.ATTACK,
+            ActionType.CAST_SPELL,
             ActionType.OFF_HAND_ATTACK,
             ActionType.SPECIAL,
         ]

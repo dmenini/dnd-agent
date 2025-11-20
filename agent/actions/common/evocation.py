@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import PrivateAttr
 
-from agent.actions.base import ActionType, StandardAction
+from agent.actions.base import ActionType, BonusAction, StandardAction
 from agent.actions.common.move import MovementAction
 from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
@@ -47,7 +47,7 @@ class RepositionEvocationAction(MovementAction):
         self._distance = 0
 
 
-class EvocationSpellAction(StandardAction):
+class EvocationSpellAction(BonusAction):
     id: str
     name: str
     description: str = ""
