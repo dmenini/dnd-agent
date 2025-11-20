@@ -6,7 +6,7 @@ from pydantic import PrivateAttr
 
 from agent.actions.base import Action, ActionCategory, ActionType
 from agent.character.resources import ActionEconomy
-from agent.models.enums import TargetingType
+from agent.models.enums import FeatureId, TargetingType
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class MovementAction(Action):
-    id: str = "move"
+    id: str = FeatureId.MOVE.value
     name: str = "Movement"
     description: str = "Move on the map to a new position within the range, or turn towards a new direction."
     type: ActionType = ActionType.MOVE
@@ -34,7 +34,7 @@ class MovementAction(Action):
             raise ValueError
 
         dist = ctx.map.distance(start=actor.pos, end=target)
-        if dist is None:
+        if dist is None or dist > self.range:
             msg = "Target position cannot be reached"
             raise ValueError(msg)
 

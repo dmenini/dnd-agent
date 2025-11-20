@@ -3,8 +3,6 @@ from logging import getLogger
 from agent.models.context import CombatContext
 from agent.models.state import State
 
-ATTACK_ROLL_EXPR = "1d20"
-
 log = getLogger(__name__)
 
 
@@ -26,8 +24,8 @@ class ActionProcessorNode:
         if not actor.is_alive:
             return state
 
-        enemies = [c for c in state.characters.values() if c.id != actor.id and c.party.id != actor.party.id]
-        allies = [c for c in state.characters.values() if c.id != actor.id and c.party.id == actor.party.id]
+        enemies = state.alive_enemies
+        allies = state.allies
 
         # Assuming decision is validated
         if decision.target_hits:

@@ -12,6 +12,7 @@ from agent.actions.common.wait import WaitAction
 from agent.character.abilities import Abilities
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
+from agent.character.resolvers.evocation import EvocationResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
 from agent.effects.traits import TraitBuilder
@@ -29,7 +30,7 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
+class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolver, JobResolver):
     party: Party
     turn_done: bool = True
 
@@ -71,6 +72,7 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
         self.turn_done = False
         self.action_economy.restore_turn()
         self.try_expire_conditions(is_start=True)
+        self.expire_evocations()
 
     def end_turn(self) -> None:
         self.try_expire_conditions(is_start=False)
@@ -137,6 +139,9 @@ class Character(EffectResolver, EquipmentResolver, RollResolver, JobResolver):
 
         # Special abilities (can have their own categories)
         all_actions += self.special_abilities
+
+        # Actions from evocations (if any)
+        all_actions += self.evocation_actions()
 
         return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 

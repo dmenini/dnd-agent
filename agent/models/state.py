@@ -56,6 +56,22 @@ class State(BaseModel):
             return None
         return self.characters[self.turn_order[self.turn_index]]
 
+    @property
+    def alive_enemies(self) -> list[Character]:
+        """Get alive enemies as a list."""
+        actor = self.current_actor
+        if not actor:
+            return []
+        return [c for c in self.alive_characters.values() if c.id != actor.id and c.party.id != actor.party.id]
+
+    @property
+    def allies(self) -> list[Character]:
+        """Get all allies as a list."""
+        actor = self.current_actor
+        if not actor:
+            return []
+        return [c for c in self.characters.values() if c.id != actor.id and c.party.id == actor.party.id]
+
     def get_party_members(self, party_id: str, *, alive_only: bool = False) -> list[Character]:
         """Get members of a party."""
         members = [c for c in self.characters.values() if c.party.id == party_id]

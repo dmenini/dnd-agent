@@ -1,3 +1,5 @@
+from agent.actions.common.attack import BonusAttackAction
+from agent.actions.common.evocation import RepositionEvocationAction
 from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
 from agent.actions.jobs.barbarian import RageAction
 from agent.actions.jobs.cleric import DivineRestorationAction, PreserveLifeAction
@@ -8,6 +10,9 @@ from agent.models.enums import FeatureId
 
 
 def register_actions() -> None:
+    ActionRegistry.register(FeatureId.MELEE_SPELL_ATTACK, BonusAttackAction)
+    ActionRegistry.register(FeatureId.REPOSITION_EVOCATION, RepositionEvocationAction)
+
     ActionRegistry.register(FeatureId.MAGIC_MISSILE, AttackSpellAction)
     ActionRegistry.register(FeatureId.SACRED_FLAME, AttackSpellAction)
     ActionRegistry.register(FeatureId.CURE_WOUNDS, HealingSpellAction)

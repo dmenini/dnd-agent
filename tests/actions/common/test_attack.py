@@ -39,15 +39,15 @@ def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture)
     action = make_attack_action()
 
     actor._dice = mocker.MagicMock()
-    actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[roll1], total=roll1, raw=roll1)
-    actor._dice.roll_once.return_value = DiceRoll(expression="1d8+5", rolls=[5], total=roll2, raw=5)
+    actor._dice.roll_with_context.return_value = DiceRoll(expression=f"{D20}+5", rolls=[roll1], total=roll1, raw=roll1)
+    actor._dice.roll_once.return_value = DiceRoll(expression="1d8+3", rolls=[5], total=roll2, raw=5)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
     assert target.attributes.hp == start_hp - roll2
-    actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=True)
-    actor._dice.roll_once.assert_called_once_with("1d8+5")
+    actor._dice.roll_with_context.assert_called_once_with(dice_expression=f"{D20}+5", advantage=True)
+    actor._dice.roll_once.assert_called_once_with("1d8+3")
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
@@ -79,16 +79,16 @@ def test_attack_critical_hit(actor: Character, target: Character, mocker: Mocker
     actor.attributes.strength = 10
 
     actor._dice = mocker.MagicMock()
-    actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[20], total=20, raw=20)
-    actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+2", rolls=[roll2], total=roll2, raw=roll2)
+    actor._dice.roll_with_context.return_value = DiceRoll(expression=f"{D20}+2", rolls=[20], total=20, raw=20)
+    actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+0", rolls=[roll2], total=roll2, raw=roll2)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
     # Target takes full critical damage
     assert target.attributes.hp == start_hp - roll2
-    actor._dice.roll_with_context.assert_called_once_with(dice_expression=D20, advantage=None)
-    actor._dice.roll_twice.assert_called_once_with("1d8+2")  # double dice damage + proficiency
+    actor._dice.roll_with_context.assert_called_once_with(dice_expression=f"{D20}+2", advantage=None)
+    actor._dice.roll_twice.assert_called_once_with("1d8+0")  # double dice damage + proficiency
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0

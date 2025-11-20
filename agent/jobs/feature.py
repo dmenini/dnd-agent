@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from agent.actions.base import Action
+from agent.actions.registry import ActionRegistry
 from agent.effects.base import ModifierTrait, Trait
 from agent.equipment.base import EquipmentSlot
 from agent.models.enums import FeatureId
@@ -14,6 +16,14 @@ class JobFeature(BaseModel):
     level_required: int = 1
     uses_per_rest: int | None = None
     kwargs: dict = {}
+
+    def to_action(self) -> Action:
+        return ActionRegistry.create(
+            id_=self.ref_id,
+            name=self.name,
+            description=self.description,
+            **self.kwargs,
+        )
 
 
 class JobPassive(BaseModel):

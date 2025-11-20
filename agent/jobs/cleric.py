@@ -81,6 +81,7 @@ Cleric = CharacterJob(
         Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.SHIELD),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MAGIC),
     ],
     passives=[
         JobPassive(
@@ -144,6 +145,7 @@ LifeDomain = JobSpecialization(
         SpellBuilder.cure_wounds(level_required=1),
         SpellBuilder.bless(level_required=1),
         SpellBuilder.lesser_restoration(level_required=3),
+        SpellBuilder.spiritual_sword(level_required=3),
     ],
     proficiencies=[Proficiency(source="life_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
 )

@@ -1,3 +1,4 @@
+import re
 from typing import Self
 
 from pydantic import computed_field
@@ -6,6 +7,7 @@ from agent.character.abilities import AbilityType, SkillType
 from agent.character.resolvers.base import CharacterBase
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
+from agent.equipment.weapons import WeaponType
 from agent.mechanics.advantage import resolve_advantage
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.enums import Advantage
@@ -36,7 +38,7 @@ class RollResolver(CharacterBase):
         )
         return Advantage.DISADVANTAGE if penalty else Advantage.NEUTRAL
 
-    def attack_roll(self, ability: AbilityType, target: Self) -> DiceRoll:
+    def attack_roll(self, ability: AbilityType, weapon: WeaponType, target: Self) -> DiceRoll:
         # Compute advantage from multiple sources
         sources = [
             self.attributes.ability_advantage(ability),
@@ -46,9 +48,26 @@ class RollResolver(CharacterBase):
         ]
         advantage = resolve_advantage(sources)
 
-        return self._dice.roll_with_context(dice_expression=D20, advantage=advantage)
+        ability_mod = self.attributes.ability_modifier(ability)
+        prof_bonus = self.proficiency_bonus(weapon)
+        mod = ability_mod + prof_bonus
+        expr = f"{D20}+{mod}"
 
-    def damage_roll(self, *, expr: str, is_critical: bool = False) -> DiceRoll:
+        return self._dice.roll_with_context(dice_expression=expr, advantage=advantage)
+
+    def damage_roll(self, *, damage_dice: str, ability: AbilityType, is_critical: bool = False) -> DiceRoll:
+        # Parse existing modifier from the dice expression (e.g. "1d8+2" → base="1d8", base_mod=2)
+        match = re.match(r"^(\d+d\d+)([+-]\d+)?$", damage_dice.strip())
+        if match:
+            base_expr, base_mod_str = match.groups()
+            base_mod = int(base_mod_str) if base_mod_str else 0
+        else:
+            base_mod = 0
+
+        ability_mod = self.attributes.ability_modifier(ability)
+        mod = base_mod + ability_mod
+        expr = f"{damage_dice}+{mod}"
+
         if is_critical:
             return self._dice.roll_twice(expr)
         return self._dice.roll_once(expr)

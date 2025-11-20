@@ -86,6 +86,20 @@ class GameMap(BaseModel):
 
         return None  # unreachable
 
+    def find_nearest(self, origin: Position, max_range: float | None = None) -> list[str]:
+        # Compute (char_id, distance) pairs
+        distances = [(char_id, origin.manhattan_distance(pos)) for char_id, pos in self.characters.items()]
+
+        # If max_range is provided, filter out characters outside the range
+        if max_range is not None:
+            distances = [(char_id, dist) for char_id, dist in distances if dist <= max_range]
+
+        # Sort by distance
+        distances.sort(key=lambda item: item[1])
+
+        # Return only the character IDs
+        return [char_id for char_id, _ in distances]
+
     def get_visible_positions(self, observer: CharacterBase) -> set[Position]:
         """
         Compute visible tiles. Walls are included in the visible positions if they are in sight.
