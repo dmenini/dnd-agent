@@ -81,6 +81,7 @@ Cleric = CharacterJob(
         Proficiency(type=ProficiencyType.ARMOR, target=ArmorType.SHIELD),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE),
         Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_RANGED),
+        Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.MAGIC),
     ],
     passives=[
         JobPassive(

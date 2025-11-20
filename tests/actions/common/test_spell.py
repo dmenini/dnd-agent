@@ -29,20 +29,20 @@ def make_attack_spell_action() -> AttackSpellAction:
 
 def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
     actor.change_job(Wizard)
-    actor.attributes.intelligence = 16  # +3 modifier
+    actor.attributes.intelligence = 16  # +3 modifier and +2 with proficiency
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
 
     target._dice = mocker.MagicMock()
     save_roll = actor.spell_save_dc - 1
     target._dice.roll_with_context.return_value = DiceRoll(
-        expression=D20, rolls=[save_roll], total=save_roll, raw=save_roll
+        expression="1d20+2", rolls=[save_roll], total=save_roll, raw=save_roll
     )
 
     actor._dice = mocker.MagicMock()
     damage_roll = 5
     actor._dice.roll_once.return_value = DiceRoll(
-        expression="1d8+3", rolls=[damage_roll], total=damage_roll + 3, raw=damage_roll
+        expression="1d8+4", rolls=[damage_roll], total=damage_roll + 3, raw=damage_roll
     )
 
     start_hp = target.attributes.hp

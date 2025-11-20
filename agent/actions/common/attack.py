@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-import re
 from abc import ABC
 from typing import TYPE_CHECKING, Self
 
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
 from agent.character.abilities import Abilities, AbilityType
 from agent.effects.status_effects.base import StatusEffect
+from agent.effects.traits import TraitBuilder
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.logs.log_event import Icon
+from agent.models.constants import MELEE_RANGE
 from agent.models.damage import Damage, DamageComponent, DamageType
-from agent.models.enums import EventType
+from agent.models.enums import EventType, FeatureId
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -37,7 +38,7 @@ class AttackAction(Action, ABC):
         self._fire_end_events(actor, target, ctx)
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
-        roll = actor.attack_roll(ability=self.ability, target=target)
+        roll = actor.attack_roll(ability=self.ability, weapon=self.weapon_type, target=target)
         ctx.is_critical = ctx.is_critical or roll.raw == actor.attributes.crit_roll()
 
         ctx.attack_roll = roll
@@ -60,9 +61,9 @@ class AttackAction(Action, ABC):
 
     def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
         # Damage roll
-        mod = self._attack_modifier(actor)
-        expr = f"{self.damage_dice}+{mod}"
-        ctx.damage_roll = actor.damage_roll(expr=expr, is_critical=ctx.is_critical)
+        ctx.damage_roll = actor.damage_roll(
+            damage_dice=self.damage_dice, ability=self.ability, is_critical=ctx.is_critical
+        )
         ctx.damage = Damage(components=[DamageComponent(value=ctx.damage_roll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)
 
@@ -90,24 +91,6 @@ class AttackAction(Action, ABC):
             target.try_apply_condition(effect)
 
         return ctx
-
-    def _attack_modifier(self, actor: Character) -> int:
-        # Parse existing modifier from the dice expression (e.g. "1d8+2" → base="1d8", base_mod=2)
-        match = re.match(r"^(\d+d\d+)([+-]\d+)?$", self.damage_dice.strip())
-        if match:
-            base_expr, base_mod_str = match.groups()
-            base_mod = int(base_mod_str) if base_mod_str else 0
-        else:
-            base_mod = 0
-
-        if self.weapon_type == WeaponType.MAGIC:
-            # For spell attacks use flat proficiency bonus
-            prof_bonus = actor.attributes.proficiency_bonus(level=actor.level)
-        else:
-            prof_bonus = actor.proficiency_bonus(self.weapon_type)
-
-        mod = actor.attributes.ability_modifier(self.ability)
-        return base_mod + mod + prof_bonus
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         actor.trigger_event(EventType.COMBAT_START, actor, target, ctx)
@@ -195,6 +178,15 @@ class RangedAttackAction(StandardAction, AttackAction):
     name: str = "Ranged Attack"
     description: str = ""
     type: ActionType = ActionType.ATTACK
+
+    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
+        if actor.los_distance(target.pos) <= MELEE_RANGE:
+            trait = TraitBuilder.attacker_disadvantage(source_id="ranged_attack", name="Short range Disadvantage")
+            actor.register_passive(trait)
+
+        super().execute(actor, target, ctx)
+
+        actor.unregister_passive(feature_id=FeatureId.ATTACKER_DISADVANTAGE, source_id="ranged_attack")
 
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:
