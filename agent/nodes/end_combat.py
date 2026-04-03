@@ -2,6 +2,7 @@ from logging import getLogger
 
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
+from agent.services.action_service import ActionService
 from agent.services.turn_service import TurnService
 
 log = getLogger(__name__)
@@ -21,7 +22,7 @@ class EndCombatNode:
         state.map.update_map(characters=state.characters)
 
         # Advance to next character if resources exhausted
-        if not actor.is_alive or not actor.has_resources():
+        if not actor.is_alive or not ActionService.has_resources(actor):
             if actor.is_alive:
                 TurnService.end_turn(actor)
             state.turn_index += 1

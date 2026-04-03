@@ -5,6 +5,7 @@ from agent.models.context import CombatContext
 from agent.models.enums import EventType, FeatureId
 from agent.models.map import GameMap
 from agent.models.position import Position
+from agent.services.visibility_service import VisibilityService
 
 
 def make_dash_action() -> DashAction:
@@ -38,7 +39,7 @@ def test_dash(actor: Character, game_map: GameMap) -> None:
 
 
 def test_dash_doesnt_breaks_stealth(actor: Character, game_map: GameMap) -> None:
-    actor.hide()
+    VisibilityService.hide(actor)
     actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide", event_type=EventType.MODIFIER))
     action = make_dash_action()
 

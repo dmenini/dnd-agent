@@ -11,6 +11,7 @@ from agent.logs.log_registry import LogRegistry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.state import State
+from agent.services.action_service import ActionService
 
 log = getLogger(__name__)
 
@@ -51,7 +52,7 @@ class DecisionNode:
             else:
                 state.command = interrupt("Enemy's turn, press ENTER to continue")
 
-        actions = actor.get_available_actions()
+        actions = ActionService.get_available_actions(actor)
         if not actions:
             state.action = None
             state.decision = None

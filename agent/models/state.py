@@ -9,6 +9,7 @@ from agent.character.character import Character, Party
 from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
+from agent.services.visibility_service import VisibilityService
 
 registry = get_log_registry()
 
@@ -98,7 +99,7 @@ class State(BaseModel):
                 continue
 
             # Handle stealth / perception contest
-            if actor.detect_target(target, use_passive=True):
+            if VisibilityService.detect_target(actor, target, use_passive=True):
                 visible_targets.append(target_id)
 
         self.visibility[actor.id] = visible_targets

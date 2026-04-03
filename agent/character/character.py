@@ -1,28 +1,16 @@
-from typing import Any, Self
+from typing import Any
 
 from pydantic import BaseModel, computed_field
 
 from agent.actions.base import Action
-from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
-from agent.actions.common.dash import DashAction
-from agent.actions.common.dodge import DodgeAction
-from agent.actions.common.hide import HideAction
-from agent.actions.common.move import MovementAction
-from agent.actions.common.wait import WaitAction
 from agent.character.abilities import Abilities
 from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.evocation import EvocationResolver
 from agent.character.resolvers.job import JobResolver
 from agent.character.resolvers.roll import RollResolver
-from agent.effects.traits import TraitBuilder
-from agent.equipment.armor import ArmorType
-from agent.equipment.base import EquipmentType
-from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import Icon
-from agent.models.enums import FeatureId
 from agent.models.position import Position
-from agent.services.roll_service import RollService
 
 
 class Party(BaseModel):
@@ -57,79 +45,7 @@ class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolv
         self.pos = destination
         self.log_event(f"{self.name} moves from {starting_pos} to {destination}", icon=Icon.MOVE)
 
-    def hide(self) -> None:
-        # Use RollService directly
-        roll = RollService.stealth_roll(self)
-        self.stealth_value = roll.total
-        trait = TraitBuilder.target_advantage(source_id="hide")
-        self.register_passive(trait)
-        self.log_event(f"{self.name} hides (stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
 
-    def unhide(self) -> None:
-        self.stealth_value = 0
-        self.unregister_passive(feature_id=FeatureId.STEALTH, source_id="hide")
-        self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
-
-
-    def has_resources(self) -> bool:
-        has_bonus = self.off_hand is not None and (self.action_economy.can_use_bonus())
-        main_hand = self.main_hand or self.ranged or self.spells
-        has_main = main_hand is not None and (self.action_economy.can_use_standard())
-        has_movement = self.action_economy.can_move(self.current_speed)
-        return has_main or has_bonus or has_movement
-
-    def detect_target(self, target: Self, *, use_passive: bool = False) -> bool:
-        if not target.is_hidden:
-            return True  # Always visible if not hidden
-
-        # Use passive perception or active roll - use RollService for active
-        perception_value = (
-            self.attributes.passive_perception() if use_passive else RollService.perception_roll(self).total
-        )
-
-        return perception_value >= (target.stealth_value or 0)
-
-    def _can_use_spells(self) -> bool:
-        # Can use spells if they are either wearing no armor or armor they are proficient with,
-        # or if their off-hand is empty or holding a shield they are proficient with.
-        return (not self.armor or self.attributes.has_proficiency(self.armor.armor_type)) or (
-            not self.off_hand
-            or (self.off_hand.type == EquipmentType.SHIELD and self.attributes.has_proficiency(ArmorType.SHIELD))
-        )
-
-    def get_available_actions(self) -> dict[str, Action]:
-        all_actions: list[Action] = [
-            MovementAction(range=self.current_speed),
-            DashAction(range=self.current_speed),
-            DodgeAction(),
-            WaitAction(),
-            HideAction(),
-        ]
-
-        # Equipment-based actions
-        if self.main_hand:
-            main_action = MainHandAttackAction.from_weapon(
-                weapon=self.main_hand, is_two_handed=self.two_handed_active, abilities=self.attributes
-            )
-            all_actions.append(main_action)
-        if self.off_hand and isinstance(self.off_hand.type, MeleeWeapon):
-            off_action = OffHandAttackAction.from_weapon(weapon=self.off_hand)
-            all_actions.append(off_action)
-        if self.ranged:
-            ranged_action = RangedAttackAction.from_weapon(weapon=self.ranged)
-            all_actions.append(ranged_action)
-
-        # Spells (only if slot available and armor proficiency)
-        if self._can_use_spells():
-            all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
-
-        # Special abilities (can have their own categories)
-        all_actions += self.special_abilities
-
-        # Actions from evocations (if any)
-        all_actions += self.evocation_actions()
-
-        return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
 
     def __str__(self) -> str:
         return (

@@ -8,6 +8,7 @@ from agent.equipment.weapons import WeaponType
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import EventType, FeatureId, TargetingType
+from agent.services.visibility_service import VisibilityService
 from tests.conftest import cheater_dice
 
 
@@ -87,7 +88,7 @@ def test_attack_critical_hit(actor: Character, target: Character) -> None:
 
 
 def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
-    actor.hide()
+    VisibilityService.hide(actor)
     actor.passives.append(Trait(feature_id=FeatureId.STEALTH, source_id="hide", event_type=EventType.MODIFIER))
     action = make_attack_action()
     action.execute(actor, target, ctx=CombatContext())
