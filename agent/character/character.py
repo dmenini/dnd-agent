@@ -8,7 +8,6 @@ from agent.character.resolvers.effect import EffectResolver
 from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.evocation import EvocationResolver
 from agent.character.resolvers.job import JobResolver
-from agent.character.resolvers.roll import RollResolver
 from agent.logs.log_event import Icon
 from agent.models.position import Position
 
@@ -19,7 +18,7 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolver, JobResolver):
+class Character(EvocationResolver, EffectResolver, EquipmentResolver, JobResolver):
     party: Party
     turn_done: bool = True
 
