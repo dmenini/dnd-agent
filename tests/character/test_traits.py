@@ -4,6 +4,7 @@ from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
+from agent.services.effect_service import EffectService
 from agent.services.turn_service import TurnService
 
 custom_effect = StatusEffect(
@@ -35,7 +36,7 @@ def test_same_conditions(actor: Character) -> None:
     effect1 = custom_effect.model_copy(deep=True)
     effect2 = custom_effect.model_copy(deep=True)
 
-    actor.apply_condition(effect1)
+    EffectService.apply_condition(actor, effect1)
 
     assert actor.status_effects[0].type == StatusType.CUSTOM
     assert actor.status_effects[0].duration == 2
@@ -50,7 +51,7 @@ def test_same_conditions(actor: Character) -> None:
     assert actor.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert actor.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    actor.apply_condition(effect2)
+    EffectService.apply_condition(actor, effect2)
 
     assert actor.status_effects[0].type == StatusType.CUSTOM
     assert actor.status_effects[0].duration == 2

@@ -14,6 +14,7 @@ from agent.logs.log_event import Icon
 from agent.models.constants import MELEE_RANGE
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import EventType, FeatureId
+from agent.services.effect_service import EffectService
 from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
@@ -92,7 +93,7 @@ class AttackAction(Action, ABC):
 
         # Try to apply status effects
         for effect in self.status_effects:
-            target.try_apply_condition(effect)
+            EffectService.try_apply_condition(target, effect)
 
         return ctx
 

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from agent.services.effect_service import EffectService
 from agent.services.evocation_service import EvocationService
 
 if TYPE_CHECKING:
@@ -14,13 +15,13 @@ class TurnService:
         """Start a character's turn - restore action economy and expire start-of-turn effects."""
         character.turn_done = False
         character.action_economy.restore_turn()
-        character.try_expire_conditions(is_start=True)
+        EffectService.try_expire_conditions(character, is_start=True)
         EvocationService.expire_evocations(character)
 
     @classmethod
     def end_turn(cls, character: "Character") -> None:
         """End a character's turn - expire end-of-turn effects."""
-        character.try_expire_conditions(is_start=False)
+        EffectService.try_expire_conditions(character, is_start=False)
         character.turn_done = True
 
     @classmethod

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from agent.actions.base import ActionType, StandardAction
 from agent.effects.status_effects.collection import Dodge
 from agent.models.enums import TargetingType
+from agent.services.effect_service import EffectService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -24,4 +25,4 @@ class DodgeAction(StandardAction):
 
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:  # noqa: ARG002
         effect = Dodge.with_duration(1)
-        actor.apply_condition(effect)
+        EffectService.apply_condition(actor, effect)

@@ -15,6 +15,7 @@ from agent.models.enums import (
     EventType,
     TargetingType,
 )
+from agent.services.effect_service import EffectService
 from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
@@ -99,12 +100,12 @@ class SupportSpellAction(StandardAction):
 
     def _execute_on_target(self, target: Character) -> None:
         for to_apply in self.apply_conditions:
-            target.try_apply_condition(to_apply)
+            EffectService.try_apply_condition(target, to_apply)
 
         # Remove conditions
         for to_remove in self.remove_conditions:
-            if target.has_condition(to_remove):
-                target.remove_condition(to_remove)
+            if EffectService.has_condition(target, to_remove):
+                EffectService.remove_condition(target, to_remove)
                 break
 
     def finalize(self, actor: Character) -> None:

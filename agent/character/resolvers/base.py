@@ -13,6 +13,7 @@ from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.effects.base import ModifierTrait, Trait, normalize_id
 from agent.effects.evocations.base import Evocation
+from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.armor import Armor, Shield
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import LogEvent, LogLevel
@@ -45,6 +46,7 @@ class CharacterBase(BaseModel):
     special_abilities: list[Action] = Field(default_factory=list)
     passives: list[Trait | ModifierTrait] = Field(default_factory=list)
     evocations: list[Evocation] = Field(default_factory=list)
+    status_effects: list[StatusEffect] = Field(default_factory=list)
 
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
     action_economy: ActionEconomy = Field(default_factory=ActionEconomy)

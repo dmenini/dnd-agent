@@ -8,6 +8,7 @@ from agent.logs.log_event import LogLevel
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
+from agent.services.effect_service import EffectService
 
 
 class RageAction(LimitedBonusAction):
@@ -47,7 +48,7 @@ class RageAction(LimitedBonusAction):
                 ],
                 duration=1,
             )
-            actor.apply_condition(effect)
+            EffectService.apply_condition(actor, effect)
             actor.log_event(f"{actor.name} enters a furious rage!", log_type=LogLevel.DETAIL)
         else:
             actor.log_event(
