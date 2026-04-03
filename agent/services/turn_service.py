@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from agent.services.evocation_service import EvocationService
+
 if TYPE_CHECKING:
     from agent.character.character import Character
 
@@ -13,7 +15,7 @@ class TurnService:
         character.turn_done = False
         character.action_economy.restore_turn()
         character.try_expire_conditions(is_start=True)
-        character.expire_evocations()
+        EvocationService.expire_evocations(character)
 
     @classmethod
     def end_turn(cls, character: "Character") -> None:

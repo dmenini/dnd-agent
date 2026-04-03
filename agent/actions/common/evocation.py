@@ -12,6 +12,7 @@ from agent.effects.evocations.base import Evocation
 from agent.logs.log_event import Icon
 from agent.models.enums import FeatureId, TargetingType
 from agent.models.position import Position
+from agent.services.evocation_service import EvocationService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -64,7 +65,7 @@ class EvocationSpellAction(BonusAction):
             raise ValueError(msg)
 
         self.evocation.position = target
-        actor.add_evocation(self.evocation)
+        EvocationService.add_evocation(actor, self.evocation)
         actor.log_event(f"{actor.name} summons {self.name} at position {target}.")
 
         if self.evocation.on_cast_use is None:

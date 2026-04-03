@@ -10,6 +10,7 @@ from agent.actions.common.wait import WaitAction
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon
+from agent.services.evocation_service import EvocationService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -78,6 +79,6 @@ class ActionService:
         all_actions += character.special_abilities
 
         # Actions from evocations (if any)
-        all_actions += character.evocation_actions()
+        all_actions += EvocationService.evocation_actions(character)
 
         return {action.id: action for action in all_actions if action.is_available(character.action_economy)}
