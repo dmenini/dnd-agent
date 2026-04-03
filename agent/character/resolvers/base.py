@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field, computed_field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SkipValidation, computed_field, field_serializer, field_validator
 
 from agent.actions.base import Action
 from agent.actions.common.evocation import EvocationSpellAction
@@ -16,7 +16,7 @@ from agent.equipment.armor import Armor, Shield
 from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
-from agent.mechanics.dice_roller import DiceRoll
+from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.damage import Damage
 from agent.models.enums import EventType, FeatureId
 from agent.models.position import Position
@@ -25,6 +25,8 @@ registry = get_log_registry()
 
 
 class CharacterBase(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     id: str
     name: str
     icon: str
@@ -36,7 +38,9 @@ class CharacterBase(BaseModel):
     narrative: NarrativeAttributes = Field(default_factory=NarrativeAttributes)
     stealth_value: int = 0
 
-    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = Field(default_factory=list)
+    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = Field(
+        default_factory=list
+    )
     special_abilities: list[Action] = Field(default_factory=list)
     passives: list[Trait | ModifierTrait] = Field(default_factory=list)
 
@@ -45,6 +49,9 @@ class CharacterBase(BaseModel):
 
     armor: Armor | None = None
     off_hand: MeleeWeapon | Shield | None = None
+
+    # Test-only: override dice roller for deterministic rolls
+    cheater_dice: SkipValidation[DiceRoller | None] = Field(default=None, exclude=True)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

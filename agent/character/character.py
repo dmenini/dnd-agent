@@ -22,6 +22,7 @@ from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import Icon
 from agent.models.enums import FeatureId
 from agent.models.position import Position
+from agent.services.roll_service import RollService
 
 
 class Party(BaseModel):
@@ -57,7 +58,8 @@ class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolv
         self.log_event(f"{self.name} moves from {starting_pos} to {destination}", icon=Icon.MOVE)
 
     def hide(self) -> None:
-        roll = self.stealth_roll()
+        # Use RollService directly
+        roll = RollService.stealth_roll(self)
         self.stealth_value = roll.total
         trait = TraitBuilder.target_advantage(source_id="hide")
         self.register_passive(trait)
@@ -98,8 +100,10 @@ class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolv
         if not target.is_hidden:
             return True  # Always visible if not hidden
 
-        # Use passive perception or active roll
-        perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
+        # Use passive perception or active roll - use RollService for active
+        perception_value = (
+            self.attributes.passive_perception() if use_passive else RollService.perception_roll(self).total
+        )
 
         return perception_value >= (target.stealth_value or 0)
 

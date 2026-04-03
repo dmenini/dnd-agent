@@ -3,6 +3,7 @@ from agent.character.character import Character
 from agent.logs.log_event import LogLevel
 from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
+from agent.services.roll_service import RollService
 
 
 class SecondWindAction(LimitedBonusAction):
@@ -15,7 +16,8 @@ class SecondWindAction(LimitedBonusAction):
     targeting: TargetingType = TargetingType.SELF
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
-        heal_amount = actor.roll(expr="1d10").total + actor.level
+        # Use RollService directly, passing actor for cheater_dice support
+        heal_amount = RollService.roll("1d10", character=actor).total + actor.level
         actor.heal(heal_amount)
         actor.log_event(
             f"{actor.name} catches their breath and recovers {heal_amount} HP ({actor.attributes.hp}/{actor.max_hp}).",

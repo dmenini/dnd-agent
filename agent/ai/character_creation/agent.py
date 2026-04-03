@@ -1,6 +1,6 @@
 import operator
 import uuid
-from typing import Annotated, TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from langchain.agents import AgentState, create_agent
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage

@@ -15,6 +15,7 @@ from agent.models.enums import (
     EventType,
     TargetingType,
 )
+from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -44,7 +45,8 @@ class AttackSpellAction(StandardAction, AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        roll = target.save_roll(ability=self.ability, is_spell=True)
+        # Call RollService directly instead of target.save_roll()
+        roll = RollService.save_roll(target, ability=self.ability, is_spell=True)
         ctx.save_roll = roll
         actor.trigger_event(EventType.SAVE_THROW, actor, target, ctx)
 
@@ -131,7 +133,7 @@ class HealingSpellAction(StandardAction):
     heal_dice: str
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        ctx.heal_roll = actor.heal_roll(expr=self.heal_dice)
+        ctx.heal_roll = RollService.heal_roll(actor, expr=self.heal_dice)
         actor.trigger_event(EventType.HEAL, actor, ctx)
 
         heal_amount = min(ctx.heal_roll.total, target.max_hp - target.attributes.hp)

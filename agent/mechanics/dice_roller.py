@@ -15,12 +15,16 @@ class DiceRoll(BaseModel):
 
 
 class DiceRoller:
-    def __init__(self, seed: int = 42) -> None:
+    def __init__(self, seed: int = 42, value: int | None = None) -> None:
         self.random = random.Random(seed)  # noqa: S311
+        self.value = value
+
+    def _roll(self, sides: int) -> int:
+        return self.random.randint(1, sides) if self.value is None else self.value
 
     def roll_once(self, expr: str) -> DiceRoll:
         n, sides, mod = self._parse_expression(expr)
-        rolls = [self.random.randint(1, sides) for _ in range(n)]
+        rolls = [self._roll(sides) for _ in range(n)]
         return DiceRoll(
             expression=expr,
             rolls=rolls,
@@ -30,7 +34,7 @@ class DiceRoller:
 
     def roll_twice(self, expr: str) -> DiceRoll:
         n, sides, mod = self._parse_expression(expr)
-        rolls = [self.random.randint(1, sides) for _ in range(n * 2)]
+        rolls = [self._roll(sides) for _ in range(n * 2)]
         return DiceRoll(
             expression=expr,
             rolls=rolls,

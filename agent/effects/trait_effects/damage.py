@@ -8,6 +8,7 @@ from agent.equipment.weapons import MeleeWeapon, RangedWeapon
 from agent.logs.log_event import LogLevel
 from agent.models.constants import MELEE_RANGE, TRAIT_LOG_LEVEL
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
+from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -73,7 +74,8 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
     )
     has_advantage = context.attack_roll and context.attack_roll.advantage is True
     if context.damage and has_advantage and is_finesse_or_ranged and is_first_attack:
-        result = actor.roll(dice).total
+        # Use RollService directly, passing actor for cheater_dice support
+        result = RollService.roll(dice, character=actor).total
         damage_type = context.metadata["damage_type"]
         context.damage.components.append(DamageComponent(value=result, type=damage_type, operation="add"))
         actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)

@@ -1,17 +1,14 @@
-from pytest_mock import MockerFixture
-
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.common.attack import AttackAction, MainHandAttackAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resolvers.roll import D20
 from agent.effects.base import Trait
 from agent.equipment.weapons import WeaponType
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import EventType, FeatureId, TargetingType
+from tests.conftest import cheater_dice
 
 
 def make_attack_action() -> AttackAction:
@@ -31,64 +28,58 @@ def make_attack_action() -> AttackAction:
     )
 
 
-def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
+def test_attack_hits(actor: Character, target: Character) -> None:
     actor.attributes.strength = 16  # +3 modifier
     actor.attributes.proficiencies = [Proficiency(type=ProficiencyType.WEAPON, target=WeaponType.SIMPLE_MELEE)]
-    roll1 = target.armor_class + 1  # Attacker rolls high enough to hit target
-    roll2 = 10
     action = make_attack_action()
 
-    actor._dice = mocker.MagicMock()
-    actor._dice.roll_with_context.return_value = DiceRoll(expression=f"{D20}+5", rolls=[roll1], total=roll1, raw=roll1)
-    actor._dice.roll_once.return_value = DiceRoll(expression="1d8+3", rolls=[5], total=roll2, raw=5)
+    # Set deterministic dice on actor - all rolls return 7
+    actor.cheater_dice = cheater_dice(value=7)
+    # Attack roll: 1d20 rolls 7, +5 modifier (STR+3, prof+2) = 12 (hits AC 0)
+    # Damage roll: 1d8 rolls 7, +3 STR modifier = 10
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
-    assert target.attributes.hp == start_hp - roll2
-    actor._dice.roll_with_context.assert_called_once_with(dice_expression=f"{D20}+5", advantage=True)
-    actor._dice.roll_once.assert_called_once_with("1d8+3")
+    assert target.attributes.hp == start_hp - 10
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
 
 
-def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    roll = target.armor_class - 1  # Attack roll is too low -> miss
+def test_attack_misses(actor: Character, target: Character) -> None:
     action = make_attack_action()
+    target.attributes.base_ac = 20  # Set high AC so attack misses
 
-    actor._dice = mocker.MagicMock()
-    actor._dice.roll_with_context.return_value = DiceRoll(expression=D20, rolls=[roll], total=roll, raw=roll)
+    # Set dice to roll 1
+    actor.cheater_dice = cheater_dice(value=1)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
-    # Target HP unchanged since attack missed
+    # Target HP unchanged since attack missed (1+2=3 vs AC 20)
     assert target.attributes.hp == start_hp
-    actor._dice.roll_once.assert_not_called()
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
 
 
-def test_attack_critical_hit(actor: Character, target: Character, mocker: MockerFixture) -> None:
+def test_attack_critical_hit(actor: Character, target: Character) -> None:
     action = make_attack_action()
-    roll2 = 5
-    actor.attributes.strength = 10
+    actor.attributes.strength = 10  # +0 modifier
+    target.attributes.hp = 50  # Set high enough to survive crit
 
-    actor._dice = mocker.MagicMock()
-    actor._dice.roll_with_context.return_value = DiceRoll(expression=f"{D20}+2", rolls=[20], total=20, raw=20)
-    actor._dice.roll_twice.return_value = DiceRoll(expression="1d8+0", rolls=[roll2], total=roll2, raw=roll2)
+    # Natural 20 triggers critical
+    actor.cheater_dice = cheater_dice(value=20)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
-    # Target takes full critical damage
-    assert target.attributes.hp == start_hp - roll2
-    actor._dice.roll_with_context.assert_called_once_with(dice_expression=f"{D20}+2", advantage=None)
-    actor._dice.roll_twice.assert_called_once_with("1d8+0")  # double dice damage + proficiency
+    # Attack roll: raw=20 triggers crit
+    # Damage: cheater_dice returns 20, doubled for crit = 40
+    assert target.attributes.hp == start_hp - 40
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0

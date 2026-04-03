@@ -1,5 +1,3 @@
-from unittest.mock import MagicMock
-
 import pytest
 
 from agent.actions.common.spell import SupportSpellAction
@@ -9,17 +7,17 @@ from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import StatusType
 from agent.effects.status_effects.collection import Hasted
 from agent.jobs.wizard import Wizard
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
 from agent.models.enums import FeatureId, TargetingType
 from agent.models.map import GameMap
 from agent.models.state import State
-from tests.conftest import advance_turn
+from tests.conftest import advance_turn, cheater_dice
 
 
 @pytest.mark.asyncio
 async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
+    actor.cheater_dice = None
     actor.change_job(Wizard)
     hero_id = actor.id
     orc_id = target.id
@@ -79,9 +77,10 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
 
-    hero._dice = MagicMock()  # fail save
-    hero._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=1, raw=1)
+    # Set actor to fail save roll (value=1) so hero becomes lethargic
+    actor.cheater_dice = cheater_dice(value=1)
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+    actor.cheater_dice = None
 
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == StatusType.LETHARGIC

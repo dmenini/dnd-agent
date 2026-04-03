@@ -3,6 +3,7 @@ from agent.character.character import Character
 from agent.logs.log_event import LogLevel
 from agent.models.context import CombatContext
 from agent.models.enums import TargetingType
+from agent.services.roll_service import RollService
 
 
 class DivineRestorationAction(LimitedBonusAction):
@@ -16,7 +17,7 @@ class DivineRestorationAction(LimitedBonusAction):
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         # TODO: Should run on all allies
-        heal_roll = actor.heal_roll(expr="1d10")
+        heal_roll = RollService.heal_roll(actor, expr="1d10")
         heal_amount = heal_roll.total + actor.level // 2
         heal_amount = min(heal_amount, target.max_hp - target.attributes.hp)
         target.heal(heal_amount)

@@ -1,9 +1,15 @@
+from typing import TYPE_CHECKING, cast
+
 from pydantic import Field
 
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.logs.log_event import Icon
 from agent.models.enums import EventType
+from agent.services.roll_service import RollService
+
+if TYPE_CHECKING:
+    from agent.character.character import Character
 
 
 class EffectResolver(CharacterBase):
@@ -25,7 +31,7 @@ class EffectResolver(CharacterBase):
 
         # Saving throw
         if condition.save_dc:
-            roll = self.save_roll(ability=condition.save_ability)
+            roll = RollService.save_roll(cast("Character", self), ability=condition.save_ability)
             self.log_event(
                 f"{condition.save_ability.name} save throw: {roll.total} vs DC {condition.save_dc}", icon=Icon.ROLL
             )
@@ -83,6 +89,6 @@ class EffectResolver(CharacterBase):
         self.status_effects = [e for e in self.status_effects if not e.is_expired()]
 
     def _try_break_free(self, condition: StatusEffect) -> None:
-        roll = self.save_roll(ability=condition.save_ability)
+        roll = RollService.save_roll(cast("Character", self), ability=condition.save_ability)
         if roll.total >= condition.save_dc:
             condition.duration = 0

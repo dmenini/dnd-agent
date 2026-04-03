@@ -14,6 +14,7 @@ from agent.logs.log_event import Icon
 from agent.models.constants import MELEE_RANGE
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import EventType, FeatureId
+from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -40,7 +41,8 @@ class AttackAction(Action, ABC):
         self._fire_end_events(actor, target, ctx)
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
-        roll = actor.attack_roll(ability=self.ability, weapon=self.weapon_type, target=target)
+        # Call RollService directly instead of actor.attack_roll()
+        roll = RollService.attack_roll(actor, ability=self.ability, weapon=self.weapon_type, target=target)
         ctx.is_critical = ctx.is_critical or roll.raw >= actor.attributes.crit_roll()
 
         ctx.attack_roll = roll
@@ -62,9 +64,9 @@ class AttackAction(Action, ABC):
         return ctx.is_hit
 
     def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
-        # Damage roll
-        ctx.damage_roll = actor.damage_roll(
-            damage_dice=self.damage_dice, ability=self.ability, is_critical=ctx.is_critical
+        # Damage roll - call RollService directly instead of actor.damage_roll()
+        ctx.damage_roll = RollService.damage_roll(
+            actor, damage_dice=self.damage_dice, ability=self.ability, is_critical=ctx.is_critical
         )
         ctx.damage = Damage(components=[DamageComponent(value=ctx.damage_roll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)

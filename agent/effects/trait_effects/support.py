@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from agent.effects.base import register_effect
 from agent.models.constants import TRAIT_LOG_LEVEL
+from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -13,16 +14,18 @@ if TYPE_CHECKING:
 
 
 @register_effect()
-def bonus_attack_roll_effect(actor: Character, context: CombatContext, *, expr: str) -> None:
+def bonus_attack_roll_effect(_: Character, context: CombatContext, *, expr: str) -> None:
     if context.attack_roll:
-        result = actor.roll(expr=expr)
+        # Use RollService directly instead of actor.roll()
+        result = RollService.roll(expr)
         context.attack_roll.total += result.total
 
 
 @register_effect()
-def bonus_save_roll_effect(actor: Character, context: CombatContext, *, expr: str) -> None:
+def bonus_save_roll_effect(_: Character, context: CombatContext, *, expr: str) -> None:
     if context.save_roll:
-        result = actor.roll(expr=expr)
+        # Use RollService directly instead of actor.roll()
+        result = RollService.roll(expr)
         context.save_roll.total += result.total
 
 

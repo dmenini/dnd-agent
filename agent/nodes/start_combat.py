@@ -3,6 +3,7 @@ from logging import getLogger
 
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
+from agent.services.roll_service import RollService
 
 log = getLogger(__name__)
 
@@ -33,8 +34,8 @@ class StartCombatNode:
     def decide_turn_order(self, state: State) -> None:
         rolls = []
         for cid, char in state.characters.items():
-            # First check roll result
-            init_roll = char.initiative_roll()
+            # First check roll result - use RollService directly
+            init_roll = RollService.initiative_roll(char)
             # Include initiative modifier (DEX mod) as a secondary sort key
             init_mod = char.initiative_modifier
             # Include a random value as a final tie-breaker

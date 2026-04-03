@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,11 +9,15 @@ from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.effects.trait_effects.damage import *  # noqa: F403
+from agent.effects.trait_effects.support import *  # noqa: F403
+from agent.effects.trait_effects.turn import *  # noqa: F403
 from agent.equipment.armor import Armor, ArmorType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
 from agent.jobs.wizard import Wizard
+from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
@@ -27,7 +32,6 @@ from agent.nodes.start_combat import StartCombatNode
 from agent.registration import register_actions
 
 register_actions()
-
 
 dagger = MeleeWeapon(
     name="Dagger",
@@ -303,3 +307,17 @@ def mock_tool_runtime(mocker: MockerFixture):  # type: ignore[no-untyped-def]  #
         )
 
     return _create
+
+
+def cheater_dice(value: int = 10) -> DiceRoller:
+    """Factory for creating deterministic dice rollers for testing.
+
+    Usage:
+        def test_something(actor, cheater_dice):
+            actor.cheater_dice = cheater_dice(value=15)
+            # Now all rolls for this actor will return 15
+    """
+
+    return DiceRoller(value=value)
+
+
