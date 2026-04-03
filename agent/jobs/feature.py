@@ -15,7 +15,7 @@ class JobFeature(BaseModel):
     description: str
     level_required: int = 1
     uses_per_rest: int | None = None
-    kwargs: dict = {}
+    kwargs: dict = Field(default_factory=dict)
 
     def to_action(self) -> Action:
         return ActionRegistry.create(

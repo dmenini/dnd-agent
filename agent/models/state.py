@@ -22,11 +22,11 @@ class VerificationResult(BaseModel):
 class State(BaseModel):
     round: int = 0
     map: GameMap | None = None
-    turn_order: list[str] = []
+    turn_order: list[str] = Field(default_factory=list)
     turn_index: int = 0
-    characters: dict[str, Character] = {}
+    characters: dict[str, Character] = Field(default_factory=dict)
     visibility: defaultdict[str, list[str]] = Field(default_factory=defaultdict)
-    parties: dict[str, Party] = {}
+    parties: dict[str, Party] = Field(default_factory=dict)
     decision: DecisionResult | None = None
     action: Action | None = None
     verification_result: VerificationResult | None = None
@@ -130,4 +130,4 @@ class GameSnapshot(BaseModel):
     phase: GamePhase
     thread_id: str
     recursion_limit: int = 20
-    char_creation_state: dict = {}
+    char_creation_state: dict = Field(default_factory=dict)

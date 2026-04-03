@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any, Literal
 
 from anthropic import BaseModel
+from pydantic import Field
 
 from agent.character.modifier import Modifier
 from agent.effects.condition import Condition
@@ -37,8 +38,8 @@ class Trait(BaseModel):
     priority: int = Priority.MEDIUM
     event_type: EventType
     effect_type: str = ""  # Maps to an effect function
-    effect_params: dict[str, Any] = {}  # Parameters passed to the effect
-    conditions: list[Condition] = []
+    effect_params: dict[str, Any] = Field(default_factory=dict)  # Parameters passed to the effect
+    conditions: list[Condition] = Field(default_factory=list)
 
     def model_post_init(self, _: Any) -> None:
         if not self.name:

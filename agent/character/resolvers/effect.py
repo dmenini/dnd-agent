@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.logs.log_event import Icon
@@ -5,7 +7,7 @@ from agent.models.enums import EventType
 
 
 class EffectResolver(CharacterBase):
-    status_effects: list[StatusEffect] = []
+    status_effects: list[StatusEffect] = Field(default_factory=list)
 
     def is_immune_to(self, condition: StatusType) -> bool:  # noqa: ARG002
         # TODO: Implement this

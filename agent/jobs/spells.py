@@ -45,8 +45,8 @@ class AttackSpell(SpellBase):
 
 class SupportSpell(SpellBase):
     spell_type: Literal[SpellType.SUPPORT] = Field(default=SpellType.SUPPORT, frozen=True)
-    apply_conditions: list[StatusEffect] = []
-    remove_conditions: list[StatusType] = []
+    apply_conditions: list[StatusEffect] = Field(default_factory=list)
+    remove_conditions: list[StatusType] = Field(default_factory=list)
     hits: int = 1
 
 

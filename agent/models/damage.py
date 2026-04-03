@@ -46,8 +46,8 @@ class DamageVulnerability(DamageComponent):
 
 class Damage(BaseModel):
     components: list[DamageComponent]
-    resistances: list[DamageResistance] = []
-    vulnerabilities: list[DamageVulnerability] = []
+    resistances: list[DamageResistance] = Field(default_factory=list)
+    vulnerabilities: list[DamageVulnerability] = Field(default_factory=list)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

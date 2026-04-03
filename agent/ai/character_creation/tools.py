@@ -24,7 +24,10 @@ def get_class_options(job_type: JobType) -> str:
     job_str = job.model_dump_json()
 
     options = options_map.get(job_type)
-    options_str = options.model_dump_json() if options else f"No choices available for {job_type.value}"
+    options_str = options.model_dump_json() if options else (
+        f"No choices available for {job_type.value} at the moment. "
+        f"Just leave subclass details unfilled, focusing only on the main job"
+    )
 
     return f"Class:\n{job_str}\n\nOptions for player choice:\n{options_str}"
 
@@ -111,6 +114,11 @@ def save_subclass(selections: CharacterSelections, runtime: ToolRuntime) -> Comm
         return _format_tool_response(message=msg, tool_call_id=runtime.tool_call_id)
 
     builder = runtime.state["current_builder"].model_copy(deep=True)
+
+    try:
+        selections.validate_subclass_choice(options.subclass_options)
+    except ValueError as e:
+        return _format_tool_response(message=str(e), tool_call_id=runtime.tool_call_id)
 
     builder.selections.subclass = selections.subclass
 

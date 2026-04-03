@@ -1,7 +1,7 @@
 import math
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.actions.base import ActionCategory, ActionType
 from agent.character.collection import ActionExtension
@@ -26,7 +26,7 @@ class ActionEconomy(BaseModel):
 
     # Temporary rule extensions
     can_act: bool = True
-    action_extensions: list[ActionExtension] = []
+    action_extensions: list[ActionExtension] = Field(default_factory=list)
 
     def restore_turn(self) -> None:
         """Restore per-turn actions and movement (start of your turn)."""

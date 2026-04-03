@@ -1,10 +1,12 @@
+from pydantic import Field
+
 from agent.actions.base import Action
 from agent.character.resolvers.base import CharacterBase
 from agent.effects.evocations.base import Evocation
 
 
 class EvocationResolver(CharacterBase):
-    evocations: list[Evocation] = []
+    evocations: list[Evocation] = Field(default_factory=list)
 
     def add_evocation(self, evo: Evocation) -> None:
         existing = next((e for e in self.evocations if e.source_id == evo.source_id), None)

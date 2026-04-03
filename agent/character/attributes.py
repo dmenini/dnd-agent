@@ -2,7 +2,7 @@ import math
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import ConfigDict, PrivateAttr
+from pydantic import ConfigDict, Field, PrivateAttr
 
 from agent.character.abilities import Abilities, AbilityType
 from agent.character.modifier import Modifier, ModifierRegistry
@@ -24,7 +24,7 @@ class Attributes(Abilities):
     hp: int = -1
     primary_ability: AbilityType = AbilityType.STR
     spellcasting_ability: AbilityType | None = None  # Only for spellcasters
-    proficiencies: list[Proficiency] = []
+    proficiencies: list[Proficiency] = Field(default_factory=list)
     hit_die: int = 0
 
     # Base attributes on which modifiers are applied (do not change directly)

@@ -50,3 +50,14 @@ make test-format
 # Fix format with ruff and sort imports
 make format
 ```
+
+## Roadmap
+
+- Add more classes
+- Try to remove map string and compute it dynamically
+- Better logging of main info and details
+- BUG: Some emoji "move" the UI line they are at to the right, resulting in a visual artefact
+- BUG: Spell still executed when save roll passes
+- BUG: Hide available actions when none available
+- BUG: Only heal enemies if not dead
+- Use source_id in status effects to uniquely identify thema
