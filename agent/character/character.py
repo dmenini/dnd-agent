@@ -70,24 +70,6 @@ class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolv
         self.unregister_passive(feature_id=FeatureId.STEALTH, source_id="hide")
         self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 
-    def start_turn(self) -> None:
-        self.turn_done = False
-        self.action_economy.restore_turn()
-        self.try_expire_conditions(is_start=True)
-        self.expire_evocations()
-
-    def end_turn(self) -> None:
-        self.try_expire_conditions(is_start=False)
-        self.turn_done = True
-
-    def end_round(self) -> None:
-        self.action_economy.restore_reaction()
-
-    def end_combat(self) -> None:
-        # TODO: This should be done on rest
-        for ability in self.special_abilities:
-            if hasattr(ability, "rest"):
-                ability.rest()
 
     def has_resources(self) -> bool:
         has_bonus = self.off_hand is not None and (self.action_economy.can_use_bonus())

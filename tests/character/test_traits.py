@@ -4,6 +4,7 @@ from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
+from agent.services.turn_service import TurnService
 
 custom_effect = StatusEffect(
     type=StatusType.CUSTOM,
@@ -29,7 +30,7 @@ def assert_passive(actor: Character, feature_id: FeatureId, source_id: str, coun
 
 
 def test_same_conditions(actor: Character) -> None:
-    actor.start_turn()
+    TurnService.start_turn(actor)
 
     effect1 = custom_effect.model_copy(deep=True)
     effect2 = custom_effect.model_copy(deep=True)
@@ -41,8 +42,8 @@ def test_same_conditions(actor: Character) -> None:
     assert actor.attributes.get_modifiers("resistance.fire")[0].value == 0.25
     assert actor.attributes.get_modifiers("resistance.cold")[0].value == 0.25
 
-    actor.end_turn()
-    actor.start_turn()
+    TurnService.end_turn(actor)
+    TurnService.start_turn(actor)
 
     assert actor.status_effects[0].type == StatusType.CUSTOM
     assert actor.status_effects[0].duration == 1
@@ -81,8 +82,8 @@ def test_different_traits(actor: Character) -> None:
     assert attrs.damage_vulnerability(DamageType.FIRE).value == value  # type: ignore[union-attr]
 
     # Traits persist across turns
-    actor.start_turn()
-    actor.end_turn()
+    TurnService.start_turn(actor)
+    TurnService.end_turn(actor)
     assert_modifier(attrs, "resistance.fire", value, "ring-resistance")
     assert_modifier(attrs, "vulnerability.fire", value, "ring-vulnerability")
 

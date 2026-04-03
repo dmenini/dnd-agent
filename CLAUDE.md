@@ -208,4 +208,14 @@ When writing tests:
 - The map coordinate system has origin at top-left, y increases downward
 - LangGraph state must be JSON-serializable (no complex objects in State that aren't Pydantic)
 - The combat graph uses memory checkpointing - thread_id must be consistent for turn history
-- Keep commits messages short and to the point
+
+## Git Commit Guidelines
+
+- **Keep commits concise** - One line only, no body or bullet points
+- **Use conventional commit format** - `type: short description` (e.g., `fix: attack roll calculation`, `refactor: extract RollService`)
+- **Common types**: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+- **Never add co-author lines** - Keep commits clean and simple
+- **Examples of good commits**:
+  - `refactor: extract RollService and add deterministic testing`
+  - `fix: evocation spell category`
+  - `test: add character creation agent tests`
