@@ -110,10 +110,10 @@ def test_character_builder_to_character_with_equipment_selections() -> None:
 
     character = builder.to_character(party="Adventurers")
 
-    assert character.armor is not None
-    assert character.armor.name == "Leather Armor"
-    assert character.main_hand is not None
-    assert character.main_hand.name == "Longsword"
+    assert character.equipment.armor is not None
+    assert character.equipment.armor.name == "Leather Armor"
+    assert character.equipment.main_hand is not None
+    assert character.equipment.main_hand.name == "Longsword"
 
 
 def test_character_builder_to_character_with_subclass() -> None:

@@ -101,9 +101,11 @@ class StandardAction(Action, ABC):
 
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
+        from agent.services.visibility_service import VisibilityService  # noqa: PLC0415
+
         actor.action_economy.use_standard(self.type)
         if self.breaks_stealth and actor.is_hidden:
-            actor.unhide()
+            VisibilityService.unhide(actor)
 
 
 class BonusAction(Action, ABC):
@@ -115,9 +117,11 @@ class BonusAction(Action, ABC):
 
     def finalize(self, actor: Character) -> None:
         """Consume resources (action point by default)."""
+        from agent.services.visibility_service import VisibilityService  # noqa: PLC0415
+
         actor.action_economy.use_bonus(self.type)
         if self.breaks_stealth and actor.is_hidden:
-            actor.unhide()
+            VisibilityService.unhide(actor)
 
 
 class LimitedBonusAction(BonusAction, ABC):

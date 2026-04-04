@@ -1,10 +1,11 @@
 from agent.character.character import Character
 from agent.jobs.barbarian import Barbarian
 from agent.models.enums import FeatureId
+from agent.services.job_service import JobService
 
 
 def test_barbarian(actor: Character) -> None:
-    actor.change_job(Barbarian)
+    JobService.change_job(actor, Barbarian)
 
     # Verify active action is available
     assert any(a.id == FeatureId.RAGE for a in actor.special_abilities)
@@ -14,7 +15,7 @@ def test_barbarian(actor: Character) -> None:
 
 
 def test_barbarian_serialization(actor: Character) -> None:
-    actor.change_job(Barbarian)
+    JobService.change_job(actor, Barbarian)
 
     actor_dict = actor.model_dump()
     actor2 = Character.model_validate(actor_dict)

@@ -70,8 +70,8 @@ def test_validate_inbound_edge_case_character_at_bounds() -> None:
 
 
 def test_visible_in_range_no_obstacles(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=1, y=1, direction="E")
-    target.pos = Position(x=3, y=1)
+    actor.combat.pos = Position(x=1, y=1, direction="E")
+    target.combat.pos = Position(x=3, y=1)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     assert game_map.within_visibility_range(actor, target.pos) is True
@@ -93,16 +93,16 @@ def test_visible_in_range_no_obstacles(game_map: GameMap, actor: Character, targ
 def test_visible_in_range(
     game_map: GameMap, actor: Character, target: Character, pos1: Position, pos2: Position
 ) -> None:
-    actor.pos = pos1
-    target.pos = pos2
+    actor.combat.pos = pos1
+    target.combat.pos = pos2
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     assert game_map.within_visibility_range(actor, target.pos) is True
 
 
 def test_not_visible_out_of_range(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=0, y=0)
-    target.pos = Position(x=4, y=4)
+    actor.combat.pos = Position(x=0, y=0)
+    target.combat.pos = Position(x=4, y=4)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     actor.attributes.vision_range = lambda: 2  # short-sighted
 
@@ -110,16 +110,16 @@ def test_not_visible_out_of_range(game_map: GameMap, actor: Character, target: C
 
 
 def test_out_of_vision_cone(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=1, y=1, direction="W")
-    target.pos = Position(x=3, y=1)
+    actor.combat.pos = Position(x=1, y=1, direction="W")
+    target.combat.pos = Position(x=3, y=1)
     game_map.characters = {actor.id: Position(x=1, y=1), target.id: Position(x=3, y=1)}
 
     assert game_map.within_visibility_range(actor, target.pos) is False
 
 
 def test_blocked_by_wall(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=0, y=0)
-    target.pos = Position(x=4, y=0)
+    actor.combat.pos = Position(x=0, y=0)
+    target.combat.pos = Position(x=4, y=0)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     game_map.walls = [Position(x=2, y=0)]  # wall directly in line
 
@@ -127,8 +127,8 @@ def test_blocked_by_wall(game_map: GameMap, actor: Character, target: Character)
 
 
 def test_wall_not_on_path(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=0, y=0, direction="E")
-    target.pos = Position(x=4, y=0)
+    actor.combat.pos = Position(x=0, y=0, direction="E")
+    target.combat.pos = Position(x=4, y=0)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
     game_map.walls = [Position(x=2, y=1)]  # wall near line, not blocking
 
@@ -136,8 +136,8 @@ def test_wall_not_on_path(game_map: GameMap, actor: Character, target: Character
 
 
 def test_same_position_visible(game_map: GameMap, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=2, y=2)
-    target.pos = Position(x=2, y=2)
+    actor.combat.pos = Position(x=2, y=2)
+    target.combat.pos = Position(x=2, y=2)
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     assert game_map.within_visibility_range(actor, target.pos) is True
@@ -207,7 +207,7 @@ def test_distance_out_of_bounds_returns_none(game_map: GameMap) -> None:
 def test_visibility_no_walls(game_map: GameMap, actor: Character) -> None:
     """Test visible cells with 360 degree FoV."""
 
-    actor.pos = Position(x=5, y=5)
+    actor.combat.pos = Position(x=5, y=5)
     actor.attributes.base_vision_fov = 360
     actor.attributes.base_vision_range = 3
 
@@ -234,7 +234,7 @@ def test_visibility_with_wall_blocking(game_map: GameMap, actor: Character) -> N
     walls = [Position(x=6, y=5)]
     game_map.walls = walls
 
-    actor.pos = Position(x=5, y=5)
+    actor.combat.pos = Position(x=5, y=5)
     actor.attributes.base_vision_fov = 360
     actor.attributes.base_vision_range = 8
     # ++++++++++
@@ -269,7 +269,7 @@ def test_fov_directional(
     facing: Direction, expected_visible: set[Position], game_map: GameMap, actor: Character
 ) -> None:
     """Test visible cells with directional FoV."""
-    actor.pos = Position(x=5, y=5, direction=facing)
+    actor.combat.pos = Position(x=5, y=5, direction=facing)
     actor.attributes.base_vision_fov = 90
     actor.attributes.base_vision_range = 3
 
@@ -284,7 +284,7 @@ def test_fov_directional(
 
 
 def test_visibility_edges_of_map(game_map: GameMap, actor: Character) -> None:
-    actor.pos = Position(x=0, y=0)
+    actor.combat.pos = Position(x=0, y=0)
     actor.attributes.base_vision_fov = 90
     actor.attributes.base_vision_range = 3
 

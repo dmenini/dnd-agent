@@ -6,6 +6,7 @@ from textual.reactive import reactive
 from textual.widgets import Markdown, Static
 
 from agent.character.character import Character
+from agent.services.action_service import ActionService
 from agent.ui.widgets.action_table import ActionsSummaryTable
 
 
@@ -44,7 +45,7 @@ class CharacterSheet(Static):
 
         # Update the actions table
         actions_table = self.query_one("#actions-table", ActionsSummaryTable)
-        actions = list(self.char.get_available_actions().values())
+        actions = list(ActionService.get_available_actions(self.char).values())
         actions_table.update_actions(actions)
 
     def update_character(self, char: Character) -> None:
@@ -59,7 +60,7 @@ class CharacterSheet(Static):
         proficiencies = ", ".join(str(prof) for prof in char.attributes.proficiencies) or "None"
 
         equipments = []
-        for slot, eq in char.equipment_slots.items():
+        for slot, eq in char.equipment.slots.items():
             if eq is not None:
                 slot_str = slot.value.title().replace("_", " ")
                 equipments.append(f"{eq.name} ({slot_str})")

@@ -1,27 +1,34 @@
-from typing import Any, Self
+from enum import Enum
+from typing import Any
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, Field, SkipValidation, computed_field, field_serializer, field_validator
 
 from agent.actions.base import Action
-from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
-from agent.actions.common.dash import DashAction
-from agent.actions.common.dodge import DodgeAction
-from agent.actions.common.hide import HideAction
-from agent.actions.common.move import MovementAction
-from agent.actions.common.wait import WaitAction
-from agent.character.abilities import Abilities
-from agent.character.resolvers.effect import EffectResolver
-from agent.character.resolvers.equipment import EquipmentResolver
-from agent.character.resolvers.evocation import EvocationResolver
-from agent.character.resolvers.job import JobResolver
-from agent.character.resolvers.roll import RollResolver
-from agent.effects.traits import TraitBuilder
-from agent.equipment.armor import ArmorType
-from agent.equipment.base import EquipmentType
-from agent.equipment.weapons import MeleeWeapon
-from agent.logs.log_event import Icon
+from agent.actions.common.evocation import EvocationSpellAction
+from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
+from agent.actions.registry import ActionRegistry
+from agent.character.abilities import Abilities, AbilityType
+from agent.character.attributes import Attributes
+from agent.character.combat_stats import CombatStats
+from agent.character.equipment import Equipment
+from agent.character.narrative import NarrativeAttributes
+from agent.character.resources import ActionEconomy, SpellSlots
+from agent.effects.base import ModifierTrait, Trait
+from agent.effects.evocations.base import Evocation
+from agent.effects.status_effects.base import StatusEffect
+from agent.equipment.armor import Shield
+from agent.jobs.base import CharacterJob
+from agent.jobs.fighter import Fighter
+from agent.logs.log_event import LogEvent, LogLevel
+from agent.logs.log_registry import get_log_registry
+from agent.mechanics.dice_roller import DiceRoll, DiceRoller
 from agent.models.enums import FeatureId
 from agent.models.position import Position
+from agent.services.equipment_service import EquipmentService
+from agent.services.job_service import JobService
+from agent.services.trait_service import TraitService
+
+registry = get_log_registry()
 
 
 class Party(BaseModel):
@@ -30,120 +37,167 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(EvocationResolver, EffectResolver, EquipmentResolver, RollResolver, JobResolver):
+class Character(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    id: str
+    name: str
+    icon: str
+    is_player: bool = False
+    level: int = 1
+    experience: int = 0
+    attributes: Attributes = Field(default_factory=Attributes)
+    narrative: NarrativeAttributes = Field(default_factory=NarrativeAttributes)
+    job: CharacterJob = Fighter  # TODO: default to None
     party: Party
-    turn_done: bool = True
+
+    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = Field(
+        default_factory=list
+    )
+    special_abilities: list[Action] = Field(default_factory=list)
+    passives: list[Trait | ModifierTrait] = Field(default_factory=list)
+    evocations: list[Evocation] = Field(default_factory=list)
+    status_effects: list[StatusEffect] = Field(default_factory=list)
+
+    spell_slots: SpellSlots = Field(default_factory=SpellSlots)
+    equipment: Equipment = Field(default_factory=Equipment)
+    combat: CombatStats = Field(default_factory=CombatStats)
+
+    # Test-only: override dice roller for deterministic rolls
+    cheater_dice: SkipValidation[DiceRoller | None] = Field(default=None, exclude=True)
 
     def model_post_init(self, _: Any, /) -> None:
         """Hook running after every initialization (also after deserialization)."""
         # Make sure that passives are synced
         for passive in self.passives:
-            self.register_passive(passive)
+            TraitService.register_passive(self, passive)
 
         # HP set to -1 means that it's the first initialization
         if self.attributes.hp == -1:
-            self.equip_all()
-            self.apply_job_features()
+            EquipmentService.equip_all(self)
+            JobService.apply_job_features(self)
             self.attributes.hp = self.max_hp
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def current_speed(self) -> float:
-        return self.attributes.speed() - self.action_economy.movement_used
+        return self.attributes.speed() - self.combat.action_economy.movement_used
 
-    def move(self, destination: Position) -> None:
-        starting_pos = self.pos.model_copy()
-        self.pos = destination
-        self.log_event(f"{self.name} moves from {starting_pos} to {destination}", icon=Icon.MOVE)
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def initiative_modifier(self) -> int:
+        return self.attributes.initiative()
 
-    def hide(self) -> None:
-        roll = self.stealth_roll()
-        self.stealth_value = roll.total
-        trait = TraitBuilder.target_advantage(source_id="hide")
-        self.register_passive(trait)
-        self.log_event(f"{self.name} hides (stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
-
-    def unhide(self) -> None:
-        self.stealth_value = 0
-        self.unregister_passive(feature_id=FeatureId.STEALTH, source_id="hide")
-        self.log_event(f"{self.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
-
-    def start_turn(self) -> None:
-        self.turn_done = False
-        self.action_economy.restore_turn()
-        self.try_expire_conditions(is_start=True)
-        self.expire_evocations()
-
-    def end_turn(self) -> None:
-        self.try_expire_conditions(is_start=False)
-        self.turn_done = True
-
-    def end_round(self) -> None:
-        self.action_economy.restore_reaction()
-
-    def end_combat(self) -> None:
-        # TODO: This should be done on rest
-        for ability in self.special_abilities:
-            if hasattr(ability, "rest"):
-                ability.rest()
-
-    def has_resources(self) -> bool:
-        has_bonus = self.off_hand is not None and (self.action_economy.can_use_bonus())
-        main_hand = self.main_hand or self.ranged or self.spells
-        has_main = main_hand is not None and (self.action_economy.can_use_standard())
-        has_movement = self.action_economy.can_move(self.current_speed)
-        return has_main or has_bonus or has_movement
-
-    def detect_target(self, target: Self, *, use_passive: bool = False) -> bool:
-        if not target.is_hidden:
-            return True  # Always visible if not hidden
-
-        # Use passive perception or active roll
-        perception_value = self.attributes.passive_perception() if use_passive else self.perception_roll().total
-
-        return perception_value >= (target.stealth_value or 0)
-
-    def _can_use_spells(self) -> bool:
-        # Can use spells if they are either wearing no armor or armor they are proficient with,
-        # or if their off-hand is empty or holding a shield they are proficient with.
-        return (not self.armor or self.attributes.has_proficiency(self.armor.armor_type)) or (
-            not self.off_hand
-            or (self.off_hand.type == EquipmentType.SHIELD and self.attributes.has_proficiency(ArmorType.SHIELD))
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def armor_class(self) -> int:
+        """Armor Class is derived from DEX and equipment."""
+        ac = self.attributes.ac_bonus(
+            armor_type=self.equipment.armor.armor_type if self.equipment.armor else None,
+            max_dex_bonus=self.equipment.armor.max_dex_bonus if self.equipment.armor else None,
         )
 
-    def get_available_actions(self) -> dict[str, Action]:
-        all_actions: list[Action] = [
-            MovementAction(range=self.current_speed),
-            DashAction(range=self.current_speed),
-            DodgeAction(),
-            WaitAction(),
-            HideAction(),
-        ]
+        if self.equipment.armor:
+            ac += self.equipment.armor.base_ac
+        if self.equipment.off_hand and isinstance(self.equipment.off_hand, Shield):
+            ac += self.equipment.off_hand.ac_bonus
+        return ac
 
-        # Equipment-based actions
-        if self.main_hand:
-            main_action = MainHandAttackAction.from_weapon(
-                weapon=self.main_hand, is_two_handed=self.two_handed_active, abilities=self.attributes
-            )
-            all_actions.append(main_action)
-        if self.off_hand and isinstance(self.off_hand.type, MeleeWeapon):
-            off_action = OffHandAttackAction.from_weapon(weapon=self.off_hand)
-            all_actions.append(off_action)
-        if self.ranged:
-            ranged_action = RangedAttackAction.from_weapon(weapon=self.ranged)
-            all_actions.append(ranged_action)
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def max_hp(self) -> int:
+        return self.attributes.max_hp(level=self.level)
 
-        # Spells (only if slot available and armor proficiency)
-        if self._can_use_spells():
-            all_actions.extend(spell for spell in self.spells if self.spell_slots.has_slot(spell.level))
+    def proficiency_bonus(self, reference: Enum) -> int:
+        if not self.attributes.has_proficiency(reference):
+            return 0
 
-        # Special abilities (can have their own categories)
-        all_actions += self.special_abilities
+        bonus = self.attributes.proficiency_bonus(level=self.level)
+        if self.attributes.has_expertise(reference):
+            bonus *= 2
 
-        # Actions from evocations (if any)
-        all_actions += self.evocation_actions()
+        return bonus
 
-        return {action.id: action for action in all_actions if action.is_available(self.action_economy)}
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def spell_save_dc(self) -> int:
+        return self.attributes.spell_save_dc(level=self.level)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def speed(self) -> float:
+        return self.attributes.speed()
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_alive(self) -> bool:
+        return self.attributes.hp > 0
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_hidden(self) -> bool:
+        return self.combat.is_hidden
+
+    @property
+    def pos(self) -> Position:
+        return self.combat.pos
+
+    @property
+    def action_economy(self) -> ActionEconomy:
+        return self.combat.action_economy
+
+    def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
+        raise NotImplementedError
+
+    def los_distance(self, target: Position) -> float:
+        """Line of Sight distance from the target."""
+        return self.pos.manhattan_distance(target)
+
+    def log_event(
+        self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False
+    ) -> None:
+        char_icon_pad = f"{self.icon} "
+        icon = self.icon if log_type == LogLevel.MAIN else icon
+        show_ai = True if log_type == LogLevel.MAIN else show_ai
+        event = LogEvent(
+            actor_id=self.id,
+            icon=icon or char_icon_pad,
+            is_player=self.is_player,
+            message=message,
+            type=log_type,
+            show_ai=show_ai,
+        )
+        registry.append(event)
+
+    @field_serializer("spells", "special_abilities")
+    def serialize_actions(self, actions: list[Action]) -> list[dict]:
+        return [a.model_dump(mode="json") for a in actions]
+
+    @field_validator("spells", "special_abilities", mode="before")
+    @classmethod
+    def deserialize_action(cls, v: Any) -> list[Action]:
+        if not isinstance(v, list):
+            msg = f"Invalid action payload: {v}"
+            raise TypeError(msg)
+
+        actions = []
+        for el in v:
+            # If it's already an Action instance, return as-is
+            if isinstance(el, Action):
+                actions.append(el)
+
+            # Otherwise, assume it's a dict with an "id"
+            elif isinstance(el, dict):
+                el_copy = el.copy()
+                id_ = el_copy.pop("id")
+                feature_id = FeatureId(id_)
+                actions.append(ActionRegistry.create(id_=feature_id, **el_copy))
+
+            else:
+                msg = f"Invalid action payload: {v}"
+                raise TypeError(msg)
+
+        return actions
 
     def __str__(self) -> str:
         return (

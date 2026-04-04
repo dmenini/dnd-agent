@@ -10,6 +10,7 @@ from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.position import Position
 from agent.models.state import GamePhase, State
+from agent.services.action_service import ActionService
 from agent.ui.game_ui import GameUI
 from agent.ui.log_panel import LogPanel
 
@@ -33,12 +34,12 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
     )
     ui.backend.char_agent = fake_char_agent
 
-    actor.pos = Position(x=0, y=0, direction="E")
-    target.pos = Position(x=1, y=0)
+    actor.combat.pos = Position(x=0, y=0, direction="E")
+    target.combat.pos = Position(x=1, y=0)
     ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])
 
     def fake_initialize_map(encounter: list[Character], map_layout: list[str] | None = None) -> None:
-        ui.backend.state.characters[actor.id].pos = actor.pos
+        ui.backend.state.characters[actor.id].combat.pos = actor.combat.pos
         game_map = GameMap(
             map="..\n..",
             width=2,
@@ -164,7 +165,7 @@ async def test_action_resources_are_used(
         await pilot.press("enter")
 
         assert ui.state.current_actor is not None
-        assert "main_hand_attack" not in ui.state.current_actor.get_available_actions()
+        assert "main_hand_attack" not in ActionService.get_available_actions(ui.state.current_actor)
 
         # Actor turn -> second wind (due to serialization it may be restored)
         assert actor.name in input_widget.placeholder
@@ -172,7 +173,7 @@ async def test_action_resources_are_used(
         await pilot.press("enter")
 
         assert ui.state.current_actor is not None
-        assert "second_wind" not in ui.state.current_actor.get_available_actions()
+        assert "second_wind" not in ActionService.get_available_actions(ui.state.current_actor)
 
         # Actor turn -> turn around is free
         new_pos = Position(x=actor.pos.x, y=actor.pos.y, direction="S")
@@ -183,7 +184,7 @@ async def test_action_resources_are_used(
         await pilot.press("enter")
 
         assert ui.state.current_actor is not None
-        assert "move" in ui.state.current_actor.get_available_actions()
+        assert "move" in ActionService.get_available_actions(ui.state.current_actor)
 
         # Actor turn -> move
         new_pos = Position(x=actor.pos.x, y=actor.pos.y + 1, direction="S")

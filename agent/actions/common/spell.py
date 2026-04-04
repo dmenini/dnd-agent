@@ -15,6 +15,10 @@ from agent.models.enums import (
     EventType,
     TargetingType,
 )
+from agent.services.combat_service import CombatService
+from agent.services.effect_service import EffectService
+from agent.services.roll_service import RollService
+from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -44,9 +48,9 @@ class AttackSpellAction(StandardAction, AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        roll = target.save_roll(ability=self.ability, is_spell=True)
+        roll = RollService.save_roll(target, ability=self.ability, is_spell=True)
         ctx.save_roll = roll
-        actor.trigger_event(EventType.SAVE_THROW, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.SAVE_THROW, actor, target, ctx)
 
         ctx.is_hit = ctx.save_roll.total < dc
 
@@ -97,12 +101,12 @@ class SupportSpellAction(StandardAction):
 
     def _execute_on_target(self, target: Character) -> None:
         for to_apply in self.apply_conditions:
-            target.try_apply_condition(to_apply)
+            EffectService.try_apply_condition(target, to_apply)
 
         # Remove conditions
         for to_remove in self.remove_conditions:
-            if target.has_condition(to_remove):
-                target.remove_condition(to_remove)
+            if EffectService.has_condition(target, to_remove):
+                EffectService.remove_condition(target, to_remove)
                 break
 
     def finalize(self, actor: Character) -> None:
@@ -131,12 +135,12 @@ class HealingSpellAction(StandardAction):
     heal_dice: str
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        ctx.heal_roll = actor.heal_roll(expr=self.heal_dice)
-        actor.trigger_event(EventType.HEAL, actor, ctx)
+        ctx.heal_roll = RollService.heal_roll(actor, expr=self.heal_dice)
+        TraitService.trigger_event(actor, EventType.HEAL, actor, ctx)
 
         heal_amount = min(ctx.heal_roll.total, target.max_hp - target.attributes.hp)
         if heal_amount:
-            target.heal(heal_amount)
+            CombatService.heal(target, heal_amount)
             target.log_event(
                 f"{actor.name} heals {target.name} for {heal_amount} HP ({target.attributes.hp}/{target.max_hp}).",
                 log_type=LogLevel.DETAIL,

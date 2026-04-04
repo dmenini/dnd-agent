@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from agent.actions.base import ActionType, StandardAction
 from agent.logs.log_event import Icon
 from agent.models.enums import TargetingType
+from agent.services.visibility_service import VisibilityService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -29,9 +30,9 @@ class HideAction(StandardAction):
             raise ValueError
 
         # Only allow hiding if no enemy has line of sight
-        can_hide = all(actor.pos not in ctx.map.get_visible_positions(enemy) for enemy in ctx.enemies)
+        can_hide = all(actor.combat.pos not in ctx.map.get_visible_positions(enemy) for enemy in ctx.enemies)
 
         if can_hide:
-            actor.hide()
+            VisibilityService.hide(actor)
         else:
             actor.log_event(f"{actor.name} cannot hide: spotted by an enemy!", icon=Icon.STEALTH, show_ai=True)

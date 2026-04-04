@@ -8,6 +8,8 @@ from agent.equipment.weapons import MeleeWeapon, RangedWeapon
 from agent.logs.log_event import LogLevel
 from agent.models.constants import MELEE_RANGE, TRAIT_LOG_LEVEL
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
+from agent.services.combat_service import CombatService
+from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -24,8 +26,8 @@ def auto_crit_if_melee_effect(actor: Character, target: Character, context: Comb
 @register_effect()
 def damage_over_time_effect(target: Character, value: int, damage_type: DamageType) -> None:
     damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
-    damage = target.modify_incoming_damage(damage)
-    target.apply_damage(damage.total)
+    damage = CombatService.modify_incoming_damage(target, damage)
+    CombatService.apply_damage(target, damage.total)
     target.log_event(f"{target.name} suffers {damage.total} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
@@ -37,8 +39,8 @@ def reflect_melee_damage_effect(
     if has_damage and actor.los_distance(target.pos) <= MELEE_RANGE:
         value = context.damage.total * ratio  # type: ignore[union-attr]
         damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
-        damage = actor.modify_incoming_damage(damage)
-        actor.apply_damage(damage.total)
+        damage = CombatService.modify_incoming_damage(actor, damage)
+        CombatService.apply_damage(actor, damage.total)
         target.log_event(
             f"{target.name} reflects {damage.total:.0f} {damage_type.value} damage back to {actor.name}.",
             log_type=LogLevel.DEBUG,
@@ -55,7 +57,7 @@ def damage_bonus_effect(actor: Character, context: CombatContext, value: int, da
 @register_effect()
 def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: int) -> None:
     slot = context.metadata.get("metadata", {}).get("slot")
-    weapon = actor.equipment_slots.get(slot)
+    weapon = actor.equipment.slots.get(slot)
     is_melee = isinstance(weapon, MeleeWeapon) and weapon.ability == AbilityType.STR
     if is_melee:
         damage_bonus_effect(actor, context, value=value, damage_type=context.metadata["damage_type"])
@@ -66,14 +68,14 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
     slot = context.metadata.get("metadata", {}).get("slot")
     is_finesse_or_ranged = False
     if slot:
-        weapon = actor.equipment_slots.get(slot)
+        weapon = actor.equipment.slots.get(slot)
         is_finesse_or_ranged = isinstance(weapon, RangedWeapon) or (isinstance(weapon, MeleeWeapon) and weapon.finesse)
     is_first_attack = (
         actor.action_economy.last_standard_action is None and actor.action_economy.last_bonus_action is None
     )
     has_advantage = context.attack_roll and context.attack_roll.advantage is True
     if context.damage and has_advantage and is_finesse_or_ranged and is_first_attack:
-        result = actor.roll(dice).total
+        result = RollService.roll(dice, character=actor).total
         damage_type = context.metadata["damage_type"]
         context.damage.components.append(DamageComponent(value=result, type=damage_type, operation="add"))
         actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)

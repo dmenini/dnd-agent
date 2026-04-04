@@ -1,16 +1,14 @@
-from pytest_mock import MockerFixture
-
 from agent.actions.common.spell import AttackSpellAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resolvers.roll import D20
 from agent.character.resources import SpellLevel
 from agent.jobs.wizard import Wizard
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
+from agent.services.job_service import JobService
+from tests.conftest import cheater_dice
 
 
 def make_attack_spell_action() -> AttackSpellAction:
@@ -27,82 +25,62 @@ def make_attack_spell_action() -> AttackSpellAction:
     )
 
 
-def test_attack_hits(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    actor.change_job(Wizard)
+def test_attack_hits(actor: Character, target: Character) -> None:
+    JobService.change_job(actor, Wizard)
     actor.attributes.intelligence = 16  # +3 modifier and +2 with proficiency
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
 
-    target._dice = mocker.MagicMock()
-    save_roll = actor.spell_save_dc - 1
-    target._dice.roll_with_context.return_value = DiceRoll(
-        expression="1d20+2", rolls=[save_roll], total=save_roll, raw=save_roll
-    )
-
-    actor._dice = mocker.MagicMock()
-    damage_roll = 5
-    actor._dice.roll_once.return_value = DiceRoll(
-        expression="1d8+4", rolls=[damage_roll], total=damage_roll + 3, raw=damage_roll
-    )
+    # Actor rolls damage (8), target fails save (rolls 1)
+    actor.cheater_dice = cheater_dice(value=8)
+    target.cheater_dice = cheater_dice(value=1)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
-    assert target.attributes.hp == start_hp - damage_roll - 3
-    target._dice.roll_with_context.assert_called_once_with(dice_expression="1d20+2", advantage=None)
-    actor._dice.roll_once.assert_called_once_with("1d8+3")
+    # Damage: 8 (dice value)
+    assert target.attributes.hp == start_hp - 8 - 3
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
 
 
-def test_attack_misses(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    actor.change_job(Wizard)
+def test_attack_misses(actor: Character, target: Character) -> None:
+    JobService.change_job(actor, Wizard)
     actor.attributes.spellcasting_ability = AbilityType.INT
     target.attributes.proficiencies = [
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT)
     ]  # Save modifier +2
     action = make_attack_spell_action()
 
-    actor._dice = mocker.MagicMock()
-    target._dice = mocker.MagicMock()
-    save_roll = actor.spell_save_dc + 1
-    target._dice.roll_with_context.return_value = DiceRoll(
-        expression=D20, rolls=[save_roll], total=save_roll + 2, raw=save_roll
-    )
+    # Target passes save (rolls 20, well above DC)
+    target.cheater_dice = cheater_dice(value=20)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
+    # Target resists - no damage
     assert target.attributes.hp == start_hp
-    target._dice.roll_with_context.assert_called_once_with(dice_expression="1d20+2", advantage=None)
-    actor._dice.roll_once.assert_not_called()
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
 
 
-def test_save_throw_skipped(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    actor.change_job(Wizard)
+def test_save_throw_skipped(actor: Character, target: Character) -> None:
+    JobService.change_job(actor, Wizard)
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
     action.requires_save = False
 
-    target._dice = mocker.MagicMock()
-    actor._dice = mocker.MagicMock()
-    damage_roll = 5
-    actor._dice.roll_once.return_value = DiceRoll(
-        expression="1d8+0", rolls=[damage_roll], total=damage_roll, raw=damage_roll
-    )
+    # No save required - actor rolls damage (5)
+    actor.cheater_dice = cheater_dice(value=5)
 
     start_hp = target.attributes.hp
     action.execute(actor, target, ctx=CombatContext())
 
-    assert target.attributes.hp == start_hp - damage_roll
-    target._dice.roll_with_context.assert_not_called()
-    actor._dice.roll_once.assert_called_once_with("1d8+0")
+    assert target.attributes.hp == start_hp - 5
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0

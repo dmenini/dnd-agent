@@ -3,6 +3,8 @@ from logging import getLogger
 
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
+from agent.services.combat_service import CombatService
+from agent.services.roll_service import RollService
 
 log = getLogger(__name__)
 
@@ -22,9 +24,9 @@ class StartCombatNode:
         if not actor.is_alive:
             return state
 
-        if actor.turn_done:
+        if actor.combat.turn_done:
             actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
-            actor.start_turn()
+            CombatService.start_turn(actor)
 
         state.update_visibility(actor)
 
@@ -34,7 +36,7 @@ class StartCombatNode:
         rolls = []
         for cid, char in state.characters.items():
             # First check roll result
-            init_roll = char.initiative_roll()
+            init_roll = RollService.initiative_roll(char)
             # Include initiative modifier (DEX mod) as a secondary sort key
             init_mod = char.initiative_modifier
             # Include a random value as a final tie-breaker

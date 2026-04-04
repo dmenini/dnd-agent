@@ -1,25 +1,23 @@
 # mypy: disable-error-code="union-attr"
-from unittest.mock import MagicMock
-
 import pytest
 
 from agent.character.character import Character
 from agent.jobs.cleric import Cleric, LifeDomain
-from agent.mechanics.dice_roller import DiceRoll
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
 from agent.models.enums import FeatureId
 from agent.models.map import GameMap
 from agent.models.position import Position
 from agent.models.state import State
-from tests.conftest import advance_turn
+from agent.services.job_service import JobService
+from tests.conftest import advance_turn, cheater_dice
 
 
 @pytest.mark.asyncio
 async def test_evocation(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     actor.level = 3
-    actor.change_job(Cleric.apply_specialization(LifeDomain))
+    JobService.change_job(actor, Cleric.apply_specialization(LifeDomain))
     orc_id = target.id
 
     starting_hp = 14
@@ -32,10 +30,8 @@ async def test_evocation(config: AgentConfig, game_map: GameMap, actor: Characte
         turn_order=[hero_id, orc_id],
     )
 
-    actor._dice = MagicMock()
-    value1 = 5
-    actor._dice.roll_with_context.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
-    actor._dice.roll_once.return_value = DiceRoll(expression="1d20", rolls=[], total=value1, raw=value1)
+    # Set deterministic rolls for evocation summon and attacks
+    actor.cheater_dice = cheater_dice(value=5)
 
     # Turn 1.1: Hero summons sword
     evo_id = FeatureId.SPIRITUAL_SWORD.value

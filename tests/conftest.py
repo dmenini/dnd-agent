@@ -8,11 +8,17 @@ from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.character.combat_stats import CombatStats
+from agent.character.equipment import Equipment
+from agent.effects.trait_effects.damage import *  # noqa: F403
+from agent.effects.trait_effects.support import *  # noqa: F403
+from agent.effects.trait_effects.turn import *  # noqa: F403
 from agent.equipment.armor import Armor, ArmorType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
 from agent.jobs.wizard import Wizard
+from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
@@ -27,7 +33,6 @@ from agent.nodes.start_combat import StartCombatNode
 from agent.registration import register_actions
 
 register_actions()
-
 
 dagger = MeleeWeapon(
     name="Dagger",
@@ -106,7 +111,7 @@ def actor() -> Character:
         icon="⚔️",
         job=Fighter,
         level=3,
-        pos=Position(x=2, y=2),
+        combat=CombatStats(pos=Position(x=2, y=2)),
         attributes=Attributes(strength=20, primary_ability=AbilityType.STR),
         is_player=True,
         party=party_players,
@@ -124,13 +129,15 @@ def target() -> Character:
         icon="👹",
         job=Wizard,
         level=3,
-        pos=Position(x=3, y=2),
+        combat=CombatStats(pos=Position(x=3, y=2)),
         party=party_players,
-        armor=Armor(
-            name="Armor",
-            description="",
-            armor_type=ArmorType.HEAVY,
-            base_ac=0,
+        equipment=Equipment(
+            armor=Armor(
+                name="Armor",
+                description="",
+                armor_type=ArmorType.HEAVY,
+                base_ac=0,
+            )
         ),
     )
     char.attributes.hp = 15
@@ -143,7 +150,7 @@ def game_map(actor: Character, target: Character) -> GameMap:
         map="",
         width=10,
         height=10,
-        characters={actor.id: actor.pos, target.id: target.pos},
+        characters={actor.id: actor.combat.pos, target.id: target.combat.pos},
         icons={actor.id: actor.icon, target.id: target.icon},
     )
 
@@ -158,7 +165,7 @@ def fighter() -> Character:
         icon="⚔️",
         job=Fighter,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=16,
             dexterity=14,
@@ -187,7 +194,7 @@ def orc() -> Character:
         icon="👹",
         job=Fighter,  # Generic enemy
         level=3,
-        pos=Position(x=5, y=0),
+        combat=CombatStats(pos=Position(x=5, y=0)),
         attributes=Attributes(
             strength=16,
             dexterity=12,
@@ -215,7 +222,7 @@ def wizard() -> Character:
         icon="🧙",
         job=Wizard,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=8,
             dexterity=14,
@@ -244,7 +251,7 @@ def cleric() -> Character:
         icon="✝️",
         job=Cleric,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=14,
             dexterity=10,
@@ -303,3 +310,15 @@ def mock_tool_runtime(mocker: MockerFixture):  # type: ignore[no-untyped-def]  #
         )
 
     return _create
+
+
+def cheater_dice(value: int = 10) -> DiceRoller:
+    """Factory for creating deterministic dice rollers for testing.
+
+    Usage:
+        def test_something(actor, cheater_dice):
+            actor.cheater_dice = cheater_dice(value=15)
+            # Now all rolls for this actor will return 15
+    """
+
+    return DiceRoller(value=value)

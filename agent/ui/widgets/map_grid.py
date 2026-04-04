@@ -145,7 +145,7 @@ class InteractiveMapGrid(Grid):
             self.cells.append(row)
 
         if self.state.current_actor:
-            pos = self.state.current_actor.pos
+            pos = self.state.current_actor.combat.pos
             self._select_cell(pos.x, pos.y)
 
     def _get_cell_content(self, x: int, y: int) -> str:
@@ -170,7 +170,7 @@ class InteractiveMapGrid(Grid):
                 lines.append(f"Character: {char.name}")
                 lines.append(f"HP: {char.attributes.hp}/{char.max_hp}")
                 if (actor := self.state.current_actor) and actor.id != cid:
-                    dist = self.game_map.distance(actor.pos, char.pos)
+                    dist = self.game_map.distance(actor.combat.pos, char.combat.pos)
                     lines.append(f"Distance: {dist}m")
                     if cid not in self.state.visibility[actor.id]:
                         lines.append("Out of sight")

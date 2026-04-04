@@ -11,6 +11,7 @@ from agent.logs.log_registry import LogRegistry
 from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.models.state import State
+from agent.services.action_service import ActionService
 
 log = getLogger(__name__)
 
@@ -51,7 +52,7 @@ class DecisionNode:
             else:
                 state.command = interrupt("Enemy's turn, press ENTER to continue")
 
-        actions = actor.get_available_actions()
+        actions = ActionService.get_available_actions(actor)
         if not actions:
             state.action = None
             state.decision = None
@@ -199,8 +200,8 @@ class DecisionNode:
     def _format_characters(self, visible_characters: list[Character], game_map: GameMap, actor: Character) -> str:
         lines = []
         for c in visible_characters:
-            dist = game_map.distance(actor.pos, c.pos)
-            los = actor.los_distance(c.pos)
+            dist = game_map.distance(actor.combat.pos, c.combat.pos)
+            los = actor.los_distance(c.combat.pos)
             lines.append(
                 f"- {c.id}: {c.icon} name={c.name} (HP {c.attributes.hp}/{c.max_hp}) "
                 f"at ({c.pos.x}, {c.pos.y}) facing {c.pos.direction}, distance={dist} steps, LoS={los}m"

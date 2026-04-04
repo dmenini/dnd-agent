@@ -27,8 +27,8 @@ def app() -> App:
 
 @pytest.mark.asyncio
 async def test_visibility(app: App, actor: Character, target: Character) -> None:
-    actor.pos = Position(x=1, y=1, direction="SE")
-    target.pos = Position(x=5, y=5, direction="N")
+    actor.combat.pos = Position(x=1, y=1, direction="SE")
+    target.combat.pos = Position(x=5, y=5, direction="N")
 
     map_str = [
         "############",

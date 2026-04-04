@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import PrivateAttr
 
-from agent.actions.base import ActionType, BonusAction, StandardAction
+from agent.actions.base import ActionType, BonusAction
 from agent.actions.common.move import MovementAction
 from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
@@ -12,6 +12,7 @@ from agent.effects.evocations.base import Evocation
 from agent.logs.log_event import Icon
 from agent.models.enums import FeatureId, TargetingType
 from agent.models.position import Position
+from agent.services.evocation_service import EvocationService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -30,7 +31,7 @@ class RepositionEvocationAction(MovementAction):
         if not ctx.map:
             raise ValueError
 
-        dist = ctx.map.distance(start=actor.pos, end=target)
+        dist = ctx.map.distance(start=actor.combat.pos, end=target)
         if dist is None or dist > self.range:
             msg = "Target position cannot be reached"
             raise ValueError(msg)
@@ -64,7 +65,7 @@ class EvocationSpellAction(BonusAction):
             raise ValueError(msg)
 
         self.evocation.position = target
-        actor.add_evocation(self.evocation)
+        EvocationService.add_evocation(actor, self.evocation)
         actor.log_event(f"{actor.name} summons {self.name} at position {target}.")
 
         if self.evocation.on_cast_use is None:

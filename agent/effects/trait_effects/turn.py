@@ -4,34 +4,34 @@ import math
 from typing import TYPE_CHECKING
 
 from agent.actions.base import ActionType
-from agent.character.collection import ActionExtension
+from agent.character.resources import ActionExtension
 from agent.effects.base import register_effect
 from agent.models.constants import TRAIT_LOG_LEVEL
 
 if TYPE_CHECKING:
-    from agent.character.resolvers.base import CharacterBase
+    from agent.character.character import Character
 
 
 @register_effect()
-def cannot_move_effect(target: CharacterBase) -> None:
+def cannot_move_effect(target: Character) -> None:
     target.action_economy.movement_available = False
     target.log_event(f"{target.name} cannot move this turn.", log_type=TRAIT_LOG_LEVEL)
 
 
 @register_effect()
-def cannot_act_effect(target: CharacterBase) -> None:
+def cannot_act_effect(target: Character) -> None:
     target.action_economy.can_act = False
     target.log_event(f"{target.name} cannot act this turn.", log_type=TRAIT_LOG_LEVEL)
 
 
 @register_effect()
-def extra_actions_effect(target: CharacterBase, extensions: list[ActionExtension]) -> None:
+def extra_actions_effect(target: Character, extensions: list[ActionExtension]) -> None:
     target.action_economy.action_extensions.extend(extensions)
     target.log_event(f"{target.name} gains {len(extensions)} extra actions.", log_type=TRAIT_LOG_LEVEL)
 
 
 @register_effect()
-def half_attacks_effect(target: CharacterBase) -> None:
+def half_attacks_effect(target: Character) -> None:
     economy = target.action_economy
     attack_extensions = [
         ext

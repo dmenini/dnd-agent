@@ -14,6 +14,10 @@ from agent.logs.log_event import Icon
 from agent.models.constants import MELEE_RANGE
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import EventType, FeatureId
+from agent.services.combat_service import CombatService
+from agent.services.effect_service import EffectService
+from agent.services.roll_service import RollService
+from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -40,11 +44,11 @@ class AttackAction(Action, ABC):
         self._fire_end_events(actor, target, ctx)
 
     def _resolve_attack(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
-        roll = actor.attack_roll(ability=self.ability, weapon=self.weapon_type, target=target)
+        roll = RollService.attack_roll(actor, ability=self.ability, weapon=self.weapon_type, target=target)
         ctx.is_critical = ctx.is_critical or roll.raw >= actor.attributes.crit_roll()
 
         ctx.attack_roll = roll
-        actor.trigger_event(EventType.ATTACK_ROLL, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.ATTACK_ROLL, actor, target, ctx)
 
         ctx.is_hit = ctx.is_critical or ctx.attack_roll.total >= target.armor_class
 
@@ -62,25 +66,24 @@ class AttackAction(Action, ABC):
         return ctx.is_hit
 
     def _apply_damage(self, actor: Character, target: Character, ctx: CombatContext) -> CombatContext:
-        # Damage roll
-        ctx.damage_roll = actor.damage_roll(
-            damage_dice=self.damage_dice, ability=self.ability, is_critical=ctx.is_critical
+        ctx.damage_roll = RollService.damage_roll(
+            actor, damage_dice=self.damage_dice, ability=self.ability, is_critical=ctx.is_critical
         )
         ctx.damage = Damage(components=[DamageComponent(value=ctx.damage_roll.total, type=self.damage_type)])
         actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)
 
         # Apply target resistances and vulnerabilities
-        ctx.damage = target.modify_incoming_damage(ctx.damage)
+        ctx.damage = CombatService.modify_incoming_damage(target, ctx.damage)
 
         # Apply actor status effects
-        actor.trigger_event(EventType.APPLY_DAMAGE, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target status effects
-        target.trigger_event(EventType.RECEIVE_DAMAGE, actor, target, ctx)
+        TraitService.trigger_event(target, EventType.RECEIVE_DAMAGE, actor, target, ctx)
 
         # Apply damage
         total_damage = ctx.damage.total
-        target.apply_damage(damage=total_damage)
+        CombatService.apply_damage(target, total_damage)
         actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE, show_ai=True)
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
@@ -90,17 +93,17 @@ class AttackAction(Action, ABC):
 
         # Try to apply status effects
         for effect in self.status_effects:
-            target.try_apply_condition(effect)
+            EffectService.try_apply_condition(target, effect)
 
         return ctx
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        actor.trigger_event(EventType.COMBAT_START, actor, target, ctx)
-        target.trigger_event(EventType.COMBAT_START, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.COMBAT_START, actor, target, ctx)
+        TraitService.trigger_event(target, EventType.COMBAT_START, actor, target, ctx)
 
     def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        actor.trigger_event(EventType.COMBAT_END, actor, target, ctx)
-        target.trigger_event(EventType.COMBAT_END, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.COMBAT_END, actor, target, ctx)
+        TraitService.trigger_event(target, EventType.COMBAT_END, actor, target, ctx)
 
     def __str__(self) -> str:
         effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"
@@ -184,11 +187,11 @@ class RangedAttackAction(StandardAction, AttackAction):
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         if actor.los_distance(target.pos) <= MELEE_RANGE:
             trait = TraitBuilder.attacker_disadvantage(source_id="ranged_attack", name="Short range Disadvantage")
-            actor.register_passive(trait)
+            TraitService.register_passive(actor, trait)
 
         super().execute(actor, target, ctx)
 
-        actor.unregister_passive(feature_id=FeatureId.ATTACKER_DISADVANTAGE, source_id="ranged_attack")
+        TraitService.unregister_passive(actor, feature_id=FeatureId.ATTACKER_DISADVANTAGE, source_id="ranged_attack")
 
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:

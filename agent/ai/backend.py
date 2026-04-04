@@ -8,6 +8,7 @@ from langgraph.types import Command
 from agent.ai.character_creation.agent import CharacterCreationAgent
 from agent.ai.combat_graph import build_combat_graph
 from agent.character.character import Character, Party
+from agent.character.combat_stats import CombatStats
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.exceptions import CharacterCreationError, InvalidPhaseError
@@ -19,6 +20,7 @@ from agent.models.enums import TargetingType
 from agent.models.map import GameMap
 from agent.models.position import Direction, Position
 from agent.models.state import GamePhase, GameResult, GameSnapshot, State
+from agent.services.equipment_service import EquipmentService
 
 
 class GameBackend:
@@ -56,7 +58,7 @@ class GameBackend:
                 id="orc",
                 name="Grunt",
                 icon="👹",
-                pos=Position(x=8, y=3, direction="W"),
+                combat=CombatStats(pos=Position(x=8, y=3, direction="W")),
                 job=Fighter,
                 party=self._default_enemy_party,
             ),
@@ -309,8 +311,8 @@ class GameBackend:
         all_characters = list(self.state.characters.values()) + encounter
         for character in all_characters:
             if walkable:
-                character.pos = walkable.pop()
-                character.pos.direction = random.choice(directions)  # noqa: S311
+                character.combat.pos = walkable.pop()
+                character.combat.pos.direction = random.choice(directions)  # noqa: S311
             else:
                 raise ValueError("Not enough free space on the map for all characters!")
 
@@ -344,7 +346,7 @@ class GameBackend:
 
         player_char = self._get_first_player_character()
         if player_char:
-            player_char.equip_melee_weapon(sword, EquipmentSlot.MAIN_HAND)
+            EquipmentService.equip_melee_weapon(player_char, sword, EquipmentSlot.MAIN_HAND)
 
     def _get_first_player_character(self) -> Character | None:
         """Get the first player character from state."""

@@ -5,10 +5,11 @@ from agent.character.character import Character
 from agent.jobs.cleric import Cleric, LifeDomain
 from agent.models.context import CombatContext
 from agent.models.enums import FeatureId
+from agent.services.job_service import JobService
 
 
 def test_divine_restoration(actor: Character, target: Character) -> None:
-    actor.change_job(Cleric)
+    JobService.change_job(actor, Cleric)
     actor.level = 3
     target.attributes.hp = 1
 
@@ -25,7 +26,7 @@ def test_divine_restoration(actor: Character, target: Character) -> None:
 
 
 def test_preserve_life(actor: Character, target: Character, mocker: MockerFixture) -> None:
-    actor.change_job(Cleric.apply_specialization(LifeDomain))
+    JobService.change_job(actor, Cleric.apply_specialization(LifeDomain))
     actor.level = 4  # 4 * 5 = 20 HP to distribute
     target.attributes.hp = 1
     target.attributes.max_hp = lambda level: 50  # Half would be 25
