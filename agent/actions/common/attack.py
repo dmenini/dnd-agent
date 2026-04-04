@@ -49,7 +49,7 @@ class AttackAction(Action, ABC):
         ctx.is_critical = ctx.is_critical or roll.raw >= actor.attributes.crit_roll()
 
         ctx.attack_roll = roll
-        TraitService.trigger_event(actor,EventType.ATTACK_ROLL, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.ATTACK_ROLL, actor, target, ctx)
 
         ctx.is_hit = ctx.is_critical or ctx.attack_roll.total >= target.armor_class
 
@@ -78,10 +78,10 @@ class AttackAction(Action, ABC):
         ctx.damage = CombatService.modify_incoming_damage(target, ctx.damage)
 
         # Apply actor status effects
-        TraitService.trigger_event(actor,EventType.APPLY_DAMAGE, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.APPLY_DAMAGE, actor, target, ctx)
 
         # Apply target status effects
-        TraitService.trigger_event(target,EventType.RECEIVE_DAMAGE, actor, target, ctx)
+        TraitService.trigger_event(target, EventType.RECEIVE_DAMAGE, actor, target, ctx)
 
         # Apply damage
         total_damage = ctx.damage.total
@@ -100,12 +100,12 @@ class AttackAction(Action, ABC):
         return ctx
 
     def _fire_start_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        TraitService.trigger_event(actor,EventType.COMBAT_START, actor, target, ctx)
-        TraitService.trigger_event(target,EventType.COMBAT_START, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.COMBAT_START, actor, target, ctx)
+        TraitService.trigger_event(target, EventType.COMBAT_START, actor, target, ctx)
 
     def _fire_end_events(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        TraitService.trigger_event(actor,EventType.COMBAT_END, actor, target, ctx)
-        TraitService.trigger_event(target,EventType.COMBAT_END, actor, target, ctx)
+        TraitService.trigger_event(actor, EventType.COMBAT_END, actor, target, ctx)
+        TraitService.trigger_event(target, EventType.COMBAT_END, actor, target, ctx)
 
     def __str__(self) -> str:
         effects = ", ".join([str(eff) for eff in self.status_effects]) if self.status_effects else "None"

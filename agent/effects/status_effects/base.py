@@ -9,7 +9,7 @@ from agent.character.abilities import AbilityType
 from agent.effects.base import ModifierTrait, Trait
 
 if TYPE_CHECKING:
-    from agent.character.resolvers.base import CharacterBase
+    from agent.character.character import Character
 
 
 class StatusType(str, Enum):
@@ -40,16 +40,16 @@ class StatusEffect(BaseModel):
         self.duration = duration
         return self
 
-    def on_apply(self, target: CharacterBase) -> None:
+    def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
-        from agent.services.trait_service import TraitService
+        from agent.services.trait_service import TraitService  # noqa:PLC0415
 
         for trait in self.traits:
             TraitService.register_passive(target, trait)
 
-    def on_expire(self, target: CharacterBase) -> None:
+    def on_expire(self, target: Character) -> None:
         """Call when the effect is removed."""
-        from agent.services.trait_service import TraitService
+        from agent.services.trait_service import TraitService  # noqa:PLC0415
 
         for trait in self.traits:
             TraitService.unregister_passive(target, feature_id=trait.feature_id, source_id=self.type.value)

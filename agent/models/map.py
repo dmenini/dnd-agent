@@ -13,7 +13,7 @@ from agent.models.position import Position
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from agent.character.resolvers.base import CharacterBase
+    from agent.character.character import Character
 
 WALL_CELL = "#  "
 EMPTY_CELL = "·  "
@@ -56,7 +56,7 @@ class GameMap(BaseModel):
 
         return self
 
-    def update_map(self, characters: Mapping[str, CharacterBase]) -> None:
+    def update_map(self, characters: Mapping[str, Character]) -> None:
         updated = {cid: characters[cid].pos for cid in self.characters if characters[cid].is_alive}
         self.characters = updated
 
@@ -100,7 +100,7 @@ class GameMap(BaseModel):
         # Return only the character IDs
         return [char_id for char_id, _ in distances]
 
-    def get_visible_positions(self, observer: CharacterBase) -> set[Position]:
+    def get_visible_positions(self, observer: Character) -> set[Position]:
         """
         Compute visible tiles. Walls are included in the visible positions if they are in sight.
         """
@@ -158,7 +158,7 @@ class GameMap(BaseModel):
     def is_walkable(self, x: int, y: int) -> bool:
         return (0 <= x < self.width) and (0 <= y < self.height) and (Position(x=x, y=y) not in self.walls)
 
-    def within_visibility_range(self, observer: CharacterBase, target: Position) -> bool:
+    def within_visibility_range(self, observer: Character, target: Position) -> bool:
         """Check whether the target is visible to the actor, considering range and walls."""
         observer_pos = observer.pos
 
@@ -177,7 +177,7 @@ class GameMap(BaseModel):
         # 3. Line of sight check (Bresenham's line)
         return self.has_line_of_sight(observer, target)
 
-    def in_vision_cone(self, observer: CharacterBase, target: Position) -> bool:
+    def in_vision_cone(self, observer: Character, target: Position) -> bool:
         """Return True if target is within observer's vision cone."""
         facing_x, facing_y = observer.pos.facing_vector
         tx, ty = observer.pos.direction_to(target)
@@ -186,7 +186,7 @@ class GameMap(BaseModel):
         dot = facing_x * tx + facing_y * ty
         return dot >= cos_half
 
-    def has_line_of_sight(self, observer: CharacterBase, target: Position) -> bool:
+    def has_line_of_sight(self, observer: Character, target: Position) -> bool:
         """Fast line-of-sight using libtcod's Bresenham algorithm."""
         # Build a local transparency map
         transparency_mask = self._transparency_mask()

@@ -10,7 +10,6 @@ from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
-    from agent.character.resolvers.base import CharacterBase
     from agent.models.context import CombatContext
 
 
@@ -31,7 +30,7 @@ def bonus_save_roll_effect(_: Character, context: CombatContext, *, expr: str) -
 
 
 @register_effect()
-def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float) -> None:
+def life_steal_effect(actor: Character, context: CombatContext, ratio: float) -> None:
     if context.damage:
         heal = math.ceil(context.damage.total * ratio)
         CombatService.heal(actor, heal)  # type: ignore[arg-type]
@@ -39,13 +38,13 @@ def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float
 
 
 @register_effect()
-def regeneration_effect(actor: CharacterBase, value: int) -> None:
+def regeneration_effect(actor: Character, value: int) -> None:
     CombatService.heal(actor, value)  # type: ignore[arg-type]
     actor.log_event(f"{actor.name} heals {value} HP.", log_type=TRAIT_LOG_LEVEL)
 
 
 @register_effect()
-def healing_bonus_effect(_: CharacterBase, context: CombatContext, value: int) -> None:
+def healing_bonus_effect(_: Character, context: CombatContext, value: int) -> None:
     if context.heal_roll:
         spell_level = context.metadata.get("level", 1)
         context.heal_roll.total = spell_level + value

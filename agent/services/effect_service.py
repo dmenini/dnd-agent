@@ -81,11 +81,11 @@ class EffectService:
         for condition in list(character.status_effects):
             if is_start:
                 condition.duration -= 1
-                TraitService.trigger_event(character,EventType.TURN_START, character)
+                TraitService.trigger_event(character, EventType.TURN_START, character)
                 if condition.save_mode == "start":
                     cls._try_break_free(character, condition)
             else:
-                TraitService.trigger_event(character,EventType.TURN_END, character)
+                TraitService.trigger_event(character, EventType.TURN_END, character)
 
             if condition.is_expired():
                 condition.on_expire(character)

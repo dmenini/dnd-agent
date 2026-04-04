@@ -82,7 +82,7 @@ class EquipmentService:
 
         setattr(character.equipment, slot_name, item)
         item.on_equip(character)
-        TraitService.notify_state_change(character,f"equipment.{slot_name.value}")
+        TraitService.notify_state_change(character, f"equipment.{slot_name.value}")
 
     @classmethod
     def equip_melee_weapon(cls, character: "Character", weapon: MeleeWeapon, slot_name: EquipmentSlot) -> None:
@@ -97,7 +97,7 @@ class EquipmentService:
         if current:
             current.on_unequip(character)
             setattr(equipment, slot_name.value, None)
-            TraitService.notify_state_change(character,f"equipment.{slot_name.value}")
+            TraitService.notify_state_change(character, f"equipment.{slot_name.value}")
 
         # Reset two-handed flag if equipping a new weapon
         equipment.two_handed_active = False
@@ -109,7 +109,7 @@ class EquipmentService:
                 raise ValueError("Two-handed weapons must be equipped in main hand")
             equipment.two_handed_active = True
             equipment.off_hand = None
-            TraitService.notify_state_change(character,"equipment.off_hand")
+            TraitService.notify_state_change(character, "equipment.off_hand")
 
         # Handle versatile weapons
         if weapon.handling == WeaponHandling.VERSATILE:
@@ -122,7 +122,7 @@ class EquipmentService:
         # Equip in the requested slot
         setattr(equipment, slot_name.value, weapon)
         weapon.on_equip(character)
-        TraitService.notify_state_change(character,f"equipment.{slot_name.value}")
+        TraitService.notify_state_change(character, f"equipment.{slot_name.value}")
 
     @classmethod
     def unequip(cls, character: "Character", slot_name: EquipmentSlot) -> None:
@@ -139,7 +139,7 @@ class EquipmentService:
 
         item.on_unequip(character)
         setattr(equipment, slot_name, None)
-        TraitService.notify_state_change(character,f"equipment.{slot_name.value}")
+        TraitService.notify_state_change(character, f"equipment.{slot_name.value}")
 
     @classmethod
     def equip_all(cls, character: "Character") -> None:
@@ -150,4 +150,4 @@ class EquipmentService:
             if not item:
                 continue
             item.on_equip(character)
-            TraitService.notify_state_change(character,f"equipment.{slot_name.value}")
+            TraitService.notify_state_change(character, f"equipment.{slot_name.value}")

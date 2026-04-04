@@ -3,15 +3,15 @@ from collections.abc import Sequence
 from anthropic import BaseModel
 from pydantic import Field
 
-from agent.character.resolvers.base import CharacterBase
+from agent.character.character import Character
 from agent.mechanics.dice_roller import DiceRoll
 from agent.models.damage import Damage
 from agent.models.map import GameMap
 
 
 class CombatContext(BaseModel):
-    enemies: Sequence[CharacterBase] = Field(default_factory=list)
-    allies: Sequence[CharacterBase] = Field(default_factory=list)
+    enemies: Sequence[Character] = Field(default_factory=list)
+    allies: Sequence[Character] = Field(default_factory=list)
     hits: dict[str, int] = Field(default_factory=dict)
     map: GameMap | None = None
     damage_roll: DiceRoll | None = None

@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING, Any
 
-from agent.effects.base import normalize_id, Trait
+from agent.effects.base import Trait, normalize_id
 from agent.logs.log_event import LogLevel
 from agent.models.enums import EventType, FeatureId
 
@@ -44,9 +44,7 @@ class TraitService:
             source_id: The source ID of the trait
         """
         source_id = normalize_id(source_id)
-        matching_traits = [
-            t for t in character.passives if t.feature_id == feature_id and t.source_id == source_id
-        ]
+        matching_traits = [t for t in character.passives if t.feature_id == feature_id and t.source_id == source_id]
 
         for trait in matching_traits:
             # Remove modifier if applicable

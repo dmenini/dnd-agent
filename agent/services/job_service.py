@@ -95,7 +95,9 @@ class JobService:
             character: The character forgetting the feature
             feature: The feature to remove
         """
-        character.special_abilities = [ability for ability in character.special_abilities if ability.id != feature.ref_id]
+        character.special_abilities = [
+            ability for ability in character.special_abilities if ability.id != feature.ref_id
+        ]
         character.log_event(f"{character.name} forgot ability {feature.name}", log_type=LogLevel.DETAIL)
 
     @classmethod
