@@ -60,7 +60,7 @@ make format
 
 ### Concentration Mechanics (Partial Implementation)
 - TODO: Damage-based concentration checks (CON save when taking damage, DC = max(10, damage/2))
-- TODO: Concentration on non-self-targeted spells (e.g., Bless on allies)
+- TODO: Fix concentration breaking for ally-targeted spells - currently the effect stays on the target when caster loses concentration
 - TODO: Voluntary concentration dropping as a free action
 - TODO: Concentration indicator in the UI
 - TODO: Add UNCONSCIOUS status type and break concentration on it
