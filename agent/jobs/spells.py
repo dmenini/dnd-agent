@@ -131,11 +131,6 @@ class SpellBuilder:
         )
 
     @staticmethod
-    def spiritual_sword(level_required: int) -> EvocationSpell:
-        """Alias for spiritual_weapon for backwards compatibility."""
-        return SpellBuilder.spiritual_weapon(level_required)
-
-    @staticmethod
     def spiritual_weapon(level_required: int) -> EvocationSpell:
         """Create a Spiritual Weapon evocation for War Domain clerics.
 

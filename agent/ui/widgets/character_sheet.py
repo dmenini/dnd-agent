@@ -66,6 +66,14 @@ class CharacterSheet(Static):
                 equipments.append(f"{eq.name} ({slot_str})")
         equipment = ", ".join(equipments)
 
+        # Build limited resources display
+        resources_display = []
+        for resource_name, resource in char.limited_resources.items():
+            if resource.max_uses > 0:
+                display_name = resource_name.replace("_", " ").title()
+                resources_display.append(f"{display_name}: {resource.current_uses}/{resource.max_uses}")
+        resources = ", ".join(resources_display) if resources_display else "None"
+
         return (
             f"# Character **{char.name} {char.icon} (ID: {char.id})**\n\n"
             f"{char.narrative.summary}\n\n"
@@ -76,6 +84,7 @@ class CharacterSheet(Static):
             f"Status Effects: {status}\n\n"
             f"Passives: {passives}\n\n"
             f"Spell Slots: {char.spell_slots}\n\n"
+            f"Resources: {resources}\n\n"
             f"Abilities: {char.attributes}\n\n"
             f"Proficiencies: {proficiencies}\n\n"
             f"Equipment: {equipment}"
