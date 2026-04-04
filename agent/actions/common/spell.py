@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pydantic import Field
+
 from agent.actions.base import ActionType, StandardAction
 from agent.actions.common.attack import AttackAction
 from agent.character.abilities import AbilityType
@@ -82,8 +84,8 @@ class SupportSpellAction(StandardAction):
     targeting: TargetingType
     ability: AbilityType
     range: float
-    apply_conditions: list[StatusEffect] = []
-    remove_conditions: list[StatusType] = []
+    apply_conditions: list[StatusEffect] = Field(default_factory=list)
+    remove_conditions: list[StatusType] = Field(default_factory=list)
 
     def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
         if self.targeting == TargetingType.SELF:

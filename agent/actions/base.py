@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.models.enums import TargetingType
 
@@ -69,7 +69,7 @@ class Action(BaseModel, ABC):
     targeting: TargetingType
     hits: int = 1
     range: float = 0.0
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
     @abstractmethod
     def is_available(self, action_economy: ActionEconomy) -> bool:

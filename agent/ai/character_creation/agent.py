@@ -1,6 +1,6 @@
 import operator
 import uuid
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated, TYPE_CHECKING
 
 from langchain.agents import AgentState, create_agent
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -158,9 +158,7 @@ class CharacterCreationAgent:
         while not self.done:
             user_input = input("\nYou: ").strip()
             input_ = {
-                "current_builder": None,
                 "messages": [HumanMessage(content=user_input)],  # type: ignore[list-item]
-                "max_players": self.max_players,
             }
             for event in self.agent.stream(input_, config=config, stream_mode="values"):
                 event["messages"][-1].pretty_print()

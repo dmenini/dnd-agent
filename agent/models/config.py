@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ToolsConfig(BaseModel):
@@ -22,7 +22,7 @@ class AgentConfig(BaseModel):
     retries: int = 3
     llm: LLMConfig
     prompts: PromptsConfig
-    decision_node: dict = {}
+    decision_node: dict = Field(default_factory=dict)
 
 
 class Config(BaseModel):

@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Self
 
+from pydantic import Field
+
 from agent.actions.base import Action, ActionType, BonusAction, StandardAction
 from agent.character.abilities import Abilities, AbilityType
 from agent.effects.status_effects.base import StatusEffect
@@ -25,7 +27,7 @@ class AttackAction(Action, ABC):
     weapon_type: WeaponType
     ability: AbilityType
     range: float
-    status_effects: list[StatusEffect] = []
+    status_effects: list[StatusEffect] = Field(default_factory=list)
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         self._fire_start_events(actor, target, ctx)

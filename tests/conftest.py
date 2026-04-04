@@ -10,6 +10,7 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.equipment.armor import Armor, ArmorType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
+from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
 from agent.jobs.wizard import Wizard
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
@@ -147,6 +148,121 @@ def game_map(actor: Character, target: Character) -> GameMap:
     )
 
 
+@pytest.fixture
+def fighter() -> Character:
+    """A fighter character for testing."""
+    party = Party(id="p1", name="Heroes", is_player_party=True)
+    char = Character(
+        id="fighter",
+        name="Fighter",
+        icon="⚔️",
+        job=Fighter,
+        level=5,
+        pos=Position(x=0, y=0),
+        attributes=Attributes(
+            strength=16,
+            dexterity=14,
+            constitution=15,
+            intelligence=10,
+            wisdom=12,
+            charisma=8,
+            primary_ability=AbilityType.STR,
+        ),
+        is_player=True,
+        party=party,
+    )
+    char.attributes.hp = 45
+    char.attributes.base_hp = 45
+    char.attributes.base_speed = 6
+    return char
+
+
+@pytest.fixture
+def orc() -> Character:
+    """An orc enemy for testing."""
+    party = Party(id="p2", name="Monsters", is_player_party=False)
+    char = Character(
+        id="orc",
+        name="Orc",
+        icon="👹",
+        job=Fighter,  # Generic enemy
+        level=3,
+        pos=Position(x=5, y=0),
+        attributes=Attributes(
+            strength=16,
+            dexterity=12,
+            constitution=16,
+            intelligence=7,
+            wisdom=11,
+            charisma=10,
+            primary_ability=AbilityType.STR,
+        ),
+        party=party,
+    )
+    char.attributes.hp = 30
+    char.attributes.base_hp = 30
+    char.attributes.base_ac = 13
+    return char
+
+
+@pytest.fixture
+def wizard() -> Character:
+    """A wizard character for testing."""
+    party = Party(id="p1", name="Heroes", is_player_party=True)
+    char = Character(
+        id="wizard",
+        name="Wizard",
+        icon="🧙",
+        job=Wizard,
+        level=5,
+        pos=Position(x=0, y=0),
+        attributes=Attributes(
+            strength=8,
+            dexterity=14,
+            constitution=13,
+            intelligence=17,
+            wisdom=12,
+            charisma=10,
+            primary_ability=AbilityType.INT,
+            spellcasting_ability=AbilityType.INT,
+        ),
+        is_player=True,
+        party=party,
+    )
+    char.attributes.hp = 28
+    char.attributes.base_hp = 28
+    return char
+
+
+@pytest.fixture
+def cleric() -> Character:
+    """A cleric character for testing."""
+    party = Party(id="p1", name="Heroes", is_player_party=True)
+    char = Character(
+        id="cleric",
+        name="Cleric",
+        icon="✝️",
+        job=Cleric,
+        level=5,
+        pos=Position(x=0, y=0),
+        attributes=Attributes(
+            strength=14,
+            dexterity=10,
+            constitution=14,
+            intelligence=10,
+            wisdom=17,
+            charisma=13,
+            primary_ability=AbilityType.WIS,
+            spellcasting_ability=AbilityType.WIS,
+        ),
+        is_player=True,
+        party=party,
+    )
+    char.attributes.hp = 38
+    char.attributes.base_hp = 38
+    return char
+
+
 async def advance_turn(state: State, result: DecisionResult) -> State:
     llm = AsyncMock(spec=BaseChatModel)
     llm.with_structured_output.return_value = llm
@@ -156,3 +272,34 @@ async def advance_turn(state: State, result: DecisionResult) -> State:
     state = await DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
     state = await ActionProcessorNode()(state)
     return await EndCombatNode()(state)
+
+
+@pytest.fixture
+def char_creation_config() -> AgentConfig:
+    """Config for character creation testing."""
+    return AgentConfig(
+        llm=LLMConfig(name="fake", temperature=0),
+        prompts=PromptsConfig(npc="", map="", dm="Test DM", character_builder="Test builder. {dm}"),
+        retries=1,
+        mock_character=False,
+    )
+
+
+@pytest.fixture
+def mock_tool_runtime(mocker: MockerFixture):  # type: ignore[no-untyped-def]  # noqa: ANN201
+    """Factory for creating mock ToolRuntime objects."""
+    from langgraph.prebuilt import ToolRuntime  # noqa: PLC0415
+
+    def _create(state_data: dict):  # type: ignore[no-untyped-def]  # noqa: ANN202
+        config = mocker.MagicMock()
+        stream_writer = mocker.MagicMock()
+        return ToolRuntime(
+            state=state_data,
+            context=None,
+            config=config,
+            stream_writer=stream_writer,
+            tool_call_id="test_call_123",
+            store=None,
+        )
+
+    return _create

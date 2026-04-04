@@ -21,10 +21,10 @@ class JobType(str, Enum):
 
 class JobSpecialization(BaseModel):
     name: str
-    features: list[JobFeature] = []
-    passives: list[JobPassive] = []
-    spells: list[Spell] = []
-    proficiencies: list[Proficiency] = []
+    features: list[JobFeature] = Field(default_factory=list)
+    passives: list[JobPassive] = Field(default_factory=list)
+    spells: list[Spell] = Field(default_factory=list)
+    proficiencies: list[Proficiency] = Field(default_factory=list)
 
 
 class CharacterJob(BaseModel):
@@ -36,11 +36,11 @@ class CharacterJob(BaseModel):
     primary_ability: AbilityType
     spellcasting_ability: AbilityType | None = None
     proficiencies: list[Proficiency]
-    passives: list[JobPassive] = []
-    features: list[JobFeature] = []
-    spells: list[Spell] = []
+    passives: list[JobPassive] = Field(default_factory=list)
+    features: list[JobFeature] = Field(default_factory=list)
+    spells: list[Spell] = Field(default_factory=list)
     spell_progression: CasterProgression
-    equipment: dict[str, EquipmentPiece] = {}
+    equipment: dict[str, EquipmentPiece] = Field(default_factory=dict)
 
     def get_features_for_level(self, level: int) -> list[JobFeature]:
         """Return unlocked features up to the given level."""

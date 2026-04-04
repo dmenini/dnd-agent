@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.character.abilities import AbilityType
 from agent.effects.base import ModifierTrait, Trait
@@ -34,7 +34,7 @@ class StatusEffect(BaseModel):
     save_dc: int = 12  # Difficulty class
     save_mode: Literal["none", "start", "end"] = "none"
     followup: StatusEffect | None = None
-    traits: list[Trait | ModifierTrait] = []
+    traits: list[Trait | ModifierTrait] = Field(default_factory=list)
 
     def with_duration(self, duration: int) -> Self:
         self.duration = duration

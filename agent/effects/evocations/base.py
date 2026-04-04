@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.actions.base import Action
 from agent.character.resources import ActionEconomy
@@ -12,9 +12,9 @@ class Evocation(BaseModel):
     name: str
     duration: int
     position: Position | None = None
-    features: list[JobFeature] = []
+    features: list[JobFeature] = Field(default_factory=list)
     on_cast_use: FeatureId | None = None
-    action_economy: ActionEconomy = ActionEconomy()
+    action_economy: ActionEconomy = Field(default_factory=ActionEconomy)
 
     def available_actions(self) -> list[Action]:
         actions = []

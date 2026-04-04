@@ -36,9 +36,9 @@ class CharacterBase(BaseModel):
     narrative: NarrativeAttributes = Field(default_factory=NarrativeAttributes)
     stealth_value: int = 0
 
-    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = []
-    special_abilities: list[Action] = []
-    passives: list[Trait | ModifierTrait] = []
+    spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = Field(default_factory=list)
+    special_abilities: list[Action] = Field(default_factory=list)
+    passives: list[Trait | ModifierTrait] = Field(default_factory=list)
 
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
     action_economy: ActionEconomy = Field(default_factory=ActionEconomy)

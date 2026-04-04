@@ -115,10 +115,17 @@ class LogPanel(ListView):
             for event in self._filtered_logs:
                 self.append(self._create_list_item(event, children_map))
         else:
-            # TODO: The last log may have children now -> update disabled flag
             # Incremental update: only append new items
             new_items = new_filtered[old_count:]
             self._filtered_logs = new_filtered
+
+            # Update disabled state of existing items if their children state changed
+            for idx, child in enumerate(self.children):
+                if idx < old_count:
+                    event = new_filtered[idx]
+                    if event.type in {LogLevel.MAIN, LogLevel.SYSTEM}:
+                        has_children = children_map.get(event.id, False)
+                        child.disabled = not has_children
 
             for event in new_items:
                 self.append(self._create_list_item(event, children_map))

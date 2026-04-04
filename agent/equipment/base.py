@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agent.effects.base import ModifierTrait, Trait
 from agent.effects.status_effects.base import StatusEffect
@@ -64,8 +64,8 @@ class EquipmentBase(BaseModel):
     name: str
     description: str = ""
     rarity: Rarity = Rarity.COMMON
-    features: list[EquipmentFeature] = []
-    effects: list[StatusEffect] = []
+    features: list[EquipmentFeature] = Field(default_factory=list)
+    effects: list[StatusEffect] = Field(default_factory=list)
 
     def on_equip(self, actor: CharacterBase) -> None:
         for feature in self.features:
