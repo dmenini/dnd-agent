@@ -256,3 +256,63 @@ def test_war_priest_feature(actor: Character, orc: Character) -> None:
     # After rest, uses should be restored
     war_priest.rest()
     assert war_priest.current_uses == 0
+
+
+def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:
+    """Test that War Domain clerics learn Magic Weapon spell at level 3."""
+    # Start at level 2 before changing job
+    actor.level = 2
+
+    job = Cleric.apply_specialization(WarDomain)
+    JobService.change_job(actor, job)
+
+    # At level 2, should not have Magic Weapon
+    spells = [a.id for a in actor.spells]
+    assert FeatureId.MAGIC_WEAPON not in spells
+
+    # Level up to 3
+    from agent.services.level_service import LevelService  # noqa: PLC0415
+
+    LevelService.level_up(actor)
+    assert actor.level == 3
+
+    # Should now have Magic Weapon
+    spells = [a.id for a in actor.spells]
+    assert FeatureId.MAGIC_WEAPON in spells
+
+    # Find the Magic Weapon spell
+    magic_weapon = next((s for s in actor.spells if s.id == FeatureId.MAGIC_WEAPON), None)
+    assert magic_weapon is not None
+    assert magic_weapon.name == "Magic Weapon"
+
+    # Check it's a bonus action
+    assert magic_weapon.category == ActionCategory.BONUS
+    assert isinstance(magic_weapon, BonusSupportSpellAction)
+
+    # Check it requires concentration
+    assert magic_weapon.requires_concentration
+
+    # Check targeting and range
+    assert magic_weapon.targeting == TargetingType.SINGLE
+    assert magic_weapon.range == 2  # Touch range
+
+    # Check the condition
+    assert len(magic_weapon.apply_conditions) == 1
+    condition = magic_weapon.apply_conditions[0]
+    assert condition.type == StatusType.MAGIC_WEAPON
+    assert condition.duration == 600  # 1 hour
+
+    # Check the traits (attack bonus and damage bonus)
+    assert len(condition.traits) == 2
+
+    # Test casting on an ally
+    ctx = CombatContext()
+
+    magic_weapon.execute(actor, orc, ctx)
+
+    # Caster should be concentrating
+    assert actor.concentrating_on is not None
+    assert actor.concentrating_on.type == StatusType.MAGIC_WEAPON
+
+    # Target should have the buff
+    assert EffectService.has_condition(orc, StatusType.MAGIC_WEAPON)

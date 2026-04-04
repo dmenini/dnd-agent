@@ -47,7 +47,15 @@ class DiceRoller:
         return sides
 
     def _parse_expression(self, expr: str) -> tuple[int, int, int]:
-        match = dice_pattern.match(expr.strip())
+        expr = expr.strip()
+
+        # Check if it's a flat number (e.g., "1", "+1", "-1")
+        if expr.lstrip("+-").isdigit():
+            flat_value = int(expr)
+            # Return 0d0+value (special case: 0 dice, just use modifier)
+            return 0, 0, flat_value
+
+        match = dice_pattern.match(expr)
         if not match:
             msg = f"Invalid dice expression: {expr}"
             raise ValueError(msg)

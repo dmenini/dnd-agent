@@ -216,6 +216,44 @@ class SpellBuilder:
         )
 
     @staticmethod
+    def magic_weapon(level_required: int) -> SupportSpell:
+        # TODO: Level scaling - +2 at spell level 4, +3 at spell level 6
+        return SupportSpell(
+            ref_id=FeatureId.MAGIC_WEAPON,
+            name="Magic Weapon",
+            description=(
+                "You touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon "
+                "with a +1 bonus to attack rolls and damage rolls."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_2,
+            casting_time=ActionCategory.BONUS,
+            targeting=TargetingType.SINGLE,
+            range=TOUCH_RANGE,
+            requires_concentration=True,
+            apply_conditions=[
+                StatusEffect(
+                    type=StatusType.MAGIC_WEAPON,
+                    duration=600,  # 1 hour = 600 rounds
+                    save_dc=0,
+                    traits=[
+                        TraitBuilder.bonus_on_attack_roll(
+                            source_id=FeatureId.MAGIC_WEAPON.value,
+                            name="Magic Weapon",
+                            dice_expr="1",  # Flat +1 bonus
+                        ),
+                        TraitBuilder.damage_bonus(
+                            source_id=FeatureId.MAGIC_WEAPON.value,
+                            name="Magic Weapon",
+                            value=1,
+                            damage_type=DamageType.FORCE,  # Generic magical damage
+                        ),
+                    ],
+                )
+            ],
+        )
+
+    @staticmethod
     def shield_of_faith(level_required: int) -> SupportSpell:
         return SupportSpell(
             ref_id=FeatureId.SHIELD_OF_FAITH,

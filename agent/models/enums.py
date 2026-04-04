@@ -101,6 +101,7 @@ class FeatureId(str, Enum):
     SPIRITUAL_SWORD = "spiritual_sword"
     DIVINE_FAVOR = "divine_favor"
     SHIELD_OF_FAITH = "shield_of_faith"
+    MAGIC_WEAPON = "magic_weapon"
     WEAPON_DAMAGE_BONUS = "weapon_damage_bonus"
 
 
