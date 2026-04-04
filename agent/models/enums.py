@@ -88,6 +88,7 @@ class FeatureId(str, Enum):
     SECOND_WIND = "second_wind"
     RAGE = "rage"
     WAR_PRIEST = "war_priest"
+    GUIDED_STRIKE = "guided_strike"
 
     # Spells
     MAGIC_MISSILE = "magic_missile"

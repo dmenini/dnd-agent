@@ -78,6 +78,13 @@ class JobService:
         character.spell_slots.progression = character.job.spell_progression
         character.spell_slots.recompute(character.level)
 
+        # Initialize all job-defined resources
+        for resource_def in character.job.resources:
+            resource = character.get_resource(resource_def.name)
+            max_uses = resource_def.calculate_max_uses(character.level)
+            resource.set_max_uses(max_uses)
+            resource.restore()
+
     @classmethod
     def apply_job_feature(cls, character: "Character", feature: JobFeature) -> None:
         """Apply a job feature (special ability).

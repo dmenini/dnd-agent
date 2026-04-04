@@ -1,4 +1,5 @@
 """Level service - handles character leveling and progression."""
+
 import math
 from typing import TYPE_CHECKING
 
@@ -79,6 +80,20 @@ class LevelService:
         prof_bonus = character.attributes.proficiency_bonus(new_level)
         if prof_bonus > character.attributes.proficiency_bonus(old_level):
             character.log_event(f"Proficiency bonus increased to +{prof_bonus}", log_type=LogLevel.DETAIL)
+
+        # Update all job-defined resources with level scaling
+        for resource_def in character.job.resources:
+            resource = character.get_resource(resource_def.name)
+            old_max = resource.max_uses
+            new_max = resource_def.calculate_max_uses(new_level)
+            resource.set_max_uses(new_max)
+            if new_max > old_max:
+                # Format resource name for display (e.g., "channel_divinity" -> "Channel Divinity")
+                display_name = resource_def.name.replace("_", " ").title()
+                character.log_event(
+                    f"{display_name} uses increased to {new_max}",
+                    log_type=LogLevel.DETAIL,
+                )
 
     @classmethod
     def set_level(cls, character: "Character", target_level: int) -> None:

@@ -46,3 +46,36 @@ def healing_bonus_effect(_: Character, context: CombatContext, value: int) -> No
     if context.heal_roll:
         spell_level = context.metadata.get("level", 1)
         context.heal_roll.total = spell_level + value
+
+
+@register_effect()
+def guided_strike(actor: Character, target: Character, context: CombatContext) -> None:
+    """Use Channel Divinity to add +10 to an attack roll.
+
+    Automatically activated if:
+    - Character has Channel Divinity uses available
+    - The attack would miss without the bonus
+    - The attack would hit with the bonus
+    """
+    if not context.attack_roll:
+        return
+
+    # Check if we have Channel Divinity uses available
+    channel_divinity = actor.get_resource("channel_divinity")
+    if not channel_divinity.has_uses():
+        return
+
+    # Use target AC
+    target_ac = target.armor_class
+    current_total = context.attack_roll.total
+
+    # Only use if it would turn a miss into a hit
+    would_miss = current_total < target_ac
+    would_hit_with_bonus = (current_total + 10) >= target_ac
+
+    if would_miss and would_hit_with_bonus:
+        # Apply the bonus
+        context.attack_roll.total += 10
+        # Consume Channel Divinity
+        channel_divinity.consume()
+        actor.log_event(f"{actor.name} uses Guided Strike (+10 to attack roll)!", log_type=TRAIT_LOG_LEVEL)

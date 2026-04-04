@@ -12,7 +12,7 @@ from agent.character.attributes import Attributes
 from agent.character.combat_stats import CombatStats
 from agent.character.equipment import Equipment
 from agent.character.narrative import NarrativeAttributes
-from agent.character.resources import ActionEconomy, SpellSlots
+from agent.character.resources import ActionEconomy, LimitedResource, SpellSlots
 from agent.effects.base import ModifierTrait, Trait
 from agent.effects.evocations.base import Evocation
 from agent.effects.status_effects.base import StatusEffect
@@ -61,6 +61,7 @@ class Character(BaseModel):
     concentrating_on: StatusEffect | None = None  # Tracks active concentration spell
 
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
+    limited_resources: dict[str, LimitedResource] = Field(default_factory=dict)
     equipment: Equipment = Field(default_factory=Equipment)
     combat: CombatStats = Field(default_factory=CombatStats)
 
@@ -146,6 +147,12 @@ class Character(BaseModel):
     @property
     def action_economy(self) -> ActionEconomy:
         return self.combat.action_economy
+
+    def get_resource(self, resource_name: str) -> LimitedResource:
+        """Get or create a limited resource by name."""
+        if resource_name not in self.limited_resources:
+            self.limited_resources[resource_name] = LimitedResource()
+        return self.limited_resources[resource_name]
 
     def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError

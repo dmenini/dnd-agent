@@ -307,6 +307,18 @@ class TraitBuilder:
             operation="set",
         )
 
+    @staticmethod
+    def guided_strike(source_id: str, name: str = "", description: str = "") -> Trait:
+        """Grant ability to use Channel Divinity for +10 to attack rolls."""
+        return Trait(
+            source_id=source_id,
+            feature_id=FeatureId.GUIDED_STRIKE,
+            name=name or "Guided Strike",
+            description=description or "Use Channel Divinity for +10 to attack (auto-activates on near-miss).",
+            event_type=EventType.ATTACK_ROLL,
+            effect_type="guided_strike",
+        )
+
     # ============================================================================
     # EVENT TRAITS - Callback-based effects
     # ============================================================================

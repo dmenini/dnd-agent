@@ -5,13 +5,24 @@ from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
-from agent.jobs.base import CharacterJob, JobOptions, JobSpecialization, JobType
+from agent.jobs.base import CharacterJob, JobOptions, JobSpecialization, JobType, ResourceDefinition
 from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, OptionItem, SubclassChoice
 from agent.jobs.spells import AttackSpell, SpellBuilder
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 
 # https://roll20.net/compendium/dnd5e/Classes:Cleric#content
+
+
+def channel_divinity_max_uses(level: int) -> int:
+    """Calculate Channel Divinity max uses based on cleric level."""
+    if level >= 18:  # noqa: PLR2004
+        return 3
+    if level >= 6:  # noqa: PLR2004
+        return 2
+    if level >= 2:  # noqa: PLR2004
+        return 1
+    return 0
 
 
 ClericOptions = JobOptions(
@@ -111,6 +122,14 @@ Cleric = CharacterJob(
             ability=AbilityType.DEX,
         ),
     ],
+    resources=[
+        ResourceDefinition(
+            name="channel_divinity",
+            calculate_max_uses=channel_divinity_max_uses,
+            restore_on_short_rest=True,
+            restore_on_long_rest=True,
+        ),
+    ],
 )
 
 LifeDomain = JobSpecialization(
@@ -152,7 +171,20 @@ LifeDomain = JobSpecialization(
 
 WarDomain = JobSpecialization(
     name="War Domain",
-    proficiencies=[Proficiency(source="war_domain", type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE)],
+    proficiencies=[
+        Proficiency(source="war_domain", type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE),
+        Proficiency(source="war_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY),
+    ],
+    passives=[
+        JobPassive(
+            trait=TraitBuilder.guided_strike(
+                source_id=JobType.CLERIC.value,
+                name="Guided Strike",
+                description="Use Channel Divinity after seeing attack roll to gain +10 bonus.",
+            ),
+            level_required=2,
+        ),
+    ],
     features=[
         JobFeature(
             ref_id=FeatureId.WAR_PRIEST,

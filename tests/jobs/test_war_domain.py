@@ -2,6 +2,7 @@ from agent.actions.base import ActionCategory, ActionType
 from agent.actions.common.spell import BonusSupportSpellAction
 from agent.character.character import Character
 from agent.effects.status_effects.base import StatusType
+from agent.equipment.armor import ArmorType
 from agent.jobs.cleric import Cleric, WarDomain
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
@@ -95,6 +96,117 @@ def test_war_domain_shield_of_faith(actor: Character, orc: Character) -> None:
     # Target should have the buff
     assert EffectService.has_condition(orc, StatusType.SHIELDED_BY_FAITH)
     assert orc.armor_class == original_ac + 2
+
+
+def test_war_domain_guided_strike(actor: Character, orc: Character) -> None:
+    """Test that War Domain clerics get Guided Strike at level 2."""
+    # Start at level 1 before changing job
+    actor.level = 1
+
+    job = Cleric.apply_specialization(WarDomain)
+    JobService.change_job(actor, job)
+
+    # At level 1, should not have Guided Strike
+    assert not any(p.feature_id == FeatureId.GUIDED_STRIKE for p in actor.passives)
+
+    # Level up to 2
+    from agent.services.level_service import LevelService  # noqa: PLC0415
+
+    LevelService.level_up(actor)
+    assert actor.level == 2
+
+    # Should now have Guided Strike passive
+    assert any(p.feature_id == FeatureId.GUIDED_STRIKE for p in actor.passives)
+
+    # Should have Channel Divinity uses
+    channel_divinity = actor.get_resource("channel_divinity")
+    assert channel_divinity.max_uses == 1
+    assert channel_divinity.has_uses()
+
+    # Test Guided Strike activation
+    # Set up a scenario where attack would miss without bonus but hit with +10
+    # AC is calculated from attributes.base_ac + armor.base_ac + dex + traits
+    # We want: roll=15 misses, roll+10=25 hits, so AC should be between 16-25
+    # Set base_ac to 0 and use armor to control the total AC precisely
+    # With no base_ac: AC = armor.base_ac + dex + trait + 10 (if no armor type penalty)
+    # Target AC ~20, so let's use heavy armor with base_ac 20 (no dex added)
+    orc.attributes.base_ac = 0
+    from agent.equipment.armor import Armor, ArmorType  # noqa: PLC0415
+
+    orc.equipment.armor = Armor(name="Plate", description="", armor_type=ArmorType.HEAVY, base_ac=20)
+    target_ac = orc.armor_class
+
+    ctx = CombatContext(enemies=[orc])
+
+    # Mock an attack roll that would miss (total = 15)
+    from agent.mechanics.dice_roller import DiceRoll  # noqa: PLC0415
+
+    ctx.attack_roll = DiceRoll(expression="1d20+5", total=15, raw=10, advantage=None, rolls=[10])
+
+    # Verify the conditions for Guided Strike
+    assert target_ac > 15, f"Roll 15 should miss AC {target_ac}"
+    assert target_ac <= 25, f"Roll 25 should hit AC {target_ac}"
+
+    # Trigger the Guided Strike effect
+    from agent.effects.trait_effects.support import guided_strike  # noqa: PLC0415
+
+    guided_strike(actor, orc, ctx)
+
+    # Should have applied +10 bonus
+    assert ctx.attack_roll.total == 25  # 15 + 10
+
+    # Should have consumed Channel Divinity
+    channel_divinity = actor.get_resource("channel_divinity")
+    assert not channel_divinity.has_uses()
+    assert channel_divinity.current_uses == 1
+
+
+def test_guided_strike_not_used_if_already_hits(actor: Character, orc: Character) -> None:
+    """Test that Guided Strike is not used if attack already hits."""
+    job = Cleric.apply_specialization(WarDomain)
+    JobService.change_job(actor, job)
+
+    from agent.services.level_service import LevelService  # noqa: PLC0415
+
+    LevelService.level_up(actor)
+
+    # Use orc fixture as target with low AC
+    # AC is calculated from attributes.base_ac + armor.base_ac + dex + traits
+    # Set base_ac very low and remove armor to get minimal AC
+    orc.attributes.base_ac = 0
+    orc.equipment.armor = None
+    target_ac = orc.armor_class
+
+    # Set up a scenario where attack already hits
+    ctx = CombatContext(enemies=[orc])
+
+    from agent.mechanics.dice_roller import DiceRoll  # noqa: PLC0415
+
+    ctx.attack_roll = DiceRoll(expression="1d20+5", total=15, raw=10, advantage=None, rolls=[10])
+
+    # Verify attack already hits
+    assert target_ac <= 15, f"Roll 15 should hit AC {target_ac}"
+
+    # Should not use Guided Strike
+    from agent.effects.trait_effects.support import guided_strike  # noqa: PLC0415
+
+    guided_strike(actor, orc, ctx)
+
+    # Should not have changed the roll
+    assert ctx.attack_roll.total == 15
+
+    # Should not have consumed Channel Divinity
+    channel_divinity = actor.get_resource("channel_divinity")
+    assert channel_divinity.has_uses()
+
+
+def test_war_domain_heavy_armor_proficiency(actor: Character) -> None:
+    """Test that War Domain clerics get heavy armor proficiency."""
+    job = Cleric.apply_specialization(WarDomain)
+    JobService.change_job(actor, job)
+
+    # Should have heavy armor proficiency
+    assert actor.attributes.has_proficiency(ArmorType.HEAVY)
 
 
 def test_war_priest_feature(actor: Character, orc: Character) -> None:
