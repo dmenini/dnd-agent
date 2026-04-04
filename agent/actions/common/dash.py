@@ -37,7 +37,7 @@ class DashAction(StandardAction):
         if not ctx.map:
             raise ValueError
 
-        dist = ctx.map.distance(start=actor.pos, end=target)
+        dist = ctx.map.distance(start=actor.combat.pos, end=target)
         if dist is None or dist > self.range:
             msg = "Target position cannot be reached"
             raise ValueError(msg)

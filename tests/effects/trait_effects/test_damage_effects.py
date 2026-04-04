@@ -30,7 +30,7 @@ def test_auto_crit_triggers_within_melee(actor: Character, target: Character, co
 
 
 def test_auto_crit_does_not_trigger_outside_melee(actor: Character, target: Character, context: CombatContext) -> None:
-    target.pos = Position(x=10, y=10)
+    target.combat.pos = Position(x=10, y=10)
     auto_crit_if_melee_effect(actor, target, context)
     assert context.is_critical is False
 

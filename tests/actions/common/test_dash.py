@@ -22,11 +22,11 @@ def test_dash(actor: Character, game_map: GameMap) -> None:
     action = make_dash_action()
 
     target = Position(x=3, y=3)
-    assert actor.pos != target
+    assert actor.combat.pos != target
 
     action.execute(actor, target, ctx=CombatContext(map=game_map))
 
-    assert actor.pos == target
+    assert actor.combat.pos == target
     assert actor.current_speed == initial_speed
 
     action.finalize(actor)
@@ -47,5 +47,5 @@ def test_dash_doesnt_breaks_stealth(actor: Character, game_map: GameMap) -> None
     action.execute(actor, target, ctx=CombatContext(map=game_map))
     action.finalize(actor)
 
-    assert actor.is_hidden is True
-    assert actor.stealth_value > 0
+    assert actor.combat.is_hidden is True
+    assert actor.combat.stealth_value > 0

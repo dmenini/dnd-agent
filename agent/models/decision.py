@@ -196,7 +196,7 @@ class DecisionResult(BaseModel):
             )
 
         # For movement, we use distance measured on the map with pathfinding algo
-        dist = game_map.distance(start=actor.pos, end=pos)
+        dist = game_map.distance(start=actor.combat.pos, end=pos)
         max_dist = action.range  # The range is configured as the max distance available to the character
         if dist is None:
             return (

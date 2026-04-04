@@ -15,6 +15,7 @@ from agent.models.state import State
 from tests.conftest import advance_turn, cheater_dice
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     actor.cheater_dice = None

@@ -8,15 +8,15 @@ from agent.models.position import Position
 def test_hide_success(actor: Character, target: Character, game_map: GameMap) -> None:
     action = HideAction()
 
-    target.pos = Position(x=5, y=5)
-    actor.pos = Position(x=1, y=1)
+    target.combat.pos = Position(x=5, y=5)
+    actor.combat.pos = Position(x=1, y=1)
     game_map.walls = [Position(x=2, y=2), Position(x=3, y=3)]  # block los
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     action.execute(actor, None, ctx=CombatContext(map=game_map, enemies=[target]))
 
     assert actor.is_hidden is True
-    assert actor.stealth_value > 0
+    assert actor.combat.stealth_value > 0
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0
@@ -26,14 +26,14 @@ def test_hide_success(actor: Character, target: Character, game_map: GameMap) ->
 def test_hide_failure(actor: Character, target: Character, game_map: GameMap) -> None:
     action = HideAction()
 
-    actor.pos = Position(x=1, y=1)
-    target.pos = Position(x=5, y=5, direction="NW")
+    actor.combat.pos = Position(x=1, y=1)
+    target.combat.pos = Position(x=5, y=5, direction="NW")
     game_map.characters = {actor.id: actor.pos, target.id: target.pos}
 
     action.execute(actor, None, ctx=CombatContext(map=game_map, enemies=[target]))
 
     assert actor.is_hidden is False
-    assert actor.stealth_value == 0
+    assert actor.combat.stealth_value == 0
 
     action.finalize(actor)
     assert actor.action_economy.standard_actions == 0

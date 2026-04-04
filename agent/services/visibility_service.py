@@ -16,7 +16,7 @@ class VisibilityService:
     def hide(cls, character: "Character") -> None:
         """Make character attempt to hide using stealth."""
         roll = RollService.stealth_roll(character)
-        character.stealth_value = roll.total
+        character.combat.stealth_value = roll.total
         trait = TraitBuilder.target_advantage(source_id="hide")
         character.register_passive(trait)
         character.log_event(f"{character.name} hides (stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
@@ -24,7 +24,7 @@ class VisibilityService:
     @classmethod
     def unhide(cls, character: "Character") -> None:
         """Make character visible again."""
-        character.stealth_value = 0
+        character.combat.stealth_value = 0
         character.unregister_passive(feature_id=FeatureId.ATTACKER_ADVANTAGE, source_id="hide")
         character.log_event(f"{character.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 
@@ -39,4 +39,4 @@ class VisibilityService:
             observer.attributes.passive_perception() if use_passive else RollService.perception_roll(observer).total
         )
 
-        return perception_value >= (target.stealth_value or 0)
+        return perception_value >= (target.combat.stealth_value or 0)

@@ -34,12 +34,12 @@ def ui(config: AgentConfig, actor: Character, target: Character, mocker: MockerF
     )
     ui.backend.char_agent = fake_char_agent
 
-    actor.pos = Position(x=0, y=0, direction="E")
-    target.pos = Position(x=1, y=0)
+    actor.combat.pos = Position(x=0, y=0, direction="E")
+    target.combat.pos = Position(x=1, y=0)
     ui.backend.get_default_enemies = mocker.MagicMock(return_value=[target])
 
     def fake_initialize_map(encounter: list[Character], map_layout: list[str] | None = None) -> None:
-        ui.backend.state.characters[actor.id].pos = actor.pos
+        ui.backend.state.characters[actor.id].combat.pos = actor.combat.pos
         game_map = GameMap(
             map="..\n..",
             width=2,

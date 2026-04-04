@@ -310,8 +310,8 @@ class GameBackend:
         all_characters = list(self.state.characters.values()) + encounter
         for character in all_characters:
             if walkable:
-                character.pos = walkable.pop()
-                character.pos.direction = random.choice(directions)  # noqa: S311
+                character.combat.pos = walkable.pop()
+                character.combat.pos.direction = random.choice(directions)  # noqa: S311
             else:
                 raise ValueError("Not enough free space on the map for all characters!")
 

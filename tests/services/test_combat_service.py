@@ -7,35 +7,35 @@ from agent.services.combat_service import CombatService
 def test_start_turn(fighter: Character) -> None:
     """Test start_turn restores action economy and expires start-of-turn effects."""
     # Simulate end of previous turn
-    fighter.turn_done = True
+    fighter.combat.turn_done = True
     fighter.action_economy.movement_used = 30
     fighter.action_economy.standard_actions = 0
     fighter.action_economy.bonus_actions = 0
 
     CombatService.start_turn(fighter)
 
-    assert fighter.turn_done is False
-    assert fighter.action_economy.movement_used == 0
+    assert fighter.combat.turn_done is False
+    assert fighter.action_econom.movement_used == 0
     assert fighter.action_economy.standard_actions == 1
     assert fighter.action_economy.bonus_actions == 1
 
 
 def test_end_turn(fighter: Character) -> None:
     """Test end_turn marks turn as done."""
-    fighter.turn_done = False
+    fighter.combat.turn_done = False
 
     CombatService.end_turn(fighter)
 
-    assert fighter.turn_done is True
+    assert fighter.combat.turn_done is True
 
 
 def test_end_round(fighter: Character) -> None:
     """Test end_round restores reaction."""
-    fighter.action_economy.reaction_available = False
+    fighter.combat.action_economy.reaction_available = False
 
     CombatService.end_round(fighter)
 
-    assert fighter.action_economy.reaction_available is True
+    assert fighter.combat.action_economy.reaction_available is True
 
 
 def test_end_combat_rests_abilities(fighter: Character) -> None:
@@ -56,18 +56,18 @@ def test_end_combat_rests_abilities(fighter: Character) -> None:
 
 def test_turn_lifecycle(fighter: Character) -> None:
     """Test the full turn lifecycle using CombatService."""
-    fighter.turn_done = True
+    fighter.combat.turn_done = True
     fighter.action_economy.movement_used = 20
 
     # Start turn
     CombatService.start_turn(fighter)
 
-    assert fighter.turn_done is False
+    assert fighter.combat.turn_done is False
     assert fighter.action_economy.movement_used == 0
 
     # End turn
     CombatService.end_turn(fighter)
-    assert fighter.turn_done is True
+    assert fighter.combat.turn_done is True
 
     # End round
     fighter.action_economy.reaction_available = False

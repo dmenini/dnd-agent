@@ -8,6 +8,7 @@ from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.character.combat_stats import CombatStats
 from agent.character.equipment import Equipment
 from agent.effects.trait_effects.damage import *  # noqa: F403
 from agent.effects.trait_effects.support import *  # noqa: F403
@@ -110,7 +111,7 @@ def actor() -> Character:
         icon="⚔️",
         job=Fighter,
         level=3,
-        pos=Position(x=2, y=2),
+        combat=CombatStats(pos=Position(x=2, y=2)),
         attributes=Attributes(strength=20, primary_ability=AbilityType.STR),
         is_player=True,
         party=party_players,
@@ -128,7 +129,7 @@ def target() -> Character:
         icon="👹",
         job=Wizard,
         level=3,
-        pos=Position(x=3, y=2),
+        combat=CombatStats(pos=Position(x=3, y=2)),
         party=party_players,
         equipment=Equipment(
             armor=Armor(
@@ -149,7 +150,7 @@ def game_map(actor: Character, target: Character) -> GameMap:
         map="",
         width=10,
         height=10,
-        characters={actor.id: actor.pos, target.id: target.pos},
+        characters={actor.id: actor.combat.pos, target.id: target.combat.pos},
         icons={actor.id: actor.icon, target.id: target.icon},
     )
 

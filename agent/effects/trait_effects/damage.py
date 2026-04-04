@@ -26,7 +26,7 @@ def auto_crit_if_melee_effect(actor: Character, target: Character, context: Comb
 @register_effect()
 def damage_over_time_effect(target: Character, value: int, damage_type: DamageType) -> None:
     damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
-    damage = target.modify_incoming_damage(damage)
+    damage = CombatService.modify_incoming_damage(target, damage)
     CombatService.apply_damage(target, damage.total)
     target.log_event(f"{target.name} suffers {damage.total} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
@@ -39,7 +39,7 @@ def reflect_melee_damage_effect(
     if has_damage and actor.los_distance(target.pos) <= MELEE_RANGE:
         value = context.damage.total * ratio  # type: ignore[union-attr]
         damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
-        damage = actor.modify_incoming_damage(damage)
+        damage = CombatService.modify_incoming_damage(actor, damage)
         CombatService.apply_damage(actor, damage.total)
         target.log_event(
             f"{target.name} reflects {damage.total:.0f} {damage_type.value} damage back to {actor.name}.",

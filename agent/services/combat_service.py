@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING
 
 from agent.logs.log_event import Icon
+from agent.models.damage import Damage
 from agent.models.position import Position
 from agent.services.effect_service import EffectService
 from agent.services.evocation_service import EvocationService
@@ -62,6 +63,24 @@ class CombatService:
         """
         return character.attributes.hp <= 0
 
+    @classmethod
+    def modify_incoming_damage(cls, character: "Character", damage: Damage) -> Damage:
+        """Apply resistances and vulnerabilities to incoming damage.
+
+        Args:
+            character: The character receiving damage
+            damage: The damage to modify
+
+        Returns:
+            Modified damage with resistances and vulnerabilities applied
+        """
+        for dtype in {c.type for c in damage.components}:
+            if res := character.attributes.damage_resistance(dtype):
+                damage.resistances.append(res)
+            if vul := character.attributes.damage_vulnerability(dtype):
+                damage.vulnerabilities.append(vul)
+        return damage
+
     # Turn lifecycle methods (from TurnService)
 
     @classmethod
@@ -72,7 +91,7 @@ class CombatService:
             character: The character starting their turn
         """
         character.combat.turn_done = False
-        character.combat.action_economy.restore_turn()
+        character.action_economy.restore_turn()
         EffectService.try_expire_conditions(character, is_start=True)
         EvocationService.expire_evocations(character)
 

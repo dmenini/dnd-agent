@@ -10,13 +10,13 @@ def test_hide(fighter: Character) -> None:
     """Test hide sets stealth value and registers passive."""
     fighter.cheater_dice = cheater_dice(value=15)
 
-    assert fighter.stealth_value == 0
+    assert fighter.combat.stealth_value == 0
     assert not any(p.source_id == "hide" for p in fighter.passives)
 
     VisibilityService.hide(fighter)
 
     # Should set stealth value to roll result (15 + DEX mod)
-    assert fighter.stealth_value > 0
+    assert fighter.combat.stealth_value > 0
     # Should register attacker advantage passive (from hiding)
     assert any(p.feature_id == FeatureId.ATTACKER_ADVANTAGE and p.source_id == "hide" for p in fighter.passives)
 
@@ -26,19 +26,19 @@ def test_unhide(fighter: Character) -> None:
     fighter.cheater_dice = cheater_dice(value=15)
     VisibilityService.hide(fighter)
 
-    assert fighter.stealth_value > 0
-    assert fighter.is_hidden
+    assert fighter.combat.stealth_value > 0
+    assert fighter.combat.is_hidden
 
     VisibilityService.unhide(fighter)
 
-    assert fighter.stealth_value == 0
-    assert not fighter.is_hidden
+    assert fighter.combat.stealth_value == 0
+    assert not fighter.combat.is_hidden
     assert not any(p.source_id == "hide" for p in fighter.passives)
 
 
 def test_detect_target_visible_target(fighter: Character, orc: Character) -> None:
     """Test detect_target returns True for visible (non-hidden) targets."""
-    assert not orc.is_hidden
+    assert not orc.combat.is_hidden
 
     result = VisibilityService.detect_target(fighter, orc, use_passive=True)
 

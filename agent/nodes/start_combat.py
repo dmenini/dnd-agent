@@ -24,7 +24,7 @@ class StartCombatNode:
         if not actor.is_alive:
             return state
 
-        if actor.turn_done:
+        if actor.combat.turn_done:
             actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
             CombatService.start_turn(actor)
 

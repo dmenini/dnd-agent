@@ -97,4 +97,4 @@ def test_attack_breaks_stealth(actor: Character, target: Character) -> None:
     assert actor.action_economy.standard_actions == 0
     assert action.is_available(actor.action_economy) is False
     assert actor.is_hidden is False
-    assert actor.stealth_value == 0
+    assert actor.combat.stealth_value == 0
