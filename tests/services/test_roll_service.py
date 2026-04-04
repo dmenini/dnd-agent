@@ -5,6 +5,7 @@ import pytest
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.character.combat_stats import CombatStats
 from agent.equipment.armor import Armor, ArmorType
 from agent.equipment.weapons import WeaponType
 from agent.jobs.fighter import Fighter
@@ -23,7 +24,7 @@ def test_character() -> Character:
         icon="⚔️",
         job=Fighter,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=16,
             dexterity=14,
@@ -47,7 +48,7 @@ def target_character() -> Character:
         icon="👹",
         job=Fighter,
         level=3,
-        pos=Position(x=5, y=0),
+        combat=CombatStats(pos=Position(x=5, y=0)),
         attributes=Attributes(
             strength=14,
             dexterity=12,

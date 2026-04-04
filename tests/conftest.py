@@ -165,7 +165,7 @@ def fighter() -> Character:
         icon="⚔️",
         job=Fighter,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=16,
             dexterity=14,
@@ -194,7 +194,7 @@ def orc() -> Character:
         icon="👹",
         job=Fighter,  # Generic enemy
         level=3,
-        pos=Position(x=5, y=0),
+        combat=CombatStats(pos=Position(x=5, y=0)),
         attributes=Attributes(
             strength=16,
             dexterity=12,
@@ -222,7 +222,7 @@ def wizard() -> Character:
         icon="🧙",
         job=Wizard,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=8,
             dexterity=14,
@@ -251,7 +251,7 @@ def cleric() -> Character:
         icon="✝️",
         job=Cleric,
         level=5,
-        pos=Position(x=0, y=0),
+        combat=CombatStats(pos=Position(x=0, y=0)),
         attributes=Attributes(
             strength=14,
             dexterity=10,

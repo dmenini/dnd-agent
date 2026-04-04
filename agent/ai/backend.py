@@ -8,6 +8,7 @@ from langgraph.types import Command
 from agent.ai.character_creation.agent import CharacterCreationAgent
 from agent.ai.combat_graph import build_combat_graph
 from agent.character.character import Character, Party
+from agent.character.combat_stats import CombatStats
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import MeleeWeapon, WeaponType
 from agent.exceptions import CharacterCreationError, InvalidPhaseError
@@ -57,7 +58,7 @@ class GameBackend:
                 id="orc",
                 name="Grunt",
                 icon="👹",
-                pos=Position(x=8, y=3, direction="W"),
+                combat=CombatStats(pos=Position(x=8, y=3, direction="W")),
                 job=Fighter,
                 party=self._default_enemy_party,
             ),

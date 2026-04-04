@@ -189,11 +189,11 @@ class RangedAttackAction(StandardAction, AttackAction):
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         if actor.los_distance(target.pos) <= MELEE_RANGE:
             trait = TraitBuilder.attacker_disadvantage(source_id="ranged_attack", name="Short range Disadvantage")
-            actor.register_passive(trait)
+            TraitService.register_passive(actor, trait)
 
         super().execute(actor, target, ctx)
 
-        actor.unregister_passive(feature_id=FeatureId.ATTACKER_DISADVANTAGE, source_id="ranged_attack")
+        TraitService.unregister_passive(actor, feature_id=FeatureId.ATTACKER_DISADVANTAGE, source_id="ranged_attack")
 
     @classmethod
     def from_weapon(cls, weapon: RangedWeapon) -> Self:
