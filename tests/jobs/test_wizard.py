@@ -1,12 +1,13 @@
 from agent.character.character import Character
 from agent.jobs.wizard import Wizard
 from agent.models.enums import FeatureId
+from agent.services.job_service import JobService
 
 
 def test_mage(actor: Character) -> None:
     # Setup actor as a Mage and apply features
     actor.equipment.armor = None
-    actor.change_job(Wizard)
+    JobService.change_job(actor, Wizard)
 
     abilities = [a.id for a in actor.special_abilities]
     assert FeatureId.ARCANE_RECOVERY in abilities
@@ -19,7 +20,7 @@ def test_mage(actor: Character) -> None:
 
 
 def test_wizard_serialization(actor: Character) -> None:
-    actor.change_job(Wizard)
+    JobService.change_job(actor, Wizard)
 
     actor_dict = actor.model_dump()
     actor2 = Character.model_validate(actor_dict)

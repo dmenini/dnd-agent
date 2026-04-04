@@ -11,6 +11,7 @@ from agent.models.enums import FeatureId
 
 if TYPE_CHECKING:
     from agent.character.resolvers.base import CharacterBase
+    from agent.services.trait_service import TraitService
 
 
 class EquipmentSlot(str, Enum):
@@ -68,9 +69,13 @@ class EquipmentBase(BaseModel):
     effects: list[StatusEffect] = Field(default_factory=list)
 
     def on_equip(self, actor: CharacterBase) -> None:
+        from agent.services.trait_service import TraitService
+
         for feature in self.features:
-            actor.register_passive(feature.trait)
+            TraitService.register_passive(actor, feature.trait)
 
     def on_unequip(self, actor: CharacterBase) -> None:
+        from agent.services.trait_service import TraitService
+
         for feature in self.features:
-            actor.unregister_passive(feature_id=feature.ref_id, source_id=self.name)
+            TraitService.unregister_passive(actor, feature_id=feature.ref_id, source_id=self.name)

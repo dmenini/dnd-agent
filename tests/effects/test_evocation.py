@@ -9,6 +9,7 @@ from agent.models.enums import FeatureId
 from agent.models.map import GameMap
 from agent.models.position import Position
 from agent.models.state import State
+from agent.services.job_service import JobService
 from tests.conftest import advance_turn, cheater_dice
 
 
@@ -16,7 +17,7 @@ from tests.conftest import advance_turn, cheater_dice
 async def test_evocation(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     actor.level = 3
-    actor.change_job(Cleric.apply_specialization(LifeDomain))
+    JobService.change_job(actor, Cleric.apply_specialization(LifeDomain))
     orc_id = target.id
 
     starting_hp = 14

@@ -7,6 +7,7 @@ from agent.jobs.wizard import Wizard
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
+from agent.services.job_service import JobService
 from tests.conftest import cheater_dice
 
 
@@ -25,7 +26,7 @@ def make_attack_spell_action() -> AttackSpellAction:
 
 
 def test_attack_hits(actor: Character, target: Character) -> None:
-    actor.change_job(Wizard)
+    JobService.change_job(actor, Wizard)
     actor.attributes.intelligence = 16  # +3 modifier and +2 with proficiency
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
@@ -46,7 +47,7 @@ def test_attack_hits(actor: Character, target: Character) -> None:
 
 
 def test_attack_misses(actor: Character, target: Character) -> None:
-    actor.change_job(Wizard)
+    JobService.change_job(actor, Wizard)
     actor.attributes.spellcasting_ability = AbilityType.INT
     target.attributes.proficiencies = [
         Proficiency(type=ProficiencyType.SAVE, target=AbilityType.INT)
@@ -68,7 +69,7 @@ def test_attack_misses(actor: Character, target: Character) -> None:
 
 
 def test_save_throw_skipped(actor: Character, target: Character) -> None:
-    actor.change_job(Wizard)
+    JobService.change_job(actor, Wizard)
     actor.attributes.spellcasting_ability = AbilityType.INT
     action = make_attack_spell_action()
     action.requires_save = False

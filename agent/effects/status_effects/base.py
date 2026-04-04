@@ -42,13 +42,17 @@ class StatusEffect(BaseModel):
 
     def on_apply(self, target: CharacterBase) -> None:
         """Call when the effect is first applied."""
+        from agent.services.trait_service import TraitService
+
         for trait in self.traits:
-            target.register_passive(trait=trait)
+            TraitService.register_passive(target, trait)
 
     def on_expire(self, target: CharacterBase) -> None:
         """Call when the effect is removed."""
+        from agent.services.trait_service import TraitService
+
         for trait in self.traits:
-            target.unregister_passive(feature_id=trait.feature_id, source_id=self.type.value)
+            TraitService.unregister_passive(target, feature_id=trait.feature_id, source_id=self.type.value)
 
     def is_expired(self) -> bool:
         return self.duration <= 0

@@ -3,8 +3,10 @@ from typing import Any
 from pydantic import BaseModel
 
 from agent.character.abilities import Abilities
-from agent.character.resolvers.job import JobResolver
+from agent.character.resolvers.base import CharacterBase
 from agent.services.equipment_service import EquipmentService
+from agent.services.job_service import JobService
+from agent.services.trait_service import TraitService
 
 
 class Party(BaseModel):
@@ -13,19 +15,19 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(JobResolver):
+class Character(CharacterBase):
     party: Party
 
     def model_post_init(self, _: Any, /) -> None:
         """Hook running after every initialization (also after deserialization)."""
         # Make sure that passives are synced
         for passive in self.passives:
-            self.register_passive(passive)
+            TraitService.register_passive(self, passive)
 
         # HP set to -1 means that it's the first initialization
         if self.attributes.hp == -1:
             EquipmentService.equip_all(self)
-            self.apply_job_features()
+            JobService.apply_job_features(self)
             self.attributes.hp = self.max_hp
 
     def __str__(self) -> str:

@@ -25,6 +25,8 @@ from agent.effects.base import ModifierTrait, Trait, normalize_id
 from agent.effects.evocations.base import Evocation
 from agent.effects.status_effects.base import StatusEffect
 from agent.equipment.armor import Shield
+from agent.jobs.base import CharacterJob
+from agent.jobs.fighter import Fighter
 from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
@@ -45,6 +47,7 @@ class CharacterBase(BaseModel):
     experience: int = 0
     attributes: Attributes = Field(default_factory=Attributes)
     narrative: NarrativeAttributes = Field(default_factory=NarrativeAttributes)
+    job: CharacterJob = Fighter  # TODO: default to None
 
     spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = Field(
         default_factory=list
@@ -135,52 +138,6 @@ class CharacterBase(BaseModel):
     def los_distance(self, target: Position) -> float:
         """Line of Sight distance from the target."""
         return self.pos.manhattan_distance(target)
-
-    def register_passive(self, trait: Trait) -> None:
-        """Register a passive trait (idempotent)."""
-        # Add to passives list if not already there
-        if all(trait.id != p.id for p in self.passives):
-            self.passives.append(trait)
-            self.log_event(f"{self.name} gained passive trait {trait.name}", log_type=LogLevel.DETAIL)
-
-        # Apply immediately if it's a modifier (even if passive exists, as serialization loses modifiers)
-        if trait.event_type == EventType.MODIFIER:
-            trait.apply(self)
-
-    def unregister_passive(self, feature_id: FeatureId, source_id: str) -> None:
-        source_id = normalize_id(source_id)
-        matching_traits = [t for t in self.passives if t.feature_id == feature_id and t.source_id == source_id]
-
-        for trait in matching_traits:
-            # Remove modifier if applicable
-            if trait.event_type == EventType.MODIFIER:
-                self.attributes.remove_modifier(trait.id)
-
-            # Remove from passives
-            self.passives.remove(trait)
-
-            self.log_event(f"{self.name} lost passive trait {trait.name}", log_type=LogLevel.DETAIL)
-
-    def trigger_event(self, event: EventType, *args: Any, **kwargs: Any) -> None:
-        """Trigger all listeners for the given event type in priority order."""
-        listeners = [trait for trait in self.passives if trait.event_type == event]
-        listeners.sort(key=lambda t: t.priority)
-
-        for trait in list(listeners):
-            trait.apply(*args, **kwargs)
-
-    def notify_state_change(self, field_name: str) -> None:
-        """Called whenever an internal property changes."""
-        # Find all traits that depend on this field
-        dependent_traits = [
-            trait
-            for trait in self.passives
-            if trait.event_type == EventType.MODIFIER and trait.condition_depends_on(field_name)
-        ]
-
-        # Re-apply them (they'll check their conditions)
-        for trait in dependent_traits:
-            trait.apply(self)
 
     def log_event(
         self, message: str, *, log_type: LogLevel = LogLevel.DETAIL, icon: str = "", show_ai: bool = False

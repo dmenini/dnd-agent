@@ -7,6 +7,7 @@ from agent.equipment.weapons import MeleeWeapon, Weapon, WeaponHandling, WeaponT
 from agent.jobs.fighter import Fighter
 from agent.models.damage import DamageType
 from agent.services.equipment_service import EquipmentService
+from agent.services.job_service import JobService
 from tests.conftest import bow, dagger, greatsword, longsword
 
 
@@ -73,7 +74,7 @@ def test_unequip_clears_slot_and_calls_on_unequip(actor: Character) -> None:
 
 def test_state_change_recomputes_traits(actor: Character) -> None:
     EquipmentService.unequip(actor, EquipmentSlot.ARMOR)
-    actor.change_job(Fighter)
+    JobService.change_job(actor, Fighter)
 
     attrs = actor.attributes
     assert len(attrs.get_modifiers("ac")) == 0

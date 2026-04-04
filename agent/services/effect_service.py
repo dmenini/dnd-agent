@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from agent.logs.log_event import Icon
 from agent.models.enums import EventType
 from agent.services.roll_service import RollService
+from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -80,11 +81,11 @@ class EffectService:
         for condition in list(character.status_effects):
             if is_start:
                 condition.duration -= 1
-                character.trigger_event(EventType.TURN_START, character)
+                TraitService.trigger_event(character,EventType.TURN_START, character)
                 if condition.save_mode == "start":
                     cls._try_break_free(character, condition)
             else:
-                character.trigger_event(EventType.TURN_END, character)
+                TraitService.trigger_event(character,EventType.TURN_END, character)
 
             if condition.is_expired():
                 condition.on_expire(character)

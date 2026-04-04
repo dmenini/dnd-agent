@@ -4,6 +4,7 @@ from agent.effects.traits import TraitBuilder
 from agent.logs.log_event import Icon
 from agent.models.enums import FeatureId
 from agent.services.roll_service import RollService
+from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -18,14 +19,14 @@ class VisibilityService:
         roll = RollService.stealth_roll(character)
         character.combat.stealth_value = roll.total
         trait = TraitBuilder.target_advantage(source_id="hide")
-        character.register_passive(trait)
+        TraitService.register_passive(character, trait)
         character.log_event(f"{character.name} hides (stealth {roll.total})", icon=Icon.STEALTH, show_ai=True)
 
     @classmethod
     def unhide(cls, character: "Character") -> None:
         """Make character visible again."""
         character.combat.stealth_value = 0
-        character.unregister_passive(feature_id=FeatureId.ATTACKER_ADVANTAGE, source_id="hide")
+        TraitService.unregister_passive(character, feature_id=FeatureId.ATTACKER_ADVANTAGE, source_id="hide")
         character.log_event(f"{character.name} is not hidden anymore!", icon=Icon.STEALTH, show_ai=True)
 
     @classmethod

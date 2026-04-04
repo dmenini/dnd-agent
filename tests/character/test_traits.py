@@ -6,6 +6,7 @@ from agent.models.damage import DamageResistance, DamageType
 from agent.models.enums import FeatureId
 from agent.services.combat_service import CombatService
 from agent.services.effect_service import EffectService
+from agent.services.trait_service import TraitService
 
 custom_effect = StatusEffect(
     type=StatusType.CUSTOM,
@@ -65,8 +66,8 @@ def test_different_traits(actor: Character) -> None:
     value = 0.5
     trait1 = TraitBuilder.resistance(source_id="ring", value=value, damage_type=DamageType.FIRE)
     trait2 = TraitBuilder.vulnerability(source_id="ring", value=value, damage_type=DamageType.FIRE)
-    actor.register_passive(trait=trait1)
-    actor.register_passive(trait=trait2)
+    TraitService.register_passive(actor,trait=trait1)
+    TraitService.register_passive(actor,trait=trait2)
 
     attrs = actor.attributes
 
@@ -89,7 +90,7 @@ def test_different_traits(actor: Character) -> None:
     assert_modifier(attrs, "vulnerability.fire", value, "ring-vulnerability")
 
     # Ensure cleanup
-    actor.unregister_passive(FeatureId.RESISTANCE, source_id="ring")
+    TraitService.unregister_passive(actor,FeatureId.RESISTANCE, source_id="ring")
     assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]) == 0
     assert len([p for p in actor.passives if p.feature_id == FeatureId.VULNERABILITY]) == 1
     assert len(attrs.get_modifiers("resistance.fire")) == 0
@@ -100,8 +101,8 @@ def test_same_traits_from_different_sources_stack(actor: Character) -> None:
     value = 0.5
     trait1 = TraitBuilder.resistance(source_id="ring 0", value=value, damage_type=DamageType.FIRE)
     trait2 = TraitBuilder.resistance(source_id="ring 1", value=value, damage_type=DamageType.FIRE)
-    actor.register_passive(trait=trait1)
-    actor.register_passive(trait=trait2)
+    TraitService.register_passive(actor,trait=trait1)
+    TraitService.register_passive(actor,trait=trait2)
 
     # Passives and listeners
     for i in range(2):
@@ -121,7 +122,7 @@ def test_same_traits_from_different_sources_stack(actor: Character) -> None:
 
     # Unequip and cleanup
     source = "ring-0"
-    actor.unregister_passive(FeatureId.RESISTANCE, source_id=source)
+    TraitService.unregister_passive(actor,FeatureId.RESISTANCE, source_id=source)
 
     assert_passive(actor, FeatureId.RESISTANCE, "ring-0", 0)
     assert_passive(actor, FeatureId.RESISTANCE, "ring-1", 1)
@@ -132,8 +133,8 @@ def test_traits_with_same_feature_id(actor: Character) -> None:
     name = "ring"
     trait1 = TraitBuilder.resistance(source_id=name, value=value, damage_type=DamageType.FIRE)
     trait2 = TraitBuilder.resistance(source_id=name, value=value, damage_type=DamageType.COLD)
-    actor.register_passive(trait=trait1)
-    actor.register_passive(trait=trait2)
+    TraitService.register_passive(actor,trait=trait1)
+    TraitService.register_passive(actor,trait=trait2)
 
     attrs = actor.attributes
 
@@ -147,7 +148,7 @@ def test_traits_with_same_feature_id(actor: Character) -> None:
         assert attrs.damage_resistance(dtype) == DamageResistance(value=value, type=dtype)
 
     # Unequip and cleanup
-    actor.unregister_passive(FeatureId.RESISTANCE, source_id=name)
+    TraitService.unregister_passive(actor,FeatureId.RESISTANCE, source_id=name)
     assert not [p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]
     for dtype in (DamageType.COLD, DamageType.FIRE):
         assert not attrs.get_modifiers(f"resistance.{dtype.value}")
@@ -157,7 +158,7 @@ def test_same_traits_same_source_dont_stack(actor: Character) -> None:
     value = 0.5
     name = "ring"
     trait1 = TraitBuilder.resistance(source_id=name, value=value, damage_type=DamageType.FIRE)
-    actor.register_passive(trait=trait1)
+    TraitService.register_passive(actor,trait=trait1)
 
     attrs = actor.attributes
 
@@ -167,12 +168,12 @@ def test_same_traits_same_source_dont_stack(actor: Character) -> None:
     assert attrs.damage_resistance(DamageType.FIRE) == DamageResistance(value=value, type=DamageType.FIRE)
 
     # Register again -> Same source ID, so it's not added
-    actor.register_passive(trait=trait1)
+    TraitService.register_passive(actor,trait=trait1)
     assert len([p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE and p.source_id == name]) == 1
     assert len(attrs.get_modifiers("resistance.fire")) == 1
     assert_modifier(attrs, "resistance.fire", value, f"{name}-resistance")
 
     # Unequip and cleanup
-    actor.unregister_passive(FeatureId.RESISTANCE, source_id=name)
+    TraitService.unregister_passive(actor,FeatureId.RESISTANCE, source_id=name)
     assert not [p for p in actor.passives if p.feature_id == FeatureId.RESISTANCE]
     assert not attrs.get_modifiers("resistance.fire")

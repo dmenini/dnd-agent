@@ -4,10 +4,11 @@ from agent.effects.status_effects.base import StatusType
 from agent.jobs.barbarian import Barbarian
 from agent.models.context import CombatContext
 from agent.models.enums import FeatureId
+from agent.services.job_service import JobService
 
 
 def test_rage(actor: Character, target: Character) -> None:
-    actor.change_job(Barbarian)
+    JobService.change_job(actor, Barbarian)
     target.attributes.hp = 5
 
     action = RageAction(id=FeatureId.RAGE.value, description="", damage_bonus=4)

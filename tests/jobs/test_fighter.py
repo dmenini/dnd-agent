@@ -2,11 +2,12 @@ from agent.character.character import Character
 from agent.equipment.armor import Armor, ArmorType
 from agent.jobs.fighter import Fighter
 from agent.models.enums import FeatureId
+from agent.services.job_service import JobService
 
 
 def test_fighter(actor: Character) -> None:
     actor.equipment.armor = Armor(name="Armor", armor_type=ArmorType.HEAVY, base_ac=5)
-    actor.change_job(Fighter)
+    JobService.change_job(actor, Fighter)
 
     # Verify active action is available
     assert any(a.id == FeatureId.SECOND_WIND for a in actor.special_abilities)
@@ -16,7 +17,7 @@ def test_fighter(actor: Character) -> None:
 
 
 def test_fighter_serialization(actor: Character) -> None:
-    actor.change_job(Fighter)
+    JobService.change_job(actor, Fighter)
 
     actor_dict = actor.model_dump()
     actor2 = Character.model_validate(actor_dict)

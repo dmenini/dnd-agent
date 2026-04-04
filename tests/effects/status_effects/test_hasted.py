@@ -12,6 +12,7 @@ from agent.models.decision import DecisionResult
 from agent.models.enums import FeatureId, TargetingType
 from agent.models.map import GameMap
 from agent.models.state import State
+from agent.services.job_service import JobService
 from tests.conftest import advance_turn, cheater_dice
 
 
@@ -19,7 +20,7 @@ from tests.conftest import advance_turn, cheater_dice
 @pytest.mark.asyncio
 async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     actor.cheater_dice = None
-    actor.change_job(Wizard)
+    JobService.change_job(actor, Wizard)
     hero_id = actor.id
     orc_id = target.id
 

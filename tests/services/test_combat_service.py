@@ -15,7 +15,7 @@ def test_start_turn(fighter: Character) -> None:
     CombatService.start_turn(fighter)
 
     assert fighter.combat.turn_done is False
-    assert fighter.action_econom.movement_used == 0
+    assert fighter.action_economy.movement_used == 0
     assert fighter.action_economy.standard_actions == 1
     assert fighter.action_economy.bonus_actions == 1
 
