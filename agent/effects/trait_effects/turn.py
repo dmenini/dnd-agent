@@ -4,7 +4,7 @@ import math
 from typing import TYPE_CHECKING
 
 from agent.actions.base import ActionType
-from agent.character.collection import ActionExtension
+from agent.character.resources import ActionExtension
 from agent.effects.base import register_effect
 from agent.models.constants import TRAIT_LOG_LEVEL
 

@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 @register_effect()
 def bonus_attack_roll_effect(_: Character, context: CombatContext, *, expr: str) -> None:
     if context.attack_roll:
-        # Use RollService directly instead of actor.roll()
         result = RollService.roll(expr)
         context.attack_roll.total += result.total
 
@@ -24,7 +23,6 @@ def bonus_attack_roll_effect(_: Character, context: CombatContext, *, expr: str)
 @register_effect()
 def bonus_save_roll_effect(_: Character, context: CombatContext, *, expr: str) -> None:
     if context.save_roll:
-        # Use RollService directly instead of actor.roll()
         result = RollService.roll(expr)
         context.save_roll.total += result.total
 

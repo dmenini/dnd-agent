@@ -35,7 +35,7 @@ class StartCombatNode:
     def decide_turn_order(self, state: State) -> None:
         rolls = []
         for cid, char in state.characters.items():
-            # First check roll result - use RollService directly
+            # First check roll result
             init_roll = RollService.initiative_roll(char)
             # Include initiative modifier (DEX mod) as a secondary sort key
             init_mod = char.initiative_modifier

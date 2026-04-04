@@ -48,7 +48,6 @@ class AttackSpellAction(StandardAction, AttackAction):
 
     def _resolve_saving_throw(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         dc = actor.spell_save_dc
-        # Call RollService directly instead of target.save_roll()
         roll = RollService.save_roll(target, ability=self.ability, is_spell=True)
         ctx.save_roll = roll
         TraitService.trigger_event(actor, EventType.SAVE_THROW, actor, target, ctx)

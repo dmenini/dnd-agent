@@ -1,6 +1,6 @@
 from agent.actions.base import ActionCategory, ActionType
 from agent.character.abilities import AbilityType
-from agent.character.collection import ActionExtension
+from agent.character.resources import ActionExtension
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
 from agent.models.damage import DamageType

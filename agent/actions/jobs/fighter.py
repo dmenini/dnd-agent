@@ -17,7 +17,6 @@ class SecondWindAction(LimitedBonusAction):
     targeting: TargetingType = TargetingType.SELF
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
-        # Use RollService directly, passing actor for cheater_dice support
         heal_amount = RollService.roll("1d10", character=actor).total + actor.level
         CombatService.heal(actor, heal_amount)
         actor.log_event(
