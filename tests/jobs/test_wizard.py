@@ -5,7 +5,7 @@ from agent.models.enums import FeatureId
 
 def test_mage(actor: Character) -> None:
     # Setup actor as a Mage and apply features
-    actor.armor = None
+    actor.equipment.armor = None
     actor.change_job(Wizard)
 
     abilities = [a.id for a in actor.special_abilities]

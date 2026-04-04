@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from agent.logs.log_event import Icon
 from agent.models.enums import EventType

@@ -6,7 +6,7 @@ from agent.models.enums import FeatureId
 
 def test_cleric(actor: Character) -> None:
     # Setup actor as a Cleric and apply features
-    actor.armor = Armor(name="Glass", armor_type=ArmorType.LIGHT, base_ac=2)
+    actor.equipment.armor = Armor(name="Glass", armor_type=ArmorType.LIGHT, base_ac=2)
 
     job = Cleric
     job = job.apply_specialization(LifeDomain)

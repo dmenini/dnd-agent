@@ -27,7 +27,7 @@ async def test_paralyzed(config: AgentConfig, game_map: GameMap, actor: Characte
         targeting=TargetingType.SINGLE,
         effects=[Paralyzed.with_duration(duration=2)],
     )
-    actor.main_hand = sword
+    actor.equipment.main_hand = sword
 
     starting_hp = 30
     target.attributes.hp = starting_hp

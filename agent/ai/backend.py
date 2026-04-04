@@ -19,6 +19,7 @@ from agent.models.enums import TargetingType
 from agent.models.map import GameMap
 from agent.models.position import Direction, Position
 from agent.models.state import GamePhase, GameResult, GameSnapshot, State
+from agent.services.equipment_service import EquipmentService
 
 
 class GameBackend:
@@ -344,7 +345,7 @@ class GameBackend:
 
         player_char = self._get_first_player_character()
         if player_char:
-            player_char.equip_melee_weapon(sword, EquipmentSlot.MAIN_HAND)
+            EquipmentService.equip_melee_weapon(player_char, sword, EquipmentSlot.MAIN_HAND)
 
     def _get_first_player_character(self) -> Character | None:
         """Get the first player character from state."""

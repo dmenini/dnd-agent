@@ -22,8 +22,8 @@ class ActionService:
     @classmethod
     def has_resources(cls, character: "Character") -> bool:
         """Check if character has any actions or movement remaining."""
-        has_bonus = character.off_hand is not None and (character.action_economy.can_use_bonus())
-        main_hand = character.main_hand or character.ranged or character.spells
+        has_bonus = character.equipment.off_hand is not None and (character.action_economy.can_use_bonus())
+        main_hand = character.equipment.main_hand or character.equipment.ranged or character.spells
         has_main = bool(main_hand) and character.action_economy.can_use_standard()
         has_movement = character.current_speed > 0
         return has_main or has_bonus or has_movement
@@ -35,10 +35,12 @@ class ActionService:
         Can use spells if they are either wearing no armor or armor they are proficient with,
         or if their off-hand is empty or holding a shield they are proficient with.
         """
-        return (not character.armor or character.attributes.has_proficiency(character.armor.armor_type)) or (
-            not character.off_hand
+        return (
+            not character.equipment.armor or character.attributes.has_proficiency(character.equipment.armor.armor_type)
+        ) or (
+            not character.equipment.off_hand
             or (
-                character.off_hand.type == EquipmentType.SHIELD
+                character.equipment.off_hand.type == EquipmentType.SHIELD
                 and character.attributes.has_proficiency(ArmorType.SHIELD)
             )
         )
@@ -55,25 +57,23 @@ class ActionService:
         ]
 
         # Equipment-based actions
-        if character.main_hand:
+        if character.equipment.main_hand:
             main_action = MainHandAttackAction.from_weapon(
-                weapon=character.main_hand,
-                is_two_handed=character.two_handed_active,
+                weapon=character.equipment.main_hand,
+                is_two_handed=character.equipment.two_handed_active,
                 abilities=character.attributes,
             )
             all_actions.append(main_action)
-        if character.off_hand and isinstance(character.off_hand.type, MeleeWeapon):
-            off_action = OffHandAttackAction.from_weapon(weapon=character.off_hand)
+        if character.equipment.off_hand and isinstance(character.equipment.off_hand.type, MeleeWeapon):
+            off_action = OffHandAttackAction.from_weapon(weapon=character.equipment.off_hand)
             all_actions.append(off_action)
-        if character.ranged:
-            ranged_action = RangedAttackAction.from_weapon(weapon=character.ranged)
+        if character.equipment.ranged:
+            ranged_action = RangedAttackAction.from_weapon(weapon=character.equipment.ranged)
             all_actions.append(ranged_action)
 
         # Spells (only if slot available and armor proficiency)
         if cls.can_use_spells(character):
-            all_actions.extend(
-                spell for spell in character.spells if character.spell_slots.has_slot(spell.level)
-            )
+            all_actions.extend(spell for spell in character.spells if character.spell_slots.has_slot(spell.level))
 
         # Special abilities (can have their own categories)
         all_actions += character.special_abilities

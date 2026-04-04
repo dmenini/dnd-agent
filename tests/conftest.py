@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from unittest.mock import AsyncMock
 
 import pytest
@@ -9,6 +8,7 @@ from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
+from agent.character.equipment import Equipment
 from agent.effects.trait_effects.damage import *  # noqa: F403
 from agent.effects.trait_effects.support import *  # noqa: F403
 from agent.effects.trait_effects.turn import *  # noqa: F403
@@ -130,11 +130,13 @@ def target() -> Character:
         level=3,
         pos=Position(x=3, y=2),
         party=party_players,
-        armor=Armor(
-            name="Armor",
-            description="",
-            armor_type=ArmorType.HEAVY,
-            base_ac=0,
+        equipment=Equipment(
+            armor=Armor(
+                name="Armor",
+                description="",
+                armor_type=ArmorType.HEAVY,
+                base_ac=0,
+            )
         ),
     )
     char.attributes.hp = 15
@@ -319,5 +321,3 @@ def cheater_dice(value: int = 10) -> DiceRoller:
     """
 
     return DiceRoller(value=value)
-
-

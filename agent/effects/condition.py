@@ -112,7 +112,7 @@ class FieldCondition(BaseModel):
 
     def depends_on_fields(self) -> set[str]:
         # Return the root field (first part of the path)
-        return {self.field.split(".")[0]}
+        return set(self.field.split(","))
 
 
 class CompositeCondition(BaseModel):

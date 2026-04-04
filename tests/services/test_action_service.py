@@ -37,16 +37,16 @@ def test_has_resources_exhausted(fighter: Character) -> None:
     fighter.action_economy.movement_used = fighter.speed  # All movement used
 
     # Remove equipment so has_resources logic only checks action economy
-    fighter.main_hand = None
-    fighter.off_hand = None
-    fighter.ranged = None
+    fighter.equipment.main_hand = None
+    fighter.equipment.off_hand = None
+    fighter.equipment.ranged = None
 
     assert ActionService.has_resources(fighter) is False
 
 
 def test_can_use_spells_no_armor(wizard: Character) -> None:
     """Test can_use_spells returns True when wearing no armor."""
-    wizard.armor = None
+    wizard.equipment.armor = None
     assert ActionService.can_use_spells(wizard) is True
 
 
@@ -54,7 +54,7 @@ def test_can_use_spells_with_proficient_armor(cleric: Character) -> None:
     """Test can_use_spells returns True when wearing proficient armor."""
     # Cleric is proficient in light and medium armor
     light_armor = Armor(name="Leather", description="Light armor", armor_type=ArmorType.LIGHT, base_ac=11)
-    cleric.armor = light_armor
+    cleric.equipment.armor = light_armor
 
     assert ActionService.can_use_spells(cleric) is True
 
@@ -106,7 +106,7 @@ def test_get_available_actions_excludes_spells_no_slots(wizard: Character) -> No
     """Test get_available_actions excludes spells when no slots available."""
     # Exhaust all spell slots
     for level in range(1, 10):
-        wizard.spell_slots.slots[level] = 0
+        wizard.spell_slots.slots[level] = 0  # type: ignore[index]
 
     actions = ActionService.get_available_actions(wizard)
 

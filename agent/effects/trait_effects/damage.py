@@ -56,7 +56,7 @@ def damage_bonus_effect(actor: Character, context: CombatContext, value: int, da
 @register_effect()
 def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: int) -> None:
     slot = context.metadata.get("metadata", {}).get("slot")
-    weapon = actor.equipment_slots.get(slot)
+    weapon = actor.equipment.slots.get(slot)
     is_melee = isinstance(weapon, MeleeWeapon) and weapon.ability == AbilityType.STR
     if is_melee:
         damage_bonus_effect(actor, context, value=value, damage_type=context.metadata["damage_type"])
@@ -67,7 +67,7 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
     slot = context.metadata.get("metadata", {}).get("slot")
     is_finesse_or_ranged = False
     if slot:
-        weapon = actor.equipment_slots.get(slot)
+        weapon = actor.equipment.slots.get(slot)
         is_finesse_or_ranged = isinstance(weapon, RangedWeapon) or (isinstance(weapon, MeleeWeapon) and weapon.finesse)
     is_first_attack = (
         actor.action_economy.last_standard_action is None and actor.action_economy.last_bonus_action is None

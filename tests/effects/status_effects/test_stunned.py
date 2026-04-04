@@ -27,7 +27,7 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
         targeting=TargetingType.SINGLE,
         effects=[Stunned.with_duration(duration=2)],
     )
-    actor.main_hand = sword
+    actor.equipment.main_hand = sword
 
     state = State(
         map=game_map,

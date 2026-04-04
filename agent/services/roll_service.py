@@ -145,10 +145,13 @@ class RollService:
     def _armor_advantage(character: "Character", ability: AbilityType) -> int:
         """Check if armor proficiency affects the roll."""
         penalty = ability in {AbilityType.DEX, AbilityType.STR} and (
-            (character.armor is not None and not character.attributes.has_proficiency(character.armor.armor_type))
+            (
+                character.equipment.armor is not None
+                and not character.attributes.has_proficiency(character.equipment.armor.armor_type)
+            )
             or (
-                character.off_hand is not None
-                and character.off_hand.type == EquipmentType.SHIELD
+                character.equipment.off_hand is not None
+                and character.equipment.off_hand.type == EquipmentType.SHIELD
                 and not character.attributes.has_proficiency(ArmorType.SHIELD)
             )
         )

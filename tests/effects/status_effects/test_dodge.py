@@ -24,7 +24,7 @@ async def test_dodge(config: AgentConfig, game_map: GameMap, actor: Character, t
         targeting=TargetingType.SINGLE,
         damage_type=DamageType.SLASHING,
     )
-    actor.main_hand = sword
+    actor.equipment.main_hand = sword
 
     state = State(
         map=game_map,

@@ -16,6 +16,7 @@ from agent.jobs.fighter import Fighter
 from agent.jobs.rogue import Rogue
 from agent.jobs.wizard import Wizard
 from agent.models.constants import MAX_SCORES_TOTAL
+from agent.services.equipment_service import EquipmentService
 
 job_map = {
     JobType.FIGHTER: Fighter,
@@ -154,4 +155,4 @@ class CharacterBuilder(BaseModel):
         """Apply selected equipment to character."""
         equipment = self.selections.equipment or {}
         for slot, choice in equipment.items():
-            character.equip(item=choice, slot_name=slot)
+            EquipmentService.equip(character, item=choice, slot_name=slot)

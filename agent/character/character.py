@@ -2,12 +2,12 @@ from typing import Any
 
 from pydantic import BaseModel, computed_field
 
-from agent.actions.base import Action
 from agent.character.abilities import Abilities
-from agent.character.resolvers.equipment import EquipmentResolver
 from agent.character.resolvers.job import JobResolver
+from agent.equipment.armor import Shield
 from agent.logs.log_event import Icon
 from agent.models.position import Position
+from agent.services.equipment_service import EquipmentService
 
 
 class Party(BaseModel):
@@ -16,7 +16,7 @@ class Party(BaseModel):
     is_player_party: bool = False
 
 
-class Character(EquipmentResolver, JobResolver):
+class Character(JobResolver):
     party: Party
     turn_done: bool = True
 
@@ -28,7 +28,7 @@ class Character(EquipmentResolver, JobResolver):
 
         # HP set to -1 means that it's the first initialization
         if self.attributes.hp == -1:
-            self.equip_all()
+            EquipmentService.equip_all(self)
             self.apply_job_features()
             self.attributes.hp = self.max_hp
 
@@ -37,12 +37,30 @@ class Character(EquipmentResolver, JobResolver):
     def current_speed(self) -> float:
         return self.attributes.speed() - self.action_economy.movement_used
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def initiative_modifier(self) -> int:
+        return self.attributes.initiative()
+
     def move(self, destination: Position) -> None:
         starting_pos = self.pos.model_copy()
         self.pos = destination
         self.log_event(f"{self.name} moves from {starting_pos} to {destination}", icon=Icon.MOVE)
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def armor_class(self) -> int:
+        """Armor Class is derived from DEX and equipment."""
+        ac = self.attributes.ac_bonus(
+            armor_type=self.equipment.armor.armor_type if self.equipment.armor else None,
+            max_dex_bonus=self.equipment.armor.max_dex_bonus if self.equipment.armor else None,
+        )
 
+        if self.equipment.armor:
+            ac += self.equipment.armor.base_ac
+        if self.equipment.off_hand and isinstance(self.equipment.off_hand, Shield):
+            ac += self.equipment.off_hand.ac_bonus
+        return ac
 
     def __str__(self) -> str:
         return (

@@ -9,13 +9,12 @@ from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, Su
 from agent.actions.registry import ActionRegistry
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
+from agent.character.equipment import Equipment
 from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy, SpellSlots
 from agent.effects.base import ModifierTrait, Trait, normalize_id
 from agent.effects.evocations.base import Evocation
 from agent.effects.status_effects.base import StatusEffect
-from agent.equipment.armor import Armor, Shield
-from agent.equipment.weapons import MeleeWeapon
 from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
 from agent.mechanics.dice_roller import DiceRoll, DiceRoller
@@ -51,8 +50,7 @@ class CharacterBase(BaseModel):
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
     action_economy: ActionEconomy = Field(default_factory=ActionEconomy)
 
-    armor: Armor | None = None
-    off_hand: MeleeWeapon | Shield | None = None
+    equipment: Equipment = Field(default_factory=Equipment)
 
     # Test-only: override dice roller for deterministic rolls
     cheater_dice: SkipValidation[DiceRoller | None] = Field(default=None, exclude=True)

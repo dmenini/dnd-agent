@@ -153,7 +153,7 @@ class TraitBuilder:
             name=name,
             description=description or f"Grant +{value} bonus to AC while wearing armor.",
             value=value,
-            conditions=[When.field("armor").exists()],
+            conditions=[When.field("equipment.armor").exists()],
         )
 
     @staticmethod
@@ -167,7 +167,7 @@ class TraitBuilder:
             name=name,
             description=description or f"Grant +{value} bonus to AC with {armors} armor.",
             value=value,
-            conditions=[When.field("armor.armor_type").is_in(armor_types)],
+            conditions=[When.field("equipment.armor.armor_type").is_in(armor_types)],
         )
 
     @staticmethod
@@ -178,7 +178,7 @@ class TraitBuilder:
             name=name,
             description=description or f"Grant +{value} bonus to AC while not wearing armor.",
             value=value,
-            conditions=[When.field("armor").is_falsy()],
+            conditions=[When.field("equipment.armor").is_falsy()],
         )
 
     @staticmethod
@@ -192,7 +192,7 @@ class TraitBuilder:
             description=description or f"Add {ability.name} modifier to AC without armor.",
             attribute=f"ac_mod.{ability.value}",
             value=True,
-            conditions=[When.field("armor").is_falsy()],
+            conditions=[When.field("equipment.armor").is_falsy()],
         )
 
     @staticmethod

@@ -5,7 +5,7 @@ from agent.models.enums import FeatureId
 
 
 def test_fighter(actor: Character) -> None:
-    actor.armor = Armor(name="Armor", armor_type=ArmorType.HEAVY, base_ac=5)
+    actor.equipment.armor = Armor(name="Armor", armor_type=ArmorType.HEAVY, base_ac=5)
     actor.change_job(Fighter)
 
     # Verify active action is available

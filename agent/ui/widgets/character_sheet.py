@@ -60,7 +60,7 @@ class CharacterSheet(Static):
         proficiencies = ", ".join(str(prof) for prof in char.attributes.proficiencies) or "None"
 
         equipments = []
-        for slot, eq in char.equipment_slots.items():
+        for slot, eq in char.equipment.slots.items():
             if eq is not None:
                 slot_str = slot.value.title().replace("_", " ")
                 equipments.append(f"{eq.name} ({slot_str})")

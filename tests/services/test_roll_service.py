@@ -225,7 +225,7 @@ def test_armor_disadvantage(test_character: Character, target_character: Charact
     """Test that Fighter can wear heavy armor without disadvantage."""
     # Equip heavy armor - Fighter has proficiency with all armor
     heavy_armor = Armor(name="Plate", description="Heavy armor", armor_type=ArmorType.HEAVY, base_ac=18)
-    test_character.armor = heavy_armor
+    test_character.equipment.armor = heavy_armor
     test_character.cheater_dice = cheater_dice(value=10)
 
     # Fighter has heavy armor proficiency, so no disadvantage

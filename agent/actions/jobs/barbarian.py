@@ -35,7 +35,7 @@ class RageAction(LimitedBonusAction):
     damage_bonus: int
 
     def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
-        if not actor.armor or actor.armor.armor_type != ArmorType.HEAVY:
+        if not actor.equipment.armor or actor.equipment.armor.armor_type != ArmorType.HEAVY:
             effect = StatusEffect(
                 type=StatusType.ENRAGED,
                 save_dc=0,

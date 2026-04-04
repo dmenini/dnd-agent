@@ -27,7 +27,7 @@ async def test_restrained(config: AgentConfig, game_map: GameMap, actor: Charact
         targeting=TargetingType.SINGLE,
         effects=[Restrained.with_duration(2)],
     )
-    actor.main_hand = sword
+    actor.equipment.main_hand = sword
 
     starting_hp = 20
     target.attributes.hp = starting_hp

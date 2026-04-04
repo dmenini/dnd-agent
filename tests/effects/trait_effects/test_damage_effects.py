@@ -20,6 +20,7 @@ from agent.models.context import CombatContext
 from agent.models.damage import Damage, DamageComponent, DamageResistance, DamageType, DamageVulnerability
 from agent.models.enums import TargetingType
 from agent.models.position import Position
+from agent.services.equipment_service import EquipmentService
 from tests.conftest import dagger
 
 
@@ -115,8 +116,8 @@ def test_ignore_resistance_no_effect_if_no_resistance(
 
 
 def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None:
-    actor.equip(item=dagger, slot_name=EquipmentSlot.MAIN_HAND)
-    actor.equip(item=dagger, slot_name=EquipmentSlot.OFF_HAND)
+    EquipmentService.equip(actor, item=dagger, slot_name=EquipmentSlot.MAIN_HAND)
+    EquipmentService.equip(actor, item=dagger, slot_name=EquipmentSlot.OFF_HAND)
 
     context = CombatContext(
         attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),

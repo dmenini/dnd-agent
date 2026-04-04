@@ -1,10 +1,7 @@
 """Tests for TurnService."""
 
-import pytest
-
 from agent.character.character import Character
 from agent.services.turn_service import TurnService
-from tests.conftest import cheater_dice
 
 
 def test_start_turn(fighter: Character) -> None:
