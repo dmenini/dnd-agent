@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
-from agent.actions.base import ActionType, StandardAction
+from agent.actions.base import ActionType, BonusAction, StandardAction
 from agent.actions.common.attack import AttackAction
 from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
@@ -80,6 +80,50 @@ class AttackSpellAction(StandardAction, AttackAction):
 
 
 class SupportSpellAction(StandardAction):
+    id: str
+    name: str
+    description: str = ""
+    type: ActionType = ActionType.CAST_SPELL
+    level: SpellLevel
+    targeting: TargetingType
+    ability: AbilityType
+    range: float
+    apply_conditions: list[StatusEffect] = Field(default_factory=list)
+    remove_conditions: list[StatusType] = Field(default_factory=list)
+
+    def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
+        if self.targeting == TargetingType.SELF:
+            self._execute_on_target(target=actor)
+        else:
+            if target is None:
+                raise ValueError
+            self._execute_on_target(target=target)
+
+    def _execute_on_target(self, target: Character) -> None:
+        for to_apply in self.apply_conditions:
+            EffectService.try_apply_condition(target, to_apply)
+
+        # Remove conditions
+        for to_remove in self.remove_conditions:
+            if EffectService.has_condition(target, to_remove):
+                EffectService.remove_condition(target, to_remove)
+                break
+
+    def finalize(self, actor: Character) -> None:
+        """Consume action point and spell slot."""
+        super().finalize(actor)
+        actor.spell_slots.consume(self.level)
+
+    def __str__(self) -> str:
+        level = f" Level {self.level.value}" if self.level != SpellLevel.CANTRIP else ""
+        return (
+            f"- {self.id}: {self.name}{level} — {self.description} "
+            f"(Type: {self.type.value}, Category: {self.category.value}, Targeting: {self.targeting.value}, "
+            f"Range: {self.range} m, Hits: {self.hits})"
+        )
+
+
+class BonusSupportSpellAction(BonusAction):
     id: str
     name: str
     description: str = ""

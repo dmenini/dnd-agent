@@ -11,6 +11,7 @@ from agent.character.resources import SpellLevel
 from agent.effects.evocations.base import Evocation
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.status_effects.collection import Blessed
+from agent.effects.traits import TraitBuilder
 from agent.equipment.weapons import WeaponType
 from agent.jobs.feature import JobFeature
 from agent.models.constants import MELEE_RANGE, TOUCH_RANGE
@@ -179,4 +180,35 @@ class SpellBuilder:
             range=20,
             evocation=evo,
             casting_time=ActionCategory.BONUS,
+        )
+
+    @staticmethod
+    def divine_favor(level_required: int) -> SupportSpell:
+        return SupportSpell(
+            ref_id=FeatureId.DIVINE_FAVOR,
+            name="Divine Favor",
+            description=(
+                "Your prayer empowers you with divine radiance. "
+                "Until the spell ends, your weapon attacks deal an extra 1d4 radiant damage on a hit."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_1,
+            casting_time=ActionCategory.BONUS,
+            targeting=TargetingType.SELF,
+            range=1,
+            apply_conditions=[
+                StatusEffect(
+                    type=StatusType.DIVINE_FAVORED,
+                    duration=10,
+                    save_dc=0,
+                    traits=[
+                        TraitBuilder.weapon_damage_bonus(
+                            source_id=FeatureId.DIVINE_FAVOR.value,
+                            name="Divine Favor",
+                            dice="1d4",
+                            damage_type=DamageType.RADIANT,
+                        )
+                    ],
+                )
+            ],
         )

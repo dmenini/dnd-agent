@@ -153,6 +153,9 @@ LifeDomain = JobSpecialization(
 WarDomain = JobSpecialization(
     name="War Domain",
     proficiencies=[Proficiency(source="war_domain", type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE)],
+    spells=[
+        SpellBuilder.divine_favor(level_required=1),
+    ],
 )
 
 TempestDomain = JobSpecialization(

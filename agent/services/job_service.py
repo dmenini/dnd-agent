@@ -2,9 +2,11 @@
 
 from typing import TYPE_CHECKING
 
+from agent.actions.base import ActionCategory
+from agent.actions.common.spell import BonusSupportSpellAction
 from agent.jobs.base import CharacterJob, JobFeature
 from agent.jobs.feature import JobPassive
-from agent.jobs.spells import Spell, spell_action_map
+from agent.jobs.spells import Spell, SpellType, spell_action_map
 from agent.logs.log_event import LogLevel
 from agent.services.trait_service import TraitService
 
@@ -137,7 +139,11 @@ class JobService:
 
         if spell.ref_id not in {a.id for a in character.spells}:
             spell.ability = spell.ability or character.attributes.spellcasting_ability
-            action = spell_action_map[spell.spell_type](id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
+            # Use BonusSupportSpellAction for bonus action support spells
+            if spell.spell_type == SpellType.SUPPORT and spell.casting_time == ActionCategory.BONUS:
+                action = BonusSupportSpellAction(id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
+            else:
+                action = spell_action_map[spell.spell_type](id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
             character.spells.append(action)  # type: ignore[arg-type]
             character.log_event(f"{character.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
 

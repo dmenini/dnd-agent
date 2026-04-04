@@ -17,6 +17,7 @@ class StatusType(str, Enum):
     BLINDED = "blinded"
     CUSTOM = "custom"
     DEAFENED = "deafened"
+    DIVINE_FAVORED = "divine_favored"
     DODGING = "dodging"
     ENRAGED = "enraged"
     HASTED = "hasted"
