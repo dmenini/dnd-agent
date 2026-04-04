@@ -35,6 +35,7 @@ def test_has_resources_exhausted(fighter: Character) -> None:
     fighter.action_economy.standard_actions = 0
     fighter.action_economy.bonus_actions = 0
     fighter.action_economy.movement_used = fighter.speed  # All movement used
+    fighter.action_economy.movement_available = False  # Movement exhausted
 
     # Remove equipment so has_resources logic only checks action economy
     fighter.equipment.main_hand = None

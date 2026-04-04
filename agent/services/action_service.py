@@ -25,7 +25,8 @@ class ActionService:
         has_bonus = character.equipment.off_hand is not None and (character.action_economy.can_use_bonus())
         main_hand = character.equipment.main_hand or character.equipment.ranged or character.spells
         has_main = bool(main_hand) and character.action_economy.can_use_standard()
-        has_movement = character.current_speed > 0
+        # Technically we should check the speed left, but we force one movement per turn
+        has_movement = character.action_economy.movement_available
         return has_main or has_bonus or has_movement
 
     @classmethod
