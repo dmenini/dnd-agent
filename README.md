@@ -53,9 +53,19 @@ make format
 
 ## Roadmap
 
+### Features
 - Add more classes
 - Try to remove map string and compute it dynamically
 - Better logging of main info and details
+
+### Concentration Mechanics (Partial Implementation)
+- TODO: Damage-based concentration checks (CON save when taking damage, DC = max(10, damage/2))
+- TODO: Concentration on non-self-targeted spells (e.g., Bless on allies)
+- TODO: Voluntary concentration dropping as a free action
+- TODO: Concentration indicator in the UI
+- TODO: Add UNCONSCIOUS status type and break concentration on it
+
+### Bugs
 - BUG: Some emoji "move" the UI line they are at to the right, resulting in a visual artefact
 - BUG: Spell still executed when save roll passes
 - BUG: Hide available actions when none available
