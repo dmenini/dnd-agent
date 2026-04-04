@@ -71,6 +71,11 @@ class EffectService:
     @classmethod
     def remove_condition(cls, character: "Character", condition: "StatusType") -> None:
         """Remove a condition by type."""
+        # Find and expire the effect before removing
+        effect_to_remove = next((e for e in character.status_effects if e.type == condition), None)
+        if effect_to_remove:
+            effect_to_remove.on_expire(character)
+
         character.status_effects = [e for e in character.status_effects if e.type != condition]
         character.log_event(f"{character.name} is not {condition.value} anymore!", icon=Icon.EFFECT_EXPIRED)
 

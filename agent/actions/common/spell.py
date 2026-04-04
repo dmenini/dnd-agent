@@ -90,14 +90,30 @@ class SupportSpellAction(StandardAction):
     range: float
     apply_conditions: list[StatusEffect] = Field(default_factory=list)
     remove_conditions: list[StatusType] = Field(default_factory=list)
+    requires_concentration: bool = False
 
     def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
+        # Handle concentration
+        if self.requires_concentration and self.targeting == TargetingType.SELF:
+            self._handle_concentration(actor)
+
         if self.targeting == TargetingType.SELF:
             self._execute_on_target(target=actor)
         else:
             if target is None:
                 raise ValueError
             self._execute_on_target(target=target)
+
+    def _handle_concentration(self, actor: Character) -> None:
+        """Break existing concentration and set up new concentration."""
+        if actor.concentrating_on:
+            old_effect = actor.concentrating_on
+            EffectService.remove_condition(actor, old_effect.type)
+            actor.log_event(f"{actor.name} stops concentrating on {old_effect.type.value}")
+
+        # Track new concentration
+        if self.apply_conditions:
+            actor.concentrating_on = self.apply_conditions[0]
 
     def _execute_on_target(self, target: Character) -> None:
         for to_apply in self.apply_conditions:
@@ -134,14 +150,30 @@ class BonusSupportSpellAction(BonusAction):
     range: float
     apply_conditions: list[StatusEffect] = Field(default_factory=list)
     remove_conditions: list[StatusType] = Field(default_factory=list)
+    requires_concentration: bool = False
 
     def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
+        # Handle concentration
+        if self.requires_concentration and self.targeting == TargetingType.SELF:
+            self._handle_concentration(actor)
+
         if self.targeting == TargetingType.SELF:
             self._execute_on_target(target=actor)
         else:
             if target is None:
                 raise ValueError
             self._execute_on_target(target=target)
+
+    def _handle_concentration(self, actor: Character) -> None:
+        """Break existing concentration and set up new concentration."""
+        if actor.concentrating_on:
+            old_effect = actor.concentrating_on
+            EffectService.remove_condition(actor, old_effect.type)
+            actor.log_event(f"{actor.name} stops concentrating on {old_effect.type.value}")
+
+        # Track new concentration
+        if self.apply_conditions:
+            actor.concentrating_on = self.apply_conditions[0]
 
     def _execute_on_target(self, target: Character) -> None:
         for to_apply in self.apply_conditions:

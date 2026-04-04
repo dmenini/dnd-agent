@@ -58,6 +58,7 @@ class Character(BaseModel):
     passives: list[Trait | ModifierTrait] = Field(default_factory=list)
     evocations: list[Evocation] = Field(default_factory=list)
     status_effects: list[StatusEffect] = Field(default_factory=list)
+    concentrating_on: StatusEffect | None = None  # Tracks active concentration spell
 
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
     equipment: Equipment = Field(default_factory=Equipment)

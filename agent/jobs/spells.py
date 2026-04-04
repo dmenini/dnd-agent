@@ -34,6 +34,7 @@ class SpellBase(JobFeature):
     targeting: TargetingType
     range: float
     ability: AbilityType | None = None  # Default to spellcaster ability if not specified
+    requires_concentration: bool = False
 
 
 class AttackSpell(SpellBase):
@@ -196,6 +197,7 @@ class SpellBuilder:
             casting_time=ActionCategory.BONUS,
             targeting=TargetingType.SELF,
             range=1,
+            requires_concentration=True,
             apply_conditions=[
                 StatusEffect(
                     type=StatusType.DIVINE_FAVORED,

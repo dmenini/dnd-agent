@@ -43,10 +43,17 @@ class StatusEffect(BaseModel):
 
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""
+        from agent.services.effect_service import EffectService  # noqa:PLC0415
         from agent.services.trait_service import TraitService  # noqa:PLC0415
 
         for trait in self.traits:
             TraitService.register_passive(target, trait)
+
+        # Break concentration on incapacitating effects
+        if self.type in [StatusType.STUNNED, StatusType.PARALYZED] and target.concentrating_on:
+            EffectService.remove_condition(target, target.concentrating_on.type)
+            target.log_event(f"{target.name} loses concentration due to {self.type.value}!")
+            target.concentrating_on = None
 
     def on_expire(self, target: Character) -> None:
         """Call when the effect is removed."""
@@ -54,6 +61,10 @@ class StatusEffect(BaseModel):
 
         for trait in self.traits:
             TraitService.unregister_passive(target, feature_id=trait.feature_id, source_id=self.type.value)
+
+        # Clear concentration tracking if this was the concentrated effect
+        if target.concentrating_on and target.concentrating_on.type == self.type:
+            target.concentrating_on = None
 
     def is_expired(self) -> bool:
         return self.duration <= 0
