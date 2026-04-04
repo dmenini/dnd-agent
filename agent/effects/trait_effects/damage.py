@@ -8,6 +8,7 @@ from agent.equipment.weapons import MeleeWeapon, RangedWeapon
 from agent.logs.log_event import LogLevel
 from agent.models.constants import MELEE_RANGE, TRAIT_LOG_LEVEL
 from agent.models.damage import Damage, DamageComponent, DamageType, DamageVulnerability
+from agent.services.combat_service import CombatService
 from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ def auto_crit_if_melee_effect(actor: Character, target: Character, context: Comb
 def damage_over_time_effect(target: Character, value: int, damage_type: DamageType) -> None:
     damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
     damage = target.modify_incoming_damage(damage)
-    target.apply_damage(damage.total)
+    CombatService.apply_damage(target, damage.total)
     target.log_event(f"{target.name} suffers {damage.total} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
 
@@ -39,7 +40,7 @@ def reflect_melee_damage_effect(
         value = context.damage.total * ratio  # type: ignore[union-attr]
         damage = Damage(components=[DamageComponent(value=value, type=damage_type)])
         damage = actor.modify_incoming_damage(damage)
-        actor.apply_damage(damage.total)
+        CombatService.apply_damage(actor, damage.total)
         target.log_event(
             f"{target.name} reflects {damage.total:.0f} {damage_type.value} damage back to {actor.name}.",
             log_type=LogLevel.DEBUG,

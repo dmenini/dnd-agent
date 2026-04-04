@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from agent.effects.base import register_effect
 from agent.models.constants import TRAIT_LOG_LEVEL
+from agent.services.combat_service import CombatService
 from agent.services.roll_service import RollService
 
 if TYPE_CHECKING:
@@ -33,13 +34,13 @@ def bonus_save_roll_effect(_: Character, context: CombatContext, *, expr: str) -
 def life_steal_effect(actor: CharacterBase, context: CombatContext, ratio: float) -> None:
     if context.damage:
         heal = math.ceil(context.damage.total * ratio)
-        actor.heal(heal)
+        CombatService.heal(actor, heal)  # type: ignore[arg-type]
         actor.log_event(f"{actor.name} heals {heal} HP through life steal.", log_type=TRAIT_LOG_LEVEL)
 
 
 @register_effect()
 def regeneration_effect(actor: CharacterBase, value: int) -> None:
-    actor.heal(value)
+    CombatService.heal(actor, value)  # type: ignore[arg-type]
     actor.log_event(f"{actor.name} heals {value} HP.", log_type=TRAIT_LOG_LEVEL)
 
 

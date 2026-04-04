@@ -7,6 +7,7 @@ from pydantic import PrivateAttr
 from agent.actions.base import ActionType, StandardAction
 from agent.character.resources import ActionEconomy
 from agent.models.enums import FeatureId, TargetingType
+from agent.services.combat_service import CombatService
 
 if TYPE_CHECKING:
     from agent.character.character import Character
@@ -42,7 +43,7 @@ class DashAction(StandardAction):
             raise ValueError(msg)
 
         self._distance = dist
-        actor.move(target)
+        CombatService.move(actor, target)
 
     def finalize(self, actor: Character) -> None:
         """Consume standard action point and movement."""

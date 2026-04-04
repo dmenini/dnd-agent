@@ -15,6 +15,7 @@ from agent.models.enums import (
     EventType,
     TargetingType,
 )
+from agent.services.combat_service import CombatService
 from agent.services.effect_service import EffectService
 from agent.services.roll_service import RollService
 
@@ -139,7 +140,7 @@ class HealingSpellAction(StandardAction):
 
         heal_amount = min(ctx.heal_roll.total, target.max_hp - target.attributes.hp)
         if heal_amount:
-            target.heal(heal_amount)
+            CombatService.heal(target, heal_amount)
             target.log_event(
                 f"{actor.name} heals {target.name} for {heal_amount} HP ({target.attributes.hp}/{target.max_hp}).",
                 log_type=LogLevel.DETAIL,

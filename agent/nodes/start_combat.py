@@ -3,8 +3,8 @@ from logging import getLogger
 
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
+from agent.services.combat_service import CombatService
 from agent.services.roll_service import RollService
-from agent.services.turn_service import TurnService
 
 log = getLogger(__name__)
 
@@ -26,7 +26,7 @@ class StartCombatNode:
 
         if actor.turn_done:
             actor.log_event(f"Turn {state.round + 1}.{state.turn_index + 1} - {actor.name}", log_type=LogLevel.HEADER)
-            TurnService.start_turn(actor)
+            CombatService.start_turn(actor)
 
         state.update_visibility(actor)
 

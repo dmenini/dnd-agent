@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, SkipValidation, computed_field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SkipValidation, computed_field, field_serializer, field_validator, model_validator
 
 from agent.actions.base import Action
 from agent.actions.common.evocation import EvocationSpellAction
@@ -9,6 +9,7 @@ from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, Su
 from agent.actions.registry import ActionRegistry
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
+from agent.character.combat_stats import CombatStats
 from agent.character.equipment import Equipment
 from agent.character.narrative import NarrativeAttributes
 from agent.character.resources import ActionEconomy, SpellSlots
@@ -34,10 +35,8 @@ class CharacterBase(BaseModel):
     is_player: bool = False
     level: int = 1
     experience: int = 0
-    pos: Position = Position(x=0, y=0)
     attributes: Attributes = Field(default_factory=Attributes)
     narrative: NarrativeAttributes = Field(default_factory=NarrativeAttributes)
-    stealth_value: int = 0
 
     spells: list[AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction] = Field(
         default_factory=list
@@ -48,12 +47,35 @@ class CharacterBase(BaseModel):
     status_effects: list[StatusEffect] = Field(default_factory=list)
 
     spell_slots: SpellSlots = Field(default_factory=SpellSlots)
-    action_economy: ActionEconomy = Field(default_factory=ActionEconomy)
-
     equipment: Equipment = Field(default_factory=Equipment)
+    combat: CombatStats = Field(default_factory=CombatStats)
 
     # Test-only: override dice roller for deterministic rolls
     cheater_dice: SkipValidation[DiceRoller | None] = Field(default=None, exclude=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _route_combat_fields(cls, data: dict) -> dict:
+        """Route flat combat fields to the combat component during initialization."""
+        if isinstance(data, dict):
+            combat_fields = {}
+            # Extract combat-related fields if they exist
+            if "pos" in data:
+                combat_fields["pos"] = data.pop("pos")
+            if "stealth_value" in data:
+                combat_fields["stealth_value"] = data.pop("stealth_value")
+            if "action_economy" in data:
+                combat_fields["action_economy"] = data.pop("action_economy")
+            if "turn_done" in data:
+                combat_fields["turn_done"] = data.pop("turn_done")
+
+            # If combat component exists, merge the fields
+            if "combat" in data:
+                data["combat"] = {**data["combat"], **combat_fields}
+            elif combat_fields:
+                data["combat"] = combat_fields
+
+        return data
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -88,7 +110,32 @@ class CharacterBase(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def is_hidden(self) -> bool:
-        return self.stealth_value > 0
+        return self.combat.is_hidden
+
+    # Backward compatibility properties for combat stats
+    @property
+    def pos(self) -> Position:
+        return self.combat.pos
+
+    @pos.setter
+    def pos(self, value: Position) -> None:
+        self.combat.pos = value
+
+    @property
+    def stealth_value(self) -> int:
+        return self.combat.stealth_value
+
+    @stealth_value.setter
+    def stealth_value(self, value: int) -> None:
+        self.combat.stealth_value = value
+
+    @property
+    def action_economy(self) -> ActionEconomy:
+        return self.combat.action_economy
+
+    @action_economy.setter
+    def action_economy(self, value: ActionEconomy) -> None:
+        self.combat.action_economy = value
 
     def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
         raise NotImplementedError
@@ -96,12 +143,6 @@ class CharacterBase(BaseModel):
     def los_distance(self, target: Position) -> float:
         """Line of Sight distance from the target."""
         return self.pos.manhattan_distance(target)
-
-    def apply_damage(self, damage: int) -> None:
-        self.attributes.hp = max(0, self.attributes.hp - damage)
-
-    def heal(self, amount: int) -> None:
-        self.attributes.hp = min(self.attributes.hp + amount, self.max_hp)
 
     def modify_incoming_damage(self, damage: Damage) -> Damage:
         """Apply resistances and vulnerabilities to damage."""

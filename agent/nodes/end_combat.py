@@ -3,7 +3,7 @@ from logging import getLogger
 from agent.logs.log_event import Icon, LogLevel
 from agent.models.state import State
 from agent.services.action_service import ActionService
-from agent.services.turn_service import TurnService
+from agent.services.combat_service import CombatService
 
 log = getLogger(__name__)
 
@@ -24,7 +24,7 @@ class EndCombatNode:
         # Advance to next character if resources exhausted
         if not actor.is_alive or not ActionService.has_resources(actor):
             if actor.is_alive:
-                TurnService.end_turn(actor)
+                CombatService.end_turn(actor)
             state.turn_index += 1
 
         # End of round
@@ -33,7 +33,7 @@ class EndCombatNode:
 
             # Reset resources
             for char in state.alive_characters.values():
-                TurnService.end_round(char)
+                CombatService.end_round(char)
 
             state.round += 1
             state.turn_index = 0

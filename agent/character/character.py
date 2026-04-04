@@ -5,8 +5,6 @@ from pydantic import BaseModel, computed_field
 from agent.character.abilities import Abilities
 from agent.character.resolvers.job import JobResolver
 from agent.equipment.armor import Shield
-from agent.logs.log_event import Icon
-from agent.models.position import Position
 from agent.services.equipment_service import EquipmentService
 
 
@@ -18,7 +16,6 @@ class Party(BaseModel):
 
 class Character(JobResolver):
     party: Party
-    turn_done: bool = True
 
     def model_post_init(self, _: Any, /) -> None:
         """Hook running after every initialization (also after deserialization)."""
@@ -35,17 +32,21 @@ class Character(JobResolver):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def current_speed(self) -> float:
-        return self.attributes.speed() - self.action_economy.movement_used
+        return self.attributes.speed() - self.combat.action_economy.movement_used
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def initiative_modifier(self) -> int:
         return self.attributes.initiative()
 
-    def move(self, destination: Position) -> None:
-        starting_pos = self.pos.model_copy()
-        self.pos = destination
-        self.log_event(f"{self.name} moves from {starting_pos} to {destination}", icon=Icon.MOVE)
+    # Backward compatibility property for turn_done
+    @property
+    def turn_done(self) -> bool:
+        return self.combat.turn_done
+
+    @turn_done.setter
+    def turn_done(self, value: bool) -> None:
+        self.combat.turn_done = value
 
     @computed_field  # type: ignore[prop-decorator]
     @property

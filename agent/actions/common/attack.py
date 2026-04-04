@@ -14,6 +14,7 @@ from agent.logs.log_event import Icon
 from agent.models.constants import MELEE_RANGE
 from agent.models.damage import Damage, DamageComponent, DamageType
 from agent.models.enums import EventType, FeatureId
+from agent.services.combat_service import CombatService
 from agent.services.effect_service import EffectService
 from agent.services.roll_service import RollService
 
@@ -83,7 +84,7 @@ class AttackAction(Action, ABC):
 
         # Apply damage
         total_damage = ctx.damage.total
-        target.apply_damage(damage=total_damage)
+        CombatService.apply_damage(target, total_damage)
         actor.log_event(f"Damage dealt: {total_damage} ({ctx.damage})", icon=Icon.DAMAGE, show_ai=True)
         target.log_event(f"{target.name}: {target.attributes.hp}/{target.max_hp} HP")
 
