@@ -1,4 +1,5 @@
 """Test concentration mechanics for spells."""
+
 from agent.actions.common.spell import BonusSupportSpellAction
 from agent.character.character import Character
 from agent.effects.status_effects.base import StatusEffect, StatusType
@@ -125,3 +126,38 @@ def test_concentration_clears_on_expire(actor: Character) -> None:
 
     # Concentration should be cleared
     assert actor.concentrating_on is None
+
+
+def test_concentration_on_ally_targeted_spell(actor: Character, orc: Character) -> None:
+    """Test that concentration works for spells cast on allies."""
+    job = Cleric.apply_specialization(WarDomain)
+    JobService.change_job(actor, job)
+
+    # Cast Shield of Faith on an ally
+    shield_of_faith = next((s for s in actor.spells if s.id == FeatureId.SHIELD_OF_FAITH), None)
+    assert shield_of_faith is not None
+    assert isinstance(shield_of_faith, BonusSupportSpellAction)
+
+    ctx = CombatContext()
+    shield_of_faith.execute(actor, orc, ctx)
+
+    # Caster should be concentrating (not the target)
+    assert actor.concentrating_on is not None
+    assert actor.concentrating_on.type == StatusType.SHIELDED_BY_FAITH
+    assert orc.concentrating_on is None
+
+    # Target should have the effect
+    assert EffectService.has_condition(orc, StatusType.SHIELDED_BY_FAITH)
+
+    # Caster loses concentration if they cast another concentration spell
+    divine_favor = next((s for s in actor.spells if s.id == FeatureId.DIVINE_FAVOR), None)
+    divine_favor.execute(actor, None, ctx)
+
+    # New concentration should be active
+    assert actor.concentrating_on.type == StatusType.DIVINE_FAVORED
+
+    # TODO: Fix concentration breaking for ally-targeted spells
+    # Known limitation: The effect on the target (orc) is not automatically removed
+    # when the caster loses concentration. This requires tracking which character(s)
+    # have the effect. For now, ally-targeted concentration spells don't properly
+    # clean up when broken.

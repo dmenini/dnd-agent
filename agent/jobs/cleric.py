@@ -155,6 +155,7 @@ WarDomain = JobSpecialization(
     proficiencies=[Proficiency(source="war_domain", type=ProficiencyType.WEAPON, target=WeaponType.MARTIAL_MELEE)],
     spells=[
         SpellBuilder.divine_favor(level_required=1),
+        SpellBuilder.shield_of_faith(level_required=1),
     ],
 )
 

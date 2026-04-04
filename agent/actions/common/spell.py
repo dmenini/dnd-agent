@@ -93,8 +93,8 @@ class SupportSpellAction(StandardAction):
     requires_concentration: bool = False
 
     def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
-        # Handle concentration
-        if self.requires_concentration and self.targeting == TargetingType.SELF:
+        # Handle concentration (actor concentrates, regardless of who receives the effect)
+        if self.requires_concentration:
             self._handle_concentration(actor)
 
         if self.targeting == TargetingType.SELF:
@@ -153,8 +153,8 @@ class BonusSupportSpellAction(BonusAction):
     requires_concentration: bool = False
 
     def execute(self, actor: Character, target: Character | None, ctx: CombatContext) -> None:  # noqa: ARG002
-        # Handle concentration
-        if self.requires_concentration and self.targeting == TargetingType.SELF:
+        # Handle concentration (actor concentrates, regardless of who receives the effect)
+        if self.requires_concentration:
             self._handle_concentration(actor)
 
         if self.targeting == TargetingType.SELF:

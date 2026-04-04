@@ -24,6 +24,7 @@ class StatusType(str, Enum):
     LETHARGIC = "lethargic"
     PARALYZED = "paralyzed"
     POISONED = "poisoned"
+    SHIELDED_BY_FAITH = "shielded_by_faith"
     STUNNED = "stunned"
     RESTRAINED = "restrained"
 

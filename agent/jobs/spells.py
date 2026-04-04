@@ -214,3 +214,34 @@ class SpellBuilder:
                 )
             ],
         )
+
+    @staticmethod
+    def shield_of_faith(level_required: int) -> SupportSpell:
+        return SupportSpell(
+            ref_id=FeatureId.SHIELD_OF_FAITH,
+            name="Shield of Faith",
+            description=(
+                "A shimmering field appears and surrounds a creature of your choice within range, "
+                "granting it a +2 bonus to AC for the duration."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_1,
+            casting_time=ActionCategory.BONUS,
+            targeting=TargetingType.SINGLE,
+            range=60,
+            requires_concentration=True,
+            apply_conditions=[
+                StatusEffect(
+                    type=StatusType.SHIELDED_BY_FAITH,
+                    duration=100,
+                    save_dc=0,
+                    traits=[
+                        TraitBuilder.ac_bonus(
+                            source_id=FeatureId.SHIELD_OF_FAITH.value,
+                            name="Shield of Faith",
+                            value=2,
+                        )
+                    ],
+                )
+            ],
+        )
