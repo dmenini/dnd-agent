@@ -132,56 +132,8 @@ class SpellBuilder:
 
     @staticmethod
     def spiritual_sword(level_required: int) -> EvocationSpell:
-        # TODO: When you cast this spell using a spell slot 3rd level of or higher,
-        #  the damage increases by 1d8 for every two slot levels above the 2nd.
-        attack = JobFeature(
-            ref_id=FeatureId.MELEE_SPELL_ATTACK,
-            name="Spiritual Weapon Attack",
-            description="The spiritual weapon attacks the nearest creature.",
-            kwargs={
-                "range": MELEE_RANGE,
-                "damage_dice": "1d8",
-                "damage_type": DamageType.FORCE,
-                "weapon_type": WeaponType.MAGIC,
-                "targeting": TargetingType.SINGLE,
-                "ability": AbilityType.WIS,
-                "casting_time": ActionCategory.BONUS,
-                "breaks_stealth": False,
-            },
-        )
-        move = JobFeature(
-            ref_id=FeatureId.REPOSITION_EVOCATION,
-            name="Spiritual Weapon Movement",
-            description="You can move the weapon to prepare for the next attack.",
-            kwargs={
-                "range": 20,
-                "evocation_name": "Spiritual Sword",
-                "casting_time": ActionCategory.MOVEMENT,
-                "breaks_stealth": False,
-            },
-        )
-        evo = Evocation(
-            source_id=FeatureId.SPIRITUAL_SWORD.value,
-            name="Spiritual Sword",
-            duration=10,
-            features=[attack, move],
-            on_cast_use=attack.ref_id,
-        )
-        return EvocationSpell(
-            ref_id=FeatureId.SPIRITUAL_SWORD,
-            name="Spiritual Sword",
-            description=(
-                "You create a floating, spectral weapon within range that lasts for the duration. "
-                "When you cast the spell, you can make a melee spell attack against a creature within weapon range. "
-                "On a hit, the target takes force damage equal to 1d8 + your spellcasting ability modifier."
-            ),
-            level_required=level_required,
-            level=SpellLevel.LEVEL_2,
-            targeting=TargetingType.SINGLE,
-            range=20,
-            evocation=evo,
-            casting_time=ActionCategory.BONUS,
-        )
+        """Alias for spiritual_weapon for backwards compatibility."""
+        return SpellBuilder.spiritual_weapon(level_required)
 
     @staticmethod
     def spiritual_weapon(level_required: int) -> EvocationSpell:
