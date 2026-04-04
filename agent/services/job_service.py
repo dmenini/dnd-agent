@@ -4,10 +4,12 @@ from typing import TYPE_CHECKING
 
 from agent.actions.base import ActionCategory
 from agent.actions.common.spell import BonusSupportSpellAction
+from agent.character.abilities import AbilityType
 from agent.jobs.base import CharacterJob, JobFeature
 from agent.jobs.feature import JobPassive
 from agent.jobs.spells import Spell, SpellType, spell_action_map
 from agent.logs.log_event import LogLevel
+from agent.models.enums import FeatureId
 from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:
@@ -86,6 +88,12 @@ class JobService:
         """
         if feature.ref_id not in {a.id for a in character.special_abilities}:
             action = feature.to_action()
+
+            # Special handling for War Priest: set uses_per_rest based on WIS modifier
+            if feature.ref_id == FeatureId.WAR_PRIEST and hasattr(action, "uses_per_rest"):
+                wis_mod = character.attributes.ability_modifier(AbilityType.WIS)
+                action.uses_per_rest = max(1, wis_mod)  # type: ignore[attr-defined]
+
             character.special_abilities.append(action)
             character.log_event(f"{character.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
 

@@ -87,6 +87,7 @@ class FeatureId(str, Enum):
     REFLECT_MELEE_DAMAGE = "reflect_melee_damage"
     SECOND_WIND = "second_wind"
     RAGE = "rage"
+    WAR_PRIEST = "war_priest"
 
     # Spells
     MAGIC_MISSILE = "magic_missile"
