@@ -1,6 +1,6 @@
 from agent.character.abilities import AbilityType
-from agent.character.resources import ActionExtension
 from agent.character.proficiency import ProficiencyTarget
+from agent.character.resources import ActionExtension
 from agent.effects.base import ModifierTrait, Priority, Trait
 from agent.effects.condition import Condition, When
 from agent.equipment.armor import ArmorType
@@ -307,6 +307,18 @@ class TraitBuilder:
             operation="set",
         )
 
+    @staticmethod
+    def guided_strike(source_id: str, name: str = "", description: str = "") -> Trait:
+        """Grant ability to use Channel Divinity for +10 to attack rolls."""
+        return Trait(
+            source_id=source_id,
+            feature_id=FeatureId.GUIDED_STRIKE,
+            name=name or "Guided Strike",
+            description=description or "Use Channel Divinity for +10 to attack (auto-activates on near-miss).",
+            event_type=EventType.ATTACK_ROLL,
+            effect_type="guided_strike",
+        )
+
     # ============================================================================
     # EVENT TRAITS - Callback-based effects
     # ============================================================================
@@ -503,6 +515,26 @@ class TraitBuilder:
             description=description or f"Deal +{value} damage with melee Strength attacks.",
             event_type=EventType.APPLY_DAMAGE,
             effect_params={"value": value},
+            conditions=conditions or [],
+        )
+
+    @staticmethod
+    def weapon_damage_bonus(
+        source_id: str,
+        dice: str,
+        damage_type: DamageType,
+        conditions: list[Condition] | None = None,
+        name: str = "",
+        description: str = "",
+    ) -> Trait:
+        """Add bonus damage to weapon attacks from dice rolls."""
+        return Trait(
+            source_id=source_id,
+            feature_id=FeatureId.WEAPON_DAMAGE_BONUS,
+            name=name,
+            description=description or f"Weapon attacks deal an extra {dice} {damage_type.value} damage.",
+            event_type=EventType.APPLY_DAMAGE,
+            effect_params={"dice": dice, "damage_type": damage_type},
             conditions=conditions or [],
         )
 

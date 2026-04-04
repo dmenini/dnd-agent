@@ -55,6 +55,21 @@ def damage_bonus_effect(actor: Character, context: CombatContext, value: int, da
 
 
 @register_effect()
+def weapon_damage_bonus_effect(actor: Character, context: CombatContext, dice: str, damage_type: DamageType) -> None:
+    """Add bonus damage from dice rolls to weapon attacks only."""
+    slot = context.metadata.get("metadata", {}).get("slot")
+    weapon = actor.equipment.slots.get(slot) if slot else None
+    is_weapon_attack = isinstance(weapon, (MeleeWeapon, RangedWeapon))
+
+    if context.damage and is_weapon_attack:
+        result = RollService.roll(dice, character=actor).total
+        context.damage.components.append(DamageComponent(value=result, type=damage_type, operation="add"))
+        actor.log_event(
+            f"{actor.name}'s weapon attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL
+        )
+
+
+@register_effect()
 def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: int) -> None:
     slot = context.metadata.get("metadata", {}).get("slot")
     weapon = actor.equipment.slots.get(slot)

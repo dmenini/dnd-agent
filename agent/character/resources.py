@@ -180,6 +180,32 @@ class CasterProgression(Enum):
     PACT = "pact"
 
 
+class LimitedResource(BaseModel):
+    """Generic limited-use resource (Channel Divinity, Ki Points, Rage, etc.)."""
+
+    current_uses: int = 0
+    max_uses: int = 0
+
+    def has_uses(self) -> bool:
+        """Check if there are uses available."""
+        return self.current_uses < self.max_uses
+
+    def consume(self) -> bool:
+        """Consume one use. Returns True if successful."""
+        if self.has_uses():
+            self.current_uses += 1
+            return True
+        return False
+
+    def restore(self) -> None:
+        """Restore all uses (short/long rest)."""
+        self.current_uses = 0
+
+    def set_max_uses(self, max_uses: int) -> None:
+        """Set the maximum number of uses."""
+        self.max_uses = max_uses
+
+
 class SpellLevel(int, Enum):
     CANTRIP = 0
     LEVEL_1 = 1

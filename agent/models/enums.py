@@ -87,6 +87,8 @@ class FeatureId(str, Enum):
     REFLECT_MELEE_DAMAGE = "reflect_melee_damage"
     SECOND_WIND = "second_wind"
     RAGE = "rage"
+    WAR_PRIEST = "war_priest"
+    GUIDED_STRIKE = "guided_strike"
 
     # Spells
     MAGIC_MISSILE = "magic_missile"
@@ -97,6 +99,11 @@ class FeatureId(str, Enum):
     LESSER_RESTORATION = "lesser_restoration"
     MELEE_SPELL_ATTACK = "melee_spell_attack"
     SPIRITUAL_SWORD = "spiritual_sword"
+    SPIRITUAL_WEAPON = "spiritual_weapon"
+    DIVINE_FAVOR = "divine_favor"
+    SHIELD_OF_FAITH = "shield_of_faith"
+    MAGIC_WEAPON = "magic_weapon"
+    WEAPON_DAMAGE_BONUS = "weapon_damage_bonus"
 
 
 class EventType(str, Enum):

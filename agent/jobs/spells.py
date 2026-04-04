@@ -11,6 +11,7 @@ from agent.character.resources import SpellLevel
 from agent.effects.evocations.base import Evocation
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.status_effects.collection import Blessed
+from agent.effects.traits import TraitBuilder
 from agent.equipment.weapons import WeaponType
 from agent.jobs.feature import JobFeature
 from agent.models.constants import MELEE_RANGE, TOUCH_RANGE
@@ -33,6 +34,7 @@ class SpellBase(JobFeature):
     targeting: TargetingType
     range: float
     ability: AbilityType | None = None  # Default to spellcaster ability if not specified
+    requires_concentration: bool = False
 
 
 class AttackSpell(SpellBase):
@@ -129,13 +131,16 @@ class SpellBuilder:
         )
 
     @staticmethod
-    def spiritual_sword(level_required: int) -> EvocationSpell:
-        # TODO: When you cast this spell using a spell slot 3rd level of or higher,
-        #  the damage increases by 1d8 for every two slot levels above the 2nd.
+    def spiritual_weapon(level_required: int) -> EvocationSpell:
+        """Create a Spiritual Weapon evocation for War Domain clerics.
+
+        Creates a floating spectral weapon that can attack as a bonus action.
+        TODO: Level scaling - +1d8 per 2 spell levels above 2nd.
+        """
         attack = JobFeature(
             ref_id=FeatureId.MELEE_SPELL_ATTACK,
             name="Spiritual Weapon Attack",
-            description="The spiritual weapon attacks the nearest creature.",
+            description="The spiritual weapon attacks a creature within 5 feet.",
             kwargs={
                 "range": MELEE_RANGE,
                 "damage_dice": "1d8",
@@ -149,34 +154,136 @@ class SpellBuilder:
         )
         move = JobFeature(
             ref_id=FeatureId.REPOSITION_EVOCATION,
-            name="Spiritual Weapon Movement",
-            description="You can move the weapon to prepare for the next attack.",
+            name="Move Spiritual Weapon",
+            description="Move the weapon up to 20 feet.",
             kwargs={
                 "range": 20,
-                "evocation_name": "Spiritual Sword",
+                "evocation_name": "Spiritual Weapon",
                 "casting_time": ActionCategory.MOVEMENT,
                 "breaks_stealth": False,
             },
         )
         evo = Evocation(
-            source_id=FeatureId.SPIRITUAL_SWORD.value,
-            name="Spiritual Sword",
-            duration=10,
+            source_id=FeatureId.SPIRITUAL_WEAPON.value,
+            name="Spiritual Weapon",
+            duration=10,  # 1 minute = 10 rounds
             features=[attack, move],
             on_cast_use=attack.ref_id,
         )
         return EvocationSpell(
-            ref_id=FeatureId.SPIRITUAL_SWORD,
-            name="Spiritual Sword",
+            ref_id=FeatureId.SPIRITUAL_WEAPON,
+            name="Spiritual Weapon",
             description=(
                 "You create a floating, spectral weapon within range that lasts for the duration. "
-                "When you cast the spell, you can make a melee spell attack against a creature within weapon range. "
-                "On a hit, the target takes force damage equal to 1d8 + your spellcasting ability modifier."
+                "When you cast the spell, you can make a melee spell attack against a creature within 5 feet. "
+                "On a hit, the target takes 1d8 + spellcasting modifier force damage. "
+                "As a bonus action, you can move the weapon up to 20 feet and repeat the attack."
             ),
             level_required=level_required,
             level=SpellLevel.LEVEL_2,
             targeting=TargetingType.SINGLE,
-            range=20,
+            range=60,  # D&D 5e: 60 feet
             evocation=evo,
             casting_time=ActionCategory.BONUS,
+        )
+
+    @staticmethod
+    def divine_favor(level_required: int) -> SupportSpell:
+        return SupportSpell(
+            ref_id=FeatureId.DIVINE_FAVOR,
+            name="Divine Favor",
+            description=(
+                "Your prayer empowers you with divine radiance. "
+                "Until the spell ends, your weapon attacks deal an extra 1d4 radiant damage on a hit."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_1,
+            casting_time=ActionCategory.BONUS,
+            targeting=TargetingType.SELF,
+            range=1,
+            requires_concentration=True,
+            apply_conditions=[
+                StatusEffect(
+                    type=StatusType.DIVINE_FAVORED,
+                    duration=10,
+                    save_dc=0,
+                    traits=[
+                        TraitBuilder.weapon_damage_bonus(
+                            source_id=FeatureId.DIVINE_FAVOR.value,
+                            name="Divine Favor",
+                            dice="1d4",
+                            damage_type=DamageType.RADIANT,
+                        )
+                    ],
+                )
+            ],
+        )
+
+    @staticmethod
+    def magic_weapon(level_required: int) -> SupportSpell:
+        # TODO: Level scaling - +2 at spell level 4, +3 at spell level 6
+        return SupportSpell(
+            ref_id=FeatureId.MAGIC_WEAPON,
+            name="Magic Weapon",
+            description=(
+                "You touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon "
+                "with a +1 bonus to attack rolls and damage rolls."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_2,
+            casting_time=ActionCategory.BONUS,
+            targeting=TargetingType.SINGLE,
+            range=TOUCH_RANGE,
+            requires_concentration=True,
+            apply_conditions=[
+                StatusEffect(
+                    type=StatusType.MAGIC_WEAPON,
+                    duration=600,  # 1 hour = 600 rounds
+                    save_dc=0,
+                    traits=[
+                        TraitBuilder.bonus_on_attack_roll(
+                            source_id=FeatureId.MAGIC_WEAPON.value,
+                            name="Magic Weapon",
+                            dice_expr="1",  # Flat +1 bonus
+                        ),
+                        TraitBuilder.damage_bonus(
+                            source_id=FeatureId.MAGIC_WEAPON.value,
+                            name="Magic Weapon",
+                            value=1,
+                            damage_type=DamageType.FORCE,  # Generic magical damage
+                        ),
+                    ],
+                )
+            ],
+        )
+
+    @staticmethod
+    def shield_of_faith(level_required: int) -> SupportSpell:
+        return SupportSpell(
+            ref_id=FeatureId.SHIELD_OF_FAITH,
+            name="Shield of Faith",
+            description=(
+                "A shimmering field appears and surrounds a creature of your choice within range, "
+                "granting it a +2 bonus to AC for the duration."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_1,
+            casting_time=ActionCategory.BONUS,
+            targeting=TargetingType.SINGLE,
+            range=60,
+            requires_concentration=True,
+            apply_conditions=[
+                StatusEffect(
+                    type=StatusType.SHIELDED_BY_FAITH,
+                    duration=100,
+                    save_dc=0,
+                    traits=[
+                        TraitBuilder.ac_bonus(
+                            source_id=FeatureId.SHIELD_OF_FAITH.value,
+                            name="Shield of Faith",
+                            value=2,
+                        )
+                    ],
+                )
+            ],
         )

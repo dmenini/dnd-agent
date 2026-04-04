@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from enum import Enum
 from typing import Self
 
@@ -19,12 +20,22 @@ class JobType(str, Enum):
     WIZARD = "wizard"
 
 
+class ResourceDefinition(BaseModel):
+    """Defines a limited-use resource for a character class (Channel Divinity, Ki, Rage, etc.)."""
+
+    name: str
+    calculate_max_uses: Callable[[int], int]
+    restore_on_short_rest: bool = False
+    restore_on_long_rest: bool = True
+
+
 class JobSpecialization(BaseModel):
     name: str
     features: list[JobFeature] = Field(default_factory=list)
     passives: list[JobPassive] = Field(default_factory=list)
     spells: list[Spell] = Field(default_factory=list)
     proficiencies: list[Proficiency] = Field(default_factory=list)
+    resources: list[ResourceDefinition] = Field(default_factory=list)
 
 
 class CharacterJob(BaseModel):
@@ -41,6 +52,7 @@ class CharacterJob(BaseModel):
     spells: list[Spell] = Field(default_factory=list)
     spell_progression: CasterProgression
     equipment: dict[str, EquipmentPiece] = Field(default_factory=dict)
+    resources: list[ResourceDefinition] = Field(default_factory=list)
 
     def get_features_for_level(self, level: int) -> list[JobFeature]:
         """Return unlocked features up to the given level."""
@@ -55,13 +67,14 @@ class CharacterJob(BaseModel):
         return [f for f in self.passives if f.level_required <= level]
 
     def apply_specialization(self, subclass: JobSpecialization) -> Self:
-        """Modify this job by incorporating subclass features, spells, and proficiencies."""
+        """Modify this job by incorporating subclass features, spells, proficiencies, and resources."""
         updated = self.model_copy(deep=True)
         updated.specialization = subclass.name
         updated.features += subclass.features
         updated.passives += subclass.passives
         updated.spells += subclass.spells
         updated.proficiencies += subclass.proficiencies
+        updated.resources += subclass.resources
         return updated
 
 
