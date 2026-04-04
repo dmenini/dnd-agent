@@ -99,6 +99,7 @@ class FeatureId(str, Enum):
     LESSER_RESTORATION = "lesser_restoration"
     MELEE_SPELL_ATTACK = "melee_spell_attack"
     SPIRITUAL_SWORD = "spiritual_sword"
+    SPIRITUAL_WEAPON = "spiritual_weapon"
     DIVINE_FAVOR = "divine_favor"
     SHIELD_OF_FAITH = "shield_of_faith"
     MAGIC_WEAPON = "magic_weapon"

@@ -316,3 +316,82 @@ def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:
 
     # Target should have the buff
     assert EffectService.has_condition(orc, StatusType.MAGIC_WEAPON)
+
+
+def test_war_domain_spiritual_weapon(actor: Character, orc: Character) -> None:
+    """Test that War Domain clerics learn Spiritual Weapon spell at level 3."""
+    from agent.actions.common.evocation import EvocationSpellAction  # noqa: PLC0415
+
+    # Start at level 2 before changing job
+    actor.level = 2
+
+    job = Cleric.apply_specialization(WarDomain)
+    JobService.change_job(actor, job)
+
+    # At level 2, should not have Spiritual Weapon
+    spells = [a.id for a in actor.spells]
+    assert FeatureId.SPIRITUAL_WEAPON not in spells
+
+    # Level up to 3
+    from agent.services.level_service import LevelService  # noqa: PLC0415
+
+    LevelService.level_up(actor)
+    assert actor.level == 3
+
+    # Should now have Spiritual Weapon
+    spells = [a.id for a in actor.spells]
+    assert FeatureId.SPIRITUAL_WEAPON in spells
+
+    # Find the Spiritual Weapon spell
+    spiritual_weapon = next((s for s in actor.spells if s.id == FeatureId.SPIRITUAL_WEAPON), None)
+    assert spiritual_weapon is not None
+    assert spiritual_weapon.name == "Spiritual Weapon"
+
+    # Check it's a bonus action evocation spell
+    assert spiritual_weapon.category == ActionCategory.BONUS
+    assert isinstance(spiritual_weapon, EvocationSpellAction)
+
+    # Check spell properties
+    assert spiritual_weapon.targeting == TargetingType.SINGLE
+    assert spiritual_weapon.range == 60  # 60 feet as per D&D 5e
+
+    # Check the evocation details
+    evo = spiritual_weapon.evocation
+    assert evo.name == "Spiritual Weapon"
+    assert evo.duration == 10  # 1 minute = 10 rounds
+    assert len(evo.features) == 2  # Attack and move features
+
+    # Check evocation has attack on cast
+    assert evo.on_cast_use == FeatureId.MELEE_SPELL_ATTACK
+
+    # Test casting creates the evocation
+    from agent.models.position import Position  # noqa: PLC0415
+
+    ctx = CombatContext(enemies=[orc])
+    summon_position = Position(x=5, y=5)
+
+    # Position orc at the exact same spot to ensure it's within melee range
+    orc.combat.pos = Position(x=5, y=5)
+
+    # Set up a map for the test with updated positions
+    from agent.models.map import GameMap  # noqa: PLC0415
+
+    ctx.map = GameMap(
+        map="test",
+        width=20,
+        height=20,
+        characters={actor.id: actor.combat.pos, orc.id: orc.combat.pos},
+        icons={actor.id: actor.icon, orc.id: orc.icon},
+    )
+
+    spiritual_weapon.execute(actor, summon_position, ctx)
+
+    # Should have created the evocation
+    assert len(actor.evocations) == 1
+    created_evo = actor.evocations[0]
+    assert created_evo.name == "Spiritual Weapon"
+    assert created_evo.position == summon_position
+
+    # The evocation should not be able to act this turn (already attacked on cast)
+    assert not created_evo.action_economy.can_act
+    assert not created_evo.action_economy.movement_available

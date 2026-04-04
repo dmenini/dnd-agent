@@ -184,6 +184,63 @@ class SpellBuilder:
         )
 
     @staticmethod
+    def spiritual_weapon(level_required: int) -> EvocationSpell:
+        """Create a Spiritual Weapon evocation for War Domain clerics.
+
+        Creates a floating spectral weapon that can attack as a bonus action.
+        TODO: Level scaling - +1d8 per 2 spell levels above 2nd.
+        """
+        attack = JobFeature(
+            ref_id=FeatureId.MELEE_SPELL_ATTACK,
+            name="Spiritual Weapon Attack",
+            description="The spiritual weapon attacks a creature within 5 feet.",
+            kwargs={
+                "range": MELEE_RANGE,
+                "damage_dice": "1d8",
+                "damage_type": DamageType.FORCE,
+                "weapon_type": WeaponType.MAGIC,
+                "targeting": TargetingType.SINGLE,
+                "ability": AbilityType.WIS,
+                "casting_time": ActionCategory.BONUS,
+                "breaks_stealth": False,
+            },
+        )
+        move = JobFeature(
+            ref_id=FeatureId.REPOSITION_EVOCATION,
+            name="Move Spiritual Weapon",
+            description="Move the weapon up to 20 feet.",
+            kwargs={
+                "range": 20,
+                "evocation_name": "Spiritual Weapon",
+                "casting_time": ActionCategory.MOVEMENT,
+                "breaks_stealth": False,
+            },
+        )
+        evo = Evocation(
+            source_id=FeatureId.SPIRITUAL_WEAPON.value,
+            name="Spiritual Weapon",
+            duration=10,  # 1 minute = 10 rounds
+            features=[attack, move],
+            on_cast_use=attack.ref_id,
+        )
+        return EvocationSpell(
+            ref_id=FeatureId.SPIRITUAL_WEAPON,
+            name="Spiritual Weapon",
+            description=(
+                "You create a floating, spectral weapon within range that lasts for the duration. "
+                "When you cast the spell, you can make a melee spell attack against a creature within 5 feet. "
+                "On a hit, the target takes 1d8 + spellcasting modifier force damage. "
+                "As a bonus action, you can move the weapon up to 20 feet and repeat the attack."
+            ),
+            level_required=level_required,
+            level=SpellLevel.LEVEL_2,
+            targeting=TargetingType.SINGLE,
+            range=60,  # D&D 5e: 60 feet
+            evocation=evo,
+            casting_time=ActionCategory.BONUS,
+        )
+
+    @staticmethod
     def divine_favor(level_required: int) -> SupportSpell:
         return SupportSpell(
             ref_id=FeatureId.DIVINE_FAVOR,

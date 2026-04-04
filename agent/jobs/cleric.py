@@ -197,6 +197,7 @@ WarDomain = JobSpecialization(
         SpellBuilder.divine_favor(level_required=1),
         SpellBuilder.shield_of_faith(level_required=1),
         SpellBuilder.magic_weapon(level_required=3),
+        SpellBuilder.spiritual_weapon(level_required=3),
     ],
 )
 
