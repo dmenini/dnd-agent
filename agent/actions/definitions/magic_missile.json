@@ -28,6 +28,7 @@
 
   "metadata": {
     "school": "evocation",
-    "components": "V, S"
+    "components": "V, S",
+    "level_required": 1
   }
 }

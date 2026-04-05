@@ -1,15 +1,18 @@
 from collections.abc import Callable
 from enum import Enum
-from typing import Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, Field
 
+from agent.actions.composable import ComposableAction
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.attributes import Proficiency
 from agent.character.resources import CasterProgression
 from agent.equipment.inventory import EquipmentPiece
 from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, SubclassChoice
-from agent.jobs.spells import Spell
+
+if TYPE_CHECKING:
+    from agent.actions.base import Action
 
 
 class JobType(str, Enum):
@@ -33,7 +36,7 @@ class JobSpecialization(BaseModel):
     name: str
     features: list[JobFeature] = Field(default_factory=list)
     passives: list[JobPassive] = Field(default_factory=list)
-    spells: list[Spell] = Field(default_factory=list)
+    spells: list[ComposableAction] = Field(default_factory=list)
     proficiencies: list[Proficiency] = Field(default_factory=list)
     resources: list[ResourceDefinition] = Field(default_factory=list)
 
@@ -49,7 +52,7 @@ class CharacterJob(BaseModel):
     proficiencies: list[Proficiency]
     passives: list[JobPassive] = Field(default_factory=list)
     features: list[JobFeature] = Field(default_factory=list)
-    spells: list[Spell] = Field(default_factory=list)
+    spells: list[ComposableAction] = Field(default_factory=list)
     spell_progression: CasterProgression
     equipment: dict[str, EquipmentPiece] = Field(default_factory=dict)
     resources: list[ResourceDefinition] = Field(default_factory=list)
@@ -58,9 +61,16 @@ class CharacterJob(BaseModel):
         """Return unlocked features up to the given level."""
         return [f for f in self.features if f.level_required <= level]
 
-    def get_spells_for_level(self, level: int) -> list[Spell]:
-        """Return unlocked spells up to the given level."""
-        return [f for f in self.spells if f.level_required <= level]
+    def get_spells_for_level(self, level: int) -> list[ComposableAction]:
+        """Return unlocked spells up to the given level.
+
+        Spells use metadata['level_required'] for level gating.
+        """
+        return [
+            spell
+            for spell in self.spells
+            if spell.metadata.get("level_required", 1) <= level
+        ]
 
     def get_passives_for_level(self, level: int) -> list[JobPassive]:
         """Return unlocked passives up to the given level."""

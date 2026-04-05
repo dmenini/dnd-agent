@@ -25,6 +25,7 @@
   ],
 
   "metadata": {
+    "level_required": 1,
     "school": "abjuration",
     "components": "V, S, M",
     "concentration": true
