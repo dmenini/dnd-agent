@@ -153,6 +153,8 @@ def test_concentration_on_ally_targeted_spell(actor: Character, orc: Character) 
 
     # Caster loses concentration if they cast another concentration spell
     divine_favor = next((s for s in actor.spells if s.id == FeatureId.DIVINE_FAVOR), None)
+    assert divine_favor is not None
+    assert isinstance(divine_favor, ComposableAction)
     divine_favor.execute(actor, actor, ctx)  # Self-targeted spell
 
     # New concentration should be active

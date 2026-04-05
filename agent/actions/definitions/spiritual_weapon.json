@@ -1,0 +1,37 @@
+{
+  "id": "spiritual_weapon",
+  "name": "Spiritual Weapon",
+  "description": "Create a floating spectral weapon that lasts 1 minute. When you cast, it immediately attacks. As a bonus action, you can move it up to 20 feet and repeat the attack.",
+  "type": "cast_spell",
+  "category": "bonus",
+  "targeting": "position",
+  "range": 60,
+  "hits": 1,
+
+  "resolution": {
+    "type": "auto_success"
+  },
+
+  "effects": [
+    {
+      "type": "summon_evocation",
+      "evocation_id": "spiritual_weapon",
+      "on_cast_action_id": "melee_spell_attack"
+    }
+  ],
+
+  "resources": [
+    {"type": "action_economy", "category": "bonus", "action_type": "cast_spell"},
+    {"type": "spell_slot", "level": 2}
+  ],
+
+  "metadata": {
+    "level_required": 3,
+    "school": "evocation",
+    "components": "V, S",
+    "duration": "1 minute (10 rounds)",
+    "concentration": false,
+    "class": "cleric",
+    "subclass": "war_domain"
+  }
+}

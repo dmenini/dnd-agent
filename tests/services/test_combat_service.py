@@ -40,18 +40,20 @@ def test_end_round(fighter: Character) -> None:
 
 def test_end_combat_rests_abilities(fighter: Character) -> None:
     """Test end_combat calls rest on special abilities."""
-    # Get Second Wind ability
-    second_wind = next(a for a in fighter.special_abilities if a.name == "Second Wind")
+    # Second Wind uses are tracked in character resources, not on the action itself
+    # Check initial state
+    resource = fighter.get_resource("second_wind")
+    assert resource.current_uses == 0
+    assert resource.max_uses == 1
 
-    # Simulate using it (current_uses should be 0 initially, increases when used)
-    assert second_wind.current_uses == 0
-    second_wind.current_uses = 1  # Simulate one use
+    # Simulate using it
+    resource.current_uses = 1
 
     # End combat should rest it
     CombatService.end_combat(fighter)
 
     # Should be restored to 0 (unused state)
-    assert second_wind.current_uses == 0
+    assert resource.current_uses == 0
 
 
 def test_turn_lifecycle(fighter: Character) -> None:

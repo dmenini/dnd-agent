@@ -184,7 +184,7 @@ WarDomain = JobSpecialization(
         load_spell("divine_favor.json"),
         load_spell("shield_of_faith.json"),
         load_spell("magic_weapon.json"),
-        # TODO: Spiritual Weapon still needs evocation support
+        load_spell("spiritual_weapon.json"),
     ],
 )
 

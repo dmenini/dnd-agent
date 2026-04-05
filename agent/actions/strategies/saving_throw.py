@@ -38,11 +38,7 @@ class SavingThrowStrategy(ResolutionStrategy):
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         """Resolve saving throw vs caster DC."""
         # Determine DC
-        dc = (
-            actor.spell_save_dc
-            if self.use_spell_dc
-            else actor.attributes.ability_dc(self.ability, actor.level)
-        )
+        dc = actor.spell_save_dc if self.use_spell_dc else actor.attributes.ability_dc(self.ability, actor.level)
 
         # Target rolls save
         roll = RollService.save_roll(target, ability=self.ability, is_spell=self.use_spell_dc)

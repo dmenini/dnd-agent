@@ -2,7 +2,7 @@
 import pytest
 
 from agent.character.character import Character
-from agent.jobs.cleric import Cleric, LifeDomain
+from agent.jobs.cleric import Cleric, WarDomain
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
 from agent.models.enums import FeatureId
@@ -17,7 +17,7 @@ from tests.conftest import advance_turn, cheater_dice
 async def test_evocation(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
     actor.level = 3
-    JobService.change_job(actor, Cleric.apply_specialization(LifeDomain))
+    JobService.change_job(actor, Cleric.apply_specialization(WarDomain))
     orc_id = target.id
 
     starting_hp = 14
@@ -34,9 +34,9 @@ async def test_evocation(config: AgentConfig, game_map: GameMap, actor: Characte
     actor.cheater_dice = cheater_dice(value=5)
 
     # Turn 1.1: Hero summons sword
-    evo_id = FeatureId.SPIRITUAL_SWORD.value
-    evo_attack_id = FeatureId.SPIRITUAL_SWORD.value + "-" + "melee_spell_attack"
-    evo_move_id = FeatureId.SPIRITUAL_SWORD.value + "-" + FeatureId.REPOSITION_EVOCATION.value
+    evo_id = FeatureId.SPIRITUAL_WEAPON.value
+    evo_attack_id = FeatureId.SPIRITUAL_WEAPON.value + "-" + "melee_spell_attack"
+    evo_move_id = FeatureId.SPIRITUAL_WEAPON.value + "-" + FeatureId.REPOSITION_EVOCATION.value
 
     target_pos = Position(x=target.pos.x + 1, y=target.pos.y)
     state = await advance_turn(

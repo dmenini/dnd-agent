@@ -10,6 +10,7 @@ from agent.actions.base import ActionCategory, ActionType
 from agent.actions.composable import ComposableAction
 from agent.actions.effects.conditions import ApplyConditionsEffect, RemoveConditionsEffect
 from agent.actions.effects.damage import DamageEffect
+from agent.actions.effects.evocation import SummonEvocationEffect
 from agent.actions.effects.healing import HealingEffect
 from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.resources.limited_uses import LimitedUsesConsumer
@@ -97,7 +98,7 @@ class ActionLoader:
         raise ValueError(msg)
 
     @staticmethod
-    def _parse_effect(data: dict[str, Any]) -> Any:
+    def _parse_effect(data: dict[str, Any]) -> Any:  # noqa: C901
         """Parse effect applicator from dict."""
         effect_type = data["type"]
 
@@ -115,7 +116,7 @@ class ActionLoader:
             )
         if effect_type == "apply_conditions":
             # Support both string references and full StatusEffect objects
-            from agent.effects.status_effects.registry import StatusEffectRegistry
+            from agent.effects.status_effects.registry import StatusEffectRegistry  # noqa: PLC0415
 
             conditions = []
             for cond in data.get("conditions", []):
@@ -128,7 +129,7 @@ class ActionLoader:
 
             return ApplyConditionsEffect(conditions=conditions)
         if effect_type == "remove_conditions":
-            from agent.effects.status_effects.base import StatusType
+            from agent.effects.status_effects.base import StatusType  # noqa: PLC0415
 
             # Convert string condition types to StatusType enum
             condition_types = []
@@ -139,6 +140,17 @@ class ActionLoader:
                     condition_types.append(cond_type)
 
             return RemoveConditionsEffect(condition_types=condition_types)
+        if effect_type == "summon_evocation":
+            # Look up evocation template by ID
+            from agent.effects.evocations.registry import EvocationRegistry  # noqa: PLC0415
+
+            evocation_id = data["evocation_id"]
+            evocation_template = EvocationRegistry.get(evocation_id)
+            if evocation_template is None:
+                msg = f"Unknown evocation: {evocation_id}"
+                raise ValueError(msg)
+
+            return SummonEvocationEffect(evocation=evocation_template, on_cast_action_id=data.get("on_cast_action_id"))
         msg = f"Unknown effect type: {effect_type}"
         raise ValueError(msg)
 

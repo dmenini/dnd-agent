@@ -16,6 +16,7 @@ class TargetingType(str, Enum):
     SELF = "self"
     MULTI = "multi"
     ALLIES = "allies"
+    POSITION = "position"  # For evocations and position-based spells
 
 
 class FeatureId(str, Enum):

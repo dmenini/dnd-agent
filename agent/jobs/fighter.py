@@ -4,7 +4,7 @@ from agent.character.resources import CasterProgression
 from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.weapons import WeaponType
-from agent.jobs.base import CharacterJob, JobFeature, JobType
+from agent.jobs.base import CharacterJob, JobFeature, JobType, ResourceDefinition
 from agent.jobs.feature import JobPassive
 from agent.models.enums import FeatureId
 
@@ -44,6 +44,14 @@ Fighter = CharacterJob(
             description="Regain 1d10 + level HP as a bonus action once per combat.",
             level_required=1,
             uses_per_rest=1,
+        ),
+    ],
+    resources=[
+        ResourceDefinition(
+            name="second_wind",
+            calculate_max_uses=lambda level: 1,  # noqa: ARG005
+            restore_on_short_rest=True,
+            restore_on_long_rest=True,
         ),
     ],
 )

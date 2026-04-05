@@ -30,6 +30,32 @@ class ActionService:
         return has_main or has_bonus or has_movement
 
     @classmethod
+    def _has_spell_slot(cls, character: "Character", spell: Action) -> bool:
+        """Check if character has spell slot for the given spell action.
+
+        Handles both old-style spell actions (with .level attribute) and
+        ComposableActions (with SpellSlotConsumer in .resources).
+        """
+        from agent.actions.composable import ComposableAction  # noqa: PLC0415
+        from agent.actions.resources.spell_slots import SpellSlotConsumer  # noqa: PLC0415
+        from agent.character.resources import SpellLevel  # noqa: PLC0415
+
+        # For ComposableAction, check resources for SpellSlotConsumer
+        if isinstance(spell, ComposableAction):
+            for resource in spell.resources:
+                if isinstance(resource, SpellSlotConsumer):
+                    return resource.is_available(character)
+            # No spell slot consumer means it doesn't require a slot (shouldn't happen for spells)
+            return True
+
+        # For old-style spell actions, use .level attribute
+        if hasattr(spell, "level") and isinstance(spell.level, SpellLevel):
+            return character.spell_slots.has_slot(spell.level)
+
+        # Fallback: if we can't determine, assume available
+        return True
+
+    @classmethod
     def can_use_spells(cls, character: "Character") -> bool:
         """Check if character can cast spells based on armor and proficiency.
 
@@ -74,7 +100,7 @@ class ActionService:
 
         # Spells (only if slot available and armor proficiency)
         if cls.can_use_spells(character):
-            all_actions.extend(spell for spell in character.spells if character.spell_slots.has_slot(spell.level))
+            all_actions.extend(spell for spell in character.spells if cls._has_spell_slot(character, spell))
 
         # Special abilities (can have their own categories)
         all_actions += character.special_abilities

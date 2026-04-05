@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Union
+from typing import TYPE_CHECKING, Annotated, Any
 
 from pydantic import Discriminator, Field
 
 from agent.actions.base import Action, ActionCategory
 from agent.actions.effects.conditions import ApplyConditionsEffect, RemoveConditionsEffect
 from agent.actions.effects.damage import DamageEffect
+from agent.actions.effects.evocation import SummonEvocationEffect
 from agent.actions.effects.healing import HealingEffect
 from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.resources.limited_uses import LimitedUsesConsumer
@@ -38,27 +39,32 @@ class ComposableAction(Action):
     """
 
     # Composable components
-    resolution: Annotated[
-        Union[AutoSuccessStrategy, AttackRollStrategy, SavingThrowStrategy], Discriminator("type")
-    ]
+    resolution: Annotated[AutoSuccessStrategy | AttackRollStrategy | SavingThrowStrategy, Discriminator("type")]
     effects: list[
         Annotated[
-            Union[DamageEffect, HealingEffect, ApplyConditionsEffect, RemoveConditionsEffect],
+            DamageEffect | HealingEffect | ApplyConditionsEffect | RemoveConditionsEffect | SummonEvocationEffect,
             Discriminator("type"),
         ]
     ] = Field(default_factory=list)
     resources: list[
-        Annotated[
-            Union[ActionEconomyConsumer, SpellSlotConsumer, LimitedUsesConsumer], Discriminator("type")
-        ]
+        Annotated[ActionEconomyConsumer | SpellSlotConsumer | LimitedUsesConsumer, Discriminator("type")]
     ] = Field(default_factory=list)
     level: int | None = 1
 
-    def execute(self, actor: Character, target: Character, ctx: CombatContext) -> None:
-        """Execute the action using composable primitives."""
-        # Fire start events
-        TraitService.trigger_event(actor, EventType.COMBAT_START, actor, target, ctx)
-        TraitService.trigger_event(target, EventType.COMBAT_START, actor, target, ctx)
+    def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:
+        """Execute the action using composable primitives.
+
+        Args:
+            actor: Character performing the action
+            target: Target of the action (Character for most actions, Position for evocations)
+            ctx: Combat context
+        """
+        # Fire start events (only for Character targets)
+        from agent.models.position import Position  # noqa: PLC0415
+
+        if not isinstance(target, Position):
+            TraitService.trigger_event(actor, EventType.COMBAT_START, actor, target, ctx)
+            TraitService.trigger_event(target, EventType.COMBAT_START, actor, target, ctx)
 
         # Handle concentration before resolving
         requires_concentration = self.metadata.get("concentration", False)
@@ -66,16 +72,18 @@ class ComposableAction(Action):
             self._handle_concentration(actor)
 
         # Resolve (determine success/failure)
-        success = self.resolution.resolve(actor, target, ctx)
+        # For position-based targeting (evocations), skip resolution and auto-succeed
+        success = True if isinstance(target, Position) else self.resolution.resolve(actor, target, ctx)
 
         # Apply effects (if successful, or if apply_on_failure is True)
         if success or self.resolution.apply_on_failure:
             for effect in self.effects:
                 effect.apply(actor, target, ctx)
 
-        # Fire end events
-        TraitService.trigger_event(actor, EventType.COMBAT_END, actor, target, ctx)
-        TraitService.trigger_event(target, EventType.COMBAT_END, actor, target, ctx)
+        # Fire end events (only for Character targets)
+        if not isinstance(target, Position):
+            TraitService.trigger_event(actor, EventType.COMBAT_END, actor, target, ctx)
+            TraitService.trigger_event(target, EventType.COMBAT_END, actor, target, ctx)
 
     def _handle_concentration(self, actor: Character) -> None:
         """Break existing concentration and set up new concentration."""
@@ -104,7 +112,7 @@ class ComposableAction(Action):
                 # Note: We need the actor, not just action_economy
                 # This is a limitation - we'll need to refactor this slightly
                 # For now, just check action economy consumers
-                from agent.actions.resources.action_economy import ActionEconomyConsumer
+                from agent.actions.resources.action_economy import ActionEconomyConsumer  # noqa: PLC0415
 
                 if isinstance(consumer, ActionEconomyConsumer):
                     if self.category == ActionCategory.STANDARD:
