@@ -81,7 +81,6 @@ class FeatureId(str, Enum):
     REGENERATION = "regeneration"
     LIFE_STEAL = "life_steal"
     ARCANE_RECOVERY = "arcane_recovery"
-    DIVINE_RESTORATION = "divine_restoration"
     PRESERVE_LIFE = "preserve_life"
 
     # Reflection & Retaliation

@@ -14,7 +14,7 @@ def test_cleric(actor: Character) -> None:
     JobService.change_job(actor, job)
 
     abilities = [a.id for a in actor.special_abilities]
-    assert FeatureId.DIVINE_RESTORATION in abilities
+    assert FeatureId.PRESERVE_LIFE in abilities
 
     spells = [a.id for a in actor.spells]
     assert FeatureId.BLESS in spells

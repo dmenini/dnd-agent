@@ -137,7 +137,7 @@ LifeDomain = JobSpecialization(
     ],
     features=[
         JobFeature(
-            ref_id=FeatureId.DIVINE_RESTORATION,
+            ref_id=FeatureId.PRESERVE_LIFE,
             name="Channel Divinity - Preserve Life",
             description=(
                 "Once per combat, restore a number of hit points equal to five times your cleric level, "

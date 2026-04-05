@@ -100,8 +100,8 @@ def example_runtime_registration():
     healing = dm_creates_healing_spell()
 
     # Register and use immediately
-    ActionRegistry.register(FeatureId.DIVINE_RESTORATION, healing)
-    heal_action = ActionRegistry.create(FeatureId.DIVINE_RESTORATION)
+    ActionRegistry.register(FeatureId.PRESERVE_LIFE, healing)
+    heal_action = ActionRegistry.create(FeatureId.PRESERVE_LIFE)
     print(f"\nCreated action: {heal_action.name}")
 
 

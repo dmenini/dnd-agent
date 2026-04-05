@@ -2,7 +2,6 @@ from pathlib import Path
 
 from agent.actions.common.attack import BonusAttackAction
 from agent.actions.common.evocation import RepositionEvocationAction
-from agent.actions.jobs.cleric import DivineRestorationAction
 from agent.actions.registry import ActionRegistry
 from agent.models.enums import FeatureId
 
@@ -36,7 +35,6 @@ def register_actions() -> None:
         ActionRegistry.register(feature_id, json_path)
 
     # Legacy actions that still use Python classes
-    # TODO: Convert these to composable format when features are available
+    # TODO: Convert these to composable format
     ActionRegistry.register(FeatureId.MELEE_SPELL_ATTACK, BonusAttackAction)
     ActionRegistry.register(FeatureId.REPOSITION_EVOCATION, RepositionEvocationAction)
-    ActionRegistry.register(FeatureId.DIVINE_RESTORATION, DivineRestorationAction)  # Multi-target healing (TODO)
