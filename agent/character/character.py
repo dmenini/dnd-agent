@@ -4,8 +4,6 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, SkipValidation, computed_field, field_serializer, field_validator
 
 from agent.actions.base import Action
-from agent.actions.common.evocation import EvocationSpellAction
-from agent.actions.common.spell import AttackSpellAction, HealingSpellAction, SupportSpellAction
 from agent.actions.composable import ComposableAction
 from agent.actions.registry import ActionRegistry
 from agent.character.abilities import Abilities, AbilityType
@@ -52,9 +50,7 @@ class Character(BaseModel):
     job: CharacterJob = Fighter  # TODO: default to None
     party: Party
 
-    spells: list[
-        AttackSpellAction | SupportSpellAction | HealingSpellAction | EvocationSpellAction | ComposableAction
-    ] = Field(default_factory=list)
+    spells: list[ComposableAction] = Field(default_factory=list)
     special_abilities: list[Action] = Field(default_factory=list)
     passives: list[Trait | ModifierTrait] = Field(default_factory=list)
     evocations: list[Evocation] = Field(default_factory=list)

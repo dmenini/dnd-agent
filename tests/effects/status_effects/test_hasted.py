@@ -1,6 +1,6 @@
 import pytest
 
-from agent.actions.common.spell import SupportSpellAction
+# from agent.actions.common.spell import SupportSpellAction  # DEPRECATED: Use ComposableAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.resources import SpellLevel
