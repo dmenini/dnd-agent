@@ -1,7 +1,10 @@
 from pytest_mock import MockerFixture
 
-from agent.actions.base import ActionType
-from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction
+from agent.actions.base import ActionCategory, ActionType
+from agent.actions.composable import ComposableAction
+from agent.actions.effects.damage import DamageEffect
+from agent.actions.resources.action_economy import ActionEconomyConsumer
+from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.effects.trait_effects.damage import (
@@ -122,13 +125,18 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
     context = CombatContext(
         attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),
         damage=Damage(components=[DamageComponent(value=10, type=DamageType.PIERCING)]),
-        metadata=MainHandAttackAction(
+        metadata=ComposableAction(
+            id="main_hand_attack",
+            name="Main Hand Attack",
+            description="Attack with main hand weapon",
+            type=ActionType.ATTACK,
+            category=ActionCategory.STANDARD,
             targeting=TargetingType.SINGLE,
             range=3,
-            damage_type=DamageType.PIERCING,
-            damage_dice="1d10",
-            weapon_type=WeaponType.SIMPLE_RANGED,
-            ability=AbilityType.DEX,
+            hits=1,
+            resolution=AttackRollStrategy(ability=AbilityType.DEX, weapon_type=WeaponType.SIMPLE_RANGED),
+            effects=[DamageEffect(damage_dice="1d10", damage_type=DamageType.PIERCING, ability=AbilityType.DEX)],
+            resources=[ActionEconomyConsumer(category=ActionCategory.STANDARD, action_type=ActionType.ATTACK)],
             metadata={"slot": "main_hand"},
         ).model_dump(),
     )
@@ -141,12 +149,18 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
     context = CombatContext(
         attack_roll=DiceRoll(expression="1d20", rolls=[10, 5], total=10, raw=10, advantage=True),
         damage=Damage(components=[DamageComponent(value=10, type=DamageType.PIERCING)]),
-        metadata=OffHandAttackAction(
+        metadata=ComposableAction(
+            id="off_hand_attack",
+            name="Off Hand Attack",
+            description="Attack with off hand weapon",
+            type=ActionType.OFF_HAND_ATTACK,
+            category=ActionCategory.BONUS,
             targeting=TargetingType.SINGLE,
             range=3,
-            damage_type=DamageType.PIERCING,
-            damage_dice="1d5",
-            weapon_type=WeaponType.SIMPLE_MELEE,
+            hits=1,
+            resolution=AttackRollStrategy(ability=AbilityType.DEX, weapon_type=WeaponType.SIMPLE_MELEE),
+            effects=[DamageEffect(damage_dice="1d5", damage_type=DamageType.PIERCING, ability=AbilityType.DEX)],
+            resources=[ActionEconomyConsumer(category=ActionCategory.BONUS, action_type=ActionType.OFF_HAND_ATTACK)],
             ability=AbilityType.DEX,
             metadata={"slot": "off_hand"},
         ).model_dump(),
