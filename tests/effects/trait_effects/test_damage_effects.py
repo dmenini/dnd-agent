@@ -161,7 +161,6 @@ def test_sneak_attack_once_per_turn(actor: Character, target: Character) -> None
             resolution=AttackRollStrategy(ability=AbilityType.DEX, weapon_type=WeaponType.SIMPLE_MELEE),
             effects=[DamageEffect(damage_dice="1d5", damage_type=DamageType.PIERCING, ability=AbilityType.DEX)],
             resources=[ActionEconomyConsumer(category=ActionCategory.BONUS, action_type=ActionType.OFF_HAND_ATTACK)],
-            ability=AbilityType.DEX,
             metadata={"slot": "off_hand"},
         ).model_dump(),
     )

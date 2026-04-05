@@ -20,7 +20,7 @@ class Evocation(BaseModel):
         # Lazy import to avoid circular dependency
         from agent.actions.common.evocation import RepositionEvocationAction  # noqa: PLC0415
 
-        actions = []
+        actions: list[Action] = []
 
         # All evocations have repositioning (like characters have movement)
         reposition = RepositionEvocationAction(

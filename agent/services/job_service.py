@@ -6,7 +6,6 @@ from agent.character.abilities import AbilityType
 from agent.jobs.base import CharacterJob, JobFeature
 from agent.jobs.feature import JobPassive
 from agent.logs.log_event import LogLevel
-from agent.models.enums import FeatureId
 from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:

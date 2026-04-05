@@ -1,22 +1,19 @@
 import pytest
 
-# from agent.actions.common.spell import SupportSpellAction  # DEPRECATED: Use ComposableAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
-from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import StatusType
-from agent.effects.status_effects.collection import Hasted
 from agent.jobs.wizard import Wizard
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
-from agent.models.enums import FeatureId, TargetingType
+from agent.models.enums import FeatureId
 from agent.models.map import GameMap
 from agent.models.state import State
 from agent.services.job_service import JobService
 from tests.conftest import advance_turn, cheater_dice
 
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="Needs conversion to ComposableAction - awaiting Haste spell implementation")
 @pytest.mark.asyncio
 async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     actor.cheater_dice = None
@@ -24,17 +21,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     hero_id = actor.id
     orc_id = target.id
 
-    haste = SupportSpellAction(
-        id=FeatureId.HASTE.value,
-        name="Haste",
-        description="Gain 1 extra action on the next 2 turns",
-        range=1,
-        targeting=TargetingType.SELF,
-        apply_conditions=[Hasted.with_duration(1)],
-        level=SpellLevel.LEVEL_1,
-        ability=AbilityType.WIS,
-    )
-    actor.spells = [haste]
+    # TODO: Implement Haste as ComposableAction and update this test
 
     state = State(
         map=game_map,

@@ -29,4 +29,4 @@ def test_preserve_life(actor: Character, target: Character) -> None:
 
     # Finalize action consumes resources
     action.finalize(actor)
-    assert not action.is_available(actor.action_economy, actor)
+    assert not action.is_available(actor.action_economy)

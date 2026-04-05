@@ -114,7 +114,9 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
             damage_type = DamageType(damage_type)
         if damage_type:
             context.damage.components.append(DamageComponent(value=result, type=damage_type, operation="add"))
-            actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
+            actor.log_event(
+                f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL
+            )
 
 
 @register_effect()

@@ -12,13 +12,12 @@ from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
-from agent.equipment.weapons import MeleeWeapon, RangedWeapon, Weapon, WeaponHandling
-from agent.models.enums import TargetingType
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.services.evocation_service import EvocationService
 
 if TYPE_CHECKING:
-    from agent.character.character import Character
     from agent.character.attributes import Attributes
+    from agent.character.character import Character
 
 
 class ActionService:
@@ -26,7 +25,7 @@ class ActionService:
 
     @staticmethod
     def weapon_to_action(
-        weapon: Weapon,
+        weapon: MeleeWeapon | RangedWeapon,
         action_id: str,
         name: str,
         category: ActionCategory,
@@ -57,7 +56,7 @@ class ActionService:
         # Determine ability (finesse weapons can use STR or DEX, player chooses best)
         ability = weapon.ability
         if isinstance(weapon, MeleeWeapon) and weapon.finesse and abilities:
-            from agent.character.abilities import AbilityType
+            from agent.character.abilities import AbilityType  # noqa: PLC0415
 
             ability = AbilityType.STR if abilities.strength >= abilities.dexterity else AbilityType.DEX
 
