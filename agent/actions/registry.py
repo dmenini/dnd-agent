@@ -5,20 +5,40 @@ from agent.models.enums import FeatureId
 
 
 class ActionRegistry:
-    _registry: dict[FeatureId, type[Action] | str] = {}  # Can be class or JSON path
+    """Registry for actions - supports classes, JSON paths, and direct instances.
+
+    This allows:
+    1. Legacy Python classes (for complex logic)
+    2. JSON file paths (for testing/development)
+    3. Pre-built Action instances (for DM dynamic generation)
+    """
+
+    _registry: dict[FeatureId, type[Action] | str | Action] = {}
 
     @classmethod
-    def register(cls, id_: FeatureId, action_cls: type[Action] | str) -> None:
-        """Register an action class or JSON path."""
-        cls._registry[id_] = action_cls
+    def register(cls, id_: FeatureId, action: type[Action] | str | Action) -> None:
+        """Register an action class, JSON path, or action instance.
+
+        Args:
+            id_: The feature ID
+            action: Can be:
+                - A Python class (legacy)
+                - A string path to JSON (testing)
+                - An Action instance (DM dynamic generation)
+        """
+        cls._registry[id_] = action
 
     @classmethod
     def create(cls, id_: FeatureId, **kwargs: Any) -> Action:
-        """Create action instance from class or JSON definition."""
+        """Create action instance from registry.
+
+        Returns:
+            Action instance ready to use
+        """
         registered = cls._registry[id_]
 
         if isinstance(registered, str):
-            # It's a JSON path - load composable action
+            # It's a JSON path - load composable action (for testing)
             from agent.actions.loader import ActionLoader  # noqa: PLC0415
 
             action = ActionLoader.from_file(registered)
@@ -27,6 +47,10 @@ class ActionRegistry:
                 if hasattr(action, key):
                     setattr(action, key, value)
             return action
-        else:
-            # It's a class - instantiate normally
+        elif isinstance(registered, type):
+            # It's a class - instantiate normally (legacy)
             return registered(id=id_.value, **kwargs)
+        else:
+            # It's already an Action instance (DM dynamic generation)
+            # Return a copy to avoid shared state issues
+            return registered.model_copy(deep=True)

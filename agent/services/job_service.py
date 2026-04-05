@@ -154,13 +154,23 @@ class JobService:
 
         if spell.ref_id not in {a.id for a in character.spells}:
             spell.ability = spell.ability or character.attributes.spellcasting_ability
-            # Use BonusSupportSpellAction for bonus action support spells
-            if spell.spell_type == SpellType.SUPPORT and spell.casting_time == ActionCategory.BONUS:
-                action = BonusSupportSpellAction(id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
-            else:
-                action = spell_action_map[spell.spell_type](id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
-            character.spells.append(action)  # type: ignore[arg-type]
-            character.log_event(f"{character.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
+
+            # Load action from registry - will return ComposableAction if registered, else fall back
+            from agent.actions.registry import ActionRegistry
+
+            try:
+                # Try to load from registry (composable or legacy)
+                action = ActionRegistry.create(spell.ref_id)
+                character.spells.append(action)  # type: ignore[arg-type]
+                character.log_event(f"{character.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
+            except KeyError:
+                # Not registered yet - fall back to old spell action classes
+                if spell.spell_type == SpellType.SUPPORT and spell.casting_time == ActionCategory.BONUS:
+                    action = BonusSupportSpellAction(id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
+                else:
+                    action = spell_action_map[spell.spell_type](id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
+                character.spells.append(action)  # type: ignore[arg-type]
+                character.log_event(f"{character.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
 
     @classmethod
     def remove_spell(cls, character: "Character", spell: Spell) -> None:
