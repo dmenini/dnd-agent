@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.effects.base import EffectApplicator
 from agent.character.abilities import AbilityType
@@ -33,6 +33,7 @@ class HealingEffect(EffectApplicator):
     - {proficiency_bonus} → actor.attributes.proficiency_bonus
     """
 
+    type: Literal["healing"] = "healing"
     heal_dice: str
     ability: AbilityType | None = None
 
@@ -76,7 +77,7 @@ class HealingEffect(EffectApplicator):
             target.log_event(
                 f"{actor.name} heals {target.name} for {heal_amount} HP ({target.attributes.hp}/{target.max_hp}).",
                 log_type=LogLevel.DETAIL,
-                icon=Icon.EFFECT_APPLIED
+                icon=Icon.EFFECT_APPLIED,
             )
         else:
             actor.log_event(f"{target.name} is already at full health", icon=Icon.WARNING)

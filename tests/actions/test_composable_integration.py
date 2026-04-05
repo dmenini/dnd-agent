@@ -1,15 +1,14 @@
 """Integration tests for composable actions in combat."""
 
-import pytest
 from pathlib import Path
 
 from agent.actions.loader import ActionLoader
+from agent.character.character import Character
 from agent.models.context import CombatContext
 from agent.models.position import Position
-from agent.character.character import Character
 
 
-def test_longsword_attack_execution(fighter: Character, wizard: Character):
+def test_longsword_attack_execution(fighter: Character, wizard: Character) -> None:
     """Test executing a longsword attack with composable action."""
     # Load action from JSON
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
@@ -45,7 +44,7 @@ def test_longsword_attack_execution(fighter: Character, wizard: Character):
     assert not attacker.action_economy.can_use_standard(action.type)
 
 
-def test_fire_bolt_execution(wizard: Character, fighter: Character):
+def test_fire_bolt_execution(wizard: Character, fighter: Character) -> None:
     """Test executing fire bolt spell with composable action."""
     # Load action from JSON
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "fire_bolt.json"
@@ -70,6 +69,7 @@ def test_fire_bolt_execution(wizard: Character, fighter: Character):
     # If hit, verify fire damage was applied
     if ctx.is_hit:
         assert target.attributes.hp < initial_hp
+        assert ctx.damage is not None
         assert ctx.damage.components[0].type.value == "fire"
 
     # Finalize
@@ -79,7 +79,7 @@ def test_fire_bolt_execution(wizard: Character, fighter: Character):
     assert not caster.action_economy.can_use_standard(action.type)
 
 
-def test_cure_wounds_execution(cleric: Character, fighter: Character):
+def test_cure_wounds_execution(cleric: Character, fighter: Character) -> None:
     """Test executing cure wounds with composable action."""
     # Load action from JSON
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "cure_wounds.json"
@@ -112,7 +112,7 @@ def test_cure_wounds_execution(cleric: Character, fighter: Character):
     assert not healer.action_economy.can_use_standard(action.type)
 
 
-def test_composable_action_availability(fighter: Character):
+def test_composable_action_availability(fighter: Character) -> None:
     """Test action availability checking."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
     action = ActionLoader.from_file(json_path)

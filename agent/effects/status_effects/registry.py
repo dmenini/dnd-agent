@@ -1,6 +1,6 @@
 """Registry for pre-built status effects."""
 
-from agent.effects.status_effects.base import StatusEffect, StatusType
+from agent.effects.status_effects.base import StatusEffect
 from agent.effects.status_effects.collection import (
     Blessed,
     DivineFavored,
@@ -24,7 +24,8 @@ class StatusEffectRegistry:
         """Get status effect by name."""
         effect = cls._effects.get(name.lower())
         if not effect:
-            raise KeyError(f"Status effect '{name}' not found in registry")
+            msg = f"Status effect '{name}' not found in registry"
+            raise KeyError(msg)
         # Return a copy with default duration
         return effect.model_copy()
 

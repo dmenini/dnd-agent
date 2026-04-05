@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.resources.base import ResourceConsumer
@@ -18,6 +18,7 @@ class ActionEconomyConsumer(ResourceConsumer):
     This is used by almost every action to consume the appropriate action type.
     """
 
+    type: Literal["action_economy"] = "action_economy"
     category: ActionCategory
     action_type: ActionType
     breaks_stealth: bool = True
@@ -42,11 +43,8 @@ class ActionEconomyConsumer(ResourceConsumer):
         """Check if actor has action economy available."""
         if self.category == ActionCategory.STANDARD:
             return actor.action_economy.can_use_standard(self.action_type)
-        elif self.category == ActionCategory.BONUS:
+        if self.category == ActionCategory.BONUS:
             return actor.action_economy.can_use_bonus(self.action_type)
-        elif self.category == ActionCategory.REACTION:
+        if self.category == ActionCategory.REACTION:
             return actor.action_economy.can_use_reaction()
-        elif self.category == ActionCategory.MOVEMENT:
-            return True  # Movement availability checked per-distance
-
-        return False
+        return self.category == ActionCategory.MOVEMENT  # Movement availability checked per-distance

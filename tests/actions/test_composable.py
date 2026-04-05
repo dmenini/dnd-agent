@@ -1,19 +1,17 @@
 """Tests for composable action system."""
 
-import pytest
 from pathlib import Path
 
-from agent.actions.loader import ActionLoader, ActionRegistry
-from agent.actions.composable import ComposableAction
 from agent.actions.base import ActionCategory, ActionType
-from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.actions.effects.damage import DamageEffect
+from agent.actions.loader import ActionLoader, ActionRegistry
+from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.character.abilities import AbilityType
 from agent.models.damage import DamageType
 from agent.models.enums import TargetingType
 
 
-def test_load_longsword_from_json():
+def test_load_longsword_from_json() -> None:
     """Test loading longsword attack from JSON file."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
 
@@ -37,7 +35,7 @@ def test_load_longsword_from_json():
     assert action.effects[0].damage_type == DamageType.SLASHING
 
 
-def test_load_fire_bolt_from_json():
+def test_load_fire_bolt_from_json() -> None:
     """Test loading fire bolt from JSON file."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "fire_bolt.json"
 
@@ -55,7 +53,7 @@ def test_load_fire_bolt_from_json():
     assert damage_effect.damage_type == DamageType.FIRE
 
 
-def test_action_registry():
+def test_action_registry() -> None:
     """Test action registry."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
 
@@ -67,7 +65,7 @@ def test_action_registry():
     assert retrieved.name == "Longsword Attack"
 
 
-def test_load_directory():
+def test_load_directory() -> None:
     """Test loading all actions from directory."""
     definitions_dir = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions"
 

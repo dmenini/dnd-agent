@@ -7,11 +7,11 @@ Resolution strategies determine how an action succeeds or fails:
 """
 
 from agent.actions.strategies.attack_roll import AttackRollStrategy
-from agent.actions.strategies.saving_throw import SavingThrowStrategy
 from agent.actions.strategies.auto_success import AutoSuccessStrategy
+from agent.actions.strategies.saving_throw import SavingThrowStrategy
 
 __all__ = [
     "AttackRollStrategy",
-    "SavingThrowStrategy",
     "AutoSuccessStrategy",
+    "SavingThrowStrategy",
 ]

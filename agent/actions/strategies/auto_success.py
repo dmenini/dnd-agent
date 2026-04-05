@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.strategies.base import ResolutionStrategy
 
@@ -22,6 +22,8 @@ class AutoSuccessStrategy(ResolutionStrategy):
 
     No rolls, no checks - just apply the effects.
     """
+
+    type: Literal["auto_success"] = "auto_success"
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:  # noqa: ARG002
         """Always return True."""

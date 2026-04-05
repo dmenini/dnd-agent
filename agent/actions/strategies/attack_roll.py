@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.strategies.base import ResolutionStrategy
 from agent.character.abilities import AbilityType
@@ -30,18 +30,14 @@ class AttackRollStrategy(ResolutionStrategy):
     4. Log results
     """
 
+    type: Literal["attack_roll"] = "attack_roll"
     ability: AbilityType
     weapon_type: WeaponType
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         """Resolve attack roll vs target AC."""
         # Roll attack
-        roll = RollService.attack_roll(
-            actor,
-            ability=self.ability,
-            weapon=self.weapon_type,
-            target=target
-        )
+        roll = RollService.attack_roll(actor, ability=self.ability, weapon=self.weapon_type, target=target)
 
         # Check for critical
         ctx.is_critical = ctx.is_critical or roll.raw >= actor.attributes.crit_roll()
@@ -59,10 +55,7 @@ class AttackRollStrategy(ResolutionStrategy):
         if ctx.is_critical:
             actor.log_event(f"Rolls a NATURAL {roll.raw}! Critical hit!", icon=Icon.ROLL)
         else:
-            actor.log_event(
-                f"Attack roll {roll.expression}: {roll.total} vs AC {target.armor_class}",
-                icon=Icon.ROLL
-            )
+            actor.log_event(f"Attack roll {roll.expression}: {roll.total} vs AC {target.armor_class}", icon=Icon.ROLL)
 
             if ctx.is_hit:
                 actor.log_event("Attack roll passed → Hits target!", icon=Icon.ATTACK, show_ai=True)

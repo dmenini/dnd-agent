@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field
 
@@ -25,6 +25,7 @@ class ApplyConditionsEffect(EffectApplicator):
     - Weapon effects (poison, stunning strike)
     """
 
+    type: Literal["apply_conditions"] = "apply_conditions"
     conditions: list[StatusEffect] = Field(default_factory=list)
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
@@ -32,10 +33,7 @@ class ApplyConditionsEffect(EffectApplicator):
         for condition in self.conditions:
             success = EffectService.try_apply_condition(target, condition)
             if success:
-                actor.log_event(
-                    f"Applied {condition.type.value} to {target.name}",
-                    icon=Icon.EFFECT_APPLIED
-                )
+                actor.log_event(f"Applied {condition.type.value} to {target.name}", icon=Icon.EFFECT_APPLIED)
 
 
 class RemoveConditionsEffect(EffectApplicator):
@@ -47,6 +45,7 @@ class RemoveConditionsEffect(EffectApplicator):
     - Paladin Lay on Hands (can remove disease/poison)
     """
 
+    type: Literal["remove_conditions"] = "remove_conditions"
     condition_types: list[StatusType] = Field(default_factory=list)
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
@@ -55,8 +54,5 @@ class RemoveConditionsEffect(EffectApplicator):
         for cond_type in self.condition_types:
             if EffectService.has_condition(target, cond_type):
                 EffectService.remove_condition(target, cond_type)
-                actor.log_event(
-                    f"Removed {cond_type.value} from {target.name}",
-                    icon=Icon.EFFECT_EXPIRED
-                )
+                actor.log_event(f"Removed {cond_type.value} from {target.name}", icon=Icon.EFFECT_EXPIRED)
                 break  # Only remove first match

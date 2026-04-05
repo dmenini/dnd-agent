@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.strategies.base import ResolutionStrategy
 from agent.character.abilities import AbilityType
@@ -31,16 +31,18 @@ class SavingThrowStrategy(ResolutionStrategy):
     effects on success (half damage). That's handled by the effect, not here.
     """
 
+    type: Literal["saving_throw"] = "saving_throw"
     ability: AbilityType  # Which save: DEX, CON, WIS, etc.
     use_spell_dc: bool = True  # Use spell DC or ability DC
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         """Resolve saving throw vs caster DC."""
         # Determine DC
-        if self.use_spell_dc:
-            dc = actor.spell_save_dc
-        else:
-            dc = actor.attributes.ability_dc(self.ability)
+        dc = (
+            actor.spell_save_dc
+            if self.use_spell_dc
+            else actor.attributes.ability_dc(self.ability, actor.level)
+        )
 
         # Target rolls save
         roll = RollService.save_roll(target, ability=self.ability, is_spell=self.use_spell_dc)
@@ -55,14 +57,11 @@ class SavingThrowStrategy(ResolutionStrategy):
         ctx.is_hit = ctx.save_roll.total < dc
 
         # Logging
-        actor.log_event(
-            f"{self.ability.name} save throw {roll.expression}: {roll.total} vs DC {dc}",
-            icon=Icon.ROLL
-        )
+        actor.log_event(f"{self.ability.name} save throw {roll.expression}: {roll.total} vs DC {dc}", icon=Icon.ROLL)
 
         if ctx.is_hit:
             actor.log_event("Save roll failed → Hits target!", icon=Icon.ATTACK, show_ai=True)
         else:
-            actor.log_event(f"Save roll passed → Target resists!", icon=Icon.DEFENSE, show_ai=True)
+            actor.log_event("Save roll passed → Target resists!", icon=Icon.DEFENSE, show_ai=True)
 
         return ctx.is_hit

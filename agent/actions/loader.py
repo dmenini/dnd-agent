@@ -6,17 +6,17 @@ import json
 from pathlib import Path
 from typing import Any
 
-from agent.actions.composable import ComposableAction
 from agent.actions.base import ActionCategory, ActionType
+from agent.actions.composable import ComposableAction
+from agent.actions.effects.conditions import ApplyConditionsEffect, RemoveConditionsEffect
 from agent.actions.effects.damage import DamageEffect
 from agent.actions.effects.healing import HealingEffect
-from agent.actions.effects.conditions import ApplyConditionsEffect, RemoveConditionsEffect
 from agent.actions.resources.action_economy import ActionEconomyConsumer
-from agent.actions.resources.spell_slots import SpellSlotConsumer
 from agent.actions.resources.limited_uses import LimitedUsesConsumer
+from agent.actions.resources.spell_slots import SpellSlotConsumer
 from agent.actions.strategies.attack_roll import AttackRollStrategy
-from agent.actions.strategies.saving_throw import SavingThrowStrategy
 from agent.actions.strategies.auto_success import AutoSuccessStrategy
+from agent.actions.strategies.saving_throw import SavingThrowStrategy
 from agent.character.abilities import AbilityType
 from agent.character.resources import SpellLevel
 from agent.equipment.weapons import WeaponType
@@ -75,7 +75,8 @@ class ActionLoader:
     @staticmethod
     def from_file(path: str | Path) -> ComposableAction:
         """Load ComposableAction from JSON file."""
-        with open(path) as f:
+        file_path = Path(path)
+        with file_path.open() as f:
             data = json.load(f)
         return ActionLoader.from_dict(data)
 
@@ -85,19 +86,15 @@ class ActionLoader:
         strategy_type = data["type"]
 
         if strategy_type == "attack_roll":
-            return AttackRollStrategy(
-                ability=AbilityType(data["ability"]),
-                weapon_type=WeaponType(data["weapon_type"])
-            )
-        elif strategy_type == "saving_throw":
+            return AttackRollStrategy(ability=AbilityType(data["ability"]), weapon_type=WeaponType(data["weapon_type"]))
+        if strategy_type == "saving_throw":
             return SavingThrowStrategy(
-                ability=AbilityType(data["ability"]),
-                use_spell_dc=data.get("use_spell_dc", True)
+                ability=AbilityType(data["ability"]), use_spell_dc=data.get("use_spell_dc", True)
             )
-        elif strategy_type == "auto_success":
+        if strategy_type == "auto_success":
             return AutoSuccessStrategy()
-        else:
-            raise ValueError(f"Unknown resolution type: {strategy_type}")
+        msg = f"Unknown resolution type: {strategy_type}"
+        raise ValueError(msg)
 
     @staticmethod
     def _parse_effect(data: dict[str, Any]) -> Any:
@@ -109,14 +106,14 @@ class ActionLoader:
                 damage_dice=data["damage_dice"],
                 damage_type=DamageType(data["damage_type"]),
                 ability=AbilityType(data["ability"]) if "ability" in data and data["ability"] is not None else None,
-                half_on_save=data.get("half_on_save", False)
+                half_on_save=data.get("half_on_save", False),
             )
-        elif effect_type == "healing":
+        if effect_type == "healing":
             return HealingEffect(
                 heal_dice=data["heal_dice"],
-                ability=AbilityType(data["ability"]) if "ability" in data and data["ability"] is not None else None
+                ability=AbilityType(data["ability"]) if "ability" in data and data["ability"] is not None else None,
             )
-        elif effect_type == "apply_conditions":
+        if effect_type == "apply_conditions":
             # Support both string references and full StatusEffect objects
             from agent.effects.status_effects.registry import StatusEffectRegistry
 
@@ -130,7 +127,7 @@ class ActionLoader:
                     raise NotImplementedError("Full StatusEffect objects not yet supported in JSON")
 
             return ApplyConditionsEffect(conditions=conditions)
-        elif effect_type == "remove_conditions":
+        if effect_type == "remove_conditions":
             from agent.effects.status_effects.base import StatusType
 
             # Convert string condition types to StatusType enum
@@ -142,8 +139,8 @@ class ActionLoader:
                     condition_types.append(cond_type)
 
             return RemoveConditionsEffect(condition_types=condition_types)
-        else:
-            raise ValueError(f"Unknown effect type: {effect_type}")
+        msg = f"Unknown effect type: {effect_type}"
+        raise ValueError(msg)
 
     @staticmethod
     def _parse_resource(data: dict[str, Any]) -> Any:
@@ -154,18 +151,14 @@ class ActionLoader:
             return ActionEconomyConsumer(
                 category=ActionCategory(data["category"]),
                 action_type=ActionType(data.get("action_type", "attack")),
-                breaks_stealth=data.get("breaks_stealth", True)
+                breaks_stealth=data.get("breaks_stealth", True),
             )
-        elif resource_type == "spell_slot":
-            return SpellSlotConsumer(
-                level=SpellLevel(data["level"])
-            )
-        elif resource_type == "limited_uses":
-            return LimitedUsesConsumer(
-                resource_name=data["resource_name"]
-            )
-        else:
-            raise ValueError(f"Unknown resource type: {resource_type}")
+        if resource_type == "spell_slot":
+            return SpellSlotConsumer(level=SpellLevel(data["level"]))
+        if resource_type == "limited_uses":
+            return LimitedUsesConsumer(resource_name=data["resource_name"])
+        msg = f"Unknown resource type: {resource_type}"
+        raise ValueError(msg)
 
 
 class ActionRegistry:

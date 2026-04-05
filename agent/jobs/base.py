@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Self
+from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from agent.actions.composable import ComposableAction
 from agent.character.abilities import AbilityType, SkillType
@@ -10,9 +10,6 @@ from agent.character.attributes import Proficiency
 from agent.character.resources import CasterProgression
 from agent.equipment.inventory import EquipmentPiece
 from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, SubclassChoice
-
-if TYPE_CHECKING:
-    from agent.actions.base import Action
 
 
 class JobType(str, Enum):
@@ -26,8 +23,10 @@ class JobType(str, Enum):
 class ResourceDefinition(BaseModel):
     """Defines a limited-use resource for a character class (Channel Divinity, Ki, Rage, etc.)."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     name: str
-    calculate_max_uses: Callable[[int], int]
+    calculate_max_uses: Callable[[int], int] = Field(default=lambda level: 1, exclude=True)
     restore_on_short_rest: bool = False
     restore_on_long_rest: bool = True
 
@@ -66,11 +65,7 @@ class CharacterJob(BaseModel):
 
         Spells use metadata['level_required'] for level gating.
         """
-        return [
-            spell
-            for spell in self.spells
-            if spell.metadata.get("level_required", 1) <= level
-        ]
+        return [spell for spell in self.spells if spell.metadata.get("level_required", 1) <= level]
 
     def get_passives_for_level(self, level: int) -> list[JobPassive]:
         """Return unlocked passives up to the given level."""

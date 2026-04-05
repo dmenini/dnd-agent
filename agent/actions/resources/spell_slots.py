@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.resources.base import ResourceConsumer
 from agent.character.resources import SpellLevel
@@ -17,6 +17,7 @@ class SpellSlotConsumer(ResourceConsumer):
     Used by all spells that cost spell slots (cantrips don't consume slots).
     """
 
+    type: Literal["spell_slot"] = "spell_slot"
     level: SpellLevel
 
     def consume(self, actor: Character) -> None:
@@ -28,4 +29,4 @@ class SpellSlotConsumer(ResourceConsumer):
         """Check if actor has spell slot available."""
         if self.level == SpellLevel.CANTRIP:
             return True  # Cantrips don't require slots
-        return actor.spell_slots.available(self.level) > 0
+        return actor.spell_slots.has_slot(self.level)

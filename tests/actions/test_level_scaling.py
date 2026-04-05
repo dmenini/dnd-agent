@@ -66,7 +66,6 @@ def test_second_wind_different_levels() -> None:
 
         # Damage the fighter
         fighter.attributes.hp = 20
-        original_hp = fighter.attributes.hp
 
         # Use Second Wind
         action = ActionRegistry.create(FeatureId.SECOND_WIND)
@@ -79,4 +78,6 @@ def test_second_wind_different_levels() -> None:
         expected_min = 1 + level
         expected_max = 10 + level
 
-        assert expected_min <= heal_amount <= expected_max, f"Level {level}: heal {heal_amount} not in [{expected_min}, {expected_max}]"
+        assert expected_min <= heal_amount <= expected_max, (
+            f"Level {level}: heal {heal_amount} not in [{expected_min}, {expected_max}]"
+        )

@@ -47,10 +47,9 @@ class ActionRegistry:
                 if hasattr(action, key):
                     setattr(action, key, value)
             return action
-        elif isinstance(registered, type):
+        if isinstance(registered, type):
             # It's a class - instantiate normally (legacy)
             return registered(id=id_.value, **kwargs)
-        else:
-            # It's already an Action instance (DM dynamic generation)
-            # Return a copy to avoid shared state issues
-            return registered.model_copy(deep=True)
+        # It's already an Action instance (DM dynamic generation)
+        # Return a copy to avoid shared state issues
+        return registered.model_copy(deep=True)

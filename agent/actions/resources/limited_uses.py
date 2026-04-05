@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.resources.base import ResourceConsumer
 
@@ -21,17 +21,18 @@ class LimitedUsesConsumer(ResourceConsumer):
     The resource is tracked on the character by name.
     """
 
+    type: Literal["limited_uses"] = "limited_uses"
     resource_name: str  # e.g., "second_wind", "rage", "channel_divinity"
 
     def consume(self, actor: Character) -> None:
         """Consume from limited-use resource."""
-        resource = actor.resources.get(self.resource_name)
+        resource = actor.get_resource(self.resource_name)
         if resource:
             resource.consume()
 
     def is_available(self, actor: Character) -> bool:
         """Check if actor has uses remaining."""
-        resource = actor.resources.get(self.resource_name)
+        resource = actor.get_resource(self.resource_name)
         if not resource:
             return False  # Resource doesn't exist
-        return resource.current < resource.max_uses
+        return resource.has_uses()

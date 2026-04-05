@@ -1,9 +1,9 @@
 """Test spell level gating."""
 
-from agent.jobs.cleric import Cleric
+from agent.jobs.cleric import Cleric, LifeDomain
 
 
-def test_cleric_spell_level_gating():
+def test_cleric_spell_level_gating() -> None:
     """Test that spells are properly gated by level."""
     # Level 1 cleric should only have level 1 spells
     level_1_spells = Cleric.get_spells_for_level(1)
@@ -15,7 +15,7 @@ def test_cleric_spell_level_gating():
     assert len(level_3_spells) == 1  # Sacred Flame (no level 3 spells in base cleric)
 
     # Apply Life Domain specialization
-    from agent.jobs.cleric import LifeDomain
+
     life_cleric = Cleric.apply_specialization(LifeDomain)
 
     # Level 1 Life cleric

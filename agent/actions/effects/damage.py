@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from agent.actions.effects.base import EffectApplicator
 from agent.character.abilities import AbilityType
@@ -35,6 +35,7 @@ class DamageEffect(EffectApplicator):
     - {proficiency_bonus} → actor.attributes.proficiency_bonus
     """
 
+    type: Literal["damage"] = "damage"
     damage_dice: str
     damage_type: DamageType
     ability: AbilityType | None = None
@@ -74,10 +75,7 @@ class DamageEffect(EffectApplicator):
                 ctx.damage_roll = dice.roll_once(damage_expr)
         else:
             ctx.damage_roll = RollService.damage_roll(
-                actor,
-                damage_dice=damage_expr,
-                ability=self.ability,
-                is_critical=is_critical
+                actor, damage_dice=damage_expr, ability=self.ability, is_critical=is_critical
             )
 
         # Half damage if save succeeded and half_on_save is True
@@ -87,9 +85,7 @@ class DamageEffect(EffectApplicator):
             actor.log_event(f"Target saved! Damage halved: {damage_value}", icon=Icon.DEFENSE)
 
         # Create damage object
-        ctx.damage = Damage(components=[
-            DamageComponent(value=damage_value, type=self.damage_type)
-        ])
+        ctx.damage = Damage(components=[DamageComponent(value=damage_value, type=self.damage_type)])
 
         actor.log_event(f"Damage roll: {ctx.damage_roll.total}", icon=Icon.ROLL)
 
