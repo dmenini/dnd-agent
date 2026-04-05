@@ -51,16 +51,7 @@ def _register_spiritual_weapon() -> None:
         ref_id=FeatureId.MELEE_SPELL_ATTACK,
         name="Spiritual Weapon Attack",
         description="The spiritual weapon attacks a creature within 5 feet.",
-        kwargs={
-            "range": MELEE_RANGE,
-            "damage_dice": "1d8",
-            "damage_type": DamageType.FORCE,
-            "weapon_type": "magic",
-            "targeting": TargetingType.SINGLE,
-            "ability": AbilityType.WIS,
-            "casting_time": ActionCategory.BONUS,
-            "breaks_stealth": False,
-        },
+        # No kwargs needed - melee_spell_attack.json has all the right values
     )
     move = JobFeature(
         ref_id=FeatureId.REPOSITION_EVOCATION,

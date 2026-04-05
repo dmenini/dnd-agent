@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from agent.actions.common.attack import BonusAttackAction
 from agent.actions.common.evocation import RepositionEvocationAction
 from agent.actions.registry import ActionRegistry
 from agent.models.enums import FeatureId
@@ -28,6 +27,8 @@ def register_actions() -> None:
         FeatureId.RAGE: "rage.json",
         FeatureId.WAR_PRIEST: "war_priest.json",
         FeatureId.PRESERVE_LIFE: "preserve_life.json",
+        # Evocation actions
+        FeatureId.MELEE_SPELL_ATTACK: "melee_spell_attack.json",
     }
 
     for feature_id, json_file in composable_actions.items():
@@ -36,5 +37,4 @@ def register_actions() -> None:
 
     # Legacy actions that still use Python classes
     # TODO: Convert these to composable format
-    ActionRegistry.register(FeatureId.MELEE_SPELL_ATTACK, BonusAttackAction)
     ActionRegistry.register(FeatureId.REPOSITION_EVOCATION, RepositionEvocationAction)
