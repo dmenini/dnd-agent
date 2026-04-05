@@ -226,6 +226,7 @@ def test_war_priest_feature(actor: Character, orc: Character) -> None:
     # Find the War Priest action
     war_priest = next((a for a in actor.special_abilities if a.id == FeatureId.WAR_PRIEST), None)
     assert war_priest is not None
+    assert isinstance(war_priest, ComposableAction)
     assert war_priest.name == "War Priest"
 
     # Check it's a bonus action
