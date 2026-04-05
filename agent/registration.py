@@ -2,9 +2,7 @@ from pathlib import Path
 
 from agent.actions.common.attack import BonusAttackAction
 from agent.actions.common.evocation import RepositionEvocationAction
-from agent.actions.jobs.barbarian import RageAction
-from agent.actions.jobs.cleric import DivineRestorationAction, PreserveLifeAction, WarPriestAction
-from agent.actions.jobs.wizard import ArcaneRecoveryAction
+from agent.actions.jobs.cleric import DivineRestorationAction
 from agent.actions.registry import ActionRegistry
 from agent.models.enums import FeatureId
 
@@ -24,8 +22,13 @@ def register_actions() -> None:
         FeatureId.DIVINE_FAVOR: "divine_favor.json",
         FeatureId.SHIELD_OF_FAITH: "shield_of_faith.json",
         FeatureId.MAGIC_WEAPON: "magic_weapon.json",
+        FeatureId.SPIRITUAL_WEAPON: "spiritual_weapon.json",
         # Class features
         FeatureId.SECOND_WIND: "second_wind.json",
+        FeatureId.ARCANE_RECOVERY: "arcane_recovery.json",
+        FeatureId.RAGE: "rage.json",
+        FeatureId.WAR_PRIEST: "war_priest.json",
+        FeatureId.PRESERVE_LIFE: "preserve_life.json",
     }
 
     for feature_id, json_file in composable_actions.items():
@@ -36,8 +39,4 @@ def register_actions() -> None:
     # TODO: Convert these to composable format when features are available
     ActionRegistry.register(FeatureId.MELEE_SPELL_ATTACK, BonusAttackAction)
     ActionRegistry.register(FeatureId.REPOSITION_EVOCATION, RepositionEvocationAction)
-    ActionRegistry.register(FeatureId.ARCANE_RECOVERY, ArcaneRecoveryAction)
-    ActionRegistry.register(FeatureId.RAGE, RageAction)
-    ActionRegistry.register(FeatureId.DIVINE_RESTORATION, DivineRestorationAction)
-    ActionRegistry.register(FeatureId.PRESERVE_LIFE, PreserveLifeAction)
-    ActionRegistry.register(FeatureId.WAR_PRIEST, WarPriestAction)
+    ActionRegistry.register(FeatureId.DIVINE_RESTORATION, DivineRestorationAction)  # Multi-target healing (TODO)

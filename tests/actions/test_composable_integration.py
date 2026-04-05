@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from agent.actions.loader import ActionLoader
+from agent.actions.composable import ComposableAction
 from agent.character.character import Character
 from agent.models.context import CombatContext
 from agent.models.position import Position
@@ -12,7 +12,8 @@ def test_longsword_attack_execution(fighter: Character, wizard: Character) -> No
     """Test executing a longsword attack with composable action."""
     # Load action from JSON
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
-    action = ActionLoader.from_file(json_path)
+    with json_path.open() as f:
+        action = ComposableAction.model_validate_json(f.read())
 
     # Use provided fixtures
     attacker = fighter
@@ -48,7 +49,8 @@ def test_fire_bolt_execution(wizard: Character, fighter: Character) -> None:
     """Test executing fire bolt spell with composable action."""
     # Load action from JSON
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "fire_bolt.json"
-    action = ActionLoader.from_file(json_path)
+    with json_path.open() as f:
+        action = ComposableAction.model_validate_json(f.read())
 
     # Use provided fixtures
     caster = wizard
@@ -83,7 +85,8 @@ def test_cure_wounds_execution(cleric: Character, fighter: Character) -> None:
     """Test executing cure wounds with composable action."""
     # Load action from JSON
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "cure_wounds.json"
-    action = ActionLoader.from_file(json_path)
+    with json_path.open() as f:
+        action = ComposableAction.model_validate_json(f.read())
 
     # Use provided fixtures
     healer = cleric
@@ -115,7 +118,8 @@ def test_cure_wounds_execution(cleric: Character, fighter: Character) -> None:
 def test_composable_action_availability(fighter: Character) -> None:
     """Test action availability checking."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
-    action = ActionLoader.from_file(json_path)
+    with json_path.open() as f:
+        action = ComposableAction.model_validate_json(f.read())
 
     # Should be available initially
     assert action.is_available(fighter.action_economy)

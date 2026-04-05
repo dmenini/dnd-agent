@@ -83,6 +83,13 @@ class JobService:
             resource.set_max_uses(max_uses)
             resource.restore()
 
+        # Special handling for War Priest: uses are based on WIS modifier (min 1)
+        if character.job.specialization == "War Domain":
+            war_priest_resource = character.get_resource("war_priest")
+            wis_mod = character.attributes.ability_modifier(AbilityType.WIS)
+            war_priest_resource.set_max_uses(max(1, wis_mod))
+            war_priest_resource.restore()
+
     @classmethod
     def apply_job_feature(cls, character: "Character", feature: JobFeature) -> None:
         """Apply a job feature (special ability).
@@ -93,12 +100,6 @@ class JobService:
         """
         if feature.ref_id not in {a.id for a in character.special_abilities}:
             action = feature.to_action()
-
-            # Special handling for War Priest: set uses_per_rest based on WIS modifier
-            if feature.ref_id == FeatureId.WAR_PRIEST and hasattr(action, "uses_per_rest"):
-                wis_mod = character.attributes.ability_modifier(AbilityType.WIS)
-                action.uses_per_rest = max(1, wis_mod)  # type: ignore[attr-defined]
-
             character.special_abilities.append(action)
             character.log_event(f"{character.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
 

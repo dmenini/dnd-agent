@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from agent.actions.effects.base import EffectApplicator
 from agent.effects.evocations.base import Evocation
@@ -31,9 +31,25 @@ class SummonEvocationEffect(EffectApplicator):
     will immediately attempt to use that action against the nearest enemy.
     """
 
+    model_config = {"populate_by_name": True}
+
     type: Literal["summon_evocation"] = "summon_evocation"
-    evocation: Evocation = Field(description="The evocation to summon")
+    evocation: Evocation = Field(description="The evocation to summon", alias="evocation_id")
     on_cast_action_id: str | None = Field(default=None, description="Feature ID to immediately use after summoning")
+
+    @field_validator("evocation", mode="before")
+    @classmethod
+    def resolve_evocation_id(cls, v: str | Evocation) -> Evocation:
+        """Convert string ID to Evocation object from registry."""
+        if isinstance(v, str):
+            from agent.effects.evocations.registry import EvocationRegistry
+
+            evocation = EvocationRegistry.get(v)
+            if evocation is None:
+                msg = f"Unknown evocation: {v}"
+                raise ValueError(msg)
+            return evocation
+        return v
 
     def apply(self, actor: Character, target: Character | Position, ctx: CombatContext) -> None:
         """Summon the evocation at target position.

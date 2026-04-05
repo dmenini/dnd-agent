@@ -1,0 +1,71 @@
+{
+  "id": "rage",
+  "name": "Rage",
+  "description": "Enter a primal fury, gaining advantage on STR checks/saves, damage resistance, and bonus melee damage",
+  "type": "special",
+  "category": "bonus",
+  "targeting": "self",
+  "range": 0,
+  "hits": 1,
+
+  "conditions": [
+    {
+      "type": "armor_restriction",
+      "forbidden_types": ["heavy"]
+    }
+  ],
+
+  "resolution": {
+    "type": "auto_success"
+  },
+
+  "effects": [
+    {
+      "type": "apply_dynamic_status",
+      "status_type": "enraged",
+      "duration": 1,
+      "save_dc": 0,
+      "trait_templates": [
+        {
+          "template_id": "advantage_on_save",
+          "params": {"ability": "strength"}
+        },
+        {
+          "template_id": "resistance",
+          "params": {"damage_type": "bludgeoning"}
+        },
+        {
+          "template_id": "resistance",
+          "params": {"damage_type": "piercing"}
+        },
+        {
+          "template_id": "resistance",
+          "params": {"damage_type": "slashing"}
+        },
+        {
+          "template_id": "melee_damage_bonus",
+          "params": {"value": 2}
+        }
+      ]
+    }
+  ],
+
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "special"
+    },
+    {
+      "type": "limited_uses",
+      "resource_name": "rage"
+    }
+  ],
+
+  "metadata": {
+    "level_required": 1,
+    "class": "barbarian",
+    "duration_rounds": 1,
+    "rage_damage": 2
+  }
+}

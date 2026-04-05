@@ -7,10 +7,16 @@ from typing import TYPE_CHECKING, Annotated, Any
 from pydantic import Discriminator, Field
 
 from agent.actions.base import Action, ActionCategory
+from agent.actions.conditions.armor_restriction import ArmorRestrictionCondition
+from agent.actions.conditions.requires_prior_action import RequiresPriorActionCondition
+from agent.actions.conditions.resource_threshold import ResourceThresholdCondition
 from agent.actions.effects.conditions import ApplyConditionsEffect, RemoveConditionsEffect
 from agent.actions.effects.damage import DamageEffect
+from agent.actions.effects.distributed import DistributedHealingEffect
+from agent.actions.effects.dynamic_status import ApplyDynamicStatusEffect
 from agent.actions.effects.evocation import SummonEvocationEffect
 from agent.actions.effects.healing import HealingEffect
+from agent.actions.effects.resources import RecoverSpellSlotsEffect, RestoreResourceEffect
 from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.resources.limited_uses import LimitedUsesConsumer
 from agent.actions.resources.spell_slots import SpellSlotConsumer
@@ -31,18 +37,33 @@ class ComposableAction(Action):
     """Data-driven action using composable primitives.
 
     Every action is composed of:
-    1. Resolution strategy (how to determine success/failure)
-    2. Effect applicators (what happens on success)
-    3. Resource consumers (what it costs)
+    1. Availability conditions (when the action can be used)
+    2. Resolution strategy (how to determine success/failure)
+    3. Effect applicators (what happens on success)
+    4. Resource consumers (what it costs)
 
     This allows defining abilities as JSON data instead of Python classes.
     """
 
     # Composable components
+    conditions: list[
+        Annotated[
+            RequiresPriorActionCondition | ArmorRestrictionCondition | ResourceThresholdCondition,
+            Discriminator("type"),
+        ]
+    ] = Field(default_factory=list)
     resolution: Annotated[AutoSuccessStrategy | AttackRollStrategy | SavingThrowStrategy, Discriminator("type")]
     effects: list[
         Annotated[
-            DamageEffect | HealingEffect | ApplyConditionsEffect | RemoveConditionsEffect | SummonEvocationEffect,
+            DamageEffect
+            | HealingEffect
+            | ApplyConditionsEffect
+            | RemoveConditionsEffect
+            | SummonEvocationEffect
+            | RecoverSpellSlotsEffect
+            | RestoreResourceEffect
+            | ApplyDynamicStatusEffect
+            | DistributedHealingEffect,
             Discriminator("type"),
         ]
     ] = Field(default_factory=list)
@@ -104,8 +125,22 @@ class ComposableAction(Action):
         for consumer in self.resources:
             consumer.consume(actor)
 
-    def is_available(self, action_economy: ActionEconomy) -> bool:
-        """Check if action is available (has resources and action economy)."""
+    def is_available(self, action_economy: ActionEconomy, actor: Character | None = None) -> bool:
+        """Check if action is available (has resources and action economy).
+
+        Args:
+            action_economy: Action economy to check
+            actor: Optional actor for condition checking (required for conditions)
+
+        Returns:
+            True if action can be used
+        """
+        # Check availability conditions first
+        if actor:
+            for condition in self.conditions:
+                if not condition.is_available(actor):
+                    return False
+
         # Check action economy
         for consumer in self.resources:
             if hasattr(consumer, "is_available"):

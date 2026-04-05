@@ -7,7 +7,6 @@ for testing. In production, the DM will create ComposableAction instances direct
 from pathlib import Path
 
 from agent.actions.composable import ComposableAction
-from agent.actions.loader import ActionLoader
 
 
 def load_spell(json_filename: str) -> ComposableAction:
@@ -24,4 +23,5 @@ def load_spell(json_filename: str) -> ComposableAction:
     """
     definitions_dir = Path(__file__).parent.parent / "actions" / "definitions"
     json_path = definitions_dir / json_filename
-    return ActionLoader.from_file(str(json_path))
+    with json_path.open() as f:
+        return ComposableAction.model_validate_json(f.read())

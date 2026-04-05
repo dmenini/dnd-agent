@@ -232,17 +232,17 @@ def test_war_priest_feature(actor: Character, orc: Character) -> None:
     assert war_priest.category == ActionCategory.BONUS
     assert war_priest.type == ActionType.ATTACK
 
-    # Check uses_per_rest is based on WIS modifier (actor has WIS 10, so modifier is 0, but min is 1)
-    assert war_priest.uses_per_rest >= 1
+    # ComposableAction uses resources for tracking uses, not uses_per_rest attribute
+    # The resource tracking is configured in the job definition
 
     # Should not be available without using Attack action first
-    assert not war_priest.is_available(actor.action_economy)
+    assert not war_priest.is_available(actor.action_economy, actor)
 
     # Use Attack action
     actor.action_economy.use_standard(ActionType.ATTACK)
 
     # Now should be available
-    assert war_priest.is_available(actor.action_economy)
+    assert war_priest.is_available(actor.action_economy, actor)
 
     # Execute the attack
     ctx = CombatContext()
@@ -250,17 +250,18 @@ def test_war_priest_feature(actor: Character, orc: Character) -> None:
 
     # Should consume one use
     war_priest.finalize(actor)
-    assert war_priest.current_uses == 1
+    war_priest_resource = actor.get_resource("war_priest")
+    assert war_priest_resource.current_uses == 1
 
     # If we've used all available uses, should not be available even with Attack action
-    if war_priest.uses_per_rest == 1:
+    if war_priest_resource.max_uses == 1:
         actor.action_economy.restore_turn()
         actor.action_economy.use_standard(ActionType.ATTACK)
-        assert not war_priest.is_available(actor.action_economy)
+        assert not war_priest.is_available(actor.action_economy, actor)
 
     # After rest, uses should be restored
-    war_priest.rest()
-    assert war_priest.current_uses == 0
+    war_priest_resource.restore()
+    assert war_priest_resource.current_uses == 0
 
 
 def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:

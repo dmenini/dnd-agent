@@ -1,0 +1,41 @@
+{
+  "id": "arcane_recovery",
+  "name": "Arcane Recovery",
+  "description": "Recover spell slots up to half your wizard level (rounded up)",
+  "type": "special",
+  "category": "bonus",
+  "targeting": "self",
+  "range": 0,
+  "hits": 1,
+
+  "resolution": {
+    "type": "auto_success"
+  },
+
+  "effects": [
+    {
+      "type": "recover_spell_slots",
+      "max_level": "{level} / 2",
+      "round_up": true,
+      "strategy": "highest_first"
+    }
+  ],
+
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "special"
+    },
+    {
+      "type": "limited_uses",
+      "resource_name": "arcane_recovery"
+    }
+  ],
+
+  "metadata": {
+    "level_required": 1,
+    "class": "wizard",
+    "recovery_type": "short_rest"
+  }
+}

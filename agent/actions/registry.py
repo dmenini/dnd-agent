@@ -39,9 +39,13 @@ class ActionRegistry:
 
         if isinstance(registered, str):
             # It's a JSON path - load composable action (for testing)
-            from agent.actions.loader import ActionLoader  # noqa: PLC0415
+            from pathlib import Path
 
-            action = ActionLoader.from_file(registered)
+            from agent.actions.composable import ComposableAction
+
+            json_path = Path(registered)
+            with json_path.open() as f:
+                action = ComposableAction.model_validate_json(f.read())
             # Override kwargs if provided (for dynamic customization)
             for key, value in kwargs.items():
                 if hasattr(action, key):

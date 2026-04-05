@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from agent.actions.effects.base import EffectApplicator
 from agent.effects.status_effects.base import StatusEffect, StatusType
@@ -27,6 +27,24 @@ class ApplyConditionsEffect(EffectApplicator):
 
     type: Literal["apply_conditions"] = "apply_conditions"
     conditions: list[StatusEffect] = Field(default_factory=list)
+
+    @field_validator("conditions", mode="before")
+    @classmethod
+    def resolve_condition_ids(cls, v: list) -> list:
+        """Convert string IDs to StatusEffect objects from registry."""
+        from agent.effects.status_effects.registry import StatusEffectRegistry
+
+        resolved = []
+        for item in v:
+            if isinstance(item, str):
+                condition = StatusEffectRegistry.get(item)
+                if condition is None:
+                    msg = f"Unknown status effect: {item}"
+                    raise ValueError(msg)
+                resolved.append(condition)
+            else:
+                resolved.append(item)
+        return resolved
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         """Apply status effects to target."""

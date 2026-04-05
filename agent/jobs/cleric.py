@@ -151,7 +151,7 @@ LifeDomain = JobSpecialization(
         load_spell("cure_wounds.json"),
         load_spell("bless.json"),
         load_spell("lesser_restoration.json"),
-        # TODO: Spiritual Weapon still needs evocation support
+        load_spell("spiritual_weapon.json"),
     ],
     proficiencies=[Proficiency(source="life_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
 )
@@ -185,6 +185,14 @@ WarDomain = JobSpecialization(
         load_spell("shield_of_faith.json"),
         load_spell("magic_weapon.json"),
         load_spell("spiritual_weapon.json"),
+    ],
+    resources=[
+        ResourceDefinition(
+            name="war_priest",
+            calculate_max_uses=lambda level: 1,
+            restore_on_short_rest=True,
+            restore_on_long_rest=True,
+        ),
     ],
 )
 

@@ -3,8 +3,8 @@
 from pathlib import Path
 
 from agent.actions.base import ActionCategory, ActionType
+from agent.actions.composable import ComposableAction
 from agent.actions.effects.damage import DamageEffect
-from agent.actions.loader import ActionLoader, ActionRegistry
 from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.character.abilities import AbilityType
 from agent.models.damage import DamageType
@@ -15,7 +15,8 @@ def test_load_longsword_from_json() -> None:
     """Test loading longsword attack from JSON file."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
 
-    action = ActionLoader.from_file(json_path)
+    with json_path.open() as f:
+        action = ComposableAction.model_validate_json(f.read())
 
     assert action.id == "longsword_attack"
     assert action.name == "Longsword Attack"
@@ -39,7 +40,8 @@ def test_load_fire_bolt_from_json() -> None:
     """Test loading fire bolt from JSON file."""
     json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "fire_bolt.json"
 
-    action = ActionLoader.from_file(json_path)
+    with json_path.open() as f:
+        action = ComposableAction.model_validate_json(f.read())
 
     assert action.id == "fire_bolt"
     assert action.name == "Fire Bolt"
@@ -51,27 +53,3 @@ def test_load_fire_bolt_from_json() -> None:
     assert isinstance(damage_effect, DamageEffect)
     assert damage_effect.damage_dice == "1d10"
     assert damage_effect.damage_type == DamageType.FIRE
-
-
-def test_action_registry() -> None:
-    """Test action registry."""
-    json_path = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions" / "longsword_attack.json"
-
-    action = ActionLoader.from_file(json_path)
-    ActionRegistry.register(action)
-
-    retrieved = ActionRegistry.get("longsword_attack")
-    assert retrieved is not None
-    assert retrieved.name == "Longsword Attack"
-
-
-def test_load_directory() -> None:
-    """Test loading all actions from directory."""
-    definitions_dir = Path(__file__).parent.parent.parent / "agent" / "actions" / "definitions"
-
-    ActionRegistry.load_directory(definitions_dir)
-
-    action_ids = ActionRegistry.list_all()
-    assert "longsword_attack" in action_ids
-    assert "fire_bolt" in action_ids
-    assert "cure_wounds" in action_ids
