@@ -1,0 +1,32 @@
+{
+  "id": "bless",
+  "name": "Bless",
+  "description": "Bless up to 3 creatures. They gain +1d4 to attack rolls and saving throws.",
+  "type": "cast_spell",
+  "category": "standard",
+  "targeting": "allies",
+  "range": 30,
+  "hits": 3,
+
+  "resolution": {
+    "type": "auto_success"
+  },
+
+  "effects": [
+    {
+      "type": "apply_conditions",
+      "conditions": ["blessed"]
+    }
+  ],
+
+  "resources": [
+    {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
+    {"type": "spell_slot", "level": 1}
+  ],
+
+  "metadata": {
+    "school": "enchantment",
+    "components": "V, S, M",
+    "concentration": false
+  }
+}

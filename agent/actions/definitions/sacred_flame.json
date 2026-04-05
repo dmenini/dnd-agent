@@ -1,0 +1,35 @@
+{
+  "id": "sacred_flame",
+  "name": "Sacred Flame",
+  "description": "Call down radiant fire. Target makes a DEX save or takes 1d8 radiant damage.",
+  "type": "cast_spell",
+  "category": "standard",
+  "targeting": "single",
+  "range": 12,
+  "hits": 1,
+
+  "resolution": {
+    "type": "saving_throw",
+    "ability": "dexterity",
+    "use_spell_dc": true
+  },
+
+  "effects": [
+    {
+      "type": "damage",
+      "damage_dice": "1d8",
+      "damage_type": "radiant",
+      "ability": null
+    }
+  ],
+
+  "resources": [
+    {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
+    {"type": "spell_slot", "level": 1}
+  ],
+
+  "metadata": {
+    "school": "evocation",
+    "components": "V, S"
+  }
+}

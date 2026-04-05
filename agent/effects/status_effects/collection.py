@@ -115,3 +115,49 @@ Stunned = StatusEffect(
     ],
     duration=1,
 )
+
+DivineFavored = StatusEffect(
+    type=StatusType.DIVINE_FAVORED,
+    save_dc=0,
+    traits=[
+        TraitBuilder.weapon_damage_bonus(
+            source_id=StatusType.DIVINE_FAVORED.value,
+            name="Divine Favor",
+            dice="1d4",
+            damage_type=DamageType.RADIANT,
+        )
+    ],
+    duration=10,
+)
+
+MagicWeapon = StatusEffect(
+    type=StatusType.MAGIC_WEAPON,
+    save_dc=0,
+    traits=[
+        TraitBuilder.bonus_on_attack_roll(
+            source_id=StatusType.MAGIC_WEAPON.value,
+            name="Magic Weapon",
+            dice_expr="1",
+        ),
+        TraitBuilder.damage_bonus(
+            source_id=StatusType.MAGIC_WEAPON.value,
+            name="Magic Weapon",
+            value=1,
+            damage_type=DamageType.FORCE,
+        ),
+    ],
+    duration=600,
+)
+
+ShieldedByFaith = StatusEffect(
+    type=StatusType.SHIELDED_BY_FAITH,
+    save_dc=0,
+    traits=[
+        TraitBuilder.ac_bonus(
+            source_id=StatusType.SHIELDED_BY_FAITH.value,
+            name="Shield of Faith",
+            value=2,
+        )
+    ],
+    duration=100,
+)

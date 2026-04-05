@@ -1,0 +1,38 @@
+{
+  "id": "fire_bolt",
+  "name": "Fire Bolt",
+  "description": "Hurl a mote of fire at a creature or object",
+  "type": "cast_spell",
+  "category": "standard",
+  "targeting": "single",
+  "range": 24,
+  "hits": 1,
+  "resolution": {
+    "type": "attack_roll",
+    "ability": "intelligence",
+    "weapon_type": "magic"
+  },
+  "effects": [
+    {
+      "type": "damage",
+      "damage_dice": "1d10",
+      "damage_type": "fire",
+      "ability": null
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 0
+    }
+  ],
+  "metadata": {
+    "school": "evocation",
+    "components": "V, S"
+  }
+}

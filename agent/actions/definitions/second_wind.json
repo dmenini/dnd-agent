@@ -1,0 +1,31 @@
+{
+  "id": "second_wind",
+  "name": "Second Wind",
+  "description": "Regain 1d10 + fighter level hit points (once per short rest)",
+  "type": "special",
+  "category": "bonus",
+  "targeting": "self",
+  "range": 0,
+  "hits": 1,
+
+  "resolution": {
+    "type": "auto_success"
+  },
+
+  "effects": [
+    {
+      "type": "healing",
+      "heal_dice": "1d10+{level}",
+      "ability": null
+    }
+  ],
+
+  "resources": [
+    {"type": "action_economy", "category": "bonus", "action_type": "special"},
+    {"type": "limited_uses", "resource_name": "second_wind"}
+  ],
+
+  "metadata": {
+    "class": "fighter"
+  }
+}

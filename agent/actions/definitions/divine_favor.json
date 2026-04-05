@@ -1,0 +1,32 @@
+{
+  "id": "divine_favor",
+  "name": "Divine Favor",
+  "description": "Weapon attacks deal an extra 1d4 radiant damage. Requires concentration.",
+  "type": "cast_spell",
+  "category": "bonus",
+  "targeting": "self",
+  "range": 0,
+  "hits": 1,
+
+  "resolution": {
+    "type": "auto_success"
+  },
+
+  "effects": [
+    {
+      "type": "apply_conditions",
+      "conditions": ["divine_favored"]
+    }
+  ],
+
+  "resources": [
+    {"type": "action_economy", "category": "bonus", "action_type": "cast_spell"},
+    {"type": "spell_slot", "level": 1}
+  ],
+
+  "metadata": {
+    "school": "evocation",
+    "components": "V, S",
+    "concentration": true
+  }
+}
