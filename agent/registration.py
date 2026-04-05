@@ -1,12 +1,15 @@
 from pathlib import Path
 
-from agent.actions.common.evocation import RepositionEvocationAction
 from agent.actions.registry import ActionRegistry
 from agent.models.enums import FeatureId
 
 
 def register_actions() -> None:
-    """Register all actions - both composable (JSON) and legacy (Python classes)."""
+    """Register all composable actions from JSON definitions.
+
+    Note: Some actions like character movement and evocation repositioning are
+    implicit and don't need registration - they're always available by default.
+    """
 
     # Register composable actions by JSON path (loaded on demand)
     definitions_dir = Path(__file__).parent / "actions" / "definitions"
@@ -34,7 +37,3 @@ def register_actions() -> None:
     for feature_id, json_file in composable_actions.items():
         json_path = str(definitions_dir / json_file)
         ActionRegistry.register(feature_id, json_path)
-
-    # Legacy actions that still use Python classes
-    # TODO: Convert these to composable format
-    ActionRegistry.register(FeatureId.REPOSITION_EVOCATION, RepositionEvocationAction)

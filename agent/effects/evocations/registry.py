@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from agent.actions.base import ActionCategory
-from agent.character.abilities import AbilityType
 from agent.effects.evocations.base import Evocation
 from agent.jobs.feature import JobFeature
-from agent.models.constants import MELEE_RANGE
-from agent.models.damage import DamageType
-from agent.models.enums import FeatureId, TargetingType
+from agent.models.enums import FeatureId
 
 
 class EvocationRegistry:
@@ -53,22 +49,12 @@ def _register_spiritual_weapon() -> None:
         description="The spiritual weapon attacks a creature within 5 feet.",
         # No kwargs needed - melee_spell_attack.json has all the right values
     )
-    move = JobFeature(
-        ref_id=FeatureId.REPOSITION_EVOCATION,
-        name="Move Spiritual Weapon",
-        description="Move the weapon up to 20 feet.",
-        kwargs={
-            "range": 20,
-            "evocation_name": "Spiritual Weapon",
-            "casting_time": ActionCategory.MOVEMENT,
-            "breaks_stealth": False,
-        },
-    )
+    # Movement is implicit - all evocations can reposition
     evocation = Evocation(
         source_id=FeatureId.SPIRITUAL_WEAPON.value,
         name="Spiritual Weapon",
         duration=10,  # 1 minute = 10 rounds
-        features=[attack, move],
+        features=[attack],
         on_cast_use=attack.ref_id,
     )
     EvocationRegistry.register("spiritual_weapon", evocation)
