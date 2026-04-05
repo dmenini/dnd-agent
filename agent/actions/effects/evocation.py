@@ -8,6 +8,7 @@ from pydantic import Field, field_validator
 
 from agent.actions.effects.base import EffectApplicator
 from agent.effects.evocations.base import Evocation
+from agent.effects.evocations.registry import EvocationRegistry
 from agent.logs.log_event import Icon
 from agent.models.position import Position
 from agent.services.evocation_service import EvocationService
@@ -42,8 +43,6 @@ class SummonEvocationEffect(EffectApplicator):
     def resolve_evocation_id(cls, v: str | Evocation) -> Evocation:
         """Convert string ID to Evocation object from registry."""
         if isinstance(v, str):
-            from agent.effects.evocations.registry import EvocationRegistry
-
             evocation = EvocationRegistry.get(v)
             if evocation is None:
                 msg = f"Unknown evocation: {v}"

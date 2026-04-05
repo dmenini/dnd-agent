@@ -50,7 +50,7 @@ class HealingEffect(EffectApplicator):
         }
 
         for var, value in replacements.items():
-            expr = re.sub(rf"\{{{var}\}}", value, expr)
+            expr = re.sub(rf"\{{{var}}}", value, expr)
 
         return expr
 

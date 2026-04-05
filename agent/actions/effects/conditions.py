@@ -8,6 +8,7 @@ from pydantic import Field, field_validator
 
 from agent.actions.effects.base import EffectApplicator
 from agent.effects.status_effects.base import StatusEffect, StatusType
+from agent.effects.status_effects.registry import StatusEffectRegistry
 from agent.logs.log_event import Icon
 from agent.services.effect_service import EffectService
 
@@ -32,8 +33,6 @@ class ApplyConditionsEffect(EffectApplicator):
     @classmethod
     def resolve_condition_ids(cls, v: list) -> list:
         """Convert string IDs to StatusEffect objects from registry."""
-        from agent.effects.status_effects.registry import StatusEffectRegistry
-
         resolved = []
         for item in v:
             if isinstance(item, str):

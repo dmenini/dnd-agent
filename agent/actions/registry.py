@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any
 
 from agent.actions.base import Action
@@ -38,11 +39,9 @@ class ActionRegistry:
         registered = cls._registry[id_]
 
         if isinstance(registered, str):
-            # It's a JSON path - load composable action (for testing)
-            from pathlib import Path
-
             from agent.actions.composable import ComposableAction
 
+            # It's a JSON path - load composable action
             json_path = Path(registered)
             with json_path.open() as f:
                 action = ComposableAction.model_validate_json(f.read())

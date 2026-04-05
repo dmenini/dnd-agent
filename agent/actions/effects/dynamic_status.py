@@ -103,7 +103,7 @@ class ApplyDynamicStatusEffect(EffectApplicator):
         if template_id == "resistance":
             damage_type = params.get("damage_type")
             if isinstance(damage_type, str):
-                damage_type = DamageType(damage_type.upper())
+                damage_type = DamageType(damage_type)
             if not isinstance(damage_type, DamageType):
                 return None
             return TraitBuilder.resistance(source_id=source_id, damage_type=damage_type)
@@ -111,7 +111,7 @@ class ApplyDynamicStatusEffect(EffectApplicator):
         if template_id == "vulnerability":
             damage_type = params.get("damage_type")
             if isinstance(damage_type, str):
-                damage_type = DamageType(damage_type.upper())
+                damage_type = DamageType(damage_type)
             if not isinstance(damage_type, DamageType):
                 return None
             return TraitBuilder.vulnerability(source_id=source_id, damage_type=damage_type)
@@ -125,7 +125,7 @@ class ApplyDynamicStatusEffect(EffectApplicator):
             dice = params.get("dice", "1d4")
             damage_type = params.get("damage_type", DamageType.FORCE)
             if isinstance(damage_type, str):
-                damage_type = DamageType(damage_type.upper())
+                damage_type = DamageType(damage_type)
             return TraitBuilder.weapon_damage_bonus(
                 source_id=source_id, name=self.status_type.value.title(), dice=str(dice), damage_type=damage_type
             )

@@ -1,4 +1,4 @@
-from agent.actions.jobs.fighter import SecondWindAction
+from agent.actions.registry import ActionRegistry
 from agent.character.character import Character
 from agent.models.context import CombatContext
 from agent.models.enums import FeatureId
@@ -10,7 +10,7 @@ def test_second_wind(actor: Character) -> None:
     actor.attributes.hp = start_hp
     actor.level = 1
 
-    action = SecondWindAction(id=FeatureId.SECOND_WIND.value, description="")
+    action = ActionRegistry.create(FeatureId.SECOND_WIND)
 
     # Set dice to roll 5 for healing
     actor.cheater_dice = cheater_dice(value=5)

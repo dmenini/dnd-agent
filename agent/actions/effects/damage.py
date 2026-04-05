@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Literal
+from typing import Literal, TYPE_CHECKING
 
 from agent.actions.effects.base import EffectApplicator
 from agent.character.abilities import AbilityType
@@ -54,7 +54,7 @@ class DamageEffect(EffectApplicator):
         }
 
         for var, value in replacements.items():
-            expr = re.sub(rf"\{{{var}\}}", value, expr)
+            expr = re.sub(rf"\{{var}}", value, expr)
 
         return expr
 
