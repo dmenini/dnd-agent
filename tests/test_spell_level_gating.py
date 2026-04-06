@@ -8,7 +8,7 @@ def test_cleric_spell_level_gating() -> None:
     # Level 1 cleric should only have level 1 spells
     level_1_spells = Cleric.get_spells_for_level(1)
     assert len(level_1_spells) == 1  # Only Sacred Flame
-    assert all(spell.metadata.get("level_required", 1) <= 1 for spell in level_1_spells)
+    assert all(spell.level_required <= 1 for spell in level_1_spells)
 
     # Level 3 cleric should have all spells
     level_3_spells = Cleric.get_spells_for_level(3)

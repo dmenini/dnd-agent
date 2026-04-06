@@ -51,8 +51,21 @@ class ComposableAction(Action):
             RequiresPriorActionCondition | ArmorRestrictionCondition | ResourceThresholdCondition,
             Discriminator("type"),
         ]
-    ] = Field(default_factory=list)
-    resolution: Annotated[AutoSuccessStrategy | AttackRollStrategy | SavingThrowStrategy, Discriminator("type")]
+    ] = Field(
+        default_factory=list,
+        description=(
+            "Availability conditions that must be met (e.g., requires_prior_action, armor_restriction, "
+            "resource_threshold). Usually empty for simple actions."
+        ),
+    )
+    resolution: Annotated[AutoSuccessStrategy | AttackRollStrategy | SavingThrowStrategy, Discriminator("type")] = (
+        Field(
+            description=(
+                "How success is determined: auto_success (always succeeds), attack_roll (d20+mods vs AC), "
+                "or saving_throw (target rolls save)"
+            )
+        )
+    )
     effects: list[
         Annotated[
             DamageEffect
@@ -66,11 +79,26 @@ class ComposableAction(Action):
             | DistributedHealingEffect,
             Discriminator("type"),
         ]
-    ] = Field(default_factory=list)
+    ] = Field(
+        default_factory=list,
+        description=(
+            "What happens when the action succeeds: damage, healing, apply/remove conditions, summon evocation, "
+            "recover resources, etc. Can combine multiple effects."
+        ),
+    )
     resources: list[
         Annotated[ActionEconomyConsumer | SpellSlotConsumer | LimitedUsesConsumer, Discriminator("type")]
-    ] = Field(default_factory=list)
-    level: int | None = 1
+    ] = Field(
+        default_factory=list,
+        description=(
+            "Resources consumed when using this action. Always include at least action_economy. "
+            "May also consume spell_slots or limited_uses."
+        ),
+    )
+    level_required: int | None = Field(
+        default=1,
+        description="Minimum character level required to use this action (1-20). Use None if no level requirement.",
+    )
 
     def execute(self, actor: Character, target: Any, ctx: CombatContext) -> None:
         """Execute the action using composable primitives.
@@ -143,19 +171,16 @@ class ComposableAction(Action):
 
         # Check action economy
         for consumer in self.resources:
-            if hasattr(consumer, "is_available"):
+            if hasattr(consumer, "is_available") and isinstance(consumer, ActionEconomyConsumer):
                 # Note: We need the actor, not just action_economy
                 # This is a limitation - we'll need to refactor this slightly
                 # For now, just check action economy consumers
-                from agent.actions.resources.action_economy import ActionEconomyConsumer  # noqa: PLC0415
-
-                if isinstance(consumer, ActionEconomyConsumer):
-                    if self.category == ActionCategory.STANDARD:
-                        return action_economy.can_use_standard(self.type)
-                    if self.category == ActionCategory.BONUS:
-                        return action_economy.can_use_bonus(self.type)
-                    if self.category == ActionCategory.REACTION:
-                        return action_economy.can_use_reaction()
+                if self.category == ActionCategory.STANDARD:
+                    return action_economy.can_use_standard(self.type)
+                if self.category == ActionCategory.BONUS:
+                    return action_economy.can_use_bonus(self.type)
+                if self.category == ActionCategory.REACTION:
+                    return action_economy.can_use_reaction()
 
         return True
 

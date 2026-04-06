@@ -7,6 +7,7 @@
   "targeting": "single",
   "range": 1.5,
   "hits": 1,
+    "level_required": 1,
   "resolution": {
     "type": "attack_roll",
     "ability": "strength",
@@ -29,7 +30,6 @@
     }
   ],
   "metadata": {
-    "level_required": 1,
     "weapon": "longsword",
     "hands": "versatile"
   }

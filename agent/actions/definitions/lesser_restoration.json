@@ -7,25 +7,33 @@
   "targeting": "allies",
   "range": 1.5,
   "hits": 1,
-
+  "level_required": 3,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "remove_conditions",
-      "condition_types": ["paralyzed", "poisoned", "blinded", "deafened"]
+      "condition_types": [
+        "paralyzed",
+        "poisoned",
+        "blinded",
+        "deafened"
+      ]
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 1}
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
   ],
-
   "metadata": {
-    "level_required": 3,
     "school": "abjuration",
     "components": "V, S"
   }

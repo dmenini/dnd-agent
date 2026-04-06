@@ -26,7 +26,7 @@ class ResourceDefinition(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str
-    calculate_max_uses: Callable[[int], int] = Field(default=lambda level: 1, exclude=True)
+    calculate_max_uses: Callable[[int], int] = Field(default=lambda _: 1, exclude=True)
     restore_on_short_rest: bool = False
     restore_on_long_rest: bool = True
 
@@ -65,7 +65,7 @@ class CharacterJob(BaseModel):
 
         Spells use metadata['level_required'] for level gating.
         """
-        return [spell for spell in self.spells if spell.metadata.get("level_required", 1) <= level]
+        return [spell for spell in self.spells if spell.level_required <= level]
 
     def get_passives_for_level(self, level: int) -> list[JobPassive]:
         """Return unlocked passives up to the given level."""

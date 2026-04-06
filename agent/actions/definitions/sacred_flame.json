@@ -7,13 +7,12 @@
   "targeting": "single",
   "range": 12,
   "hits": 1,
-
+  "level_required": 1,
   "resolution": {
     "type": "saving_throw",
     "ability": "dexterity",
     "use_spell_dc": true
   },
-
   "effects": [
     {
       "type": "damage",
@@ -22,14 +21,18 @@
       "ability": null
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 1}
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
   ],
-
   "metadata": {
-    "level_required": 1,
     "school": "evocation",
     "components": "V, S"
   }

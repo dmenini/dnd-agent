@@ -39,7 +39,7 @@ class ActionRegistry:
         registered = cls._registry[id_]
 
         if isinstance(registered, str):
-            from agent.actions.composable import ComposableAction
+            from agent.actions.composable import ComposableAction  # noqa: PLC0415
 
             # It's a JSON path - load composable action
             json_path = Path(registered)

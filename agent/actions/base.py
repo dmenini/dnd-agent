@@ -61,15 +61,19 @@ class ActionType(str, Enum):
 class Action(BaseModel, ABC):
     """Action resolved from Agent decision"""
 
-    id: str
-    name: str
-    description: str
-    type: ActionType
-    category: ActionCategory
-    targeting: TargetingType
-    hits: int = 1
-    range: float = 0.0
-    metadata: dict = Field(default_factory=dict)
+    id: str = Field(description="Unique identifier (use snake_case, e.g., 'boss_fire_breath')")
+    name: str = Field(description="Display name shown to players (e.g., 'Fire Breath')")
+    description: str = Field(description="What the action does narratively")
+    type: ActionType = Field(description="Action type: attack, cast_spell, special, dash, move, etc.")
+    category: ActionCategory = Field(
+        description="Action category: standard (main action), bonus, reaction, or movement"
+    )
+    targeting: TargetingType = Field(description="Targeting mode: single (one target), multi (multiple), self, or area")
+    hits: int = Field(default=1, description="Number of times the effect applies (usually 1)")
+    range: float = Field(default=0.0, description="Maximum range in feet (0 for melee/self-targeted)")
+    metadata: dict = Field(
+        default_factory=dict, description="Additional data like level_required, concentration, dm_created, etc."
+    )
 
     @abstractmethod
     def is_available(self, action_economy: ActionEconomy) -> bool:

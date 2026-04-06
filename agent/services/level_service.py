@@ -40,7 +40,7 @@ class LevelService:
         # Get features/passives/spells that just became available at this level
         new_features = [f for f in character.job.features if f.level_required == new_level]
         new_passives = [p for p in character.job.passives if p.level_required == new_level]
-        new_spells = [s for s in character.job.spells if s.metadata.get("level_required", 1) == new_level]
+        new_spells = [s for s in character.job.spells if s.level_required == new_level]
 
         # Apply newly unlocked features
         for feature in new_features:

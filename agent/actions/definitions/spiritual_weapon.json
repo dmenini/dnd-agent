@@ -7,11 +7,10 @@
   "targeting": "position",
   "range": 60,
   "hits": 1,
-
+  "level_required": 3,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "summon_evocation",
@@ -19,14 +18,18 @@
       "on_cast_action_id": "melee_spell_attack"
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "bonus", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 2}
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 2
+    }
   ],
-
   "metadata": {
-    "level_required": 3,
     "school": "evocation",
     "components": "V, S",
     "duration": "1 minute (10 rounds)",

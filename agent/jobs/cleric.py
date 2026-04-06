@@ -189,7 +189,7 @@ WarDomain = JobSpecialization(
     resources=[
         ResourceDefinition(
             name="war_priest",
-            calculate_max_uses=lambda level: 1,
+            calculate_max_uses=lambda _: 1,
             restore_on_short_rest=True,
             restore_on_long_rest=True,
         ),

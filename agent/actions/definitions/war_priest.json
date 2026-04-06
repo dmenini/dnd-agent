@@ -7,7 +7,7 @@
   "targeting": "single",
   "range": 1.5,
   "hits": 1,
-
+  "level_required": 1,
   "conditions": [
     {
       "type": "requires_prior_action",
@@ -19,13 +19,11 @@
       "min_amount": 1
     }
   ],
-
   "resolution": {
     "type": "attack_roll",
     "ability": "strength",
     "weapon_type": "simple_melee"
   },
-
   "effects": [
     {
       "type": "damage",
@@ -34,7 +32,6 @@
       "ability": "strength"
     }
   ],
-
   "resources": [
     {
       "type": "action_economy",
@@ -46,9 +43,7 @@
       "resource_name": "war_priest"
     }
   ],
-
   "metadata": {
-    "level_required": 1,
     "class": "cleric",
     "subclass": "war_domain",
     "note": "Uses equipped weapon stats (simplified to basic weapon for now)"

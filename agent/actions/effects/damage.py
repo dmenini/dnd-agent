@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
+
+from pydantic import Field
 
 from agent.actions.effects.base import EffectApplicator
 from agent.character.abilities import AbilityType
@@ -36,10 +38,22 @@ class DamageEffect(EffectApplicator):
     """
 
     type: Literal["damage"] = "damage"
-    damage_dice: str
-    damage_type: DamageType
-    ability: AbilityType | None = None
-    half_on_save: bool = False  # For spells that deal half damage on successful save
+    damage_dice: str = Field(
+        description="Damage expression (e.g., '2d6', '3d8+5', '8d6'). Supports templates: {level}, {proficiency_bonus}"
+    )
+    damage_type: DamageType = Field(
+        description=(
+            "Type of damage: slashing, piercing, bludgeoning, fire, cold, poison, lightning, necrotic, radiant, "
+            "or force"
+        )
+    )
+    ability: AbilityType | None = Field(
+        default=None,
+        description="Ability modifier to add to damage (e.g., strength for melee). None defaults to the class primary ability.",
+    )
+    half_on_save: bool = Field(
+        default=False, description="If true, deals half damage on successful save (common for AOE spells)"
+    )
 
     def _parse_expression(self, expr: str, actor: Character) -> str:
         """Parse template variables in the expression.
@@ -53,8 +67,8 @@ class DamageEffect(EffectApplicator):
             "proficiency_bonus": str(actor.attributes.proficiency_bonus),
         }
 
-        for var, value in replacements.items():
-            expr = re.sub(rf"\{{var}}", value, expr)
+        for value in replacements.values():
+            expr = re.sub(r"\{var}", value, expr)
 
         return expr
 
@@ -65,18 +79,12 @@ class DamageEffect(EffectApplicator):
 
         # Roll damage
         is_critical = getattr(ctx, "is_critical", False)
-
-        # If no ability modifier, use roll_once/roll_twice directly
-        if self.ability is None:
-            dice = actor.cheater_dice if actor.cheater_dice is not None else RollService._dice
-            if is_critical:
-                ctx.damage_roll = dice.roll_twice(damage_expr)
-            else:
-                ctx.damage_roll = dice.roll_once(damage_expr)
-        else:
-            ctx.damage_roll = RollService.damage_roll(
-                actor, damage_dice=damage_expr, ability=self.ability, is_critical=is_critical
-            )
+        ctx.damage_roll = RollService.damage_roll(
+            actor,
+            damage_dice=damage_expr,
+            ability=self.ability or actor.attributes.primary_ability,
+            is_critical=is_critical,
+        )
 
         # Half damage if save succeeded and half_on_save is True
         damage_value = ctx.damage_roll.total

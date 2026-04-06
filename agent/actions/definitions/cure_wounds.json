@@ -7,6 +7,7 @@
   "targeting": "single",
   "range": 1.5,
   "hits": 1,
+  "level_required": 1,
   "resolution": {
     "type": "auto_success"
   },
@@ -29,7 +30,6 @@
     }
   ],
   "metadata": {
-    "level_required": 1,
     "school": "evocation",
     "components": "V, S"
   }

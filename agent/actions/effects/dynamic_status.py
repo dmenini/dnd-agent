@@ -173,11 +173,10 @@ class ApplyDynamicStatusEffect(EffectApplicator):
         actor.log_event(f"Unknown trait template: {template_id}", icon=Icon.WARNING)
         return None
 
-    def _eval_param(self, key: str, value: str, actor: Character, target: Character, ctx: CombatContext) -> Any:
+    def _eval_param(self, _: str, value: str, actor: Character, target: Character, ctx: CombatContext) -> Any:
         """Evaluate a parameter value."""
-        # Try to evaluate as expression first
         try:
             return ExpressionEvaluator.eval(value, actor, target, ctx)
-        except (ValueError, SyntaxError):
+        except (TypeError, ValueError, SyntaxError):
             # Not an expression, return as string (likely an enum value)
             return value

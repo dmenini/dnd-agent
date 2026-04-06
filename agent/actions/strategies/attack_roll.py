@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import Field
+
 from agent.actions.strategies.base import ResolutionStrategy
 from agent.character.abilities import AbilityType
 from agent.equipment.weapons import WeaponType
@@ -31,8 +33,14 @@ class AttackRollStrategy(ResolutionStrategy):
     """
 
     type: Literal["attack_roll"] = "attack_roll"
-    ability: AbilityType
-    weapon_type: WeaponType
+    ability: AbilityType = Field(
+        description=(
+            "Ability score used for attack roll: strength, dexterity, intelligence, wisdom, charisma, or constitution"
+        )
+    )
+    weapon_type: WeaponType = Field(
+        description="Weapon proficiency type: simple_melee, martial_melee, simple_range, martial_range, or magic"
+    )
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         """Resolve attack roll vs target AC."""

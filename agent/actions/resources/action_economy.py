@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import Field
+
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.resources.base import ResourceConsumer
 from agent.services.visibility_service import VisibilityService
@@ -19,9 +21,9 @@ class ActionEconomyConsumer(ResourceConsumer):
     """
 
     type: Literal["action_economy"] = "action_economy"
-    category: ActionCategory
-    action_type: ActionType
-    breaks_stealth: bool = True
+    category: ActionCategory = Field(description="Action category to consume: standard, bonus, reaction, or movement")
+    action_type: ActionType = Field(description="Type of action being performed (attack, cast_spell, special, etc.)")
+    breaks_stealth: bool = Field(default=True, description="If true, using this action breaks stealth/hiding")
 
     def consume(self, actor: Character) -> None:
         """Consume action economy from actor."""

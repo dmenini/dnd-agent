@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import Field
+
 from agent.actions.strategies.base import ResolutionStrategy
 from agent.character.abilities import AbilityType
 from agent.logs.log_event import Icon
@@ -32,8 +34,16 @@ class SavingThrowStrategy(ResolutionStrategy):
     """
 
     type: Literal["saving_throw"] = "saving_throw"
-    ability: AbilityType  # Which save: DEX, CON, WIS, etc.
-    use_spell_dc: bool = True  # Use spell DC or ability DC
+    ability: AbilityType = Field(
+        description=(
+            "Which ability save the target must make: dexterity, constitution, wisdom, intelligence, "
+            "charisma, or strength"
+        )
+    )
+    use_spell_dc: bool = Field(
+        default=True,
+        description="Use caster's spell save DC (true) or ability-based DC (false). Usually true for spells.",
+    )
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:
         """Resolve saving throw vs caster DC."""

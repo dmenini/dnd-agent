@@ -6,6 +6,8 @@ import ast
 import operator
 from typing import TYPE_CHECKING, Any
 
+from agent.character.abilities import AbilityType
+
 if TYPE_CHECKING:
     from agent.character.character import Character
     from agent.models.context import CombatContext
@@ -100,10 +102,8 @@ class ExpressionEvaluator:
             raise ValueError(msg) from e
 
     @classmethod
-    def _build_variables(cls, actor: Character, target: Character | None, ctx: CombatContext | None) -> dict[str, Any]:
+    def _build_variables(cls, actor: Character, target: Character | None, _: CombatContext | None) -> dict[str, Any]:
         """Build variable context from character and context."""
-        from agent.character.abilities import AbilityType
-
         variables = {
             # Actor attributes
             "level": actor.level,
@@ -193,7 +193,7 @@ class ExpressionEvaluator:
         if isinstance(node, ast.Call):
             if not isinstance(node.func, ast.Name):
                 msg = "Only simple function calls are supported"
-                raise ValueError(msg)
+                raise TypeError(msg)
             func_name = node.func.id
             if func_name not in cls._functions:
                 msg = f"Unknown function: {func_name}"

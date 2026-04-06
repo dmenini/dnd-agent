@@ -7,18 +7,18 @@
   "targeting": "self",
   "range": 0,
   "hits": 1,
-
+  "level_required": 1,
   "conditions": [
     {
       "type": "armor_restriction",
-      "forbidden_types": ["heavy"]
+      "forbidden_types": [
+        "heavy"
+      ]
     }
   ],
-
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "apply_dynamic_status",
@@ -28,28 +28,37 @@
       "trait_templates": [
         {
           "template_id": "advantage_on_save",
-          "params": {"ability": "strength"}
+          "params": {
+            "ability": "strength"
+          }
         },
         {
           "template_id": "resistance",
-          "params": {"damage_type": "bludgeoning"}
+          "params": {
+            "damage_type": "bludgeoning"
+          }
         },
         {
           "template_id": "resistance",
-          "params": {"damage_type": "piercing"}
+          "params": {
+            "damage_type": "piercing"
+          }
         },
         {
           "template_id": "resistance",
-          "params": {"damage_type": "slashing"}
+          "params": {
+            "damage_type": "slashing"
+          }
         },
         {
           "template_id": "melee_damage_bonus",
-          "params": {"value": 2}
+          "params": {
+            "value": 2
+          }
         }
       ]
     }
   ],
-
   "resources": [
     {
       "type": "action_economy",
@@ -61,9 +70,7 @@
       "resource_name": "rage"
     }
   ],
-
   "metadata": {
-    "level_required": 1,
     "class": "barbarian",
     "duration_rounds": 1,
     "rage_damage": 2

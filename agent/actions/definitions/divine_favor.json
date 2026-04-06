@@ -7,25 +7,30 @@
   "targeting": "self",
   "range": 0,
   "hits": 1,
-
+  "level_required": 1,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "apply_conditions",
-      "conditions": ["divine_favored"]
+      "conditions": [
+        "divine_favored"
+      ]
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "bonus", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 1}
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
   ],
-
   "metadata": {
-    "level_required": 1,
     "school": "evocation",
     "components": "V, S",
     "concentration": true

@@ -7,25 +7,30 @@
   "targeting": "single",
   "range": 1.5,
   "hits": 1,
-
+  "level_required": 3,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "apply_conditions",
-      "conditions": ["magic_weapon"]
+      "conditions": [
+        "magic_weapon"
+      ]
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "bonus", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 2}
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 2
+    }
   ],
-
   "metadata": {
-    "level_required": 3,
     "school": "transmutation",
     "components": "V, S",
     "concentration": true

@@ -7,11 +7,10 @@
   "targeting": "multi",
   "range": 10,
   "hits": 3,
-
+  "level_required": 1,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "damage",
@@ -20,15 +19,19 @@
       "ability": null
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 1}
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
   ],
-
   "metadata": {
     "school": "evocation",
-    "components": "V, S",
-    "level_required": 1
+    "components": "V, S"
   }
 }

@@ -7,11 +7,10 @@
   "targeting": "allies",
   "range": 30,
   "hits": 3,
-
+  "level_required": 2,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "distributed_healing",
@@ -21,7 +20,6 @@
       "distribution_strategy": "equal"
     }
   ],
-
   "resources": [
     {
       "type": "action_economy",
@@ -33,9 +31,7 @@
       "resource_name": "channel_divinity"
     }
   ],
-
   "metadata": {
-    "level_required": 2,
     "class": "cleric",
     "subclass": "life_domain",
     "channel_divinity": true

@@ -76,7 +76,9 @@ class ActionsSummaryTable(DataTable):
                 damage_effects = [e for e in action.effects if isinstance(e, DamageEffect)]
                 if damage_effects:
                     damage = damage_effects[0]
-                    info = f"{level_info}, {action.hits} hit(s) for {damage.damage_dice} {damage.damage_type.value} damage"
+                    info = (
+                        f"{level_info}, {action.hits} hit(s) for {damage.damage_dice} {damage.damage_type.value} damage"
+                    )
                 else:
                     info = level_info
             # Check if it has damage effects (attacks)

@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import Field
+
 from agent.actions.effects.base import EffectApplicator
 from agent.character.abilities import AbilityType
 from agent.logs.log_event import Icon, LogLevel
@@ -34,8 +36,16 @@ class HealingEffect(EffectApplicator):
     """
 
     type: Literal["healing"] = "healing"
-    heal_dice: str
-    ability: AbilityType | None = None
+    heal_dice: str = Field(
+        description="Healing expression (e.g., '2d8+5', '1d4+2'). Supports templates: {level}, {proficiency_bonus}"
+    )
+    ability: AbilityType | None = Field(
+        default=None,
+        description=(
+            "Ability modifier to add to healing (e.g., wisdom for clerics). None uses spellcasting ability "
+            "if available."
+        ),
+    )
 
     def _parse_expression(self, expr: str, actor: Character) -> str:
         """Parse template variables in the expression.

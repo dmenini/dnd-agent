@@ -7,25 +7,30 @@
   "targeting": "allies",
   "range": 30,
   "hits": 3,
-
+  "level_required": 1,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "apply_conditions",
-      "conditions": ["blessed"]
+      "conditions": [
+        "blessed"
+      ]
     }
   ],
-
   "resources": [
-    {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
-    {"type": "spell_slot", "level": 1}
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
   ],
-
   "metadata": {
-    "level_required": 1,
     "school": "enchantment",
     "components": "V, S, M",
     "concentration": false

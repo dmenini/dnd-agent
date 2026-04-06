@@ -36,7 +36,9 @@ def test_arcane_recovery(actor: Character) -> None:
         (actor.spell_slots.slots[level] - initial_slots[level]) * level.value for level in actor.spell_slots.slots
     )
 
-    assert slot_levels_recovered == max_recovery, f"Recovered {slot_levels_recovered} slot levels, expected {max_recovery}"
+    assert slot_levels_recovered == max_recovery, (
+        f"Recovered {slot_levels_recovered} slot levels, expected {max_recovery}"
+    )
 
     # Finalize action consumes resources
     action.finalize(actor)

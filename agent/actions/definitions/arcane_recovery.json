@@ -7,11 +7,10 @@
   "targeting": "self",
   "range": 0,
   "hits": 1,
-
+  "level_required": 1,
   "resolution": {
     "type": "auto_success"
   },
-
   "effects": [
     {
       "type": "recover_spell_slots",
@@ -20,7 +19,6 @@
       "strategy": "highest_first"
     }
   ],
-
   "resources": [
     {
       "type": "action_economy",
@@ -32,9 +30,7 @@
       "resource_name": "arcane_recovery"
     }
   ],
-
   "metadata": {
-    "level_required": 1,
     "class": "wizard",
     "recovery_type": "short_rest"
   }

@@ -7,6 +7,7 @@
   "targeting": "single",
   "range": 24,
   "hits": 1,
+  "level_required": 1,
   "resolution": {
     "type": "attack_roll",
     "ability": "intelligence",
@@ -32,7 +33,6 @@
     }
   ],
   "metadata": {
-    "level_required": 1,
     "school": "evocation",
     "components": "V, S"
   }
