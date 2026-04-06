@@ -28,6 +28,11 @@ class ApplyConditionsEffect(EffectApplicator):
 
     type: Literal["apply_conditions"] = "apply_conditions"
     conditions: list[StatusEffect] = Field(default_factory=list)
+    concentration: bool = Field(
+        default=False,
+        description="If true, the first condition in the list requires concentration",
+        examples=[False, True],
+    )
 
     @field_validator("conditions", mode="before")
     @classmethod

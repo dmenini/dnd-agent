@@ -16,7 +16,8 @@
       "type": "apply_conditions",
       "conditions": [
         "magic_weapon"
-      ]
+      ],
+      "concentration": true
     }
   ],
   "resources": [
@@ -32,7 +33,6 @@
   ],
   "metadata": {
     "school": "transmutation",
-    "components": "V, S",
-    "concentration": true
+    "components": "V, S"
   }
 }

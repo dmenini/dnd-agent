@@ -1,6 +1,7 @@
 """Test concentration mechanics for spells."""
 
 from agent.actions.composable import ComposableAction
+from agent.actions.effects.conditions import ApplyConditionsEffect
 from agent.character.character import Character
 from agent.effects.status_effects.base import StatusEffect, StatusType
 from agent.effects.traits import TraitBuilder
@@ -23,7 +24,9 @@ def test_concentration_tracking(actor: Character) -> None:
     divine_favor = next((s for s in actor.spells if s.id == FeatureId.DIVINE_FAVOR), None)
     assert divine_favor is not None
     assert isinstance(divine_favor, ComposableAction)
-    assert divine_favor.metadata.get("concentration", False)
+    apply_effect = next((e for e in divine_favor.effects if isinstance(e, ApplyConditionsEffect)), None)
+    assert apply_effect is not None
+    assert apply_effect.concentration
 
     ctx = CombatContext()
     divine_favor.execute(actor, actor, ctx)  # Self-targeted spell

@@ -16,7 +16,8 @@
       "type": "apply_conditions",
       "conditions": [
         "shielded_by_faith"
-      ]
+      ],
+      "concentration": true
     }
   ],
   "resources": [
@@ -32,7 +33,6 @@
   ],
   "metadata": {
     "school": "abjuration",
-    "components": "V, S, M",
-    "concentration": true
+    "components": "V, S, M"
   }
 }

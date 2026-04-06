@@ -3,7 +3,6 @@ import pytest
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.composable import ComposableAction
 from agent.actions.effects.conditions import ApplyConditionsEffect
-from agent.actions.resources.concentration import ConcentrationConsumer
 from agent.character.character import Character
 from agent.effects.status_effects.base import StatusType
 from agent.effects.trait_effects.support import guided_strike
@@ -73,7 +72,9 @@ def test_war_domain_shield_of_faith(actor: Character, orc: Character) -> None:
     assert isinstance(shield_of_faith, ComposableAction)
 
     # Check it requires concentration
-    assert any(isinstance(r, ConcentrationConsumer) for r in shield_of_faith.resources)
+    apply_effect = next((e for e in shield_of_faith.effects if isinstance(e, ApplyConditionsEffect)), None)
+    assert apply_effect is not None
+    assert apply_effect.concentration
 
     # Check targeting and range
     assert shield_of_faith.targeting == TargetingType.SINGLE
@@ -287,7 +288,9 @@ def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:
     assert isinstance(magic_weapon, ComposableAction)
 
     # Check it requires concentration
-    assert any(isinstance(r, ConcentrationConsumer) for r in magic_weapon.resources)
+    apply_effect = next((e for e in magic_weapon.effects if isinstance(e, ApplyConditionsEffect)), None)
+    assert apply_effect is not None
+    assert apply_effect.concentration
 
     # Check targeting and range
     assert magic_weapon.targeting == TargetingType.SINGLE

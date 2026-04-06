@@ -24,6 +24,7 @@ from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.actions.strategies.auto_success import AutoSuccessStrategy
 from agent.actions.strategies.saving_throw import SavingThrowStrategy
 from agent.models.enums import EventType
+from agent.models.position import Position
 from agent.services.effect_service import EffectService
 from agent.services.trait_service import TraitService
 
@@ -139,7 +140,10 @@ class ComposableAction(Action):
         ),
     )
     resources: list[
-        Annotated[ActionEconomyConsumer | SpellSlotConsumer | LimitedUsesConsumer, Discriminator("type")]
+        Annotated[
+            ActionEconomyConsumer | SpellSlotConsumer | LimitedUsesConsumer,
+            Discriminator("type"),
+        ]
     ] = Field(
         default_factory=list,
         description=(
@@ -161,16 +165,19 @@ class ComposableAction(Action):
             ctx: Combat context
         """
         # Fire start events (only for Character targets)
-        from agent.models.position import Position  # noqa: PLC0415
-
         if not isinstance(target, Position):
             TraitService.trigger_event(actor, EventType.COMBAT_START, actor, target, ctx)
             TraitService.trigger_event(target, EventType.COMBAT_START, actor, target, ctx)
 
-        # Handle concentration before resolving
-        requires_concentration = self.metadata.get("concentration", False)
-        if requires_concentration:
-            self._handle_concentration(actor)
+        # Handle concentration before resolving (break existing concentration if needed)
+        concentration_effect = next(
+            (e for e in self.effects if isinstance(e, ApplyConditionsEffect) and e.concentration),
+            None,
+        )
+        if concentration_effect and actor.concentrating_on:
+            old_effect = actor.concentrating_on
+            EffectService.remove_condition(actor, old_effect.type)
+            actor.log_event(f"{actor.name} stops concentrating on {old_effect.type.value}")
 
         # Resolve (determine success/failure)
         # For position-based targeting (evocations), skip resolution and auto-succeed
@@ -181,24 +188,14 @@ class ComposableAction(Action):
             for effect in self.effects:
                 effect.apply(actor, target, ctx)
 
+            # Set up new concentration tracking after effects are applied
+            if concentration_effect and concentration_effect.conditions:
+                actor.concentrating_on = concentration_effect.conditions[0]
+
         # Fire end events (only for Character targets)
         if not isinstance(target, Position):
             TraitService.trigger_event(actor, EventType.COMBAT_END, actor, target, ctx)
             TraitService.trigger_event(target, EventType.COMBAT_END, actor, target, ctx)
-
-    def _handle_concentration(self, actor: Character) -> None:
-        """Break existing concentration and set up new concentration."""
-        # Break existing concentration
-        if actor.concentrating_on:
-            old_effect = actor.concentrating_on
-            EffectService.remove_condition(actor, old_effect.type)
-            actor.log_event(f"{actor.name} stops concentrating on {old_effect.type.value}")
-
-        # Track new concentration - find the first status effect being applied
-        for effect in self.effects:
-            if isinstance(effect, ApplyConditionsEffect) and effect.conditions:
-                actor.concentrating_on = effect.conditions[0]
-                break
 
     def finalize(self, actor: Character) -> None:
         """Consume resources after action execution."""
