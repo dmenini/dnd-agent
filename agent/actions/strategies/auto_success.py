@@ -21,6 +21,9 @@ class AutoSuccessStrategy(ResolutionStrategy):
     - Self-targeted abilities (Rage, Second Wind)
 
     No rolls, no checks - just apply the effects.
+
+    Example:
+        {"type": "auto_success"}
     """
 
     type: Literal["auto_success"] = "auto_success"

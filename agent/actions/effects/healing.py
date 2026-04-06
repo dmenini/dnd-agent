@@ -33,11 +33,17 @@ class HealingEffect(EffectApplicator):
     Template variables supported in heal_dice:
     - {level} → actor.level
     - {proficiency_bonus} → actor.attributes.proficiency_bonus
+
+    Examples:
+        Cure Wounds: {"type": "healing", "heal_dice": "1d8+5", "ability": "wisdom"}
+        Healing Potion: {"type": "healing", "heal_dice": "2d4+2", "ability": null}
+        Second Wind: {"type": "healing", "heal_dice": "1d10+{level}", "ability": null}
     """
 
     type: Literal["healing"] = "healing"
     heal_dice: str = Field(
-        description="Healing expression (e.g., '2d8+5', '1d4+2'). Supports templates: {level}, {proficiency_bonus}"
+        description="Healing expression (e.g., '2d8+5', '1d4+2'). Supports templates: {level}, {proficiency_bonus}",
+        examples=["2d8+5", "2d4+2", "1d10+{level}"],
     )
     ability: AbilityType | None = Field(
         default=None,
@@ -45,6 +51,7 @@ class HealingEffect(EffectApplicator):
             "Ability modifier to add to healing (e.g., wisdom for clerics). None uses spellcasting ability "
             "if available."
         ),
+        examples=["wisdom", None],
     )
 
     def _parse_expression(self, expr: str, actor: Character) -> str:

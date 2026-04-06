@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
+from agent.models.constants import MELEE_RANGE
 from agent.models.enums import TargetingType
 
 if TYPE_CHECKING:
@@ -36,14 +37,14 @@ if TYPE_CHECKING:
 """
 
 
-class ActionCategory(str, Enum):
+class ActionCategory(StrEnum):
     STANDARD = "standard"
     BONUS = "bonus"
     REACTION = "reaction"
     MOVEMENT = "movement"
 
 
-class ActionType(str, Enum):
+class ActionType(StrEnum):
     ATTACK = "attack"
     CAST_SPELL = "cast_spell"
     USE_OBJECT = "use_object"
@@ -61,18 +62,40 @@ class ActionType(str, Enum):
 class Action(BaseModel, ABC):
     """Action resolved from Agent decision"""
 
-    id: str = Field(description="Unique identifier (use snake_case, e.g., 'boss_fire_breath')")
-    name: str = Field(description="Display name shown to players (e.g., 'Fire Breath')")
-    description: str = Field(description="What the action does narratively")
-    type: ActionType = Field(description="Action type: attack, cast_spell, special, dash, move, etc.")
-    category: ActionCategory = Field(
-        description="Action category: standard (main action), bonus, reaction, or movement"
+    id: str = Field(
+        description="Unique identifier (use snake_case, e.g., 'boss_fire_breath')",
+        examples=["longsword_attack", "fireball", "dragon_fire_breath"],
     )
-    targeting: TargetingType = Field(description="Targeting mode: single (one target), multi (multiple), self, or area")
-    hits: int = Field(default=1, description="Number of times the effect applies (usually 1)")
-    range: float = Field(default=0.0, description="Maximum range in feet (0 for melee/self-targeted)")
+    name: str = Field(
+        description="Display name shown to players (e.g., 'Fire Breath')",
+        examples=["Longsword Attack", "Fireball", "Dragon's Fire Breath"],
+    )
+    description: str = Field(
+        description="What the action does narratively",
+        examples=["Strike with your longsword", "Hurl an explosive ball of flame", "Exhale a cone of searing fire"],
+    )
+    type: ActionType = Field(
+        description="Action type."
+    )
+    category: ActionCategory = Field(
+        description="Action category"
+    )
+    targeting: TargetingType = Field(
+        description="Targeting mode",
+    )
+    hits: int = Field(
+        default=1,
+        description="Number of times the effect applies",
+    )
+    range: float = Field(
+        default=0.0,
+        description=f"Maximum range in feet (0 for self-targeted, {MELEE_RANGE} for melee range)",
+        examples=[0.0, 2, 30.0, 150.0],
+    )
     metadata: dict = Field(
-        default_factory=dict, description="Additional data like level_required, concentration, dm_created, etc."
+        default_factory=dict,
+        description="Additional data like level_required, concentration, dm_created, etc.",
+        examples=[{"concentration": True, "dm_created": True}],
     )
 
     @abstractmethod

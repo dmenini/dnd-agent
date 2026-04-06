@@ -43,6 +43,58 @@ class ComposableAction(Action):
     4. Resource consumers (what it costs)
 
     This allows defining abilities as JSON data instead of Python classes.
+
+    Examples:
+        Simple melee attack:
+        {
+            "id": "longsword_attack",
+            "name": "Longsword Attack",
+            "description": "Strike with your longsword",
+            "type": "attack",
+            "category": "standard",
+            "targeting": "single",
+            "range": 1.5,
+            "hits": 1,
+            "resolution": {"type": "attack_roll", "ability": "strength", "weapon_type": "martial_melee"},
+            "effects": [{"type": "damage", "damage_dice": "1d8+3", "damage_type": "slashing", "ability": "strength"}],
+            "resources": [{"type": "action_economy", "category": "standard", "action_type": "attack"}]
+        }
+
+        AOE spell with save:
+        {
+            "id": "fireball",
+            "name": "Fireball",
+            "description": "Hurl an explosive ball of flame",
+            "type": "cast_spell",
+            "category": "standard",
+            "targeting": "multi",
+            "range": 150.0,
+            "hits": 1,
+            "resolution": {"type": "saving_throw", "ability": "dexterity", "use_spell_dc": true},
+            "effects": [{"type": "damage", "damage_dice": "8d6", "damage_type": "fire", "half_on_save": true}],
+            "resources": [
+                {"type": "action_economy", "category": "standard", "action_type": "cast_spell"},
+                {"type": "spell_slot", "level": 3}
+            ]
+        }
+
+        Self-healing ability:
+        {
+            "id": "second_wind",
+            "name": "Second Wind",
+            "description": "Regain hit points as a bonus action",
+            "type": "special",
+            "category": "bonus",
+            "targeting": "self",
+            "range": 0.0,
+            "hits": 1,
+            "resolution": {"type": "auto_success"},
+            "effects": [{"type": "healing", "heal_dice": "1d10+{level}"}],
+            "resources": [
+                {"type": "action_economy", "category": "bonus", "action_type": "special"},
+                {"type": "limited_uses", "resource_name": "second_wind"}
+            ]
+        }
     """
 
     # Composable components

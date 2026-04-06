@@ -30,16 +30,23 @@ class AttackRollStrategy(ResolutionStrategy):
     2. Check for critical hit (natural 20 or meets crit threshold)
     3. Compare total vs target AC
     4. Log results
+
+    Examples:
+        Melee weapon attack: {"type": "attack_roll", "ability": "strength", "weapon_type": "martial_melee"}
+        Ranged weapon attack: {"type": "attack_roll", "ability": "dexterity", "weapon_type": "simple_range"}
+        Spell attack: {"type": "attack_roll", "ability": "intelligence", "weapon_type": "magic"}
     """
 
     type: Literal["attack_roll"] = "attack_roll"
     ability: AbilityType = Field(
         description=(
             "Ability score used for attack roll: strength, dexterity, intelligence, wisdom, charisma, or constitution"
-        )
+        ),
+        examples=["strength", "dexterity", "intelligence"],
     )
     weapon_type: WeaponType = Field(
-        description="Weapon proficiency type: simple_melee, martial_melee, simple_range, martial_range, or magic"
+        description="Weapon proficiency type: simple_melee, martial_melee, simple_range, martial_range, or magic",
+        examples=["martial_melee", "simple_range", "magic"],
     )
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:

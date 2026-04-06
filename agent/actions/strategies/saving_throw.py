@@ -31,6 +31,11 @@ class SavingThrowStrategy(ResolutionStrategy):
 
     Note: Some effects apply on failed save (full damage), others apply reduced
     effects on success (half damage). That's handled by the effect, not here.
+
+    Examples:
+        Fireball (DEX save): {"type": "saving_throw", "ability": "dexterity", "use_spell_dc": true}
+        Poison (CON save): {"type": "saving_throw", "ability": "constitution", "use_spell_dc": true}
+        Charm effect (WIS save): {"type": "saving_throw", "ability": "wisdom", "use_spell_dc": true}
     """
 
     type: Literal["saving_throw"] = "saving_throw"
@@ -38,11 +43,13 @@ class SavingThrowStrategy(ResolutionStrategy):
         description=(
             "Which ability save the target must make: dexterity, constitution, wisdom, intelligence, "
             "charisma, or strength"
-        )
+        ),
+        examples=["dexterity", "constitution", "wisdom"],
     )
     use_spell_dc: bool = Field(
         default=True,
         description="Use caster's spell save DC (true) or ability-based DC (false). Usually true for spells.",
+        examples=[True],
     )
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:

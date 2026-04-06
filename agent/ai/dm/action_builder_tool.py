@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from langchain_core.tools import tool
 
 from agent.actions.composable import ComposableAction
@@ -37,4 +39,5 @@ def create_custom_action(action: ComposableAction) -> str:
     Returns:
         JSON representation of the validated action
     """
-    return f"Action created successfully!\n\n{action.model_dump_json(indent=2)}"
+    # Use model_dump with mode='json' to avoid serialization warnings for discriminated unions
+    return f"Action created successfully!\n\n{json.dumps(action.model_dump(mode='json'), indent=2)}"

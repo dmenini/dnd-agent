@@ -18,12 +18,30 @@ class ActionEconomyConsumer(ResourceConsumer):
     """Consume action economy (standard/bonus/reaction/movement).
 
     This is used by almost every action to consume the appropriate action type.
+
+    Examples:
+        Standard attack:
+            {"type": "action_economy", "category": "standard", "action_type": "attack"}
+        Bonus action spell:
+            {"type": "action_economy", "category": "bonus", "action_type": "cast_spell"}
+        Reaction:
+            {"type": "action_economy", "category": "reaction", "action_type": "special"}
     """
 
     type: Literal["action_economy"] = "action_economy"
-    category: ActionCategory = Field(description="Action category to consume: standard, bonus, reaction, or movement")
-    action_type: ActionType = Field(description="Type of action being performed (attack, cast_spell, special, etc.)")
-    breaks_stealth: bool = Field(default=True, description="If true, using this action breaks stealth/hiding")
+    category: ActionCategory = Field(
+        description="Action category to consume: standard, bonus, reaction, or movement",
+        examples=["standard", "bonus", "reaction"],
+    )
+    action_type: ActionType = Field(
+        description="Type of action being performed (attack, cast_spell, special, etc.)",
+        examples=["attack", "cast_spell", "special"],
+    )
+    breaks_stealth: bool = Field(
+        default=True,
+        description="If true, using this action breaks stealth/hiding",
+        examples=[True, False],
+    )
 
     def consume(self, actor: Character) -> None:
         """Consume action economy from actor."""

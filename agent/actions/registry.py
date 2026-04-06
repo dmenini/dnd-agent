@@ -44,12 +44,8 @@ class ActionRegistry:
             # It's a JSON path - load composable action
             json_path = Path(registered)
             with json_path.open() as f:
-                action = ComposableAction.model_validate_json(f.read())
+                return ComposableAction.model_validate_json(f.read())
             # Override kwargs if provided (for dynamic customization)
-            for key, value in kwargs.items():
-                if hasattr(action, key):
-                    setattr(action, key, value)
-            return action
         if isinstance(registered, type):
             # It's a class - instantiate normally (legacy)
             return registered(id=id_.value, **kwargs)

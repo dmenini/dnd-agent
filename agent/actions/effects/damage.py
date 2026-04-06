@@ -35,27 +35,39 @@ class DamageEffect(EffectApplicator):
     Template variables supported in damage_dice:
     - {level} → actor.level
     - {proficiency_bonus} → actor.attributes.proficiency_bonus
+
+    Examples:
+        Weapon attack:
+            {"type": "damage", "damage_dice": "1d8+5", "damage_type": "slashing", "ability": "strength"}
+        Fireball (half on save):
+            {"type": "damage", "damage_dice": "8d6", "damage_type": "fire", "half_on_save": true}
+        Scaled cantrip:
+            {"type": "damage", "damage_dice": "{level}d10", "damage_type": "fire"}
     """
 
     type: Literal["damage"] = "damage"
     damage_dice: str = Field(
-        description="Damage expression (e.g., '2d6', '3d8+5', '8d6'). Supports templates: {level}, {proficiency_bonus}"
+        description="Damage expression (e.g., '2d6', '3d8+5', '8d6'). Supports templates: {level}, {proficiency_bonus}",
+        examples=["1d8+5", "8d6", "3d10", "{level}d10"],
     )
     damage_type: DamageType = Field(
         description=(
             "Type of damage: slashing, piercing, bludgeoning, fire, cold, poison, lightning, necrotic, radiant, "
             "or force"
-        )
+        ),
+        examples=["slashing", "fire", "necrotic"],
     )
     ability: AbilityType | None = Field(
         default=None,
         description=(
-            "Ability modifier to add to damage (e.g., strength for melee). None defaults to the class "
-            "primary ability."
+            "Ability modifier to add to damage (e.g., strength for melee). None defaults to the class primary ability."
         ),
+        examples=["strength", "dexterity", None],
     )
     half_on_save: bool = Field(
-        default=False, description="If true, deals half damage on successful save (common for AOE spells)"
+        default=False,
+        description="If true, deals half damage on successful save (common for AOE spells)",
+        examples=[False, True],
     )
 
     def _parse_expression(self, expr: str, actor: Character) -> str:
