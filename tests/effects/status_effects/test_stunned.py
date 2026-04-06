@@ -14,7 +14,6 @@ from agent.models.state import State
 from tests.conftest import advance_turn, cheater_dice
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     hero_id = actor.id
@@ -30,6 +29,10 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
     )
     actor.equipment.main_hand = sword
 
+    # Give target more HP to survive the attack
+    target.level = 5  # Higher level means more HP
+    target.attributes.hp = target.max_hp
+
     state = State(
         map=game_map,
         characters={actor.id: actor, target.id: target},
@@ -37,8 +40,8 @@ async def test_stunned(config: AgentConfig, game_map: GameMap, actor: Character,
         turn_order=[hero_id, orc_id],
     )
 
-    # Set deterministic rolls - actor rolls 10, target rolls 1 (fails save)
-    actor.cheater_dice = cheater_dice(value=10)
+    # Set deterministic rolls - actor rolls 5 (no crit), target rolls 1 (fails save)
+    actor.cheater_dice = cheater_dice(value=5)
     target.cheater_dice = cheater_dice(value=1)
 
     # Turn 1.1: Hero attacks and applies stun
