@@ -31,7 +31,6 @@ class ApplyConditionsEffect(EffectApplicator):
     concentration: bool = Field(
         default=False,
         description="If true, the first condition in the list requires concentration",
-        examples=[False, True],
     )
 
     @field_validator("conditions", mode="before")
