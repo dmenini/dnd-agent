@@ -24,6 +24,6 @@ class RequiresPriorActionCondition(AvailabilityCondition):
     type: Literal["requires_prior_action"] = "requires_prior_action"
     action_type: ActionType
 
-    def is_available(self, actor: Character, ctx: CombatContext | None = None) -> bool:
+    def is_available(self, actor: Character, _ctx: CombatContext | None = None) -> bool:
         """Check if the required action was used this turn."""
         return actor.action_economy.last_standard_action == self.action_type

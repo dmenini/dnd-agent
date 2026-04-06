@@ -63,9 +63,9 @@ class CharacterJob(BaseModel):
     def get_spells_for_level(self, level: int) -> list[ComposableAction]:
         """Return unlocked spells up to the given level.
 
-        Spells use metadata['level_required'] for level gating.
+        Spells use level_required for level gating (defaults to 1 if None).
         """
-        return [spell for spell in self.spells if spell.level_required <= level]
+        return [spell for spell in self.spells if (spell.level_required or 1) <= level]
 
     def get_passives_for_level(self, level: int) -> list[JobPassive]:
         """Return unlocked passives up to the given level."""

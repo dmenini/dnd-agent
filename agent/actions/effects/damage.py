@@ -49,7 +49,10 @@ class DamageEffect(EffectApplicator):
     )
     ability: AbilityType | None = Field(
         default=None,
-        description="Ability modifier to add to damage (e.g., strength for melee). None defaults to the class primary ability.",
+        description=(
+            "Ability modifier to add to damage (e.g., strength for melee). None defaults to the class "
+            "primary ability."
+        ),
     )
     half_on_save: bool = Field(
         default=False, description="If true, deals half damage on successful save (common for AOE spells)"

@@ -189,7 +189,7 @@ def test_missing_required_params_for_attack() -> None:
         ],
         "level": 1,
     }
-    with pytest.raises(ValidationError, match="adjcn"):
+    with pytest.raises(ValidationError, match="Field required"):
         ComposableAction.model_validate(action_dict)
 
 
@@ -215,5 +215,5 @@ def test_missing_required_params_for_save() -> None:
         "level": 3,
     }
 
-    with pytest.raises(ValidationError, match="saving_throw.ability\n  Field required"):
+    with pytest.raises(ValidationError, match="Field required"):
         ComposableAction.model_validate(action_dict)

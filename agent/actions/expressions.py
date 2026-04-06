@@ -150,7 +150,7 @@ class ExpressionEvaluator:
         return cls._eval_node(tree.body, variables)
 
     @classmethod
-    def _eval_node(cls, node: ast.AST, variables: dict[str, Any]) -> Any:
+    def _eval_node(cls, node: ast.AST, variables: dict[str, Any]) -> Any:  # noqa: C901, PLR0912
         """Recursively evaluate an AST node."""
         if isinstance(node, ast.Constant):
             return node.value

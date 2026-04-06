@@ -69,7 +69,7 @@ class ApplyDynamicStatusEffect(EffectApplicator):
         if success:
             actor.log_event(f"Applied {self.status_type.value} to {target.name}", icon=Icon.EFFECT_APPLIED)
 
-    def _build_trait(
+    def _build_trait(  # noqa: C901, PLR0911, PLR0912
         self, template: TraitTemplate, actor: Character, target: Character, ctx: CombatContext
     ) -> Trait | None:
         """Build a trait from a template."""
