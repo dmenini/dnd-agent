@@ -1,15 +1,21 @@
+import pytest
+
 from agent.actions.base import ActionCategory, ActionType
 from agent.actions.composable import ComposableAction
 from agent.actions.effects.conditions import ApplyConditionsEffect
+from agent.actions.resources.concentration import ConcentrationConsumer
 from agent.character.character import Character
 from agent.effects.status_effects.base import StatusType
-from agent.equipment.armor import ArmorType
+from agent.effects.trait_effects.support import guided_strike
+from agent.equipment.armor import Armor, ArmorType
 from agent.jobs.cleric import Cleric, WarDomain
+from agent.mechanics.dice_roller import DiceRoll
 from agent.models.context import CombatContext
 from agent.models.damage import DamageType
 from agent.models.enums import FeatureId, TargetingType
 from agent.services.effect_service import EffectService
 from agent.services.job_service import JobService
+from agent.services.level_service import LevelService
 
 
 def test_war_domain_divine_favor(actor: Character) -> None:
@@ -67,7 +73,7 @@ def test_war_domain_shield_of_faith(actor: Character, orc: Character) -> None:
     assert isinstance(shield_of_faith, ComposableAction)
 
     # Check it requires concentration
-    assert shield_of_faith.metadata.get("concentration", False)
+    assert any(isinstance(r, ConcentrationConsumer) for r in shield_of_faith.resources)
 
     # Check targeting and range
     assert shield_of_faith.targeting == TargetingType.SINGLE
@@ -115,8 +121,6 @@ def test_war_domain_guided_strike(actor: Character, orc: Character) -> None:
     assert not any(p.feature_id == FeatureId.GUIDED_STRIKE for p in actor.passives)
 
     # Level up to 2
-    from agent.services.level_service import LevelService  # noqa: PLC0415
-
     LevelService.level_up(actor)
     assert actor.level == 2
 
@@ -136,16 +140,12 @@ def test_war_domain_guided_strike(actor: Character, orc: Character) -> None:
     # With no base_ac: AC = armor.base_ac + dex + trait + 10 (if no armor type penalty)
     # Target AC ~20, so let's use heavy armor with base_ac 20 (no dex added)
     orc.attributes.base_ac = 0
-    from agent.equipment.armor import Armor, ArmorType  # noqa: PLC0415
-
     orc.equipment.armor = Armor(name="Plate", description="", armor_type=ArmorType.HEAVY, base_ac=20)
     target_ac = orc.armor_class
 
     ctx = CombatContext(enemies=[orc])
 
     # Mock an attack roll that would miss (total = 15)
-    from agent.mechanics.dice_roller import DiceRoll  # noqa: PLC0415
-
     ctx.attack_roll = DiceRoll(expression="1d20+5", total=15, raw=10, advantage=None, rolls=[10])
 
     # Verify the conditions for Guided Strike
@@ -153,8 +153,6 @@ def test_war_domain_guided_strike(actor: Character, orc: Character) -> None:
     assert target_ac <= 25, f"Roll 25 should hit AC {target_ac}"
 
     # Trigger the Guided Strike effect
-    from agent.effects.trait_effects.support import guided_strike  # noqa: PLC0415
-
     guided_strike(actor, orc, ctx)
 
     # Should have applied +10 bonus
@@ -171,8 +169,6 @@ def test_guided_strike_not_used_if_already_hits(actor: Character, orc: Character
     job = Cleric.apply_specialization(WarDomain)
     JobService.change_job(actor, job)
 
-    from agent.services.level_service import LevelService  # noqa: PLC0415
-
     LevelService.level_up(actor)
 
     # Use orc fixture as target with low AC
@@ -185,16 +181,12 @@ def test_guided_strike_not_used_if_already_hits(actor: Character, orc: Character
     # Set up a scenario where attack already hits
     ctx = CombatContext(enemies=[orc])
 
-    from agent.mechanics.dice_roller import DiceRoll  # noqa: PLC0415
-
     ctx.attack_roll = DiceRoll(expression="1d20+5", total=15, raw=10, advantage=None, rolls=[10])
 
     # Verify attack already hits
     assert target_ac <= 15, f"Roll 15 should hit AC {target_ac}"
 
     # Should not use Guided Strike
-    from agent.effects.trait_effects.support import guided_strike  # noqa: PLC0415
-
     guided_strike(actor, orc, ctx)
 
     # Should not have changed the roll
@@ -278,8 +270,6 @@ def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:
     assert FeatureId.MAGIC_WEAPON not in spells
 
     # Level up to 3
-    from agent.services.level_service import LevelService  # noqa: PLC0415
-
     LevelService.level_up(actor)
     assert actor.level == 3
 
@@ -297,7 +287,7 @@ def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:
     assert isinstance(magic_weapon, ComposableAction)
 
     # Check it requires concentration
-    assert magic_weapon.metadata.get("concentration", False)
+    assert any(isinstance(r, ConcentrationConsumer) for r in magic_weapon.resources)
 
     # Check targeting and range
     assert magic_weapon.targeting == TargetingType.SINGLE
@@ -329,7 +319,6 @@ def test_war_domain_magic_weapon(actor: Character, orc: Character) -> None:
 
 def test_war_domain_spiritual_weapon(actor: Character, orc: Character) -> None:
     """Test that War Domain clerics learn Spiritual Weapon spell at level 3."""
-    import pytest  # noqa: PLC0415
 
     # Skip this test - Spiritual Weapon needs evocation support which is pending
     pytest.skip("Spiritual Weapon requires evocation support - see task #12")
@@ -345,8 +334,6 @@ def test_war_domain_spiritual_weapon(actor: Character, orc: Character) -> None:
     assert FeatureId.SPIRITUAL_WEAPON not in spells
 
     # Level up to 3
-    from agent.services.level_service import LevelService  # noqa: PLC0415
-
     LevelService.level_up(actor)
     assert actor.level == 3
 

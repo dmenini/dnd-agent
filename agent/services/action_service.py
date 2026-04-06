@@ -8,8 +8,11 @@ from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.actions.composable import ComposableAction
 from agent.actions.effects.damage import DamageEffect
+from agent.actions.resources import SpellSlotConsumer
 from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.strategies.attack_roll import AttackRollStrategy
+from agent.character.abilities import AbilityType
+from agent.character.resources import SpellLevel
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling
@@ -56,8 +59,6 @@ class ActionService:
         # Determine ability (finesse weapons can use STR or DEX, player chooses best)
         ability = weapon.ability
         if isinstance(weapon, MeleeWeapon) and weapon.finesse and abilities:
-            from agent.character.abilities import AbilityType  # noqa: PLC0415
-
             ability = AbilityType.STR if abilities.strength >= abilities.dexterity else AbilityType.DEX
 
         return ComposableAction(
@@ -106,10 +107,6 @@ class ActionService:
         Handles both old-style spell actions (with .level attribute) and
         ComposableActions (with SpellSlotConsumer in .resources).
         """
-        from agent.actions.composable import ComposableAction  # noqa: PLC0415
-        from agent.actions.resources.spell_slots import SpellSlotConsumer  # noqa: PLC0415
-        from agent.character.resources import SpellLevel  # noqa: PLC0415
-
         # For ComposableAction, check resources for SpellSlotConsumer
         if isinstance(spell, ComposableAction):
             for resource in spell.resources:

@@ -74,12 +74,8 @@ class Action(BaseModel, ABC):
         description="What the action does narratively",
         examples=["Strike with your longsword", "Hurl an explosive ball of flame", "Exhale a cone of searing fire"],
     )
-    type: ActionType = Field(
-        description="Action type."
-    )
-    category: ActionCategory = Field(
-        description="Action category"
-    )
+    type: ActionType = Field(description="Action type.")
+    category: ActionCategory = Field(description="Action category")
     targeting: TargetingType = Field(
         description="Targeting mode",
     )

@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
+from langgraph.prebuilt import ToolRuntime
 from pytest_mock import MockerFixture
 
 from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
@@ -295,7 +296,6 @@ def char_creation_config() -> AgentConfig:
 @pytest.fixture
 def mock_tool_runtime(mocker: MockerFixture):  # type: ignore[no-untyped-def]  # noqa: ANN201
     """Factory for creating mock ToolRuntime objects."""
-    from langgraph.prebuilt import ToolRuntime  # noqa: PLC0415
 
     def _create(state_data: dict):  # type: ignore[no-untyped-def]  # noqa: ANN202
         config = mocker.MagicMock()

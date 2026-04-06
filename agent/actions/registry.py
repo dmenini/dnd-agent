@@ -41,14 +41,14 @@ class ActionRegistry:
         if isinstance(registered, str):
             from agent.actions.composable import ComposableAction  # noqa: PLC0415
 
-            # It's a JSON path - load composable action
             json_path = Path(registered)
             with json_path.open() as f:
                 return ComposableAction.model_validate_json(f.read())
-            # Override kwargs if provided (for dynamic customization)
+
         if isinstance(registered, type):
             # It's a class - instantiate normally (legacy)
             return registered(id=id_.value, **kwargs)
+
         # It's already an Action instance (DM dynamic generation)
         # Return a copy to avoid shared state issues
         return registered.model_copy(deep=True)
