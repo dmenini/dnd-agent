@@ -4,6 +4,7 @@ from agent.effects.status_effects.base import StatusEffect
 from agent.effects.status_effects.collection import (
     Blessed,
     DivineFavored,
+    Enraged,
     Hasted,
     MagicWeapon,
     ShieldedByFaith,
@@ -16,6 +17,7 @@ class StatusEffectRegistry:
     _effects: dict[str, StatusEffect] = {
         "blessed": Blessed,
         "divine_favored": DivineFavored,
+        "enraged": Enraged,
         "hasted": Hasted,
         "magic_weapon": MagicWeapon,
         "shielded_by_faith": ShieldedByFaith,

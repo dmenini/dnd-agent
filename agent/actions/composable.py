@@ -13,7 +13,6 @@ from agent.actions.conditions.resource_threshold import ResourceThresholdConditi
 from agent.actions.effects.conditions import ApplyConditionsEffect, RemoveConditionsEffect
 from agent.actions.effects.damage import DamageEffect
 from agent.actions.effects.distributed import DistributedHealingEffect
-from agent.actions.effects.dynamic_status import ApplyDynamicStatusEffect
 from agent.actions.effects.evocation import SummonEvocationEffect
 from agent.actions.effects.healing import HealingEffect
 from agent.actions.effects.resources import RecoverSpellSlotsEffect, RestoreResourceEffect
@@ -128,7 +127,6 @@ class ComposableAction(Action):
             | SummonEvocationEffect
             | RecoverSpellSlotsEffect
             | RestoreResourceEffect
-            | ApplyDynamicStatusEffect
             | DistributedHealingEffect,
             Discriminator("type"),
         ]

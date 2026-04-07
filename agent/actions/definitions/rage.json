@@ -21,42 +21,8 @@
   },
   "effects": [
     {
-      "type": "apply_dynamic_status",
-      "status_type": "enraged",
-      "duration": 1,
-      "save_dc": 0,
-      "trait_templates": [
-        {
-          "template_id": "advantage_on_save",
-          "params": {
-            "ability": "strength"
-          }
-        },
-        {
-          "template_id": "resistance",
-          "params": {
-            "damage_type": "bludgeoning"
-          }
-        },
-        {
-          "template_id": "resistance",
-          "params": {
-            "damage_type": "piercing"
-          }
-        },
-        {
-          "template_id": "resistance",
-          "params": {
-            "damage_type": "slashing"
-          }
-        },
-        {
-          "template_id": "melee_damage_bonus",
-          "params": {
-            "value": 2
-          }
-        }
-      ]
+      "type": "apply_conditions",
+      "conditions": ["enraged"]
     }
   ],
   "resources": [

@@ -161,3 +161,17 @@ ShieldedByFaith = StatusEffect(
     ],
     duration=100,
 )
+
+Enraged = StatusEffect(
+    type=StatusType.ENRAGED,
+    save_dc=0,
+    traits=[
+        TraitBuilder.advantage_on_save(source_id=StatusType.ENRAGED.value, ability=AbilityType.STR),
+        TraitBuilder.resistance(source_id=StatusType.ENRAGED.value, damage_type=DamageType.BLUDGEONING),
+        TraitBuilder.resistance(source_id=StatusType.ENRAGED.value, damage_type=DamageType.PIERCING),
+        TraitBuilder.resistance(source_id=StatusType.ENRAGED.value, damage_type=DamageType.SLASHING),
+        # Dynamic rage damage bonus - will be evaluated when applied
+        TraitBuilder.melee_damage_bonus(source_id=StatusType.ENRAGED.value, value=2),  # Default, can be overridden
+    ],
+    duration=1,
+)
