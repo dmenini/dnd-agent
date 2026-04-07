@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, SkipValidation, computed_fiel
 from agent.actions.base import Action
 from agent.actions.composable import ComposableAction
 from agent.actions.registry import ActionRegistry
-from agent.character.abilities import Abilities, AbilityType
+from agent.character.abilities import Abilities
 from agent.character.attributes import Attributes
 from agent.character.combat_stats import CombatStats
 from agent.character.equipment import Equipment
@@ -20,7 +20,7 @@ from agent.jobs.base import CharacterJob
 from agent.jobs.fighter import Fighter
 from agent.logs.log_event import LogEvent, LogLevel
 from agent.logs.log_registry import get_log_registry
-from agent.mechanics.dice_roller import DiceRoll, DiceRoller
+from agent.mechanics.dice_roller import DiceRoller
 from agent.models.enums import FeatureId
 from agent.models.position import Position
 from agent.services.equipment_service import EquipmentService
@@ -148,9 +148,6 @@ class Character(BaseModel):
         if resource_name not in self.limited_resources:
             self.limited_resources[resource_name] = LimitedResource()
         return self.limited_resources[resource_name]
-
-    def save_roll(self, ability: AbilityType, *, is_spell: bool = False) -> DiceRoll:
-        raise NotImplementedError
 
     def los_distance(self, target: Position) -> float:
         """Line of Sight distance from the target."""

@@ -26,8 +26,11 @@ class ApplyConditionsEffect(EffectApplicator):
     - Weapon effects (poison, stunning strike)
     """
 
-    type: Literal["apply_conditions"] = "apply_conditions"
-    conditions: list[StatusEffect] = Field(default_factory=list)
+    type: Literal["apply_conditions"] = Field(default="apply_conditions", description="Effect type identifier")
+    conditions: list[StatusEffect] = Field(
+        default_factory=list,
+        description="List of status effects to apply (can use registry IDs or StatusEffect objects)",
+    )
     concentration: bool = Field(
         default=False,
         description="If true, the first condition in the list requires concentration",
@@ -66,8 +69,10 @@ class RemoveConditionsEffect(EffectApplicator):
     - Paladin Lay on Hands (can remove disease/poison)
     """
 
-    type: Literal["remove_conditions"] = "remove_conditions"
-    condition_types: list[StatusType] = Field(default_factory=list)
+    type: Literal["remove_conditions"] = Field(default="remove_conditions", description="Effect type identifier")
+    condition_types: list[StatusType] = Field(
+        default_factory=list, description="List of status effect types to remove (removes first match found)"
+    )
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         """Remove status effects from target."""

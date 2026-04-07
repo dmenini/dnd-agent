@@ -14,7 +14,7 @@
   "effects": [
     {
       "type": "summon_evocation",
-      "evocation_id": "spiritual_weapon",
+      "evocation": "spiritual_weapon",
       "on_cast_action_id": "melee_spell_attack"
     }
   ],

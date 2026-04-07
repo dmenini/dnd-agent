@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import Field
+
 from agent.actions.effects.base import EffectApplicator
 from agent.actions.expressions import ExpressionEvaluator
 from agent.logs.log_event import LogLevel
@@ -23,11 +25,21 @@ class DistributedHealingEffect(EffectApplicator):
     - Resource distribution abilities
     """
 
-    type: Literal["distributed_healing"] = "distributed_healing"
-    total_amount: str | int = "{level} * 5"  # Expression for total healing pool
-    max_per_target: str | int | None = "{target.max_hp} / 2"  # Per-target cap (None = no cap)
-    min_per_target: int = 0  # Minimum to give each target (skip if can't meet)
-    distribution_strategy: Literal["equal", "most_wounded_first", "percentage"] = "equal"
+    type: Literal["distributed_healing"] = Field(default="distributed_healing", description="Effect type identifier")
+    total_amount: str | int = Field(
+        default="{level} * 5", description="Expression for total healing pool (e.g., '{level} * 5', '30')"
+    )
+    max_per_target: str | int | None = Field(
+        default="{target.max_hp} / 2",
+        description="Per-target healing cap, None for no limit. Supports expressions.",
+        examples=["{target.max_hp} / 2", 10, None],
+    )
+    min_per_target: int = Field(
+        default=0, description="Minimum healing per target (skip target if can't meet threshold)"
+    )
+    distribution_strategy: Literal["equal", "most_wounded_first", "percentage"] = Field(
+        default="equal", description="How to distribute healing across targets"
+    )
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Apply distributed healing to target.

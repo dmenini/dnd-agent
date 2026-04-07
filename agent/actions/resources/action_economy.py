@@ -30,17 +30,14 @@ class ActionEconomyConsumer(ResourceConsumer):
 
     type: Literal["action_economy"] = "action_economy"
     category: ActionCategory = Field(
-        description="Action category to consume: standard, bonus, reaction, or movement",
-        examples=["standard", "bonus", "reaction"],
+        description="Action category to consume",
     )
     action_type: ActionType = Field(
-        description="Type of action being performed (attack, cast_spell, special, etc.)",
-        examples=["attack", "cast_spell", "special"],
+        description="Type of action being performed",
     )
     breaks_stealth: bool = Field(
         default=True,
         description="If true, using this action breaks stealth/hiding",
-        examples=[True, False],
     )
 
     def consume(self, actor: Character) -> None:

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from pydantic import Field
+
 from agent.actions.effects.base import EffectApplicator
 from agent.actions.expressions import ExpressionEvaluator
 from agent.logs.log_event import LogLevel
@@ -22,10 +24,23 @@ class RecoverSpellSlotsEffect(EffectApplicator):
     - Other spell slot recovery features
     """
 
-    type: Literal["recover_spell_slots"] = "recover_spell_slots"
-    max_level: str | int = "{level} / 2"  # Expression for max slot levels to recover
-    round_up: bool = True
-    strategy: Literal["highest_first", "lowest_first"] = "highest_first"
+    type: Literal["recover_spell_slots"] = Field(
+        default="recover_spell_slots",
+        description="Effect type identifier",
+    )
+    max_level: str | int = Field(
+        default="{level} / 2",
+        description="Expression for max slot levels to recover",
+        examples=["{level} / 2", 5],
+    )
+    round_up: bool = Field(
+        default=True,
+        description="If true, round up fractional max_level values",
+    )
+    strategy: Literal["highest_first", "lowest_first"] = Field(
+        default="highest_first",
+        description="Which spell slots to recover first",
+    )
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:  # noqa: ARG002
         """Recover spell slots for the actor."""
@@ -96,9 +111,11 @@ class RestoreResourceEffect(EffectApplicator):
     - Restore Ki points, Sorcery points, etc.
     """
 
-    type: Literal["restore_resource"] = "restore_resource"
-    resource_name: str
-    amount: str | int = "{max}"  # Expression or literal, "{max}" means restore all
+    type: Literal["restore_resource"] = Field(default="restore_resource", description="Effect type identifier")
+    resource_name: str = Field(description="Name of the resource to restore (e.g., 'Ki', 'Rage', 'Channel Divinity')")
+    amount: str | int = Field(
+        default="{max}", description="Amount to restore, or '{max}' to restore all (e.g., '1', '2', '{max}')"
+    )
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Restore resource for the target."""

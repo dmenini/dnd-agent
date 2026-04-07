@@ -32,10 +32,8 @@ class SummonEvocationEffect(EffectApplicator):
     will immediately attempt to use that action against the nearest enemy.
     """
 
-    model_config = {"populate_by_name": True}
-
-    type: Literal["summon_evocation"] = "summon_evocation"
-    evocation: Evocation = Field(description="The evocation to summon", alias="evocation_id")
+    type: Literal["summon_evocation"] = Field(default="summon_evocation", description="Effect type identifier")
+    evocation: Evocation = Field(description="The evocation to summon (registry ID or Evocation object)")
     on_cast_action_id: str | None = Field(default=None, description="Feature ID to immediately use after summoning")
 
     @field_validator("evocation", mode="before")

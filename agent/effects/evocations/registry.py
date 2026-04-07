@@ -47,7 +47,6 @@ def _register_spiritual_weapon() -> None:
         ref_id=FeatureId.MELEE_SPELL_ATTACK,
         name="Spiritual Weapon Attack",
         description="The spiritual weapon attacks a creature within 5 feet.",
-        # No kwargs needed - melee_spell_attack.json has all the right values
     )
     # Movement is implicit - all evocations can reposition
     evocation = Evocation(

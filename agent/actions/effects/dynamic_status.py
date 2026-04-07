@@ -39,11 +39,21 @@ class ApplyDynamicStatusEffect(EffectApplicator):
     - Custom buffs/debuffs with variable strength
     """
 
-    type: Literal["apply_dynamic_status"] = "apply_dynamic_status"
-    status_type: StatusType
-    duration: int | str = 1  # Can be expression
-    save_dc: int = 0
-    trait_templates: list[TraitTemplate] = Field(default_factory=list)
+    type: Literal["apply_dynamic_status"] = Field(default="apply_dynamic_status", description="Effect type identifier")
+    status_type: StatusType = Field(description="Type of status effect to apply")
+    duration: int | str = Field(
+        default=1,
+        description="Duration in rounds, can be an expression",
+        examples=[10, "{level}"],
+    )
+    save_dc: int = Field(
+        default=0,
+        description="Save DC for the effect (0 for no save required)",
+    )
+    trait_templates: list[TraitTemplate] = Field(
+        default_factory=list,
+        description="Templates for dynamically building traits on the status effect",
+    )
 
     def apply(self, actor: Character, target: Character, ctx: CombatContext) -> None:
         """Apply status effect with dynamically built traits."""
