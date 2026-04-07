@@ -19,6 +19,7 @@ def register_actions() -> None:
         FeatureId.SACRED_FLAME: "sacred_flame.json",
         FeatureId.CURE_WOUNDS: "cure_wounds.json",
         FeatureId.BLESS: "bless.json",
+        FeatureId.HASTE: "haste.json",
         FeatureId.LESSER_RESTORATION: "lesser_restoration.json",
         FeatureId.DIVINE_FAVOR: "divine_favor.json",
         FeatureId.SHIELD_OF_FAITH: "shield_of_faith.json",

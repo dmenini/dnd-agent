@@ -51,7 +51,6 @@ class HealingEffect(EffectApplicator):
             "Ability modifier to add to healing (e.g., wisdom for clerics). None uses spellcasting ability "
             "if available."
         ),
-        examples=["wisdom", None],
     )
 
     def _parse_expression(self, expr: str, actor: Character) -> str:

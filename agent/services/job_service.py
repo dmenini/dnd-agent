@@ -83,6 +83,7 @@ class JobService:
             resource.restore()
 
         # Special handling for War Priest: uses are based on WIS modifier (min 1)
+        # TODO: Make it generic
         if character.job.specialization == "War Domain":
             war_priest_resource = character.get_resource("war_priest")
             wis_mod = character.attributes.ability_modifier(AbilityType.WIS)

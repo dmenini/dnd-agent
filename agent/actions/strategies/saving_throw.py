@@ -40,16 +40,11 @@ class SavingThrowStrategy(ResolutionStrategy):
 
     type: Literal["saving_throw"] = "saving_throw"
     ability: AbilityType = Field(
-        description=(
-            "Which ability save the target must make: dexterity, constitution, wisdom, intelligence, "
-            "charisma, or strength"
-        ),
-        examples=["dexterity", "constitution", "wisdom"],
+        description="Which ability save the target must make",
     )
     use_spell_dc: bool = Field(
         default=True,
         description="Use caster's spell save DC (true) or ability-based DC (false). Usually true for spells.",
-        examples=[True],
     )
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:

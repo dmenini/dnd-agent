@@ -40,8 +40,8 @@ class StatusEffect(BaseModel):
     traits: list[Trait | ModifierTrait] = Field(default_factory=list)
 
     def with_duration(self, duration: int) -> Self:
-        self.duration = duration
-        return self
+        """Return a copy of this effect with a different duration."""
+        return self.model_copy(update={"duration": duration})
 
     def on_apply(self, target: Character) -> None:
         """Call when the effect is first applied."""

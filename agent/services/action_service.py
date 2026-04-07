@@ -7,6 +7,7 @@ from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
 from agent.actions.composable import ComposableAction
+from agent.actions.effects.conditions import ApplyConditionsEffect
 from agent.actions.effects.damage import DamageEffect
 from agent.actions.resources import SpellSlotConsumer
 from agent.actions.resources.action_economy import ActionEconomyConsumer
@@ -17,9 +18,9 @@ from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.services.evocation_service import EvocationService
+from agent.character.attributes import Attributes
 
 if TYPE_CHECKING:
-    from agent.character.attributes import Attributes
     from agent.character.character import Character
 
 
@@ -35,7 +36,7 @@ class ActionService:
         action_type: ActionType,
         *,
         is_two_handed: bool = False,
-        abilities: "Attributes | None" = None,
+        abilities: Attributes | None = None,
     ) -> ComposableAction:
         """Build a ComposableAction from weapon data.
 
@@ -61,6 +62,17 @@ class ActionService:
         if isinstance(weapon, MeleeWeapon) and weapon.finesse and abilities:
             ability = AbilityType.STR if abilities.strength >= abilities.dexterity else AbilityType.DEX
 
+        # Build effects list: damage first, then weapon effects (if any)
+        action_effects: list = [
+            DamageEffect(
+                damage_dice=damage_dice,
+                damage_type=weapon.damage_type,
+                ability=ability,
+            )
+        ]
+        if weapon.effects:
+            action_effects.append(ApplyConditionsEffect(conditions=weapon.effects))
+
         return ComposableAction(
             id=action_id,
             name=name,
@@ -74,13 +86,7 @@ class ActionService:
                 ability=ability,
                 weapon_type=weapon.weapon_type,
             ),
-            effects=[
-                DamageEffect(
-                    damage_dice=damage_dice,
-                    damage_type=weapon.damage_type,
-                    ability=ability,
-                )
-            ],
+            effects=action_effects,
             resources=[
                 ActionEconomyConsumer(
                     category=category,

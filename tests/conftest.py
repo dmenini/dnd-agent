@@ -6,7 +6,6 @@ from langgraph.prebuilt import ToolRuntime
 from pytest_mock import MockerFixture
 
 from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
-from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.combat_stats import CombatStats
@@ -29,6 +28,7 @@ from agent.models.position import Position
 from agent.models.state import State
 from agent.nodes.action_processor import ActionProcessorNode
 from agent.nodes.decision import DecisionNode
+from agent.services.roll_service import RollService
 from agent.nodes.end_combat import EndCombatNode
 from agent.nodes.start_combat import StartCombatNode
 from agent.registration import register_actions
@@ -101,6 +101,15 @@ def context() -> CombatContext:
     ctx.is_critical = False
     ctx.vulnerabilities = []
     return ctx
+
+
+@pytest.fixture(autouse=True)
+def reset_global_state():
+    """Reset global state before each test to prevent contamination."""
+    # Reset the dice roller to prevent state leakage across tests
+    RollService._dice = DiceRoller()
+    yield
+    # Cleanup after test
 
 
 @pytest.fixture
@@ -276,7 +285,7 @@ async def advance_turn(state: State, result: DecisionResult) -> State:
     llm.with_structured_output.return_value = llm
     llm.ainvoke.return_value = result
 
-    state = await StartCombatNode()(state)
+    state = await StartCombatNode()(state.model_copy())
     state = await DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
     state = await ActionProcessorNode()(state)
     return await EndCombatNode()(state)

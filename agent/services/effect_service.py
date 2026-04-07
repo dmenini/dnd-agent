@@ -75,6 +75,9 @@ class EffectService:
         effect_to_remove = next((e for e in character.status_effects if e.type == condition), None)
         if effect_to_remove:
             effect_to_remove.on_expire(character)
+            # Apply followup effect if it exists
+            if effect_to_remove.followup:
+                cls.try_apply_condition(character, effect_to_remove.followup)
 
         character.status_effects = [e for e in character.status_effects if e.type != condition]
         character.log_event(f"{character.name} is not {condition.value} anymore!", icon=Icon.EFFECT_EXPIRED)

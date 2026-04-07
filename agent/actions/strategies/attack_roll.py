@@ -39,14 +39,10 @@ class AttackRollStrategy(ResolutionStrategy):
 
     type: Literal["attack_roll"] = "attack_roll"
     ability: AbilityType = Field(
-        description=(
-            "Ability score used for attack roll: strength, dexterity, intelligence, wisdom, charisma, or constitution"
-        ),
-        examples=["strength", "dexterity", "intelligence"],
+        description="Ability score used for attack roll",
     )
     weapon_type: WeaponType = Field(
-        description="Weapon proficiency type: simple_melee, martial_melee, simple_range, martial_range, or magic",
-        examples=["martial_melee", "simple_range", "magic"],
+        description="Weapon proficiency type",
     )
 
     def resolve(self, actor: Character, target: Character, ctx: CombatContext) -> bool:

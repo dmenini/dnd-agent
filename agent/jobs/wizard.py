@@ -45,5 +45,6 @@ Wizard = CharacterJob(
     ],
     spells=[
         load_spell("magic_missile.json"),
+        load_spell("haste.json"),
     ],
 )

@@ -51,23 +51,17 @@ class DamageEffect(EffectApplicator):
         examples=["1d8+5", "8d6", "3d10", "{level}d10"],
     )
     damage_type: DamageType = Field(
-        description=(
-            "Type of damage: slashing, piercing, bludgeoning, fire, cold, poison, lightning, necrotic, radiant, "
-            "or force"
-        ),
-        examples=["slashing", "fire", "necrotic"],
+        description="Type of damage",
     )
     ability: AbilityType | None = Field(
         default=None,
         description=(
             "Ability modifier to add to damage (e.g., strength for melee). None defaults to the class primary ability."
         ),
-        examples=["strength", "dexterity", None],
     )
     half_on_save: bool = Field(
         default=False,
         description="If true, deals half damage on successful save (common for AOE spells)",
-        examples=[False, True],
     )
 
     def _parse_expression(self, expr: str, actor: Character) -> str:
