@@ -125,3 +125,8 @@ class CombatService:
         for ability in character.special_abilities:
             if hasattr(ability, "rest"):
                 ability.rest()
+
+        # Restore limited resources that restore on short rest
+        for resource in character.limited_resources.values():
+            if resource.max_uses > 0:
+                resource.restore()

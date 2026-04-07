@@ -1,0 +1,38 @@
+{
+  "id": "shield_of_faith",
+  "name": "Shield of Faith",
+  "description": "A shimmering field grants +2 AC for the duration. Requires concentration.",
+  "type": "cast_spell",
+  "category": "bonus",
+  "targeting": "single",
+  "range": 60,
+  "hits": 1,
+  "level_required": 1,
+  "resolution": {
+    "type": "auto_success"
+  },
+  "effects": [
+    {
+      "type": "apply_conditions",
+      "conditions": [
+        "shielded_by_faith"
+      ],
+      "concentration": true
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
+  ],
+  "metadata": {
+    "school": "abjuration",
+    "components": "V, S, M"
+  }
+}

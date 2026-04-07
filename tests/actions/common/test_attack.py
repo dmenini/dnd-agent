@@ -1,5 +1,8 @@
 from agent.actions.base import ActionCategory, ActionType
-from agent.actions.common.attack import AttackAction, MainHandAttackAction
+from agent.actions.composable import ComposableAction
+from agent.actions.effects.damage import DamageEffect
+from agent.actions.resources.action_economy import ActionEconomyConsumer
+from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
 from agent.character.proficiency import Proficiency, ProficiencyType
@@ -12,20 +15,34 @@ from agent.services.visibility_service import VisibilityService
 from tests.conftest import cheater_dice
 
 
-def make_attack_action() -> AttackAction:
+def make_attack_action() -> ComposableAction:
     """Helper for creating a deterministic melee attack."""
-    return MainHandAttackAction(
+    return ComposableAction(
         id="basic_attack",
         name="Basic Attack",
         description="A test melee strike.",
-        targeting=TargetingType.SINGLE,
-        damage_dice="1d8",
-        damage_type=DamageType.SLASHING,
-        weapon_type=WeaponType.SIMPLE_MELEE,
-        ability=AbilityType.STR,
-        range=1.5,
         type=ActionType.ATTACK,
         category=ActionCategory.STANDARD,
+        targeting=TargetingType.SINGLE,
+        range=1.5,
+        hits=1,
+        resolution=AttackRollStrategy(
+            ability=AbilityType.STR,
+            weapon_type=WeaponType.SIMPLE_MELEE,
+        ),
+        effects=[
+            DamageEffect(
+                damage_dice="1d8",
+                damage_type=DamageType.SLASHING,
+                ability=AbilityType.STR,
+            )
+        ],
+        resources=[
+            ActionEconomyConsumer(
+                category=ActionCategory.STANDARD,
+                action_type=ActionType.ATTACK,
+            )
+        ],
     )
 
 

@@ -16,6 +16,7 @@ class TargetingType(str, Enum):
     SELF = "self"
     MULTI = "multi"
     ALLIES = "allies"
+    POSITION = "position"  # For evocations and position-based spells
 
 
 class FeatureId(str, Enum):
@@ -80,7 +81,6 @@ class FeatureId(str, Enum):
     REGENERATION = "regeneration"
     LIFE_STEAL = "life_steal"
     ARCANE_RECOVERY = "arcane_recovery"
-    DIVINE_RESTORATION = "divine_restoration"
     PRESERVE_LIFE = "preserve_life"
 
     # Reflection & Retaliation

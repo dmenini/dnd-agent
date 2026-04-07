@@ -116,6 +116,10 @@ class Attributes(Abilities):
         prof = self.proficiency_bonus(level=level)
         return dc + prof + spell_mod
 
+    def ability_dc(self, ability: AbilityType, level: int) -> int:
+        """Calculate save DC for non-spell abilities (racial abilities, monk ki, etc.)."""
+        return 8 + self.proficiency_bonus(level=level) + self.ability_modifier(ability)
+
     def spell_save_advantage(self) -> int:
         adv = self._recompute_attribute("save_advantage.spell")
         dis = self._recompute_attribute("save_disadvantage.spell")

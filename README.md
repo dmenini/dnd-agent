@@ -57,6 +57,9 @@ make format
 - Add more classes
 - Try to remove map string and compute it dynamically
 - Better logging of main info and details
+- Bless: When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.
+- Magic weapon: +2 at spell level 4, +3 at spell level 6
+- Spiritual weapon: +1d8 per 2 spell levels above 2nd.
 
 ### Concentration Mechanics (Partial Implementation)
 - TODO: Damage-based concentration checks (CON save when taking damage, DC = max(10, damage/2))

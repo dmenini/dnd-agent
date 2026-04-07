@@ -1,0 +1,36 @@
+{
+  "id": "longsword_attack",
+  "name": "Longsword Attack",
+  "description": "Strike with a longsword",
+  "type": "attack",
+  "category": "standard",
+  "targeting": "single",
+  "range": 1.5,
+  "hits": 1,
+    "level_required": 1,
+  "resolution": {
+    "type": "attack_roll",
+    "ability": "strength",
+    "weapon_type": "martial_melee"
+  },
+  "effects": [
+    {
+      "type": "damage",
+      "damage_dice": "1d8",
+      "damage_type": "slashing",
+      "ability": "strength"
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "attack",
+      "breaks_stealth": true
+    }
+  ],
+  "metadata": {
+    "weapon": "longsword",
+    "hands": "versatile"
+  }
+}

@@ -2,7 +2,7 @@
 
 from logging import getLogger
 
-from agent.actions.common.attack import AttackAction
+from agent.actions.base import ActionType
 from agent.actions.common.dash import DashAction
 from agent.actions.common.move import MovementAction
 from agent.logs.log_event import Icon, LogLevel
@@ -89,7 +89,7 @@ class RulesVerifierNode:
         return state.decision.validate_targets_alive(state.characters)
 
     def check_friendly_fire(self, state: State) -> tuple[bool, str | None]:
-        if not isinstance(state.action, AttackAction):
+        if not state.action or state.action.type != ActionType.ATTACK:
             return True, None
         return state.decision.validate_friendly_fire(
             actor=state.current_actor,  # type: ignore[arg-type]

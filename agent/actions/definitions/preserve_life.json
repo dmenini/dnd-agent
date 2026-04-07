@@ -1,0 +1,39 @@
+{
+  "id": "preserve_life",
+  "name": "Preserve Life",
+  "description": "Restore HP equal to 5x your cleric level, divided among allies. Each can't exceed half their max HP.",
+  "type": "special",
+  "category": "bonus",
+  "targeting": "allies",
+  "range": 30,
+  "hits": 3,
+  "level_required": 2,
+  "resolution": {
+    "type": "auto_success"
+  },
+  "effects": [
+    {
+      "type": "distributed_healing",
+      "total_amount": "{level} * 5",
+      "max_per_target": "{target.max_hp} / 2",
+      "min_per_target": 0,
+      "distribution_strategy": "equal"
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "special"
+    },
+    {
+      "type": "limited_uses",
+      "resource_name": "channel_divinity"
+    }
+  ],
+  "metadata": {
+    "class": "cleric",
+    "subclass": "life_domain",
+    "channel_divinity": true
+  }
+}

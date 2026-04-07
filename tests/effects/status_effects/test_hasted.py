@@ -1,40 +1,28 @@
 import pytest
 
-from agent.actions.common.spell import SupportSpellAction
 from agent.character.abilities import AbilityType
 from agent.character.character import Character
-from agent.character.resources import SpellLevel
 from agent.effects.status_effects.base import StatusType
-from agent.effects.status_effects.collection import Hasted
 from agent.jobs.wizard import Wizard
 from agent.models.config import AgentConfig
 from agent.models.decision import DecisionResult
-from agent.models.enums import FeatureId, TargetingType
+from agent.models.enums import FeatureId
 from agent.models.map import GameMap
 from agent.models.state import State
 from agent.services.job_service import JobService
+from agent.services.level_service import LevelService
 from tests.conftest import advance_turn, cheater_dice
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, target: Character) -> None:
     actor.cheater_dice = None
     JobService.change_job(actor, Wizard)
+    # Level up to 5 for 3rd level spell slots
+    LevelService.level_up(actor)  # Level 4
+    LevelService.level_up(actor)  # Level 5
     hero_id = actor.id
     orc_id = target.id
-
-    haste = SupportSpellAction(
-        id=FeatureId.HASTE.value,
-        name="Haste",
-        description="Gain 1 extra action on the next 2 turns",
-        range=1,
-        targeting=TargetingType.SELF,
-        apply_conditions=[Hasted.with_duration(1)],
-        level=SpellLevel.LEVEL_1,
-        ability=AbilityType.WIS,
-    )
-    actor.spells = [haste]
 
     state = State(
         map=game_map,
@@ -49,7 +37,7 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     )
     hero = state.characters[hero_id]
     assert hero.status_effects[0].type == StatusType.HASTED
-    assert hero.status_effects[0].duration == 1
+    assert hero.status_effects[0].duration == 10
 
     ac_mods = hero.attributes.get_modifiers("ac")
     assert len(ac_mods) == 2
@@ -68,36 +56,47 @@ async def test_hasted(config: AgentConfig, game_map: GameMap, actor: Character, 
     # Turn 1.2: Orc pass
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
-    # Turn 2.1: Hero double action -> haste expires, lethargy takes place at the end of turn
+    # Turn 2.1: Hero can take multiple actions thanks to Haste
     assert state.current_actor is not None
     assert state.current_actor.status_effects[0].type == StatusType.HASTED
-    assert state.current_actor.status_effects[0].duration == 1
+    assert state.current_actor.status_effects[0].duration == 10
+
+    # Verify extra action from Haste allows double attack
     state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
+    # Second attack in same turn thanks to Haste
     state = await advance_turn(
         state, result=DecisionResult(action_id="main_hand_attack", target_hits={orc_id: 1}, description="")
     )
 
-    # Set actor to fail save roll (value=1) so hero becomes lethargic
-    actor.cheater_dice = cheater_dice(value=1)
-    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
-    actor.cheater_dice = None
-
+    # Haste is still active
     hero = state.characters[hero_id]
+    assert hero.status_effects[0].type == StatusType.HASTED
+
+    # Advance enough turns for Haste to expire naturally (duration 10)
+    # Set hero to fail WIS save (value=1) so Lethargic is applied when Haste expires
+    hero = state.characters[hero_id]
+    hero.cheater_dice = cheater_dice(value=1)
+
+    # Skip ahead by passing for remaining turns (10 more rounds needed: current duration is 9 after Turn 2.1 ends)
+    for _ in range(20):  # 10 rounds * 2 characters = 20 turns
+        state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
+
+    # Haste should have expired and Lethargic should be applied
+    hero = state.characters[hero_id]
+    assert len(hero.status_effects) == 1
     assert hero.status_effects[0].type == StatusType.LETHARGIC
     assert hero.status_effects[0].duration == 1
     assert hero.attributes.get_modifiers("speed")[0].value == 0.5
     assert hero.attributes.get_modifiers("save_disadvantage.wisdom")[0].value is True
-
-    assert hero.current_speed == 0.0
+    assert hero.attributes.speed() == 3.0  # Base 6 * 0.5 = 3.0
     assert hero.attributes.ability_save_advantage(AbilityType.WIS) == -1
 
-    # Turn 2.2: Pass
+    # Advance one more turn for Lethargic to expire
+    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
     state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
 
-    # Turn 3.1: Still performs one action despite lethargy, which then expires
-    state = await advance_turn(state, result=DecisionResult(action_id="wait", description=""))
-    assert state.action is not None
-    assert state.current_actor is not None
-    assert len(state.current_actor.status_effects) == 0
+    # Both effects should be gone now
+    hero = state.characters[hero_id]
+    assert len(hero.status_effects) == 0

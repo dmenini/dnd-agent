@@ -1,0 +1,38 @@
+{
+  "id": "melee_spell_attack",
+  "name": "Melee Spell Attack",
+  "description": "Make a melee spell attack with a summoned weapon or magical effect",
+  "type": "attack",
+  "category": "bonus",
+  "targeting": "single",
+  "range": 2,
+  "hits": 1,
+
+  "resolution": {
+    "type": "attack_roll",
+    "ability": "wisdom",
+    "weapon_type": "magic"
+  },
+
+  "effects": [
+    {
+      "type": "damage",
+      "damage_dice": "1d8",
+      "damage_type": "force",
+      "ability": "wisdom"
+    }
+  ],
+
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "attack",
+      "breaks_stealth": false
+    }
+  ],
+
+  "metadata": {
+    "note": "Used by evocations like Spiritual Weapon for bonus action attacks"
+  }
+}

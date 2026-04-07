@@ -1,0 +1,38 @@
+{
+  "id": "magic_weapon",
+  "name": "Magic Weapon",
+  "description": "Touch a weapon to give it +1 to attack and damage rolls. Requires concentration.",
+  "type": "cast_spell",
+  "category": "bonus",
+  "targeting": "single",
+  "range": 1.5,
+  "hits": 1,
+  "level_required": 3,
+  "resolution": {
+    "type": "auto_success"
+  },
+  "effects": [
+    {
+      "type": "apply_conditions",
+      "conditions": [
+        "magic_weapon"
+      ],
+      "concentration": true
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 2
+    }
+  ],
+  "metadata": {
+    "school": "transmutation",
+    "components": "V, S"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "id": "magic_missile",
+  "name": "Magic Missile",
+  "description": "Three darts of magical force, each dealing 1d4+1 force damage. Automatically hits.",
+  "type": "cast_spell",
+  "category": "standard",
+  "targeting": "multi",
+  "range": 10,
+  "hits": 3,
+  "level_required": 1,
+  "resolution": {
+    "type": "auto_success"
+  },
+  "effects": [
+    {
+      "type": "damage",
+      "damage_dice": "1d4+1",
+      "damage_type": "force",
+      "ability": null
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
+  ],
+  "metadata": {
+    "school": "evocation",
+    "components": "V, S"
+  }
+}

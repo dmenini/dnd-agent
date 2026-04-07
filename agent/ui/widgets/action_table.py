@@ -3,9 +3,9 @@ from typing import Any
 from textual.reactive import reactive
 from textual.widgets import DataTable
 
-from agent.actions.base import Action
-from agent.actions.common.attack import AttackAction
-from agent.actions.common.spell import AttackSpellAction, SupportSpellAction
+from agent.actions.base import Action, ActionType
+from agent.actions.composable import ComposableAction
+from agent.actions.effects.damage import DamageEffect
 from agent.ui.widgets.action_modal import ActionInfoModal
 
 
@@ -67,17 +67,28 @@ class ActionsSummaryTable(DataTable):
         """Build the info field dynamically depending on subclass."""
         info = ""
 
-        if isinstance(action, AttackAction):
-            info = f"{action.hits} hit(s) for {action.damage_dice} {action.damage_type.value} damage"
+        if isinstance(action, ComposableAction):
+            # Check if it's a spell with level metadata
+            if action.type == ActionType.CAST_SPELL and "spell_level" in action.metadata:
+                level_info = f"Lv {action.metadata['spell_level']}"
 
-        elif isinstance(action, AttackSpellAction):
-            info = (
-                f"Lv {action.level.value}, {action.hits} hit(s) for "
-                f"{action.damage_dice} {action.damage_type.value} damage"
-            )
-
-        elif isinstance(action, SupportSpellAction):
-            info = f"Lv {action.level.value}"
+                # Check if it has damage effects
+                damage_effects = [e for e in action.effects if isinstance(e, DamageEffect)]
+                if damage_effects:
+                    damage = damage_effects[0]
+                    info = (
+                        f"{level_info}, {action.hits} hit(s) for {damage.damage_dice} {damage.damage_type.value} damage"
+                    )
+                else:
+                    info = level_info
+            # Check if it has damage effects (attacks)
+            else:
+                damage_effects = [e for e in action.effects if isinstance(e, DamageEffect)]
+                if damage_effects:
+                    damage = damage_effects[0]
+                    info = f"{action.hits} hit(s) for {damage.damage_dice} {damage.damage_type.value} damage"
+                elif hasattr(action, "hits"):
+                    info = f"{action.hits} hit(s)"
 
         elif hasattr(action, "status_effects"):
             eff = ", ".join(e.type.value for e in action.status_effects)

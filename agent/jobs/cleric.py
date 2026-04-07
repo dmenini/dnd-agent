@@ -1,15 +1,14 @@
 from agent.character.abilities import AbilityType, SkillType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resources import CasterProgression, SpellLevel
+from agent.character.resources import CasterProgression
 from agent.effects.traits import TraitBuilder
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentSlot
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobOptions, JobSpecialization, JobType, ResourceDefinition
 from agent.jobs.feature import EquipmentChoice, JobFeature, JobPassive, OptionItem, SubclassChoice
-from agent.jobs.spells import AttackSpell, SpellBuilder
-from agent.models.damage import DamageType
-from agent.models.enums import FeatureId, TargetingType
+from agent.jobs.spell_loader import load_spell
+from agent.models.enums import FeatureId
 
 # https://roll20.net/compendium/dnd5e/Classes:Cleric#content
 
@@ -108,19 +107,7 @@ Cleric = CharacterJob(
     ],
     features=[],
     spells=[
-        AttackSpell(
-            ref_id=FeatureId.SACRED_FLAME,
-            name="Sacred Flame",
-            description="Call down radiant fire to deal 1d8 radiant damage. Target makes a DEX save for no damage.",
-            level_required=1,
-            level=SpellLevel.LEVEL_1,
-            targeting=TargetingType.SINGLE,
-            range=12,
-            damage_dice="1d8",
-            damage_type=DamageType.RADIANT,
-            requires_save=True,
-            ability=AbilityType.DEX,
-        ),
+        load_spell("sacred_flame.json"),
     ],
     resources=[
         ResourceDefinition(
@@ -150,7 +137,7 @@ LifeDomain = JobSpecialization(
     ],
     features=[
         JobFeature(
-            ref_id=FeatureId.DIVINE_RESTORATION,
+            ref_id=FeatureId.PRESERVE_LIFE,
             name="Channel Divinity - Preserve Life",
             description=(
                 "Once per combat, restore a number of hit points equal to five times your cleric level, "
@@ -161,10 +148,10 @@ LifeDomain = JobSpecialization(
         ),
     ],
     spells=[
-        SpellBuilder.cure_wounds(level_required=1),
-        SpellBuilder.bless(level_required=1),
-        SpellBuilder.lesser_restoration(level_required=3),
-        SpellBuilder.spiritual_weapon(level_required=3),
+        load_spell("cure_wounds.json"),
+        load_spell("bless.json"),
+        load_spell("lesser_restoration.json"),
+        load_spell("spiritual_weapon.json"),
     ],
     proficiencies=[Proficiency(source="life_domain", type=ProficiencyType.ARMOR, target=ArmorType.HEAVY)],
 )
@@ -194,10 +181,18 @@ WarDomain = JobSpecialization(
         ),
     ],
     spells=[
-        SpellBuilder.divine_favor(level_required=1),
-        SpellBuilder.shield_of_faith(level_required=1),
-        SpellBuilder.magic_weapon(level_required=3),
-        SpellBuilder.spiritual_weapon(level_required=3),
+        load_spell("divine_favor.json"),
+        load_spell("shield_of_faith.json"),
+        load_spell("magic_weapon.json"),
+        load_spell("spiritual_weapon.json"),
+    ],
+    resources=[
+        ResourceDefinition(
+            name="war_priest",
+            calculate_max_uses=lambda _: 1,
+            restore_on_short_rest=True,
+            restore_on_long_rest=True,
+        ),
     ],
 )
 

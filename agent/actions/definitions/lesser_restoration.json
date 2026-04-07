@@ -1,0 +1,40 @@
+{
+  "id": "lesser_restoration",
+  "name": "Lesser Restoration",
+  "description": "Remove one condition (paralyzed, poisoned, blinded, or deafened) from touched creature.",
+  "type": "cast_spell",
+  "category": "standard",
+  "targeting": "allies",
+  "range": 1.5,
+  "hits": 1,
+  "level_required": 3,
+  "resolution": {
+    "type": "auto_success"
+  },
+  "effects": [
+    {
+      "type": "remove_conditions",
+      "condition_types": [
+        "paralyzed",
+        "poisoned",
+        "blinded",
+        "deafened"
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "standard",
+      "action_type": "cast_spell"
+    },
+    {
+      "type": "spell_slot",
+      "level": 1
+    }
+  ],
+  "metadata": {
+    "school": "abjuration",
+    "components": "V, S"
+  }
+}

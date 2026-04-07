@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
+from langgraph.prebuilt import ToolRuntime
 from pytest_mock import MockerFixture
 
 from agent.ai.character_creation.agent import DEFAULT_PARTY_NAME
@@ -10,14 +11,12 @@ from agent.character.attributes import Attributes
 from agent.character.character import Character, Party
 from agent.character.combat_stats import CombatStats
 from agent.character.equipment import Equipment
-from agent.effects.trait_effects.damage import *  # noqa: F403
-from agent.effects.trait_effects.support import *  # noqa: F403
-from agent.effects.trait_effects.turn import *  # noqa: F403
 from agent.equipment.armor import Armor, ArmorType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling, WeaponType
 from agent.jobs.cleric import Cleric
 from agent.jobs.fighter import Fighter
 from agent.jobs.wizard import Wizard
+from agent.logs.log_registry import LogRegistry, get_log_registry
 from agent.mechanics.dice_roller import DiceRoller
 from agent.models.config import AgentConfig, LLMConfig, PromptsConfig
 from agent.models.context import CombatContext
@@ -31,6 +30,7 @@ from agent.nodes.decision import DecisionNode
 from agent.nodes.end_combat import EndCombatNode
 from agent.nodes.start_combat import StartCombatNode
 from agent.registration import register_actions
+from agent.services.roll_service import RollService
 
 register_actions()
 
@@ -100,6 +100,19 @@ def context() -> CombatContext:
     ctx.is_critical = False
     ctx.vulnerabilities = []
     return ctx
+
+
+@pytest.fixture(autouse=True)
+def reset_global_state() -> None:
+    """Reset global state before each test to prevent contamination."""
+    # Reset the dice roller to prevent state leakage across tests
+    RollService._dice = DiceRoller()
+
+    # Reset the log registry singleton to prevent event accumulation
+    LogRegistry._instance = None
+    get_log_registry.cache_clear()
+
+    # Cleanup after test
 
 
 @pytest.fixture
@@ -275,7 +288,7 @@ async def advance_turn(state: State, result: DecisionResult) -> State:
     llm.with_structured_output.return_value = llm
     llm.ainvoke.return_value = result
 
-    state = await StartCombatNode()(state)
+    state = await StartCombatNode()(state.model_copy())
     state = await DecisionNode(llm=llm, system_prompt="", simulation=True)(state)
     state = await ActionProcessorNode()(state)
     return await EndCombatNode()(state)
@@ -295,7 +308,6 @@ def char_creation_config() -> AgentConfig:
 @pytest.fixture
 def mock_tool_runtime(mocker: MockerFixture):  # type: ignore[no-untyped-def]  # noqa: ANN201
     """Factory for creating mock ToolRuntime objects."""
-    from langgraph.prebuilt import ToolRuntime  # noqa: PLC0415
 
     def _create(state_data: dict):  # type: ignore[no-untyped-def]  # noqa: ANN202
         config = mocker.MagicMock()

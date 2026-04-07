@@ -1,13 +1,12 @@
 from agent.character.abilities import AbilityType
 from agent.character.proficiency import Proficiency, ProficiencyType
-from agent.character.resources import CasterProgression, SpellLevel
+from agent.character.resources import CasterProgression
 from agent.effects.traits import TraitBuilder
 from agent.equipment.weapons import WeaponType
 from agent.jobs.base import CharacterJob, JobFeature, JobType
 from agent.jobs.feature import JobPassive
-from agent.jobs.spells import AttackSpell
-from agent.models.damage import DamageType
-from agent.models.enums import FeatureId, TargetingType
+from agent.jobs.spell_loader import load_spell
+from agent.models.enums import FeatureId
 
 # https://roll20.net/compendium/dnd5e/Classes:Wizard#content
 
@@ -45,19 +44,7 @@ Wizard = CharacterJob(
         )
     ],
     spells=[
-        AttackSpell(
-            ref_id=FeatureId.MAGIC_MISSILE,
-            name="Magic Missile",
-            description="Automatically hits and deals 1d4+1 force damage per missile.",
-            level_required=1,
-            is_aoe=False,
-            level=SpellLevel.LEVEL_1,
-            targeting=TargetingType.MULTI,
-            range=10,
-            hits=3,
-            damage_dice="1d4+1",
-            damage_type=DamageType.FORCE,
-            requires_save=False,
-        ),
+        load_spell("magic_missile.json"),
+        load_spell("haste.json"),
     ],
 )

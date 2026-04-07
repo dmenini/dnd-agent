@@ -1,15 +1,22 @@
 from typing import TYPE_CHECKING
 
-from agent.actions.base import Action
-from agent.actions.common.attack import MainHandAttackAction, OffHandAttackAction, RangedAttackAction
+from agent.actions.base import Action, ActionCategory, ActionType
 from agent.actions.common.dash import DashAction
 from agent.actions.common.dodge import DodgeAction
 from agent.actions.common.hide import HideAction
 from agent.actions.common.move import MovementAction
 from agent.actions.common.wait import WaitAction
+from agent.actions.composable import ComposableAction
+from agent.actions.effects.conditions import ApplyConditionsEffect
+from agent.actions.effects.damage import DamageEffect
+from agent.actions.resources import SpellSlotConsumer
+from agent.actions.resources.action_economy import ActionEconomyConsumer
+from agent.actions.strategies.attack_roll import AttackRollStrategy
+from agent.character.abilities import AbilityType
+from agent.character.attributes import Attributes
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
-from agent.equipment.weapons import MeleeWeapon
+from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.services.evocation_service import EvocationService
 
 if TYPE_CHECKING:
@@ -18,6 +25,75 @@ if TYPE_CHECKING:
 
 class ActionService:
     """Stateless service for determining character action availability."""
+
+    @staticmethod
+    def weapon_to_action(
+        weapon: MeleeWeapon | RangedWeapon,
+        action_id: str,
+        name: str,
+        category: ActionCategory,
+        action_type: ActionType,
+        *,
+        is_two_handed: bool = False,
+        abilities: Attributes | None = None,
+    ) -> ComposableAction:
+        """Build a ComposableAction from weapon data.
+
+        Args:
+            weapon: The weapon to build an action from
+            action_id: Unique ID for the action
+            name: Display name
+            category: STANDARD or BONUS
+            action_type: ATTACK or OFF_HAND_ATTACK
+            is_two_handed: Whether wielding two-handed (for versatile weapons)
+            abilities: Character abilities (for finesse weapon ability selection)
+
+        Returns:
+            ComposableAction configured for this weapon attack
+        """
+        # Determine damage dice (versatile weapons deal more damage two-handed)
+        damage_dice = weapon.damage_dice
+        if isinstance(weapon, MeleeWeapon) and weapon.handling == WeaponHandling.VERSATILE and is_two_handed:
+            damage_dice = weapon.versatile_damage or damage_dice
+
+        # Determine ability (finesse weapons can use STR or DEX, player chooses best)
+        ability = weapon.ability
+        if isinstance(weapon, MeleeWeapon) and weapon.finesse and abilities:
+            ability = AbilityType.STR if abilities.strength >= abilities.dexterity else AbilityType.DEX
+
+        # Build effects list: damage first, then weapon effects (if any)
+        action_effects: list = [
+            DamageEffect(
+                damage_dice=damage_dice,
+                damage_type=weapon.damage_type,
+                ability=ability,
+            )
+        ]
+        if weapon.effects:
+            action_effects.append(ApplyConditionsEffect(conditions=weapon.effects))
+
+        return ComposableAction(
+            id=action_id,
+            name=name,
+            description=f"Attack with {weapon.name}",
+            type=action_type,
+            category=category,
+            targeting=weapon.targeting,
+            range=weapon.range,
+            hits=1,
+            resolution=AttackRollStrategy(
+                ability=ability,
+                weapon_type=weapon.weapon_type,
+            ),
+            effects=action_effects,
+            resources=[
+                ActionEconomyConsumer(
+                    category=category,
+                    action_type=action_type,
+                )
+            ],
+            metadata={"weapon": weapon.name},
+        )
 
     @classmethod
     def has_resources(cls, character: "Character") -> bool:
@@ -28,6 +104,15 @@ class ActionService:
         # Technically we should check the speed left, but we force one movement per turn
         has_movement = character.action_economy.movement_available
         return has_main or has_bonus or has_movement
+
+    @classmethod
+    def _has_spell_slot(cls, character: "Character", spell: ComposableAction) -> bool:
+        """Check if character has spell slot for the given spell action."""
+        for resource in spell.resources:
+            if isinstance(resource, SpellSlotConsumer):
+                return resource.is_available(character)
+        # No spell slot consumer means it doesn't require a slot (shouldn't happen for spells)
+        return True
 
     @classmethod
     def can_use_spells(cls, character: "Character") -> bool:
@@ -57,24 +142,40 @@ class ActionService:
             HideAction(),
         ]
 
-        # Equipment-based actions
+        # Equipment-based actions (weapon attacks built from weapon data)
         if character.equipment.main_hand:
-            main_action = MainHandAttackAction.from_weapon(
+            main_action = cls.weapon_to_action(
                 weapon=character.equipment.main_hand,
+                action_id="main_hand_attack",
+                name="Main Hand Attack",
+                category=ActionCategory.STANDARD,
+                action_type=ActionType.ATTACK,
                 is_two_handed=character.equipment.two_handed_active,
                 abilities=character.attributes,
             )
             all_actions.append(main_action)
-        if character.equipment.off_hand and isinstance(character.equipment.off_hand.type, MeleeWeapon):
-            off_action = OffHandAttackAction.from_weapon(weapon=character.equipment.off_hand)
+        if character.equipment.off_hand and isinstance(character.equipment.off_hand, MeleeWeapon):
+            off_action = cls.weapon_to_action(
+                weapon=character.equipment.off_hand,
+                action_id="off_hand_attack",
+                name="Off Hand Attack",
+                category=ActionCategory.BONUS,
+                action_type=ActionType.OFF_HAND_ATTACK,
+            )
             all_actions.append(off_action)
         if character.equipment.ranged:
-            ranged_action = RangedAttackAction.from_weapon(weapon=character.equipment.ranged)
+            ranged_action = cls.weapon_to_action(
+                weapon=character.equipment.ranged,
+                action_id="ranged_attack",
+                name="Ranged Attack",
+                category=ActionCategory.STANDARD,
+                action_type=ActionType.ATTACK,
+            )
             all_actions.append(ranged_action)
 
         # Spells (only if slot available and armor proficiency)
         if cls.can_use_spells(character):
-            all_actions.extend(spell for spell in character.spells if character.spell_slots.has_slot(spell.level))
+            all_actions.extend(spell for spell in character.spells if cls._has_spell_slot(character, spell))
 
         # Special abilities (can have their own categories)
         all_actions += character.special_abilities

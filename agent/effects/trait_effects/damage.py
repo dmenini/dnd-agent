@@ -75,7 +75,9 @@ def melee_damage_bonus_effect(actor: Character, context: CombatContext, value: i
     weapon = actor.equipment.slots.get(slot)
     is_melee = isinstance(weapon, MeleeWeapon) and weapon.ability == AbilityType.STR
     if is_melee:
-        damage_bonus_effect(actor, context, value=value, damage_type=context.metadata["damage_type"])
+        # Extract damage_type from the first damage effect in the action metadata
+        damage_type = _extract_damage_type(context)
+        damage_bonus_effect(actor, context, value=value, damage_type=damage_type)
 
 
 @register_effect()
@@ -91,7 +93,8 @@ def sneak_attack_effect(actor: Character, context: CombatContext, *, dice: str) 
     has_advantage = context.attack_roll and context.attack_roll.advantage is True
     if context.damage and has_advantage and is_finesse_or_ranged and is_first_attack:
         result = RollService.roll(dice, character=actor).total
-        damage_type = context.metadata["damage_type"]
+        # Extract damage_type from the first damage effect in the action metadata
+        damage_type = _extract_damage_type(context)
         context.damage.components.append(DamageComponent(value=result, type=damage_type, operation="add"))
         actor.log_event(f"{actor.name}'s attack gains {result} {damage_type.value} damage.", log_type=TRAIT_LOG_LEVEL)
 
@@ -114,3 +117,18 @@ def ignore_resistance_effect(
             actor.log_event(
                 f"{actor.name} ignores {target.name}'s {damage_type.value} resistance.", log_type=TRAIT_LOG_LEVEL
             )
+
+
+def _extract_damage_type(context: CombatContext) -> DamageType:
+    damage_type = context.metadata.get("damage_type")
+    if not damage_type:
+        effects = context.metadata.get("effects", [])
+        for effect in effects:
+            if effect.get("type") == "damage":
+                damage_type = effect.get("damage_type")
+                break
+    if not damage_type:
+        msg = "Damage type not found in context"
+        raise ValueError(msg)
+
+    return damage_type

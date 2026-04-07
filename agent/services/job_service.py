@@ -2,17 +2,14 @@
 
 from typing import TYPE_CHECKING
 
-from agent.actions.base import ActionCategory
-from agent.actions.common.spell import BonusSupportSpellAction
 from agent.character.abilities import AbilityType
 from agent.jobs.base import CharacterJob, JobFeature
 from agent.jobs.feature import JobPassive
-from agent.jobs.spells import Spell, SpellType, spell_action_map
 from agent.logs.log_event import LogLevel
-from agent.models.enums import FeatureId
 from agent.services.trait_service import TraitService
 
 if TYPE_CHECKING:
+    from agent.actions.base import Action
     from agent.character.character import Character
 
 
@@ -85,6 +82,14 @@ class JobService:
             resource.set_max_uses(max_uses)
             resource.restore()
 
+        # Special handling for War Priest: uses are based on WIS modifier (min 1)
+        # TODO: Make it generic
+        if character.job.specialization == "War Domain":
+            war_priest_resource = character.get_resource("war_priest")
+            wis_mod = character.attributes.ability_modifier(AbilityType.WIS)
+            war_priest_resource.set_max_uses(max(1, wis_mod))
+            war_priest_resource.restore()
+
     @classmethod
     def apply_job_feature(cls, character: "Character", feature: JobFeature) -> None:
         """Apply a job feature (special ability).
@@ -95,12 +100,6 @@ class JobService:
         """
         if feature.ref_id not in {a.id for a in character.special_abilities}:
             action = feature.to_action()
-
-            # Special handling for War Priest: set uses_per_rest based on WIS modifier
-            if feature.ref_id == FeatureId.WAR_PRIEST and hasattr(action, "uses_per_rest"):
-                wis_mod = character.attributes.ability_modifier(AbilityType.WIS)
-                action.uses_per_rest = max(1, wis_mod)  # type: ignore[attr-defined]
-
             character.special_abilities.append(action)
             character.log_event(f"{character.name} learnt ability {feature.name}", log_type=LogLevel.DETAIL)
 
@@ -141,34 +140,30 @@ class JobService:
         )
 
     @classmethod
-    def apply_spell(cls, character: "Character", spell: Spell) -> None:
-        """Learn a spell.
+    def apply_spell(cls, character: "Character", spell: "Action") -> None:
+        """Learn a spell (action instance).
 
         Args:
             character: The character learning the spell
-            spell: The spell to learn
+            spell: The spell action to learn
         """
         if character.attributes.spellcasting_ability is None:
             msg = "Character is not a caster and cannot learn spells"
             raise ValueError(msg)
 
-        if spell.ref_id not in {a.id for a in character.spells}:
-            spell.ability = spell.ability or character.attributes.spellcasting_ability
-            # Use BonusSupportSpellAction for bonus action support spells
-            if spell.spell_type == SpellType.SUPPORT and spell.casting_time == ActionCategory.BONUS:
-                action = BonusSupportSpellAction(id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
-            else:
-                action = spell_action_map[spell.spell_type](id=spell.ref_id.value, **spell.model_dump(exclude={"type"}))
-            character.spells.append(action)  # type: ignore[arg-type]
-            character.log_event(f"{character.name} learnt spell {action.name}", log_type=LogLevel.DETAIL)
+        if spell.id not in {a.id for a in character.spells}:
+            # Make a deep copy to avoid shared state between characters
+            spell_copy = spell.model_copy(deep=True)
+            character.spells.append(spell_copy)  # type: ignore[arg-type]
+            character.log_event(f"{character.name} learnt spell {spell.name}", log_type=LogLevel.DETAIL)
 
     @classmethod
-    def remove_spell(cls, character: "Character", spell: Spell) -> None:
+    def remove_spell(cls, character: "Character", spell: "Action") -> None:
         """Forget a spell.
 
         Args:
             character: The character forgetting the spell
-            spell: The spell to forget
+            spell: The spell action to forget
         """
-        character.spells = [s for s in character.spells if s.id != spell.ref_id]
-        character.log_event(f"{character.name} forgot spell {spell.ref_id}", log_type=LogLevel.DETAIL)
+        character.spells = [s for s in character.spells if s.id != spell.id]
+        character.log_event(f"{character.name} forgot spell {spell.id}", log_type=LogLevel.DETAIL)

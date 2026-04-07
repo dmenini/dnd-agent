@@ -1,0 +1,44 @@
+{
+  "id": "rage",
+  "name": "Rage",
+  "description": "Enter a primal fury, gaining advantage on STR checks/saves, damage resistance, and bonus melee damage",
+  "type": "special",
+  "category": "bonus",
+  "targeting": "self",
+  "range": 0,
+  "hits": 1,
+  "level_required": 1,
+  "conditions": [
+    {
+      "type": "armor_restriction",
+      "forbidden_types": [
+        "heavy"
+      ]
+    }
+  ],
+  "resolution": {
+    "type": "auto_success"
+  },
+  "effects": [
+    {
+      "type": "apply_conditions",
+      "conditions": ["enraged"]
+    }
+  ],
+  "resources": [
+    {
+      "type": "action_economy",
+      "category": "bonus",
+      "action_type": "special"
+    },
+    {
+      "type": "limited_uses",
+      "resource_name": "rage"
+    }
+  ],
+  "metadata": {
+    "class": "barbarian",
+    "duration_rounds": 1,
+    "rage_damage": 2
+  }
+}
