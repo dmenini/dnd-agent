@@ -27,8 +27,6 @@ from agent.services.equipment_service import EquipmentService
 from agent.services.job_service import JobService
 from agent.services.trait_service import TraitService
 
-registry = get_log_registry()
-
 
 class Party(BaseModel):
     id: str
@@ -172,7 +170,7 @@ class Character(BaseModel):
             type=log_type,
             show_ai=show_ai,
         )
-        registry.append(event)
+        get_log_registry().append(event)
 
     @field_serializer("spells", "special_abilities")
     def serialize_actions(self, actions: list[Action]) -> list[dict]:

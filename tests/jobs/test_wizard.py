@@ -1,7 +1,5 @@
 from agent.character.character import Character
-from agent.jobs.wizard import Wizard
 from agent.models.enums import FeatureId
-from agent.services.job_service import JobService
 
 
 def test_mage(wizard: Character) -> None:
@@ -19,6 +17,7 @@ def test_wizard_serialization(wizard: Character) -> None:
     # Test round-trip serialization
     actor_dict = wizard.model_dump()
     actor2 = Character.model_validate(actor_dict)
+
     assert actor2.model_dump() == actor_dict
 
     # Verify key attributes are preserved

@@ -13,12 +13,12 @@ from agent.actions.resources import SpellSlotConsumer
 from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.character.abilities import AbilityType
+from agent.character.attributes import Attributes
 from agent.character.resources import SpellLevel
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling
 from agent.services.evocation_service import EvocationService
-from agent.character.attributes import Attributes
 
 if TYPE_CHECKING:
     from agent.character.character import Character

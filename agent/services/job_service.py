@@ -152,8 +152,9 @@ class JobService:
             raise ValueError(msg)
 
         if spell.id not in {a.id for a in character.spells}:
-            # Spell is already an Action instance - just append it
-            character.spells.append(spell)  # type: ignore[arg-type]
+            # Make a deep copy to avoid shared state between characters
+            spell_copy = spell.model_copy(deep=True)
+            character.spells.append(spell_copy)  # type: ignore[arg-type]
             character.log_event(f"{character.name} learnt spell {spell.name}", log_type=LogLevel.DETAIL)
 
     @classmethod

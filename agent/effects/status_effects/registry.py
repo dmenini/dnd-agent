@@ -28,8 +28,8 @@ class StatusEffectRegistry:
         if not effect:
             msg = f"Status effect '{name}' not found in registry"
             raise KeyError(msg)
-        # Return a copy with default duration
-        return effect.model_copy()
+        # Return a deep copy to avoid shared state issues
+        return effect.model_copy(deep=True)
 
     @classmethod
     def register(cls, name: str, effect: StatusEffect) -> None:

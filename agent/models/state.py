@@ -11,8 +11,6 @@ from agent.models.decision import DecisionResult
 from agent.models.map import GameMap
 from agent.services.visibility_service import VisibilityService
 
-registry = get_log_registry()
-
 
 class VerificationResult(BaseModel):
     valid: bool = True
