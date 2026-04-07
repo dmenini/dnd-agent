@@ -14,7 +14,6 @@ from agent.actions.resources.action_economy import ActionEconomyConsumer
 from agent.actions.strategies.attack_roll import AttackRollStrategy
 from agent.character.abilities import AbilityType
 from agent.character.attributes import Attributes
-from agent.character.resources import SpellLevel
 from agent.equipment.armor import ArmorType
 from agent.equipment.base import EquipmentType
 from agent.equipment.weapons import MeleeWeapon, RangedWeapon, WeaponHandling
@@ -107,25 +106,12 @@ class ActionService:
         return has_main or has_bonus or has_movement
 
     @classmethod
-    def _has_spell_slot(cls, character: "Character", spell: Action) -> bool:
-        """Check if character has spell slot for the given spell action.
-
-        Handles both old-style spell actions (with .level attribute) and
-        ComposableActions (with SpellSlotConsumer in .resources).
-        """
-        # For ComposableAction, check resources for SpellSlotConsumer
-        if isinstance(spell, ComposableAction):
-            for resource in spell.resources:
-                if isinstance(resource, SpellSlotConsumer):
-                    return resource.is_available(character)
-            # No spell slot consumer means it doesn't require a slot (shouldn't happen for spells)
-            return True
-
-        # For old-style spell actions, use .level attribute
-        if hasattr(spell, "level") and isinstance(spell.level, SpellLevel):
-            return character.spell_slots.has_slot(spell.level)
-
-        # Fallback: if we can't determine, assume available
+    def _has_spell_slot(cls, character: "Character", spell: ComposableAction) -> bool:
+        """Check if character has spell slot for the given spell action."""
+        for resource in spell.resources:
+            if isinstance(resource, SpellSlotConsumer):
+                return resource.is_available(character)
+        # No spell slot consumer means it doesn't require a slot (shouldn't happen for spells)
         return True
 
     @classmethod
